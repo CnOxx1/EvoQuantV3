@@ -1,0 +1,50 @@
+[
+  {
+    "entity_key": "bitcoin",
+    "name": "Bitcoin Search Interest",
+    "query": "bitcoin",
+    "group_type": "asset"
+  },
+  {
+    "entity_key": "ethereum",
+    "name": "Ethereum Search Interest",
+    "query": "ethereum",
+    "group_type": "asset"
+  },
+  {
+    "entity_key": "solana",
+    "name": "Solana Search Interest",
+    "query": "solana",
+    "group_type": "asset"
+  },
+  {
+    "entity_key": "sui",
+    "name": "Sui Search Interest",
+    "query": "sui",
+    "group_type": "asset"
+  },
+  {
+    "entity_key": "crypto",
+    "name": "Crypto Search Interest",
+    "query": "crypto",
+    "group_type": "theme"
+  },
+  {
+    "entity_key": "stablecoin",
+    "name": "Stablecoin Search Interest",
+    "query": "stablecoin",
+    "group_type": "theme"
+  },
+  {
+    "entity_key": "bitcoin_etf",
+    "name": "Bitcoin ETF Search Interest",
+    "query": "bitcoin etf",
+    "group_type": "theme"
+  },
+  {
+    "entity_key": "memecoin",
+    "name": "Memecoin Search Interest",
+    "query": "memecoin",
+    "group_type": "theme"
+  }
+]

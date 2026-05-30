@@ -1,0 +1,33 @@
+[
+  {
+    "entity_key": "USDT",
+    "name": "Tether USD",
+    "aliases": [
+      "USDT",
+      "TETHER"
+    ]
+  },
+  {
+    "entity_key": "USDC",
+    "name": "USD Coin",
+    "aliases": [
+      "USDC",
+      "USD COIN"
+    ]
+  },
+  {
+    "entity_key": "DAI",
+    "name": "Dai",
+    "aliases": [
+      "DAI"
+    ]
+  },
+  {
+    "entity_key": "FDUSD",
+    "name": "First Digital USD",
+    "aliases": [
+      "FDUSD",
+      "FIRST DIGITAL USD"
+    ]
+  }
+]

@@ -1,0 +1,6 @@
+[
+  {"entity_key": "AAVE", "name": "Aave", "description": "Lending protocol"},
+  {"entity_key": "UNISWAP", "name": "Uniswap", "description": "DEX protocol"},
+  {"entity_key": "JUPITER", "name": "Jupiter", "description": "Solana DEX aggregator"},
+  {"entity_key": "CETUS", "name": "Cetus", "description": "Sui DEX protocol"}
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "entity_key": "BTC",
+    "name": "Bitcoin Treasury Group",
+    "description": "BTC treasury / foundation wallet group placeholder",
+    "wallet_group_type": "foundation_or_treasury",
+    "verification_status": "placeholder",
+    "address_count": 0,
+    "source_refs": []
+  },
+  {
+    "entity_key": "ETH",
+    "name": "Ethereum Treasury Group",
+    "description": "ETH foundation / treasury wallet group placeholder",
+    "wallet_group_type": "foundation_or_treasury",
+    "verification_status": "placeholder",
+    "address_count": 0,
+    "source_refs": []
+  },
+  {
+    "entity_key": "SOL",
+    "name": "Solana Treasury Group",
+    "description": "SOL foundation / treasury wallet group placeholder",
+    "wallet_group_type": "foundation_or_treasury",
+    "verification_status": "placeholder",
+    "address_count": 0,
+    "source_refs": []
+  },
+  {
+    "entity_key": "SUI",
+    "name": "Sui Treasury Group",
+    "description": "SUI foundation / treasury wallet group placeholder",
+    "wallet_group_type": "foundation_or_treasury",
+    "verification_status": "placeholder",
+    "address_count": 0,
+    "source_refs": []
+  }
+]

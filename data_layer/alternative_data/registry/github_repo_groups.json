@@ -1,0 +1,41 @@
+[
+  {
+    "entity_key": "BTC",
+    "name": "Bitcoin Core Repo Group",
+    "asset": "BTC",
+    "repos": [
+      "bitcoin/bitcoin",
+      "bitcoin-core/secp256k1",
+      "bitcoin/bips"
+    ]
+  },
+  {
+    "entity_key": "ETH",
+    "name": "Ethereum Core Repo Group",
+    "asset": "ETH",
+    "repos": [
+      "ethereum/go-ethereum",
+      "ethereum/execution-apis",
+      "ethereum/consensus-specs"
+    ]
+  },
+  {
+    "entity_key": "SOL",
+    "name": "Solana Core Repo Group",
+    "asset": "SOL",
+    "repos": [
+      "anza-xyz/agave",
+      "anza-xyz/solana-web3.js",
+      "solana-labs/solana-program-library"
+    ]
+  },
+  {
+    "entity_key": "SUI",
+    "name": "Sui Core Repo Group",
+    "asset": "SUI",
+    "repos": [
+      "MystenLabs/sui",
+      "MystenLabs/ts-sdks"
+    ]
+  }
+]

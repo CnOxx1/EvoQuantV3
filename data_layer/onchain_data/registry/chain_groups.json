@@ -1,0 +1,8 @@
+[
+  {"entity_key": "BITCOIN", "name": "Bitcoin", "description": "Bitcoin mainnet"},
+  {"entity_key": "ETHEREUM", "name": "Ethereum", "description": "Ethereum mainnet"},
+  {"entity_key": "SOLANA", "name": "Solana", "description": "Solana mainnet"},
+  {"entity_key": "ARBITRUM", "name": "Arbitrum", "description": "Arbitrum One"},
+  {"entity_key": "BASE", "name": "Base", "description": "Base network"},
+  {"entity_key": "SUI", "name": "Sui", "description": "Sui network"}
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "entity_key": "BTC",
+    "name": "Bitcoin",
+    "description": "BTC 供给与解锁观察对象"
+  },
+  {
+    "entity_key": "ETH",
+    "name": "Ethereum",
+    "description": "ETH 供给与质押观察对象"
+  },
+  {
+    "entity_key": "SOL",
+    "name": "Solana",
+    "description": "SOL 解锁与基金会钱包观察对象"
+  },
+  {
+    "entity_key": "SUI",
+    "name": "Sui",
+    "description": "SUI 解锁与基金会钱包观察对象"
+  }
+]
