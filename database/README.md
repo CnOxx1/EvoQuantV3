@@ -869,6 +869,22 @@ python -m database.migrate_split
 - `logic_layer.exchange_comparison`
 - 写入 `exchange_comparison_snapshots`
 
+## 慢查询日志
+
+`DBManager` 内置慢查询检测，对 `fetch_one`、`fetch_all`、`execute`、`execute_many` 四个方法自动计时。超过阈值的查询会以 `WARNING` 级别记录 SQL 前 200 字符和耗时。
+
+| 配置项 | 环境变量 | 默认值 | 说明 |
+|---|---|---|---|
+| 慢查询阈值 | `DB_SLOW_QUERY_THRESHOLD_MS` | `100` | 超过此毫秒数的查询会被记录 |
+
+日志示例：
+
+```
+WARNING | slow query (152ms): SELECT * FROM technical_indicators WHERE symbol = ? ...
+```
+
+适用于排查生产环境中的性能瓶颈，无需额外依赖或配置即可启用。
+
 ## 初始化与迁移
 
 - 所有表都由 `DBManager` 的域专用方法创建：

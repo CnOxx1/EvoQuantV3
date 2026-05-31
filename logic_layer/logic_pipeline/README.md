@@ -34,6 +34,7 @@ Phase 2 的 6 个模块互相独立，使用 `concurrent.futures.ThreadPoolExecu
 - 默认 `max_workers=4`，可通过环境变量 `LOGIC_PIPELINE_PHASE2_WORKERS` 调整
 - 单个模块失败不影响其他模块（错误隔离）
 - 相比串行执行，Phase 2 整体耗时可减少 40-60%
+- 超时保护：单模块超过 `LOGIC_PIPELINE_PHASE2_TIMEOUT`（默认 300s）后标记为 `TimeoutError`，不阻塞其他模块
 
 Phase 1/3/4/5 保持串行执行（有依赖关系或只有 1 个任务）。
 

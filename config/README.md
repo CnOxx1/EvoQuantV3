@@ -43,3 +43,24 @@ config/
 - `CORE`：最高频（orderbook 3s, derivatives 60s）
 - `ACTIVE`：中频（orderbook 10s, derivatives 300s）
 - `MONITOR`：低频（orderbook 30s, derivatives 900s）
+
+## 启动配置验证
+
+`settings.py` 提供 `validate_config()` 函数，在启动时校验配置合理性：
+
+```python
+from config.settings import validate_config
+
+warnings = validate_config()  # 返回告警列表，同时 logger.warning 输出
+```
+
+校验内容：
+
+| 检查项 | 规则 |
+|---|---|
+| 调度间隔 | `SCHEDULER_CONFIG` 所有值必须 >= 1s，< 3s 会发出告警 |
+| 数据保留 | `EXCHANGE_DATA_RETENTION` 所有值必须 >= 1 天 |
+| 网络超时 | `REQUEST_TIMEOUT` 建议 >= 5000ms（代理环境建议 >= 30000ms） |
+| 重试次数 | `MAX_RETRIES` 必须 >= 1 |
+
+函数不抛异常，只记录警告并返回列表，调用方可决定是否中止。

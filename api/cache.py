@@ -23,6 +23,9 @@ class TTLCache:
         self._cleanup_interval = cleanup_interval
         self._cleanup_thread: threading.Thread | None = None
         self._stopped = threading.Event()
+        # 命中/未命中计数器
+        self._hits: int = 0
+        self._misses: int = 0
 
     def start(self) -> None:
         """启动后台清理线程。"""
@@ -46,11 +49,14 @@ class TTLCache:
         with self._lock:
             entry = self._store.get(key)
             if entry is None:
+                self._misses += 1
                 return None
             value, expire_at = entry
             if time.monotonic() >= expire_at:
                 del self._store[key]
+                self._misses += 1
                 return None
+            self._hits += 1
             return value
 
     def set(self, key: str, value: Any, ttl: float) -> None:
@@ -83,6 +89,18 @@ class TTLCache:
     def size(self) -> int:
         """当前缓存条目数（含可能已过期但未清理的）。"""
         return len(self._store)
+
+    @property
+    def metrics(self) -> dict[str, int]:
+        """返回缓存命中/未命中统计。"""
+        total = self._hits + self._misses
+        return {
+            "hits": self._hits,
+            "misses": self._misses,
+            "total_requests": total,
+            "hit_rate_pct": round(self._hits * 100 / total, 1) if total else 0.0,
+            "size": len(self._store),
+        }
 
     def _cleanup_loop(self) -> None:
         """后台定期清理过期条目。"""

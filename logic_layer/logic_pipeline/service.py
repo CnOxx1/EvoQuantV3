@@ -30,6 +30,9 @@ DEFAULT_INTERVAL_SECONDS = int(
 # Phase 2 并行线程数
 PHASE2_MAX_WORKERS = int(os.environ.get("LOGIC_PIPELINE_PHASE2_WORKERS", "4"))
 
+# Phase 2 单模块超时（秒），超时后标记为 timeout 但不影响其他模块
+PHASE2_TASK_TIMEOUT = int(os.environ.get("LOGIC_PIPELINE_PHASE2_TIMEOUT", "300"))
+
 
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
@@ -62,10 +65,11 @@ def _run_phase_parallel(
     phase_name: str,
     tasks: list[tuple[str, callable]],
     max_workers: int = PHASE2_MAX_WORKERS,
+    timeout: int = PHASE2_TASK_TIMEOUT,
 ) -> dict[str, str]:
     """并行执行一个阶段内的所有任务，返回 {module_name: status}。
 
-    单个模块失败不影响其他模块。
+    单个模块失败或超时不影响其他模块。
     """
     results = {}
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -73,9 +77,20 @@ def _run_phase_parallel(
         for module_name, task_fn in tasks:
             future = executor.submit(_execute_task, phase_name, module_name, task_fn)
             future_to_name[future] = module_name
-        for future in as_completed(future_to_name):
-            module_name = future_to_name[future]
-            results[module_name] = future.result()
+        try:
+            for future in as_completed(future_to_name, timeout=timeout):
+                module_name = future_to_name[future]
+                results[module_name] = future.result()
+        except TimeoutError:
+            pass
+    # 标记未完成的 future（整体超时场景）
+    for future, module_name in future_to_name.items():
+        if module_name not in results:
+            results[module_name] = "error: TimeoutError"
+            logger.error(
+                "逻辑管道 [{}] {} 超时 (>{}s)",
+                phase_name, module_name, timeout,
+            )
     return results
 
 

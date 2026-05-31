@@ -1,6 +1,7 @@
 import os
 
 from config.symbols import TARGET_SYMBOLS
+from loguru import logger
 
 # 项目根目录
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -605,3 +606,40 @@ DATA_QUALITY_CONFIG = {
         "market_world_model",
     ).strip() or "market_world_model",
 }
+
+
+# ---------------------------------------------------------------------------
+# 启动时配置验证
+# ---------------------------------------------------------------------------
+
+def validate_config() -> list[str]:
+    """校验调度/网络/保留策略配置的合理性，返回告警列表。
+
+    不抛异常 — 只记录警告并返回，让调用方决定是否中止。
+    """
+    warnings: list[str] = []
+
+    # 调度间隔合理性检查
+    for key, value in SCHEDULER_CONFIG.items():
+        if value < 1:
+            warnings.append(f"SCHEDULER_CONFIG[{key}]={value} 不合法（必须 >= 1s）")
+        elif value < 3 and "interval" in key:
+            warnings.append(
+                f"SCHEDULER_CONFIG[{key}]={value}s 过短，可能导致 API 限流"
+            )
+
+    # 保留天数合理性
+    for key, value in EXCHANGE_DATA_RETENTION.items():
+        if value < 1:
+            warnings.append(f"EXCHANGE_DATA_RETENTION[{key}]={value} 不合法（必须 >= 1）")
+
+    # 网络超时合理性
+    if REQUEST_TIMEOUT < 5000:
+        warnings.append(f"REQUEST_TIMEOUT={REQUEST_TIMEOUT}ms 过短，代理环境下建议 >= 30000")
+    if MAX_RETRIES < 1:
+        warnings.append(f"MAX_RETRIES={MAX_RETRIES} 不合法（必须 >= 1）")
+
+    for w in warnings:
+        logger.warning("配置校验: {}", w)
+
+    return warnings

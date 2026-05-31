@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import signal
 import subprocess
 import sys
@@ -222,6 +223,8 @@ MODULE_INDEX = {spec.name: spec for spec in MODULE_REGISTRY}
 DEFAULT_MODULE_NAMES = tuple(spec.name for spec in MODULE_REGISTRY if spec.autostart)
 DAEMON_RESTART_LIMIT = 3
 DAEMON_RESTART_WINDOW = timedelta(minutes=15)
+DAEMON_RESTART_BASE_DELAY = float(os.environ.get("DAEMON_RESTART_BASE_DELAY", "2.0"))
+DAEMON_RESTART_MAX_DELAY = float(os.environ.get("DAEMON_RESTART_MAX_DELAY", "60.0"))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -332,11 +335,19 @@ def _restart_child(
         child.disabled_after_failure = True
         return None
 
+    # 指数退避延迟：base * 2^(count-1)，上限 max_delay
+    delay = min(
+        DAEMON_RESTART_BASE_DELAY * (2 ** (next_restart_count - 1)),
+        DAEMON_RESTART_MAX_DELAY,
+    )
     logger.warning(
-        "模块 {} 意外退出，准备第 {} 次自动重启",
+        "模块 {} 意外退出，{:.1f}s 后进行第 {} 次自动重启",
         child.spec.name,
+        delay,
         next_restart_count,
     )
+    time.sleep(delay)
+
     restarted = launch_module(
         child.spec,
         python_executable=python_executable,
@@ -351,26 +362,43 @@ def stop_modules(
 ):
     alive_children: list[ManagedProcess] = []
 
+    # 第一步：发送 SIGINT 让子进程优雅退出（处理 atexit/finally）
     for child in children:
         if child.process.poll() is not None:
             continue
         logger.info(f"停止模块 {child.spec.name} [pid={child.process.pid}]")
         try:
-            child.process.terminate()
-        except ProcessLookupError:
+            child.process.send_signal(signal.SIGINT)
+        except (ProcessLookupError, OSError):
             continue
         alive_children.append(child)
 
-    deadline = time.monotonic() + timeout_seconds
+    # 等待一半超时时间让 SIGINT 生效
+    half_timeout = timeout_seconds / 2
+    deadline = time.monotonic() + half_timeout
     while alive_children and time.monotonic() < deadline:
         alive_children = [
-            child
-            for child in alive_children
-            if child.process.poll() is None
+            child for child in alive_children if child.process.poll() is None
         ]
         if alive_children:
             time.sleep(0.2)
 
+    # 第二步：仍存活的发 SIGTERM
+    for child in alive_children:
+        try:
+            child.process.terminate()
+        except (ProcessLookupError, OSError):
+            continue
+
+    deadline = time.monotonic() + half_timeout
+    while alive_children and time.monotonic() < deadline:
+        alive_children = [
+            child for child in alive_children if child.process.poll() is None
+        ]
+        if alive_children:
+            time.sleep(0.2)
+
+    # 第三步：强制 kill
     for child in alive_children:
         logger.warning(
             f"模块 {child.spec.name} 在 {timeout_seconds:.0f}s 内未退出，执行强制 kill"

@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import threading
+import time
 from typing import Optional
 
 from loguru import logger
@@ -2930,13 +2931,24 @@ class DBManager:
             WHERE excluded.timestamp >= {latest_table}.timestamp
         """)
 
+    # ------------------------------------------------------------------
+    # 慢查询阈值（秒）
+    # ------------------------------------------------------------------
+    _SLOW_QUERY_THRESHOLD = float(os.environ.get("DB_SLOW_QUERY_THRESHOLD_MS", "100")) / 1000.0
+
     def execute(self, sql: str, params: tuple = ()) -> sqlite3.Cursor:
         """执行 SQL 语句"""
-        return self.conn.execute(sql, params)
+        start = time.monotonic()
+        cursor = self.conn.execute(sql, params)
+        self._log_slow_query(sql, start)
+        return cursor
 
     def execute_many(self, sql: str, params_list: list[tuple]) -> sqlite3.Cursor:
         """批量执行 SQL 语句"""
-        return self.conn.executemany(sql, params_list)
+        start = time.monotonic()
+        cursor = self.conn.executemany(sql, params_list)
+        self._log_slow_query(sql, start)
+        return cursor
 
     def commit(self):
         """提交事务"""
@@ -2944,13 +2956,28 @@ class DBManager:
 
     def fetch_one(self, sql: str, params: tuple = ()) -> Optional[sqlite3.Row]:
         """查询单条记录"""
+        start = time.monotonic()
         cursor = self.conn.execute(sql, params)
-        return cursor.fetchone()
+        row = cursor.fetchone()
+        self._log_slow_query(sql, start)
+        return row
 
     def fetch_all(self, sql: str, params: tuple = ()) -> list[sqlite3.Row]:
         """查询所有记录"""
+        start = time.monotonic()
         cursor = self.conn.execute(sql, params)
-        return cursor.fetchall()
+        rows = cursor.fetchall()
+        self._log_slow_query(sql, start)
+        return rows
+
+    def _log_slow_query(self, sql: str, start: float) -> None:
+        elapsed = time.monotonic() - start
+        if elapsed >= self._SLOW_QUERY_THRESHOLD:
+            logger.warning(
+                "slow query ({:.0f}ms): {}",
+                elapsed * 1000,
+                sql[:200].replace("\n", " ").strip(),
+            )
 
     def record_collection_run(
         self,

@@ -767,6 +767,9 @@ api/
 4. **独立进程** — 不影响数据采集管道运行
 5. **容错** — 单域失败不影响其他域返回
 6. **TTL 缓存** — 高频只读端点做短期内存缓存，减少重复 SQLite 查询
+7. **请求追踪** — 每个请求注入 `X-Request-ID`，用于日志关联和分布式追踪
+8. **限流保护** — 按 IP 滑动窗口限流，防止单客户端过载
+9. **安全响应** — 全局异常处理器捕获未处理异常，返回安全 JSON 而非 traceback
 
 ---
 
@@ -814,6 +817,59 @@ def get_bundle(entity: str, request: Request):
 - 线程安全（threading.Lock）
 - 惰性清理（get 时检查过期）+ 后台线程定期清理（30s 间隔）
 - 通过 FastAPI lifespan 管理启停
+- 内置命中/未命中计数器，通过 `cache.metrics` 属性暴露统计
+
+---
+
+## 运维与可观测性
+
+### 请求追踪
+
+每个 HTTP 请求自动注入 `X-Request-ID` 响应头（客户端也可在请求头中传入自定义 ID）。用于日志关联和分布式追踪。
+
+### 限流
+
+滑动窗口按 IP 限流，超限返回 `429 Too Many Requests`。
+
+| 配置项 | 环境变量 | 默认值 |
+|---|---|---|
+| 最大请求数 | `API_RATE_LIMIT_MAX_REQUESTS` | `200` |
+| 窗口时长（秒） | `API_RATE_LIMIT_WINDOW_SECONDS` | `60` |
+
+响应头 `X-RateLimit-Remaining` 返回当前窗口剩余配额。
+
+### CORS 限制
+
+| 配置项 | 环境变量 | 默认值 |
+|---|---|---|
+| 允许来源 | `API_CORS_ORIGINS` | `http://localhost:3000,http://localhost:8080` |
+
+仅允许 GET 方法，生产环境应配置为实际前端域名。
+
+### 全局异常处理
+
+所有未捕获异常返回标准 JSON 格式，包含 `error_type` 和 `request_id`，不泄露内部 traceback。
+
+### /metrics 端点
+
+`GET /metrics` 返回运维指标：
+
+```json
+{
+  "cache": {
+    "hits": 1234,
+    "misses": 56,
+    "total_requests": 1290,
+    "hit_rate_pct": 95.7,
+    "size": 42
+  },
+  "rate_limiter": {
+    "max_requests": 200,
+    "window_seconds": 60,
+    "tracked_ips": 5
+  }
+}
+```
 
 ---
 

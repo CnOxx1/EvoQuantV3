@@ -239,6 +239,19 @@ def get_symbols() -> SymbolsResponse:
     return SymbolsResponse(count=len(items), symbols=items)
 
 
+@app.get("/metrics", tags=["ops"])
+def get_metrics():
+    """运维指标端点 — 暴露缓存命中率、限流状态等内部指标。"""
+    return {
+        "cache": cache.metrics,
+        "rate_limiter": {
+            "max_requests": _RATE_LIMIT_MAX_REQUESTS,
+            "window_seconds": _RATE_LIMIT_WINDOW_SECONDS,
+            "tracked_ips": len(_rate_limiter._requests),
+        },
+    }
+
+
 # ---------------------------------------------------------------------------
 # CLI 入口
 # ---------------------------------------------------------------------------
