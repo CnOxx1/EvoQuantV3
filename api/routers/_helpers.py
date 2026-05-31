@@ -82,3 +82,39 @@ def _risk_level(annualized_vol: float) -> tuple[float, str]:
         level = "extreme"
         score = min(100.0, round(75 + (annualized_vol - 2.0) / 2.0 * 25, 1))
     return score, level
+
+
+def _linear_slope(values: list[float]) -> float:
+    """简单线性回归斜率（用于趋势检测）。"""
+    n = len(values)
+    if n < 2:
+        return 0.0
+    x_mean = (n - 1) / 2.0
+    y_mean = sum(values) / n
+    numerator = sum((i - x_mean) * (v - y_mean) for i, v in enumerate(values))
+    denominator = sum((i - x_mean) ** 2 for i in range(n))
+    if denominator == 0:
+        return 0.0
+    return numerator / denominator
+
+
+def _detect_divergence(series_a: list[float], series_b: list[float]) -> dict:
+    """检测两个序列的背离（higher high vs lower high 等）。"""
+    min_len = min(len(series_a), len(series_b))
+    if min_len < 4:
+        return {"divergence": "insufficient_data", "strength": 0.0}
+    a = series_a[-min_len:]
+    b = series_b[-min_len:]
+    mid = min_len // 2
+    a_first, a_second = a[:mid], a[mid:]
+    b_first, b_second = b[:mid], b[mid:]
+    a_trend = max(a_second) - max(a_first)
+    b_trend = max(b_second) - max(b_first)
+    if a_trend > 0 and b_trend < 0:
+        div_type = "bearish"
+    elif a_trend < 0 and b_trend > 0:
+        div_type = "bullish"
+    else:
+        div_type = "none"
+    strength = abs(a_trend - b_trend) / (abs(a_trend) + abs(b_trend) + 1e-9)
+    return {"divergence": div_type, "strength": round(strength, 4)}

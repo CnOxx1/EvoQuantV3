@@ -33,6 +33,10 @@ from api.routers.catalogs import router as catalogs_router
 from api.routers.aggregate import router as aggregate_router
 from api.routers.strategy import router as strategy_router
 from api.routers.monitor import router as monitor_router
+from api.routers.orderflow import router as orderflow_router
+from api.routers.derivatives import router as derivatives_router
+from api.routers.news_intel import router as news_intel_router
+from api.routers.ai_context import router as ai_context_router
 from config.symbols import SYMBOL_UNIVERSE
 
 app = FastAPI(
@@ -71,6 +75,10 @@ app.include_router(catalogs_router)
 app.include_router(aggregate_router)
 app.include_router(strategy_router)
 app.include_router(monitor_router)
+app.include_router(orderflow_router)
+app.include_router(derivatives_router)
+app.include_router(news_intel_router)
+app.include_router(ai_context_router)
 
 
 @app.get("/symbols", response_model=SymbolsResponse, tags=["symbols"])
