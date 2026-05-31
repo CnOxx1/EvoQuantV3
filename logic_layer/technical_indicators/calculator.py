@@ -190,6 +190,51 @@ class TechnicalIndicatorCalculator:
         "return_kurtosis_20",
         "bull_power_13",
         "bear_power_13",
+        # --- Batch 3: Crossover signals ---
+        "ema_cross_7_20",
+        "ema_cross_20_50",
+        "sma_cross_10_60",
+        "macd_cross_signal",
+        "price_above_ema_count",
+        "ma_alignment_score",
+        "ichimoku_signal",
+        "trend_consistency_20",
+        # --- Batch 3: Pivot points ---
+        "pivot_classic",
+        "pivot_r1",
+        "pivot_s1",
+        "pivot_r2",
+        "pivot_s2",
+        "distance_to_pivot_pct",
+        # --- Batch 3: Candle patterns ---
+        "pattern_doji",
+        "pattern_hammer",
+        "pattern_engulfing",
+        "pattern_morning_evening_star",
+        "pattern_three_soldiers_crows",
+        "pattern_pin_bar",
+        "pattern_inside_bar",
+        "pattern_outside_bar",
+        # --- Batch 3: Adaptive / Ehlers ---
+        "ehlers_fisher_transform_13",
+        "ehlers_instantaneous_trendline",
+        "ehlers_cyber_cycle",
+        "ehlers_dominant_cycle_period",
+        "adaptive_rsi_14",
+        "fractal_dimension_20",
+        "hurst_exponent_20",
+        "entropy_20",
+        # --- Batch 3: Microstructure stats ---
+        "realized_volatility_10",
+        "yang_zhang_volatility_20",
+        "intraday_intensity_20",
+        "volume_weighted_rsi_14",
+        "relative_volume_5",
+        "tick_intensity",
+        "amihud_illiquidity_20",
+        "kyle_lambda_20",
+        "return_dispersion_20",
+        "overnight_gap_pct",
     ]
 
     def calculate(self, merged_klines: pd.DataFrame) -> pd.DataFrame:
@@ -801,6 +846,216 @@ class TechnicalIndicatorCalculator:
             "return_kurtosis_20": return_kurtosis_20,
         }, index=frame.index)
 
+        # === Batch 3: Crossover signals ===
+        ema_cross_7_20 = pd.Series(np.where(
+            (ema_7 > ema_20) & (ema_7.shift(1) <= ema_20.shift(1)), 1.0,
+            np.where((ema_7 < ema_20) & (ema_7.shift(1) >= ema_20.shift(1)), -1.0, 0.0)
+        ), index=frame.index)
+        ema_cross_20_50 = pd.Series(np.where(
+            (ema_20 > ema_50) & (ema_20.shift(1) <= ema_50.shift(1)), 1.0,
+            np.where((ema_20 < ema_50) & (ema_20.shift(1) >= ema_50.shift(1)), -1.0, 0.0)
+        ), index=frame.index)
+        sma_cross_10_60 = pd.Series(np.where(
+            (sma_10 > sma_60) & (sma_10.shift(1) <= sma_60.shift(1)), 1.0,
+            np.where((sma_10 < sma_60) & (sma_10.shift(1) >= sma_60.shift(1)), -1.0, 0.0)
+        ), index=frame.index)
+        macd_cross_signal_col = pd.Series(np.where(
+            (macd_line > macd_signal) & (macd_line.shift(1) <= macd_signal.shift(1)), 1.0,
+            np.where((macd_line < macd_signal) & (macd_line.shift(1) >= macd_signal.shift(1)), -1.0, 0.0)
+        ), index=frame.index)
+        price_above_ema_count = (
+            (close > ema_7).astype(float) +
+            (close > ema_20).astype(float) +
+            (close > ema_50).astype(float) +
+            (close > ema_100).astype(float)
+        )
+        # MA alignment: +1 if EMA7>EMA20>EMA50>EMA100, -1 if reversed
+        ma_alignment_score = (
+            np.sign(ema_7 - ema_20) +
+            np.sign(ema_20 - ema_50) +
+            np.sign(ema_50 - ema_100)
+        ) / 3.0
+        # Ichimoku signal: price vs cloud + tenkan vs kijun
+        ichi_price_signal = pd.Series(np.where(
+            close > cloud_top, 1.0, np.where(close < cloud_bottom, -1.0, 0.0)
+        ), index=frame.index)
+        ichi_tk_signal = pd.Series(np.where(
+            ichimoku_tenkan_9 > ichimoku_kijun_26, 1.0,
+            np.where(ichimoku_tenkan_9 < ichimoku_kijun_26, -1.0, 0.0)
+        ), index=frame.index)
+        ichimoku_signal_col = ichi_price_signal + ichi_tk_signal
+        trend_consistency_20 = (close > ema_20).astype(float).rolling(20).mean()
+
+        crossover_frame = pd.DataFrame({
+            "ema_cross_7_20": ema_cross_7_20,
+            "ema_cross_20_50": ema_cross_20_50,
+            "sma_cross_10_60": sma_cross_10_60,
+            "macd_cross_signal": macd_cross_signal_col,
+            "price_above_ema_count": price_above_ema_count,
+            "ma_alignment_score": ma_alignment_score,
+            "ichimoku_signal": ichimoku_signal_col,
+            "trend_consistency_20": trend_consistency_20,
+        }, index=frame.index)
+
+        # === Batch 3: Pivot points (using previous bar H/L/C) ===
+        prev_high = high.shift(1)
+        prev_low = low.shift(1)
+        prev_close = close.shift(1)
+        pivot_classic = (prev_high + prev_low + prev_close) / 3
+        pivot_r1 = 2 * pivot_classic - prev_low
+        pivot_s1 = 2 * pivot_classic - prev_high
+        pivot_r2 = pivot_classic + (prev_high - prev_low)
+        pivot_s2 = pivot_classic - (prev_high - prev_low)
+        distance_to_pivot_pct = (close - pivot_classic) / pivot_classic.replace(0, np.nan)
+
+        pivot_frame = pd.DataFrame({
+            "pivot_classic": pivot_classic,
+            "pivot_r1": pivot_r1,
+            "pivot_s1": pivot_s1,
+            "pivot_r2": pivot_r2,
+            "pivot_s2": pivot_s2,
+            "distance_to_pivot_pct": distance_to_pivot_pct,
+        }, index=frame.index)
+
+        # === Batch 3: Candle patterns ===
+        pattern_doji = (candle_body_abs / candle_range.replace(0, np.nan) < 0.1).astype(float)
+        # Hammer: small body at top, long lower shadow > 2x body
+        pattern_hammer = (
+            (lower_shadow > 2 * candle_body_abs) &
+            (upper_shadow < candle_body_abs) &
+            (candle_range > 0)
+        ).astype(float)
+        # Engulfing
+        prev_body = candle_body.shift(1)
+        pattern_engulfing = pd.Series(np.where(
+            (candle_body > 0) & (prev_body < 0) & (candle_body_abs > candle_body.shift(1).abs()),
+            1.0,
+            np.where(
+                (candle_body < 0) & (prev_body > 0) & (candle_body_abs > candle_body.shift(1).abs()),
+                -1.0, 0.0
+            )
+        ), index=frame.index)
+        # Morning/Evening star (simplified 3-bar pattern)
+        body_2_ago = candle_body.shift(2)
+        small_body_1 = candle_body_abs.shift(1) < candle_range.shift(1).replace(0, np.nan) * 0.3
+        pattern_morning_evening_star = pd.Series(np.where(
+            (body_2_ago < 0) & small_body_1 & (candle_body > 0) & (close > close.shift(2)),
+            1.0,
+            np.where(
+                (body_2_ago > 0) & small_body_1 & (candle_body < 0) & (close < close.shift(2)),
+                -1.0, 0.0
+            )
+        ), index=frame.index)
+        # Three soldiers/crows
+        three_up = (
+            (candle_body > 0) & (candle_body.shift(1) > 0) & (candle_body.shift(2) > 0) &
+            (close > close.shift(1)) & (close.shift(1) > close.shift(2))
+        )
+        three_down = (
+            (candle_body < 0) & (candle_body.shift(1) < 0) & (candle_body.shift(2) < 0) &
+            (close < close.shift(1)) & (close.shift(1) < close.shift(2))
+        )
+        pattern_three_soldiers_crows = pd.Series(np.where(
+            three_up, 1.0, np.where(three_down, -1.0, 0.0)
+        ), index=frame.index)
+        # Pin bar: long shadow > 2.5x body, body in upper/lower 1/3
+        long_upper_pin = (upper_shadow > 2.5 * candle_body_abs) & (lower_shadow < candle_body_abs)
+        long_lower_pin = (lower_shadow > 2.5 * candle_body_abs) & (upper_shadow < candle_body_abs)
+        pattern_pin_bar = pd.Series(np.where(
+            long_lower_pin, 1.0, np.where(long_upper_pin, -1.0, 0.0)
+        ), index=frame.index)
+        # Inside bar: current H < prev H and current L > prev L
+        pattern_inside_bar = (
+            (high < high.shift(1)) & (low > low.shift(1))
+        ).astype(float)
+        # Outside bar: current H > prev H and current L < prev L
+        pattern_outside_bar = (
+            (high > high.shift(1)) & (low < low.shift(1))
+        ).astype(float)
+
+        pattern_frame = pd.DataFrame({
+            "pattern_doji": pattern_doji,
+            "pattern_hammer": pattern_hammer,
+            "pattern_engulfing": pattern_engulfing,
+            "pattern_morning_evening_star": pattern_morning_evening_star,
+            "pattern_three_soldiers_crows": pattern_three_soldiers_crows,
+            "pattern_pin_bar": pattern_pin_bar,
+            "pattern_inside_bar": pattern_inside_bar,
+            "pattern_outside_bar": pattern_outside_bar,
+        }, index=frame.index)
+
+        # === Batch 3: Adaptive / Ehlers indicators ===
+        ehlers_fisher_transform_13, _ = self._fisher_transform(median_price, period=13)
+        ehlers_instantaneous_trendline = self._ehlers_instantaneous_trendline(close)
+        ehlers_cyber_cycle = self._ehlers_cyber_cycle(close)
+        ehlers_dominant_cycle_period = self._ehlers_dominant_cycle_period(close)
+        # Adaptive RSI: weight RSI by efficiency ratio
+        er_10 = close.diff(10).abs() / close.diff().abs().rolling(10).sum().replace(0, np.nan)
+        adaptive_rsi_14 = rsi_14 * er_10 + 50 * (1 - er_10)
+        # Fractal dimension (Higuchi method approximation)
+        fractal_dimension_20 = close.rolling(20).apply(self._fractal_dimension, raw=True)
+        # Hurst exponent (R/S method)
+        hurst_exponent_20 = close.rolling(20).apply(self._hurst_exponent, raw=True)
+        # Shannon entropy of returns
+        entropy_20 = return_1.rolling(20).apply(self._shannon_entropy, raw=True)
+
+        adaptive_frame = pd.DataFrame({
+            "ehlers_fisher_transform_13": ehlers_fisher_transform_13,
+            "ehlers_instantaneous_trendline": ehlers_instantaneous_trendline,
+            "ehlers_cyber_cycle": ehlers_cyber_cycle,
+            "ehlers_dominant_cycle_period": ehlers_dominant_cycle_period,
+            "adaptive_rsi_14": adaptive_rsi_14,
+            "fractal_dimension_20": fractal_dimension_20,
+            "hurst_exponent_20": hurst_exponent_20,
+            "entropy_20": entropy_20,
+        }, index=frame.index)
+
+        # === Batch 3: Microstructure stats ===
+        realized_volatility_10 = (log_return_1.pow(2).rolling(10).sum()).pow(0.5)
+        # Yang-Zhang volatility
+        log_oc = np.log(open_price / previous_close.replace(0, np.nan))
+        log_co = np.log(close / open_price.replace(0, np.nan))
+        oc_var = log_oc.rolling(20).var(ddof=1)
+        co_var = log_co.rolling(20).var(ddof=1)
+        rs_var = rogers_satchell_component.rolling(20).mean()
+        k_yz = 0.34 / (1.34 + (21.0 / 19.0))
+        yang_zhang_volatility_20 = (oc_var + k_yz * co_var + (1 - k_yz) * rs_var).clip(lower=0).pow(0.5)
+        # Intraday intensity
+        ii_raw = ((2 * close - high - low) / (high - low).replace(0, np.nan)) * volume
+        intraday_intensity_20 = ii_raw.rolling(20).sum() / volume.rolling(20).sum().replace(0, np.nan)
+        # Volume-weighted RSI
+        vol_weight = volume / volume.rolling(14).mean().replace(0, np.nan)
+        vw_gain = (gain * vol_weight).ewm(alpha=1/14, adjust=False, min_periods=14).mean()
+        vw_loss = (loss * vol_weight).ewm(alpha=1/14, adjust=False, min_periods=14).mean()
+        vw_rs = vw_gain / vw_loss.replace(0, np.nan)
+        volume_weighted_rsi_14 = 100 - (100 / (1 + vw_rs))
+        # Relative volume
+        relative_volume_5 = volume / volume.rolling(5).mean().replace(0, np.nan)
+        # Tick intensity
+        tick_intensity = return_1.abs() / (volume.replace(0, np.nan) / volume.rolling(20).mean().replace(0, np.nan))
+        # Amihud illiquidity
+        amihud_illiquidity_20 = (return_1.abs() / (volume * close).replace(0, np.nan)).rolling(20).mean()
+        # Kyle's lambda (price impact)
+        signed_volume = np.sign(close.diff()) * volume
+        kyle_lambda_20 = return_1.rolling(20).corr(signed_volume / volume.rolling(20).mean().replace(0, np.nan))
+        # Return dispersion
+        return_dispersion_20 = (np.log(high / low.replace(0, np.nan))).rolling(20).std(ddof=0)
+        # Overnight gap
+        overnight_gap_pct = (open_price - previous_close) / previous_close.replace(0, np.nan)
+
+        microstructure_frame = pd.DataFrame({
+            "realized_volatility_10": realized_volatility_10,
+            "yang_zhang_volatility_20": yang_zhang_volatility_20,
+            "intraday_intensity_20": intraday_intensity_20,
+            "volume_weighted_rsi_14": volume_weighted_rsi_14,
+            "relative_volume_5": relative_volume_5,
+            "tick_intensity": tick_intensity,
+            "amihud_illiquidity_20": amihud_illiquidity_20,
+            "kyle_lambda_20": kyle_lambda_20,
+            "return_dispersion_20": return_dispersion_20,
+            "overnight_gap_pct": overnight_gap_pct,
+        }, index=frame.index)
+
         indicator_frame = pd.concat(
             [
                 trend_frame,
@@ -810,6 +1065,11 @@ class TechnicalIndicatorCalculator:
                 structure_frame,
                 state_frame,
                 risk_frame,
+                crossover_frame,
+                pivot_frame,
+                pattern_frame,
+                adaptive_frame,
+                microstructure_frame,
             ],
             axis=1,
         )
@@ -1298,3 +1558,119 @@ class TechnicalIndicatorCalculator:
             )
 
         return fisher, fisher.shift(1)
+
+    @staticmethod
+    def _ehlers_instantaneous_trendline(close: pd.Series) -> pd.Series:
+        """Ehlers Instantaneous Trendline (2-pole super smoother)."""
+        it = pd.Series(index=close.index, dtype="float64")
+        if len(close) < 7:
+            return it
+        a = np.exp(-np.sqrt(2) * np.pi / 10)
+        b = 2 * a * np.cos(np.sqrt(2) * np.pi / 10)
+        c2 = b
+        c3 = -(a * a)
+        c1 = 1 - c2 - c3
+        it.iloc[0] = close.iloc[0]
+        it.iloc[1] = close.iloc[1]
+        for i in range(2, len(close)):
+            it.iloc[i] = c1 * (close.iloc[i] + close.iloc[i - 1]) / 2 + c2 * it.iloc[i - 1] + c3 * it.iloc[i - 2]
+        return it
+
+    @staticmethod
+    def _ehlers_cyber_cycle(close: pd.Series) -> pd.Series:
+        """Ehlers Cyber Cycle oscillator."""
+        cycle = pd.Series(0.0, index=close.index, dtype="float64")
+        smooth = pd.Series(0.0, index=close.index, dtype="float64")
+        if len(close) < 7:
+            return cycle
+        for i in range(2, len(close)):
+            smooth.iloc[i] = (close.iloc[i] + 2 * close.iloc[i - 1] + close.iloc[i - 2]) / 4
+        alpha = 0.07
+        for i in range(6, len(close)):
+            cycle.iloc[i] = (
+                (1 - 0.5 * alpha) ** 2 * (smooth.iloc[i] - 2 * smooth.iloc[i - 1] + smooth.iloc[i - 2])
+                + 2 * (1 - alpha) * cycle.iloc[i - 1]
+                - (1 - alpha) ** 2 * cycle.iloc[i - 2]
+            )
+        return cycle
+
+    @staticmethod
+    def _ehlers_dominant_cycle_period(close: pd.Series) -> pd.Series:
+        """Estimate dominant cycle period using autocorrelation."""
+        period = pd.Series(np.nan, index=close.index, dtype="float64")
+        window = 50
+        if len(close) < window:
+            return period
+        for i in range(window, len(close)):
+            segment = close.iloc[i - window:i].values
+            segment = segment - segment.mean()
+            if np.std(segment) == 0:
+                continue
+            best_period = 10
+            best_corr = -1.0
+            for p in range(5, 25):
+                if p >= len(segment):
+                    break
+                corr = np.corrcoef(segment[p:], segment[:-p])[0, 1]
+                if corr > best_corr:
+                    best_corr = corr
+                    best_period = p
+            period.iloc[i] = float(best_period)
+        return period
+
+    @staticmethod
+    def _fractal_dimension(values) -> float:
+        """Approximate fractal dimension using variation method."""
+        window = np.asarray(values, dtype="float64")
+        if np.isnan(window).any() or len(window) < 4:
+            return float("nan")
+        n = len(window)
+        max_val = np.max(window)
+        min_val = np.min(window)
+        rng = max_val - min_val
+        if rng == 0:
+            return 1.0
+        # Simplified box-counting approximation
+        n1 = int(n / 2)
+        # Length at scale 1
+        l1 = sum(abs(window[i] - window[i - 1]) for i in range(1, n))
+        # Length at scale 2
+        l2 = sum(abs(window[i] - window[i - 2]) for i in range(2, n, 2))
+        if l2 == 0 or l1 == 0:
+            return 1.5
+        return 1 + np.log(l1 / l2) / np.log(2)
+
+    @staticmethod
+    def _hurst_exponent(values) -> float:
+        """Simplified R/S Hurst exponent estimation."""
+        window = np.asarray(values, dtype="float64")
+        if np.isnan(window).any() or len(window) < 10:
+            return float("nan")
+        returns = np.diff(window) / window[:-1]
+        returns = returns[~np.isnan(returns)]
+        if len(returns) < 8:
+            return float("nan")
+        mean_r = np.mean(returns)
+        deviations = np.cumsum(returns - mean_r)
+        r = np.max(deviations) - np.min(deviations)
+        s = np.std(returns, ddof=1)
+        if s == 0 or r == 0:
+            return 0.5
+        rs = r / s
+        n = len(returns)
+        if rs <= 0 or n <= 1:
+            return 0.5
+        return np.log(rs) / np.log(n)
+
+    @staticmethod
+    def _shannon_entropy(values) -> float:
+        """Shannon entropy of return distribution (binned)."""
+        window = np.asarray(values, dtype="float64")
+        window = window[~np.isnan(window)]
+        if len(window) < 5:
+            return float("nan")
+        # Bin into 5 equal-width bins
+        hist, _ = np.histogram(window, bins=5)
+        probs = hist / hist.sum()
+        probs = probs[probs > 0]
+        return float(-np.sum(probs * np.log2(probs)))
