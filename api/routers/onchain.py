@@ -26,7 +26,7 @@ def _get_latest_factors(db, factor_ids: list[str], entity_key: str | None = None
 
     if entity_key:
         rows = db.fetch_all(
-            f"""SELECT factor_id, entity_key, value, timestamp
+            f"""SELECT factor_id, entity_key, value, observation_time
                 FROM latest_onchain_timeseries
                 WHERE factor_id IN ({placeholders}) AND entity_key = ?
                 ORDER BY factor_id""",
@@ -34,7 +34,7 @@ def _get_latest_factors(db, factor_ids: list[str], entity_key: str | None = None
         )
     else:
         rows = db.fetch_all(
-            f"""SELECT factor_id, entity_key, value, timestamp
+            f"""SELECT factor_id, entity_key, value, observation_time
                 FROM latest_onchain_timeseries
                 WHERE factor_id IN ({placeholders})
                 ORDER BY factor_id, entity_key""",
@@ -45,11 +45,11 @@ def _get_latest_factors(db, factor_ids: list[str], entity_key: str | None = None
     for row in rows:
         fid = row["factor_id"]
         if entity_key:
-            result[fid] = {"value": row["value"], "timestamp": row["timestamp"]}
+            result[fid] = {"value": row["value"], "timestamp": row["observation_time"]}
         else:
             result.setdefault(fid, {})[row["entity_key"]] = {
                 "value": row["value"],
-                "timestamp": row["timestamp"],
+                "timestamp": row["observation_time"],
             }
     return result
 
@@ -136,7 +136,7 @@ def get_stablecoin_supply() -> dict[str, Any]:
     """返回稳定币供应量与流动性指标（USDT、USDC 等）。"""
     db = get_market_db()
     rows = db.fetch_all(
-        """SELECT lot.factor_id, lot.entity_key, lot.value, lot.timestamp
+        """SELECT lot.factor_id, lot.entity_key, lot.value, lot.observation_time
            FROM latest_onchain_timeseries lot
            WHERE lot.factor_id IN (
                'stablecoin_total_supply', 'stablecoin_supply_change_7d',
@@ -154,7 +154,7 @@ def get_stablecoin_supply() -> dict[str, Any]:
         ek = row["entity_key"]
         result.setdefault(fid, {})[ek] = {
             "value": row["value"],
-            "timestamp": row["timestamp"],
+            "timestamp": row["observation_time"],
         }
 
     return {"stablecoin_data": result}
@@ -170,14 +170,14 @@ def get_protocol_tvl(
 
     if protocol:
         rows = db.fetch_all(
-            """SELECT factor_id, entity_key, value, timestamp
+            """SELECT factor_id, entity_key, value, observation_time
                FROM latest_onchain_timeseries
                WHERE factor_id = 'protocol_tvl' AND entity_key = ?""",
             (protocol,),
         )
     else:
         rows = db.fetch_all(
-            """SELECT factor_id, entity_key, value, timestamp
+            """SELECT factor_id, entity_key, value, observation_time
                FROM latest_onchain_timeseries
                WHERE factor_id = 'protocol_tvl'
                ORDER BY CAST(value AS REAL) DESC
@@ -188,7 +188,7 @@ def get_protocol_tvl(
     if not rows:
         raise HTTPException(status_code=404, detail="No TVL data found.")
 
-    records = [{"protocol": r["entity_key"], "tvl_usd": r["value"], "timestamp": r["timestamp"]} for r in rows]
+    records = [{"protocol": r["entity_key"], "tvl_usd": r["value"], "timestamp": r["observation_time"]} for r in rows]
     total_tvl = sum(float(r["tvl_usd"]) for r in records if r["tvl_usd"] is not None)
 
     return {
@@ -233,7 +233,7 @@ def get_onchain_summary() -> dict[str, Any]:
     db = get_market_db()
 
     rows = db.fetch_all(
-        """SELECT factor_id, entity_key, value, timestamp
+        """SELECT factor_id, entity_key, value, observation_time
            FROM latest_onchain_timeseries
            WHERE factor_id IN (
                'exchange_netflow_24h', 'stablecoin_total_supply',

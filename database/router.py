@@ -102,6 +102,14 @@ class DatabaseRouter:
                 db.attach_domain_views(exchange_path, market_path)
         return db
 
+    def get_exchange_db(self) -> "DBManager":
+        """返回 exchange_data 域 DBManager。"""
+        return self.get_manager(Domain.EXCHANGE_DATA)
+
+    def get_market_db(self) -> "DBManager":
+        """返回 market_data 域 DBManager。"""
+        return self.get_manager(Domain.MARKET_DATA)
+
     def close_all(self):
         """关闭所有域连接。"""
         for manager in self._managers.values():

@@ -116,7 +116,7 @@ def get_signal_bundle(symbol: str) -> dict[str, Any]:
     # 1. 技术指标
     ti_row = analytics_db.fetch_one(
         """SELECT rsi_14, macd_line, macd_signal, macd_hist,
-                  bb_upper, bb_lower, bb_mid, atr_14, adx_14,
+                  bb_upper, bb_lower, bb_middle, atr_14, adx_14,
                   ema_20, ema_50, open_time
            FROM technical_indicators
            WHERE symbol = ? AND timeframe = '1h'

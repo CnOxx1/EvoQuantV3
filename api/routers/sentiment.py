@@ -45,7 +45,7 @@ def get_latest_news(
 
     rows = db.fetch_all(
         f"""SELECT id, title, summary, source, published_at,
-                   sentiment_label, event_type, impact_scope, url
+                   sentiment_label, category, url
             FROM news_articles
             WHERE {where_clause}
             ORDER BY published_at DESC
@@ -146,9 +146,8 @@ def get_market_breadth_history(
     """返回市场广度历史序列。"""
     db = get_analytics_db()
     rows = db.fetch_all(
-        """SELECT snapshot_time, bullish_count, bearish_count, neutral_count,
-                  bullish_pct, bearish_pct, advance_decline_ratio,
-                  above_ema20_count, above_ema50_count, breadth_signal
+        """SELECT snapshot_time, breadth_status, asset_count,
+                  ai_ready_asset_count, breadth_score, data_quality_flag
            FROM market_breadth_snapshots
            ORDER BY snapshot_time DESC
            LIMIT ?""",
@@ -183,7 +182,7 @@ def get_sentiment_summary() -> dict[str, Any]:
     overall_label = "positive" if overall_score > 0.2 else "negative" if overall_score < -0.2 else "neutral"
 
     breadth_row = db_analytics.fetch_one(
-        """SELECT breadth_signal, bullish_pct, bearish_pct, advance_decline_ratio
+        """SELECT breadth_status, breadth_score, asset_count, ai_ready_asset_count
            FROM market_breadth_snapshots
            ORDER BY snapshot_time DESC LIMIT 1""",
         (),
