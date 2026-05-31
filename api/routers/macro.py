@@ -44,13 +44,10 @@ def get_macro_latest() -> dict[str, Any]:
 def get_macro_history(
     limit: int = Query(48, ge=1, le=500, description="返回最近 N 条宏观快照"),
 ) -> dict[str, Any]:
-    """返回宏观上下文历史（用于趋势跟踪）。"""
+    """返回宏观上下文历史（按快照时间聚合的因子摘要）。"""
     db = get_analytics_db()
     rows = db.fetch_all(
-        """SELECT snapshot_time, risk_regime, macro_regime,
-                  dxy_level, dxy_trend, us10y_level, us10y_trend,
-                  vix_level, vix_regime,
-                  btc_macro_tailwind, btc_macro_headwind
+        """SELECT DISTINCT snapshot_time
            FROM macro_context_snapshots
            ORDER BY snapshot_time DESC
            LIMIT ?""",
@@ -59,12 +56,27 @@ def get_macro_history(
     if not rows:
         raise HTTPException(status_code=404, detail="No macro history found.")
 
-    records = [dict(r) for r in rows]
-    records.reverse()
-    return {
-        "count": len(records),
-        "history": records,
-    }
+    snapshots = []
+    for ts_row in rows:
+        st = ts_row["snapshot_time"]
+        factors = db.fetch_all(
+            """SELECT name, latest_value, unit, change_1d_pct
+               FROM macro_context_snapshots
+               WHERE snapshot_time = ?""",
+            (st,),
+        )
+        summary: dict[str, Any] = {"snapshot_time": st}
+        for f in factors:
+            key = f["name"].lower().replace(" ", "_")
+            summary[key] = {
+                "value": f["latest_value"],
+                "unit": f["unit"],
+                "change_1d_pct": f["change_1d_pct"],
+            }
+        snapshots.append(summary)
+
+    snapshots.reverse()
+    return {"count": len(snapshots), "history": snapshots}
 
 
 @router.get("/factors")
@@ -122,29 +134,54 @@ def get_macro_factors(
 def get_macro_regime() -> dict[str, Any]:
     """返回当前宏观市场情绪与风险环境摘要（给 Bridge 和 Dashboard 使用）。"""
     db = get_analytics_db()
-    row = db.fetch_one(
-        """SELECT snapshot_time, risk_regime, macro_regime,
-                  dxy_level, dxy_trend, us10y_level, us10y_trend,
-                  vix_level, vix_regime,
-                  btc_macro_tailwind, btc_macro_headwind,
-                  macro_summary
+    rows = db.fetch_all(
+        """SELECT name, latest_value, unit, change_1d_pct, snapshot_time
            FROM macro_context_snapshots
-           ORDER BY snapshot_time DESC LIMIT 1""",
+           WHERE snapshot_time = (SELECT MAX(snapshot_time) FROM macro_context_snapshots)""",
         (),
     )
-    if not row:
+    if not rows:
         raise HTTPException(status_code=404, detail="No macro regime data found.")
 
-    data = dict(row)
+    factors: dict[str, Any] = {}
+    snapshot_time = None
+    for r in rows:
+        snapshot_time = r["snapshot_time"]
+        factors[r["name"]] = {
+            "value": r["latest_value"],
+            "unit": r["unit"],
+            "change_1d_pct": r["change_1d_pct"],
+        }
 
-    risk_on = (
-        data.get("vix_regime") in ("low", "normal")
-        and data.get("dxy_trend") in ("falling", "flat")
+    # 从因子值推导 regime 摘要
+    vix_val = factors.get("CBOE VIX", {}).get("value")
+    dxy_val = factors.get("US Dollar Index", {}).get("value")
+    dxy_chg = factors.get("US Dollar Index", {}).get("change_1d_pct")
+    us10y_val = factors.get("US 10Y Treasury Yield", {}).get("value")
+
+    vix_regime = (
+        "low" if vix_val and vix_val < 15
+        else "normal" if vix_val and vix_val < 20
+        else "elevated" if vix_val and vix_val < 30
+        else "extreme" if vix_val else None
     )
-    risk_off = (
-        data.get("vix_regime") in ("elevated", "extreme")
-        or data.get("dxy_trend") == "rising_strongly"
+    dxy_trend = (
+        "rising" if dxy_chg and dxy_chg > 0.3
+        else "falling" if dxy_chg and dxy_chg < -0.3
+        else "flat" if dxy_chg is not None else None
     )
 
-    data["overall_stance"] = "risk_on" if risk_on else "risk_off" if risk_off else "neutral"
-    return data
+    risk_on = vix_regime in ("low", "normal") and dxy_trend in ("falling", "flat")
+    risk_off = vix_regime in ("elevated", "extreme") or dxy_trend == "rising"
+    overall_stance = "risk_on" if risk_on else "risk_off" if risk_off else "neutral"
+
+    return {
+        "snapshot_time": snapshot_time,
+        "vix_level": vix_val,
+        "vix_regime": vix_regime,
+        "dxy_level": dxy_val,
+        "dxy_trend": dxy_trend,
+        "us10y_level": us10y_val,
+        "overall_stance": overall_stance,
+        "factors": factors,
+    }
