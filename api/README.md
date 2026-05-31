@@ -118,6 +118,8 @@ python main.py --modules api_server
 | `/sentiment/market-breadth` | GET | 市场广度快照（多空比、价格广度） |
 | `/sentiment/market-breadth/history` | GET | 市场广度历史序列 |
 | `/sentiment/summary` | GET | 情感 + 广度合并摘要 |
+| `/sentiment/signal/{symbol}` | GET | 情绪-价格信号（reversal/confirmation/divergence） |
+| `/sentiment/causality/{symbol}` | GET | Granger 因果检验（情绪是否领先价格） |
 
 ### 数据质量 & 就绪度
 
@@ -206,6 +208,8 @@ python main.py --modules api_server
 | `/derivatives/oi-divergence/{symbol}` | GET | OI vs 价格背离（挤压风险检测） |
 | `/derivatives/liquidation-levels/{symbol}` | GET | 清算集中区域估算 |
 | `/derivatives/positioning-extremes` | GET | 全市场持仓极端筛选（拥挤交易=反转风险） |
+| `/derivatives/funding-prediction/{symbol}` | GET | 下期资金费率预测（均值回归+动量模型） |
+| `/derivatives/basis-signal/{symbol}` | GET | 基差均值回归信号（contango/backwardation/flat） |
 
 ### 新闻情报
 
@@ -283,6 +287,95 @@ python main.py --modules api_server
 | `/factors/correlation` | GET | 任意两因子相关性计算（Pearson） |
 | `/factors/summary` | GET | 全域因子概览（数量/新鲜度/覆盖率） |
 | `/factors/domains` | GET | 列出所有因子域及其 catalog |
+
+### 社交情绪
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/social-sentiment/score/{symbol}` | GET | 单资产社交情绪评分（加权情绪、多空比、KOL 情绪） |
+| `/social-sentiment/history/{symbol}` | GET | 社交情绪时序（最近 N 条聚合记录） |
+| `/social-sentiment/ranking` | GET | 全资产社交情绪排名 |
+| `/social-sentiment/summary` | GET | 市场整体社交情绪概览（市场情绪、多空分布） |
+
+### 巨鲸追踪
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/whale-tracker/recent` | GET | 最近大额转账列表（可按 symbol/type 过滤） |
+| `/whale-tracker/flow/{symbol}` | GET | 单资产巨鲸净流（deposit vs withdrawal） |
+| `/whale-tracker/ranking` | GET | 按 24h 巨鲸活跃度排名 |
+| `/whale-tracker/alerts` | GET | 异常大额转账预警（超过阈值） |
+
+### 微观订单流（新数据源）
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/orderflow-micro/pressure/{symbol}` | GET | 买卖压力分析（CVD + aggression_ratio） |
+| `/orderflow-micro/large-trades/{symbol}` | GET | 大单统计（次数、金额） |
+| `/orderflow-micro/cross-exchange/{symbol}` | GET | 跨交易所订单流对比 |
+| `/orderflow-micro/summary` | GET | 全市场订单流概览 |
+
+### DeFi 协议
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/defi/tvl` | GET | TVL 排名（按协议，支持链过滤） |
+| `/defi/tvl/{protocol}` | GET | 单协议 TVL 详情 + 链分布 |
+| `/defi/lending-rates` | GET | 借贷利率一览（按资产/协议） |
+| `/defi/dex-volume` | GET | DEX 成交量排名 |
+| `/defi/summary` | GET | DeFi 整体概览（总 TVL、DEX 量、平均利率） |
+
+### 跨链桥流
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/bridge-flow/chains` | GET | 各链净流入/流出排名 |
+| `/bridge-flow/bridges` | GET | 各桥成交量排名 |
+| `/bridge-flow/migration` | GET | 资本迁移方向（L1→L2 / L2→L1 判定） |
+
+### 监管动态
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/regulatory/events` | GET | 最近监管事件列表（支持 jurisdiction/severity 过滤） |
+| `/regulatory/etf-tracker` | GET | ETF 申请状态追踪 |
+| `/regulatory/risk-signal` | GET | 当前监管风险信号（基于事件密度和严重度） |
+| `/regulatory/summary` | GET | 监管环境概览（30d 事件分布 + ETF 状态） |
+
+### 市场状态（Regime）
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/regime/current/{symbol}` | GET | 单资产当前 regime（price/vol/correlation/momentum） |
+| `/regime/current` | GET | 全资产当前 regime 快照 |
+| `/regime/history/{symbol}` | GET | regime 状态历史 |
+| `/regime/transitions/{symbol}` | GET | regime 转换记录 |
+
+### 异常检测
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/anomaly/recent` | GET | 最近异常事件列表（支持 symbol/severity 过滤） |
+| `/anomaly/active/{symbol}` | GET | 单资产当前活跃异常 |
+| `/anomaly/market-risk` | GET | 市场整体异常风险评估 |
+
+### 流动性分析
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/liquidity/score/{symbol}` | GET | 流动性评分（0-100）+ 组成分解 |
+| `/liquidity/slippage/{symbol}` | GET | 滑点估算（10K/100K/1M USD） |
+| `/liquidity/alerts` | GET | 流动性预警列表（价差/深度异常） |
+| `/liquidity/ranking` | GET | 全资产流动性排名 |
+
+### 波动率预测
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/volatility/forecast/{symbol}` | GET | EWMA 波动率预测 + regime 分类 |
+| `/volatility/cone/{symbol}` | GET | 波动率锥（历史分位） |
+| `/volatility/ranking` | GET | 全资产波动率排名 |
+| `/volatility/rv-iv-spread/{symbol}` | GET | RV-IV 价差信号 |
 
 ### 时间切片（历史回溯）
 
@@ -749,12 +842,22 @@ api/
     ├── strategy.py          # /strategy — AI 策略辅助（多因子 / 入场出场 / 套利）
     ├── monitor.py           # /monitor — 实时监控（告警 / 突破 / 异常检测）
     ├── orderflow.py         # /orderflow — 订单流智能（CVD / 大单 / 深度 / 滑点）
-    ├── derivatives.py       # /derivatives — 衍生品复合信号（健康评分 / 杠杆 / 挤压）
+    ├── derivatives.py       # /derivatives — 衍生品复合信号（健康评分 / 杠杆 / 挤压 / 资金费率预测 / 基差信号）
     ├── news_intel.py        # /news-intel — 新闻情报（信号 / 事件 / 叙事 / 监管）
     ├── ai_context.py        # /ai-context — AI 决策上下文（bundle / 状态 / 套利 / 新鲜度）
     ├── portfolio_analytics.py # /portfolio — 组合分析（快照/回撤/集中度/VaR分解/趋势）
     ├── microstructure.py    # /microstructure — 市场微观结构（波动率/成交量/价差/跳空）
-    └── factor_explorer.py   # /factors — 因子探索（搜索/时序/相关性/概览）
+    ├── factor_explorer.py   # /factors — 因子探索（搜索/时序/相关性/概览）
+    ├── social_sentiment.py  # /social-sentiment — 社交情绪（评分/时序/排名/概览）
+    ├── whale_tracker.py     # /whale-tracker — 巨鲸追踪（转账/净流/排名/预警）
+    ├── orderflow_micro.py   # /orderflow-micro — 微观订单流（压力/大单/跨所/概览）
+    ├── defi.py              # /defi — DeFi 协议（TVL/借贷利率/DEX量/概览）
+    ├── bridge_flow.py       # /bridge-flow — 跨链桥流（链净流/桥排名/迁移方向）
+    ├── regulatory.py        # /regulatory — 监管动态（事件/ETF追踪/风险信号/概览）
+    ├── regime.py            # /regime — 市场状态（当前/历史/转换）
+    ├── anomaly.py           # /anomaly — 异常检测（最近/活跃/市场风险）
+    ├── liquidity.py         # /liquidity — 流动性分析（评分/滑点/预警/排名）
+    └── volatility.py        # /volatility — 波动率预测（EWMA/锥/排名/RV-IV）
 ```
 
 ---

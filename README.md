@@ -89,7 +89,7 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        AI Consumer Layer                         │
-│              REST API (100+ endpoints) / Bundle Query            │
+│              REST API (200+ endpoints) / Bundle Query            │
 ├─────────────────────────────────────────────────────────────────┤
 │                         Logic Layer (20 modules)                 │
 │  technical_indicators → feature_standardization → cross_asset   │
@@ -165,7 +165,7 @@ EvoQuant/
 ├── data_layer/      外部数据采集、标准化、落库（15 个常驻数据模块）
 ├── database/        SQLite 建表、迁移、路由和读写入口
 ├── logic_layer/     AI-ready 特征、上下文和治理结果（20 个逻辑模块）
-├── api/             对外 REST API 服务（100+ 端点）
+├── api/             对外 REST API 服务（200+ 端点）
 ├── tests/           单元测试与模块测试
 └── main.py          统一入口，模块注册与进程管理（指数退避重启 + 三阶段优雅关停）
 ```
@@ -197,7 +197,7 @@ EvoQuant/
 
 ## API
 
-100+ REST 端点，覆盖：
+200+ REST 端点，覆盖：
 
 - 技术指标深度分析（极值、背离、多周期）
 - 组合风险分析（VaR、风险贡献、集中度）
