@@ -100,7 +100,13 @@ class DBManager:
         self._create_collection_runs_table()
         for method_name in EXCHANGE_DATA_INIT_METHODS:
             getattr(self, method_name)()
-        self._sync_latest_snapshot_tables()
+        try:
+            self._sync_latest_snapshot_tables()
+        except sqlite3.OperationalError as e:
+            if "readonly" in str(e):
+                logger.debug("跳过 latest 表同步（数据库只读）")
+            else:
+                raise
         self.conn.commit()
 
     def init_market_data_tables(self):
