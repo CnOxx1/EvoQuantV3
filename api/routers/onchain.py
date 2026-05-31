@@ -6,7 +6,8 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
-from api.dependencies import get_market_db
+from api.dependencies import get_exchange_db, get_market_db
+from api.routers._helpers import _safe_float
 from config.symbols import TARGET_SYMBOLS
 
 router = APIRouter(prefix="/onchain", tags=["onchain"])
@@ -56,78 +57,198 @@ def _get_latest_factors(db, factor_ids: list[str], entity_key: str | None = None
 
 @router.get("/exchange-flow/{symbol}")
 def get_exchange_flow(symbol: str) -> dict[str, Any]:
-    """返回指定资产的交易所净流量（鲸鱼充提行为）。"""
+    """返回指定资产的交易所资金流向信号。
+
+    基于 OI 变化 + 资金费率合成：
+    - OI 增加 + 资金费率上升 → 资金流入做多
+    - OI 减少 + 资金费率下降 → 资金流出
+    - 同时查询链上数据（如有）
+    """
     normalized = _normalize_symbol(symbol)
     if normalized not in TARGET_SYMBOLS:
         raise HTTPException(status_code=404, detail=f"Symbol '{normalized}' not in universe.")
 
-    db = get_market_db()
-    base = symbol.upper().replace("/USDT", "").replace("-USDT", "")
+    exchange_db = get_exchange_db()
+    base = normalized.split("/")[0]
 
-    factors = _get_latest_factors(
-        db,
-        ["exchange_netflow_24h", "exchange_inflow_24h", "exchange_outflow_24h",
-         "exchange_reserve", "large_tx_count_24h"],
-        entity_key=base,
+    # OI change data
+    oi_row = exchange_db.fetch_one(
+        """SELECT open_interest_contracts, open_interest_change_1h, open_interest_change_24h
+           FROM latest_open_interest_snapshots
+           WHERE symbol = ? AND exchange = 'binance'""",
+        (normalized,),
     )
 
-    if not factors:
-        raise HTTPException(status_code=404, detail="No exchange flow data found.")
+    # Funding rate
+    funding = exchange_db.fetch_one(
+        "SELECT funding_rate FROM latest_funding_rates WHERE symbol = ? AND exchange = 'binance'",
+        (normalized,),
+    )
 
-    netflow = factors.get("exchange_netflow_24h", {}).get("value")
-    inflow = factors.get("exchange_inflow_24h", {}).get("value")
-    outflow = factors.get("exchange_outflow_24h", {}).get("value")
+    # Volume trend (recent vs average)
+    volumes = exchange_db.fetch_all(
+        "SELECT volume FROM klines WHERE symbol = ? AND exchange = 'binance' AND timeframe = '1h' ORDER BY open_time DESC LIMIT 24",
+        (normalized,),
+    )
+    vol_list = [_safe_float(r["volume"]) for r in volumes if _safe_float(r["volume"])]
 
+    oi_change_1h = _safe_float(oi_row["open_interest_change_1h"]) if oi_row else None
+    oi_change_24h = _safe_float(oi_row["open_interest_change_24h"]) if oi_row else None
+    oi_contracts = _safe_float(oi_row["open_interest_contracts"]) if oi_row else None
+    rate = _safe_float(funding["funding_rate"]) if funding else None
+
+    # Synthesize flow signal
     signal = "neutral"
-    if netflow is not None:
-        if netflow < -1e6:
-            signal = "bullish_outflow"
-        elif netflow > 1e6:
-            signal = "bearish_inflow"
+    flow_score = 0.0
+    if oi_change_24h is not None and rate is not None:
+        # OI increasing + positive funding = net long inflow
+        if oi_change_24h > 0 and rate > 0.0003:
+            signal = "net_inflow_long"
+            flow_score = min(100, oi_change_24h / 100 + rate * 10000)
+        # OI increasing + negative funding = net short inflow
+        elif oi_change_24h > 0 and rate < -0.0003:
+            signal = "net_inflow_short"
+            flow_score = min(100, oi_change_24h / 100 + abs(rate) * 10000)
+        # OI decreasing = position closing / outflow
+        elif oi_change_24h < -500:
+            signal = "net_outflow"
+            flow_score = min(100, abs(oi_change_24h) / 100)
+
+    # Volume context
+    vol_ratio = None
+    if len(vol_list) >= 6:
+        recent_avg = sum(vol_list[:3]) / 3
+        older_avg = sum(vol_list[3:]) / len(vol_list[3:])
+        vol_ratio = round(recent_avg / older_avg, 2) if older_avg > 0 else None
+
+    # Also try onchain data if available
+    onchain_netflow = None
+    try:
+        mdb = get_market_db()
+        onchain_row = mdb.fetch_one(
+            """SELECT value, observation_time FROM latest_onchain_timeseries
+               WHERE category = 'exchange_flow' AND entity_key = ?""",
+            (base,),
+        )
+        if onchain_row:
+            onchain_netflow = _safe_float(onchain_row["value"])
+    except Exception:
+        pass
 
     return {
         "symbol": normalized,
         "signal": signal,
-        "exchange_netflow_24h": netflow,
-        "exchange_inflow_24h": inflow,
-        "exchange_outflow_24h": outflow,
-        "exchange_reserve": factors.get("exchange_reserve", {}).get("value"),
-        "large_tx_count_24h": factors.get("large_tx_count_24h", {}).get("value"),
+        "flow_score": round(flow_score, 1),
+        "open_interest_contracts": oi_contracts,
+        "oi_change_1h": oi_change_1h,
+        "oi_change_24h": oi_change_24h,
+        "funding_rate": rate,
+        "volume_ratio_3h_vs_avg": vol_ratio,
+        "onchain_netflow_usd": onchain_netflow,
+        "data_source": "synthetic_from_derivatives" if onchain_netflow is None else "hybrid",
     }
 
 
 @router.get("/whale-activity/{symbol}")
 def get_whale_activity(symbol: str) -> dict[str, Any]:
-    """返回指定资产的鲸鱼活动（大额转账、鲸鱼积累/派发）。"""
+    """返回指定资产的鲸鱼/大户活动信号。
+
+    基于成交量异常 + 价格大幅波动 + OI 变化合成：
+    - 成交量 > 3x 均值 + 价格上涨 → 大户积累
+    - 成交量 > 3x 均值 + 价格下跌 → 大户派发
+    - 同时查询链上数据（如有）
+    """
     normalized = _normalize_symbol(symbol)
     if normalized not in TARGET_SYMBOLS:
         raise HTTPException(status_code=404, detail=f"Symbol '{normalized}' not in universe.")
 
-    db = get_market_db()
-    base = symbol.upper().replace("/USDT", "").replace("-USDT", "")
+    exchange_db = get_exchange_db()
+    base = normalized.split("/")[0]
 
-    factors = _get_latest_factors(
-        db,
-        ["whale_tx_count_24h", "whale_volume_24h", "whale_net_accumulation_7d",
-         "top100_holders_pct"],
-        entity_key=base,
+    # Volume analysis (detect abnormal activity)
+    volumes = exchange_db.fetch_all(
+        "SELECT volume FROM klines WHERE symbol = ? AND exchange = 'binance' AND timeframe = '1h' ORDER BY open_time DESC LIMIT 48",
+        (normalized,),
+    )
+    vol_list = [_safe_float(r["volume"]) for r in volumes if _safe_float(r["volume"])]
+
+    # Price movement
+    prices = exchange_db.fetch_all(
+        "SELECT close FROM klines WHERE symbol = ? AND exchange = 'binance' AND timeframe = '1h' ORDER BY open_time DESC LIMIT 24",
+        (normalized,),
+    )
+    price_list = [_safe_float(r["close"]) for r in prices if _safe_float(r["close"])]
+
+    # OI change (proxy for large position changes)
+    oi_row = exchange_db.fetch_one(
+        """SELECT open_interest_contracts, open_interest_change_1h, open_interest_change_24h
+           FROM latest_open_interest_snapshots
+           WHERE symbol = ? AND exchange = 'binance'""",
+        (normalized,),
     )
 
-    if not factors:
-        raise HTTPException(status_code=404, detail="No whale activity data found.")
+    # Funding rate
+    funding = exchange_db.fetch_one(
+        "SELECT funding_rate FROM latest_funding_rates WHERE symbol = ? AND exchange = 'binance'",
+        (normalized,),
+    )
 
-    accumulation = factors.get("whale_net_accumulation_7d", {}).get("value")
-    signal = "neutral"
-    if accumulation is not None:
-        signal = "accumulating" if accumulation > 0 else "distributing"
+    # Calculate whale signal
+    signal = "low_activity"
+    activity_score = 0.0
+    vol_spike = False
+    price_move_pct = 0.0
+
+    if len(vol_list) >= 24:
+        recent_vol = vol_list[0]
+        avg_vol = sum(vol_list[6:]) / len(vol_list[6:])
+        vol_ratio = recent_vol / avg_vol if avg_vol > 0 else 1.0
+        vol_spike = vol_ratio > 2.5
+        activity_score += min(40, vol_ratio * 10)
+
+    if len(price_list) >= 6:
+        price_move_pct = (price_list[0] - price_list[5]) / price_list[5] * 100 if price_list[5] > 0 else 0
+        activity_score += min(30, abs(price_move_pct) * 5)
+
+    oi_change_24h = _safe_float(oi_row["open_interest_change_24h"]) if oi_row else None
+    if oi_change_24h and abs(oi_change_24h) > 1000:
+        activity_score += min(30, abs(oi_change_24h) / 100)
+
+    # Determine signal
+    if activity_score > 60:
+        if price_move_pct > 0:
+            signal = "whale_accumulation"
+        else:
+            signal = "whale_distribution"
+    elif activity_score > 35:
+        signal = "moderate_activity"
+
+    # Also try onchain data if available
+    onchain_whale_count = None
+    try:
+        mdb = get_market_db()
+        onchain_row = mdb.fetch_one(
+            """SELECT value, observation_time FROM latest_onchain_timeseries
+               WHERE category = 'whale_activity' AND entity_key = ?""",
+            (base,),
+        )
+        if onchain_row:
+            onchain_whale_count = _safe_float(onchain_row["value"])
+    except Exception:
+        pass
+
+    rate = _safe_float(funding["funding_rate"]) if funding else None
 
     return {
         "symbol": normalized,
         "whale_signal": signal,
-        "whale_tx_count_24h": factors.get("whale_tx_count_24h", {}).get("value"),
-        "whale_volume_24h": factors.get("whale_volume_24h", {}).get("value"),
-        "whale_net_accumulation_7d": accumulation,
-        "top100_holders_pct": factors.get("top100_holders_pct", {}).get("value"),
+        "activity_score": round(activity_score, 1),
+        "volume_spike": vol_spike,
+        "price_move_6h_pct": round(price_move_pct, 2),
+        "oi_change_24h": oi_change_24h,
+        "funding_rate": rate,
+        "onchain_whale_transfer_count": onchain_whale_count,
+        "data_source": "synthetic_from_derivatives" if onchain_whale_count is None else "hybrid",
     }
 
 

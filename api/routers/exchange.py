@@ -212,7 +212,9 @@ def get_open_interest(symbol: str) -> dict[str, Any]:
 
     db = get_exchange_db()
     rows = db.fetch_all(
-        """SELECT exchange, open_interest, open_interest_value, timestamp
+        """SELECT exchange, open_interest_contracts, open_interest_usd,
+                  open_interest_change_5m, open_interest_change_1h,
+                  open_interest_change_24h, timestamp
            FROM latest_open_interest_snapshots
            WHERE symbol = ?
            ORDER BY timestamp DESC""",
@@ -223,9 +225,9 @@ def get_open_interest(symbol: str) -> dict[str, Any]:
 
     by_exchange = {r["exchange"]: dict(r) for r in rows}
     total_oi_value = sum(
-        r["open_interest_value"]
+        r["open_interest_usd"]
         for r in rows
-        if r["open_interest_value"] is not None
+        if r["open_interest_usd"] is not None
     )
 
     return {
@@ -355,3 +357,298 @@ def get_positioning(symbol: str) -> dict[str, Any]:
         "by_exchange": by_exchange,
     }
 
+
+@router.get("/klines/{symbol}")
+def get_klines(
+    symbol: str,
+    exchange: str = Query("binance", description="交易所"),
+    timeframe: str = Query("1h", description="K线周期"),
+    limit: int = Query(500, ge=1, le=2000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回指定资产的原始 OHLCV K线数据。"""
+    normalized = _normalize_symbol(symbol)
+    db = get_exchange_db()
+    rows = db.fetch_all(
+        """SELECT symbol, exchange, timeframe, open_time,
+                  open, high, low, close, volume
+           FROM klines
+           WHERE symbol = ? AND exchange = ? AND timeframe = ?
+           ORDER BY open_time DESC
+           LIMIT ?""",
+        (normalized, exchange, timeframe, limit),
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No kline data found.")
+    records = [dict(r) for r in rows]
+    records.reverse()
+    return {"symbol": normalized, "exchange": exchange, "timeframe": timeframe, "count": len(records), "klines": records}
+
+
+@router.get("/tickers/history/{symbol}")
+def get_ticker_history(
+    symbol: str,
+    exchange: str | None = Query(None, description="按交易所过滤"),
+    limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回指定资产的历史 Ticker 快照。"""
+    normalized = _normalize_symbol(symbol)
+    db = get_exchange_db()
+    if exchange:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, last_price, high_24h, low_24h,
+                      vwap_24h, volume_24h, quote_volume_24h,
+                      change_24h, spread_bps, timestamp
+               FROM tickers
+               WHERE symbol = ? AND exchange = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, exchange, limit),
+        )
+    else:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, last_price, high_24h, low_24h,
+                      vwap_24h, volume_24h, quote_volume_24h,
+                      change_24h, spread_bps, timestamp
+               FROM tickers
+               WHERE symbol = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, limit),
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No ticker history found.")
+    records = [dict(r) for r in rows]
+    records.reverse()
+    return {"symbol": normalized, "count": len(records), "history": records}
+
+
+@router.get("/orderbook/history/{symbol}")
+def get_orderbook_history(
+    symbol: str,
+    exchange: str | None = Query(None, description="按交易所过滤"),
+    limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回指定资产的历史订单簿深度快照。"""
+    normalized = _normalize_symbol(symbol)
+    db = get_exchange_db()
+    if exchange:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, mid_price, spread_bps,
+                      bid_depth_notional, ask_depth_notional,
+                      depth_imbalance, timestamp
+               FROM orderbook_snapshots
+               WHERE symbol = ? AND exchange = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, exchange, limit),
+        )
+    else:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, mid_price, spread_bps,
+                      bid_depth_notional, ask_depth_notional,
+                      depth_imbalance, timestamp
+               FROM orderbook_snapshots
+               WHERE symbol = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, limit),
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No orderbook history found.")
+    records = [dict(r) for r in rows]
+    records.reverse()
+    return {"symbol": normalized, "count": len(records), "history": records}
+
+
+@router.get("/open-interest/history/{symbol}")
+def get_open_interest_history(
+    symbol: str,
+    exchange: str | None = Query(None, description="按交易所过滤"),
+    limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回指定资产的历史持仓量快照。"""
+    normalized = _normalize_symbol(symbol)
+    db = get_exchange_db()
+    if exchange:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, timestamp, open_interest_contracts,
+                      open_interest_usd, open_interest_change_5m,
+                      open_interest_change_1h, open_interest_change_24h
+               FROM open_interest_snapshots
+               WHERE symbol = ? AND exchange = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, exchange, limit),
+        )
+    else:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, timestamp, open_interest_contracts,
+                      open_interest_usd, open_interest_change_5m,
+                      open_interest_change_1h, open_interest_change_24h
+               FROM open_interest_snapshots
+               WHERE symbol = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, limit),
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No open interest history found.")
+    records = [dict(r) for r in rows]
+    records.reverse()
+    return {"symbol": normalized, "count": len(records), "history": records}
+
+
+@router.get("/positioning/history/{symbol}")
+def get_positioning_history(
+    symbol: str,
+    exchange: str | None = Query(None, description="按交易所过滤"),
+    limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回指定资产的历史多空比快照。"""
+    normalized = _normalize_symbol(symbol)
+    db = get_exchange_db()
+    if exchange:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, timestamp, long_ratio, short_ratio,
+                      long_short_ratio, top_trader_long_ratio,
+                      top_trader_short_ratio
+               FROM positioning_snapshots
+               WHERE symbol = ? AND exchange = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, exchange, limit),
+        )
+    else:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, timestamp, long_ratio, short_ratio,
+                      long_short_ratio, top_trader_long_ratio,
+                      top_trader_short_ratio
+               FROM positioning_snapshots
+               WHERE symbol = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, limit),
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No positioning history found.")
+    records = [dict(r) for r in rows]
+    records.reverse()
+    return {"symbol": normalized, "count": len(records), "history": records}
+
+
+@router.get("/basis/history/{symbol}")
+def get_basis_history(
+    symbol: str,
+    exchange: str | None = Query(None, description="按交易所过滤"),
+    limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回指定资产的历史基差快照。"""
+    normalized = _normalize_symbol(symbol)
+    db = get_exchange_db()
+    if exchange:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, timestamp, spot_price, mark_price,
+                      index_price, basis_bps, annualized_basis_bps,
+                      funding_rate
+               FROM basis_snapshots
+               WHERE symbol = ? AND exchange = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, exchange, limit),
+        )
+    else:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, timestamp, spot_price, mark_price,
+                      index_price, basis_bps, annualized_basis_bps,
+                      funding_rate
+               FROM basis_snapshots
+               WHERE symbol = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (normalized, limit),
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No basis history found.")
+    records = [dict(r) for r in rows]
+    records.reverse()
+    return {"symbol": normalized, "count": len(records), "history": records}
+
+
+@router.get("/trade-flow/history/{symbol}")
+def get_trade_flow_history(
+    symbol: str,
+    exchange: str | None = Query(None, description="按交易所过滤"),
+    limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回指定资产的历史交易流数据。"""
+    normalized = _normalize_symbol(symbol)
+    db = get_exchange_db()
+    if exchange:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, market_type, interval, open_time,
+                      trade_count, buy_notional, sell_notional,
+                      net_taker_notional, cvd,
+                      aggressive_buy_notional, aggressive_sell_notional
+               FROM trade_flow_bars
+               WHERE symbol = ? AND exchange = ?
+               ORDER BY open_time DESC
+               LIMIT ?""",
+            (normalized, exchange, limit),
+        )
+    else:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, market_type, interval, open_time,
+                      trade_count, buy_notional, sell_notional,
+                      net_taker_notional, cvd,
+                      aggressive_buy_notional, aggressive_sell_notional
+               FROM trade_flow_bars
+               WHERE symbol = ?
+               ORDER BY open_time DESC
+               LIMIT ?""",
+            (normalized, limit),
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No trade flow history found.")
+    records = [dict(r) for r in rows]
+    records.reverse()
+    return {"symbol": normalized, "count": len(records), "history": records}
+
+
+@router.get("/liquidations/history/{symbol}")
+def get_liquidations_history(
+    symbol: str,
+    exchange: str | None = Query(None, description="按交易所过滤"),
+    limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回指定资产的历史清算数据。"""
+    normalized = _normalize_symbol(symbol)
+    db = get_exchange_db()
+    if exchange:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, open_time,
+                      long_liquidation_notional, short_liquidation_notional,
+                      total_liquidation_notional,
+                      max_single_liquidation_notional
+               FROM liquidation_bars
+               WHERE symbol = ? AND exchange = ?
+               ORDER BY open_time DESC
+               LIMIT ?""",
+            (normalized, exchange, limit),
+        )
+    else:
+        rows = db.fetch_all(
+            """SELECT symbol, exchange, open_time,
+                      long_liquidation_notional, short_liquidation_notional,
+                      total_liquidation_notional,
+                      max_single_liquidation_notional
+               FROM liquidation_bars
+               WHERE symbol = ?
+               ORDER BY open_time DESC
+               LIMIT ?""",
+            (normalized, limit),
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No liquidation history found.")
+    records = [dict(r) for r in rows]
+    records.reverse()
+    return {"symbol": normalized, "count": len(records), "history": records}

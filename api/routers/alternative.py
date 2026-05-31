@@ -88,3 +88,39 @@ def get_factors(
     if not rows:
         raise HTTPException(status_code=404, detail="No factor data found.")
     return {"count": len(rows), "factors": [dict(r) for r in rows]}
+
+
+@router.get("/history/{symbol}")
+def get_alternative_history(
+    symbol: str,
+    category: str | None = Query(None, description="因子类别过滤"),
+    limit: int = Query(500, ge=1, le=2000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回指定资产的另类因子历史时序数据。"""
+    entity_key = symbol.upper().replace("/USDT", "").replace("-", "")
+    db = get_market_db()
+    if category:
+        rows = db.fetch_all(
+            """SELECT factor_id, category, factor_type, entity_type,
+                      entity_key, observation_time, value, unit, source_name
+               FROM alternative_timeseries
+               WHERE entity_key = ? AND category = ?
+               ORDER BY observation_time DESC
+               LIMIT ?""",
+            (entity_key, category, limit),
+        )
+    else:
+        rows = db.fetch_all(
+            """SELECT factor_id, category, factor_type, entity_type,
+                      entity_key, observation_time, value, unit, source_name
+               FROM alternative_timeseries
+               WHERE entity_key = ?
+               ORDER BY observation_time DESC
+               LIMIT ?""",
+            (entity_key, limit),
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No alternative history found.")
+    records = [dict(r) for r in rows]
+    records.reverse()
+    return {"symbol": entity_key, "count": len(records), "history": records}

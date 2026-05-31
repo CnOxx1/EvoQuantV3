@@ -197,3 +197,42 @@ def get_sentiment_summary() -> dict[str, Any]:
         },
         "market_breadth": dict(breadth_row) if breadth_row else None,
     }
+
+
+@router.get("/labels")
+def get_sentiment_labels(
+    symbol: str | None = Query(None, description="按资产过滤（如 BTC）"),
+    sentiment: str | None = Query(None, description="按情感过滤: positive/negative/neutral"),
+    limit: int = Query(100, ge=1, le=500, description="返回条数"),
+) -> dict[str, Any]:
+    """返回 AI 情感标注结果（含置信度和影响评估）。"""
+    db = get_analytics_db()
+
+    conditions = ["1=1"]
+    params: list[Any] = []
+
+    if symbol:
+        base = symbol.upper().replace("/USDT", "").replace("-USDT", "")
+        conditions.append("title LIKE ?")
+        params.append(f"%{base}%")
+
+    if sentiment:
+        conditions.append("sentiment = ?")
+        params.append(sentiment)
+
+    where_clause = " AND ".join(conditions)
+    params.append(limit)
+
+    rows = db.fetch_all(
+        f"""SELECT article_id, url_hash, title, sentiment, confidence,
+                   event_type, impact_scope, impact_duration, labeled_at
+            FROM news_sentiment_labels
+            WHERE {where_clause}
+            ORDER BY labeled_at DESC
+            LIMIT ?""",
+        params,
+    )
+
+    if not rows:
+        raise HTTPException(status_code=404, detail="No sentiment labels found.")
+    return {"count": len(rows), "labels": [dict(r) for r in rows]}

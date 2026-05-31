@@ -147,6 +147,43 @@ python main.py --modules api_server
 | `/alternative/stablecoin-flows` | GET | 稳定币供应/流动数据（支持 entity 过滤） |
 | `/alternative/factors` | GET | 通用因子探索（支持 category 过滤） |
 
+### 聚合查询
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/aggregate/asset-profile/{symbol}` | GET | 单资产全维度画像（价格+衍生品+技术+风险+因子），替代 6+ 次请求 |
+| `/aggregate/multi-asset-compare` | GET | 2-5 资产横向对比 + 排名 + 分歧检测 |
+| `/aggregate/sector-snapshot` | GET | 板块聚合视图（领涨/领跌、板块统计、轮动阶段） |
+| `/aggregate/derivatives-heatmap` | GET | 全市场衍生品热力图（资金费率/OI/基差） |
+| `/aggregate/market-regime` | GET | 市场体制判断（趋势/震荡/恐慌/狂热） |
+| `/aggregate/correlation-context/{symbol}` | GET | 单资产相关性上下文（Beta、最相关/最不相关） |
+| `/aggregate/watchlist` | GET | 自定义观察列表批量查询 |
+
+### AI/策略辅助
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/strategy/multi-factor-score/{symbol}` | GET | 6 维多因子打分（趋势/动量/资金流/情绪/波动/价值） |
+| `/strategy/entry-exit/{symbol}` | GET | 入场/出场价位建议（基于 BB/ATR/支撑阻力） |
+| `/strategy/regime-strategy` | GET | 当前体制下的策略推荐（趋势跟踪/均值回归/套利等） |
+| `/strategy/divergence-scanner` | GET | 全市场价格-指标背离扫描 |
+| `/strategy/funding-arb` | GET | 资金费率套利机会（做空永续+做多现货） |
+| `/strategy/squeeze-detector` | GET | 空头/多头挤压检测 |
+| `/strategy/mean-reversion-candidates` | GET | 统计极端延伸资产（z-score 筛选） |
+| `/strategy/portfolio-signals` | GET | 全市场信号排行（多/空候选 + 组合指标） |
+
+### 实时监控
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/monitor/alerts` | GET | 主告警端点（汇总所有类型告警，按严重度排序） |
+| `/monitor/price-breakouts` | GET | 价格突破检测（BB/EMA 突破） |
+| `/monitor/funding-anomalies` | GET | 资金费率异常告警 |
+| `/monitor/liquidation-surges` | GET | 清算激增检测 |
+| `/monitor/volume-spikes` | GET | 成交量异常放大检测 |
+| `/monitor/positioning-extremes` | GET | 持仓极端告警（拥挤度） |
+| `/monitor/oi-divergence` | GET | OI 与价格背离检测 |
+
 ### 时间切片（历史回溯）
 
 | 端点 | 方法 | 说明 |
@@ -428,6 +465,139 @@ python main.py --modules api_server
 
 ---
 
+### GET /aggregate/asset-profile/{symbol}
+
+单资产全维度画像，一次请求替代 6+ 次调用。
+
+**路径参数：**
+- `symbol` — 资产符号，支持 `BTC`、`BTC-USDT`、`BTC/USDT`
+
+**响应示例：**
+
+```json
+{
+  "symbol": "BTC/USDT",
+  "sector": "store_of_value",
+  "tier": "core",
+  "price": {"price": 67500.0, "change_24h": 2.3, "volume_24h": 1200000000},
+  "derivatives": {"funding_rate": 0.00012, "annualized_funding": 0.1314, "open_interest": 5800000000},
+  "risk": {"daily_volatility": 0.044, "annualized_volatility": 0.85, "risk_score": 62.5, "risk_level": "high"}
+}
+```
+
+---
+
+### GET /aggregate/multi-asset-compare
+
+**查询参数：**
+
+| 参数 | 必填 | 说明 |
+|---|---|---|
+| `symbols` | 是 | 逗号分隔的 2-5 个符号，如 `BTC,ETH,SOL` |
+
+**响应包含：** 各资产价格/涨跌/资金费率 + 排名 + 分歧检测（`has_divergence`）
+
+---
+
+### GET /aggregate/market-regime
+
+市场体制判断，基于 BTC 价格趋势和全市场资金费率。
+
+**regime 枚举：** `euphoria` | `trending_up` | `ranging` | `trending_down` | `panic`
+
+---
+
+### GET /strategy/multi-factor-score/{symbol}
+
+6 维多因子打分，返回 0-100 的复合分数和方向信号。
+
+**响应示例：**
+
+```json
+{
+  "symbol": "ETH/USDT",
+  "composite_score": 63.2,
+  "factors": {"trend": 72.0, "momentum": 58.5, "flow": 65.0, "sentiment": 55.0, "volatility": 70.0, "value": 59.0},
+  "signal": "buy"
+}
+```
+
+**signal 枚举：** `strong_buy` | `buy` | `neutral` | `sell` | `strong_sell`
+
+---
+
+### GET /strategy/entry-exit/{symbol}
+
+基于 BB/ATR/支撑阻力的入场/出场价位建议。
+
+**响应包含：**
+- `entry_zones` — aggressive_long / conservative_long / support
+- `exit_zones` — take_profit_1 / take_profit_2 / resistance
+- `stop_loss` — tight / normal / wide
+- `indicators` — bb_upper / bb_lower / ma20 / atr14
+
+---
+
+### GET /strategy/funding-arb
+
+**查询参数：**
+
+| 参数 | 必填 | 默认值 | 说明 |
+|---|---|---|---|
+| `min_rate` | 否 | `0.0005` | 最低资金费率阈值 |
+
+返回所有超过阈值的资金费率套利机会，含年化收益和方向建议。
+
+---
+
+### GET /strategy/mean-reversion-candidates
+
+**查询参数：**
+
+| 参数 | 必填 | 默认值 | 说明 |
+|---|---|---|---|
+| `zscore_threshold` | 否 | `2.0` | z-score 阈值 |
+| `limit` | 否 | `10` | 返回数量 |
+
+返回统计极端延伸的资产（超买/超卖），含回归目标价。
+
+---
+
+### GET /monitor/alerts
+
+**查询参数：**
+
+| 参数 | 必填 | 默认值 | 说明 |
+|---|---|---|---|
+| `severity` | 否 | `all` | 过滤：`all` / `high` / `medium` / `low` |
+
+汇总所有类型告警（价格突破、成交量异常、资金费率极端），按严重度排序。
+
+**响应示例：**
+
+```json
+{
+  "count": 3,
+  "alerts": [
+    {"symbol": "SOL/USDT", "type": "volume_spike", "severity": "high", "detail": "Volume 1500000 is 4.2x average"},
+    {"symbol": "DOGE/USDT", "type": "funding_anomaly", "severity": "high", "detail": "Extreme funding rate: 0.003500"},
+    {"symbol": "ETH/USDT", "type": "price_breakout_up", "severity": "medium", "detail": "Price above BB upper"}
+  ]
+}
+```
+
+---
+
+### GET /monitor/volume-spikes
+
+**查询参数：**
+
+| 参数 | 必填 | 默认值 | 说明 |
+|---|---|---|---|
+| `multiplier` | 否 | `2.5` | 相对 20h 均值的倍数阈值 |
+
+---
+
 ## Sui Bridge 推荐调用流程
 
 Bridge 每 5 分钟从 EvoQuantV3 拉取数据并推送到 Sui 链，建议按以下顺序调用：
@@ -457,6 +627,7 @@ api/
 ├── models.py                # Pydantic response schemas
 └── routers/
     ├── __init__.py
+    ├── _helpers.py          # 共享工具函数（normalize/safe_float/zscore/percentile）
     ├── bundle.py            # /bundle — AI 市场上下文 bundle
     ├── domains.py           # /domains — 各域健康状态
     ├── health.py            # /health — 管道健康 + WMI
@@ -471,7 +642,10 @@ api/
     ├── sentiment.py         # /sentiment — 新闻情感 + 市场广度
     ├── data_quality.py      # /data-quality — 审计 / 就绪度 / 市场结构
     ├── features.py          # /features — 特征标准化复合分数与明细
-    └── alternative.py       # /alternative — 另类数据（开发者 / 稳定币 / 因子）
+    ├── alternative.py       # /alternative — 另类数据（开发者 / 稳定币 / 因子）
+    ├── aggregate.py         # /aggregate — 聚合查询（全维度画像 / 对比 / 热力图）
+    ├── strategy.py          # /strategy — AI 策略辅助（多因子 / 入场出场 / 套利）
+    └── monitor.py           # /monitor — 实时监控（告警 / 突破 / 异常检测）
 ```
 
 ---

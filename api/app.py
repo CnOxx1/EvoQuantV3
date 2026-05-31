@@ -28,6 +28,11 @@ from api.routers.time_slice import router as time_slice_router
 from api.routers.data_quality import router as data_quality_router
 from api.routers.features import router as features_router
 from api.routers.alternative import router as alternative_router
+from api.routers.market_info import router as market_info_router
+from api.routers.catalogs import router as catalogs_router
+from api.routers.aggregate import router as aggregate_router
+from api.routers.strategy import router as strategy_router
+from api.routers.monitor import router as monitor_router
 from config.symbols import SYMBOL_UNIVERSE
 
 app = FastAPI(
@@ -61,6 +66,11 @@ app.include_router(sentiment_router)
 app.include_router(data_quality_router)
 app.include_router(features_router)
 app.include_router(alternative_router)
+app.include_router(market_info_router)
+app.include_router(catalogs_router)
+app.include_router(aggregate_router)
+app.include_router(strategy_router)
+app.include_router(monitor_router)
 
 
 @app.get("/symbols", response_model=SymbolsResponse, tags=["symbols"])

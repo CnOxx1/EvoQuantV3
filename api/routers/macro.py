@@ -185,3 +185,22 @@ def get_macro_regime() -> dict[str, Any]:
         "overall_stance": overall_stance,
         "factors": factors,
     }
+
+
+@router.get("/snapshot")
+def get_macro_snapshot(
+    limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+) -> dict[str, Any]:
+    """返回最新宏观因子原始快照（latest_macro_timeseries 表）。"""
+    db = get_market_db()
+    rows = db.fetch_all(
+        """SELECT factor_id, factor_type, observation_time, value,
+                  open, high, low, close, unit, source_name, quality_flag
+           FROM latest_macro_timeseries
+           ORDER BY observation_time DESC
+           LIMIT ?""",
+        (limit,),
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No macro snapshot data found.")
+    return {"count": len(rows), "snapshot": [dict(r) for r in rows]}
