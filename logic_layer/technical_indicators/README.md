@@ -97,7 +97,7 @@ logic_layer/
 
 - 先保留基础列：`symbol / timeframe / open_time / close / volume`
 - 再统一预计算共享中间序列，例如 `delta / true_range / typical_price / rolling_std`
-- 按类别分别构造小块特征表：`trend / momentum / volatility / volume / structure / state / risk`
+- 按类别分别构造小块特征表：`trend / momentum / volatility / volume / structure / state / risk / crossover / pivot / pattern / adaptive / microstructure`
 - 最后用一次 `concat` 合并成结果表
 
 这样做的好处：
@@ -136,7 +136,7 @@ logic_layer/
 
 ## 当前已实现的技术指标
 
-当前模块已经不再停留在第一版基础指标，而是扩展成更适合 AI 特征工程和策略过滤的指标集合，覆盖趋势、动量、波动、量价锚定、趋势结构、压缩状态、市场状态、分位状态和风险调整几个方向。
+当前模块已经不再停留在第一版基础指标，而是扩展成更适合 AI 特征工程和策略过滤的指标集合，覆盖趋势、动量、波动、量价锚定、趋势结构、压缩状态、市场状态、分位状态、风险调整、交叉信号、枢轴点、蜡烛形态、自适应/Ehlers 和微观结构统计等方向。当前共计 **228 个技术指标**。
 
 ### 趋势类
 
@@ -348,6 +348,95 @@ logic_layer/
 - 给 AI 和策略层提供更直接的收益率与波动率特征
 - 判断量价背离和资金流入流出强弱
 - 判断趋势是否由真实成交推动
+
+### 交叉信号与多周期关系类
+
+- `EMA Cross 7/20` — EMA 7/20 交叉方向 (1=金叉, -1=死叉, 0=无交叉)
+- `EMA Cross 20/50` — EMA 20/50 交叉方向
+- `SMA Cross 10/60` — SMA 10/60 交叉方向
+- `MACD Cross Signal` — MACD 与信号线交叉方向
+- `Price Above EMA Count` — 价格在 EMA 7/20/50/100 之上的数量 (0-4)
+- `MA Alignment Score` — MA 排列评分 (-1~+1)
+- `Ichimoku Signal` — Ichimoku 综合信号 (-2~+2)
+- `Trend Consistency 20` — 20 周期 close>EMA20 比率
+
+用途：
+
+- 给 AI 提供直接可用的交叉事件信号，无需自行判断
+- 判断多条均线是否形成多头/空头排列
+- 判断趋势一致性和多周期共振程度
+- 适合作为策略触发条件和趋势过滤特征
+
+### 枢轴点与支撑阻力类
+
+- `Pivot Classic` — (H+L+C)/3
+- `Pivot R1` — 阻力位 1
+- `Pivot S1` — 支撑位 1
+- `Pivot R2` — 阻力位 2
+- `Pivot S2` — 支撑位 2
+- `Distance to Pivot %` — 价格与枢轴距离百分比
+
+用途：
+
+- 给 AI 提供经典的日内支撑阻力参考
+- 判断价格相对关键价位的距离
+- 适合作为止盈止损和仓位管理的参考特征
+
+### 蜡烛图形态类
+
+- `Pattern Doji` — 十字星 (1=出现, 0=未出现)
+- `Pattern Hammer` — 锤子线 (1=锤子, -1=上吊)
+- `Pattern Engulfing` — 吞没形态 (+1=看涨吞没, -1=看跌吞没)
+- `Pattern Morning/Evening Star` — 晨星/暮星 (+1/-1)
+- `Pattern Three Soldiers/Crows` — 三兵/三鸦 (+1/-1)
+- `Pattern Pin Bar` — Pin bar (+1=看涨, -1=看跌)
+- `Pattern Inside Bar` — 内包线 (1=出现)
+- `Pattern Outside Bar` — 外包线 (1=出现)
+
+用途：
+
+- 给 AI 提供经典蜡烛图形态的结构化识别结果
+- 无需 AI 自行从 OHLC 推断形态
+- 适合作为反转信号和趋势延续确认特征
+
+### 自适应与 Ehlers 系列类
+
+- `Ehlers Fisher Transform(13)` — Ehlers 版 Fisher 变换
+- `Ehlers Instantaneous Trendline` — 瞬时趋势线
+- `Ehlers Cyber Cycle` — 网络周期振荡器
+- `Ehlers Dominant Cycle Period` — 主导周期长度
+- `Adaptive RSI(14)` — 自适应 RSI
+- `Fractal Dimension(20)` — 分形维度
+- `Hurst Exponent(20)` — Hurst 指数
+- `Entropy(20)` — 信息熵
+
+用途：
+
+- 提供自适应于市场周期的指标，比固定参数指标更灵活
+- 判断市场是趋势主导还是均值回归主导（Hurst 指数）
+- 判断价格序列的复杂度和可预测性（分形维度、信息熵）
+- 适合作为 AI 的市场状态分类和策略选择特征
+
+### 高级统计与微观结构类
+
+- `Realized Volatility(10)` — 10 期已实现波动率
+- `Yang-Zhang Volatility(20)` — Yang-Zhang 波动率估计
+- `Intraday Intensity(20)` — 日内强度
+- `Volume Weighted RSI(14)` — 成交量加权 RSI
+- `Relative Volume(5)` — 5 期相对成交量
+- `Tick Intensity` — 价格变动强度
+- `Amihud Illiquidity(20)` — Amihud 非流动性指标
+- `Kyle Lambda(20)` — 价格影响系数
+- `Return Dispersion(20)` — 收益率离散度
+- `Overnight Gap %` — 隔夜跳空百分比
+
+用途：
+
+- 提供比传统波动率更精确的波动估计（Yang-Zhang）
+- 判断市场流动性和价格影响成本（Amihud、Kyle Lambda）
+- 判断成交量是否异常放大（相对成交量）
+- 给 AI 提供微观结构层面的流动性和执行质量特征
+- 适合作为仓位管理和执行策略的输入
 
 ## 并入的市场上下文特征
 
@@ -1174,6 +1263,200 @@ logic_layer/
 - 把收益分布从“只有均值和标准差”扩展到中位数、分位差、尾部比例和回撤质量
 - 更适合给 AI 识别“收益看起来差不多，但尾部结构完全不同”的行情
 - 对趋势策略、风控过滤和仓位控制都更有参考价值
+
+### EMA / SMA 交叉信号
+
+方法：
+
+- 比较当前和前一周期的短期/长期均线关系
+- 当短期均线从下方穿越长期均线时标记为 `+1`（金叉）
+- 当短期均线从上方穿越长期均线时标记为 `-1`（死叉）
+- 无交叉时为 `0`
+
+输出字段：
+
+- `ema_cross_7_20`
+- `ema_cross_20_50`
+- `sma_cross_10_60`
+- `macd_cross_signal`
+
+### Price Above EMA Count / MA Alignment Score
+
+方法：
+
+- `Price Above EMA Count`：统计 close 在 EMA7/20/50/100 之上的数量 (0-4)
+- `MA Alignment Score`：计算 EMA7>EMA20>EMA50>EMA100 的排列对数，归一化为 -1~+1
+
+### Ichimoku Signal
+
+方法：
+
+- 综合 Tenkan/Kijun 交叉、价格与云层关系、Senkou A/B 相对位置
+- 输出 -2~+2 的综合评分
+
+### Trend Consistency(20)
+
+方法：
+
+- 计算最近 20 根中 close > EMA20 的比率
+
+### Pivot Points (Classic)
+
+方法：
+
+- `Pivot = (前根 High + Low + Close) / 3`
+- `R1 = 2 * Pivot - Low`
+- `S1 = 2 * Pivot - High`
+- `R2 = Pivot + (High - Low)`
+- `S2 = Pivot - (High - Low)`
+- `Distance to Pivot % = (close - Pivot) / Pivot * 100`
+
+### 蜡烛图形态识别
+
+方法：
+
+- `Doji`：实体 < 全K线范围的 10%
+- `Hammer`：下影线 > 实体 2 倍，上影线 < 实体 30%
+- `Engulfing`：当前实体完全包裹前一根实体，方向相反
+- `Morning/Evening Star`：三根组合形态（大跌/小实体/大涨 或反向）
+- `Three Soldiers/Crows`：连续三根同方向实体推进
+- `Pin Bar`：单根极长影线，实体在一端
+- `Inside Bar`：当前 High/Low 完全被前一根包含
+- `Outside Bar`：当前 High/Low 完全包含前一根
+
+### Ehlers Fisher Transform(13)
+
+方法：
+
+- 对 `(high + low) / 2` 在 13 周期内做归一化到 -1~+1
+- 再做 Fisher 对数变换：`Fisher = 0.5 * ln((1+x)/(1-x))`
+- 使用 0.5 * 前值 + 0.5 * 当前值做递推平滑
+
+### Ehlers Instantaneous Trendline
+
+方法：
+
+- 使用 Ehlers 的 IIR 滤波器结构
+- 系数 `a = 2.0 / (period + 1)`
+- `IT = (a - a²/4) * price + (a²/2) * prev + (1-a)² * prev_IT`
+
+### Ehlers Cyber Cycle
+
+方法：
+
+- 使用高通滤波器去除趋势成分
+- 再用带通滤波器提取主导周期振荡
+
+### Ehlers Dominant Cycle Period
+
+方法：
+
+- 对价格做差分后进行零交叉检测
+- 用相邻零交叉间距估计瞬时周期
+- 做 EMA 平滑得到主导周期长度
+
+### Adaptive RSI(14)
+
+方法：
+
+- 使用 Ehlers Dominant Cycle Period 作为自适应窗口
+- 将窗口 clip 在 5~50 之间
+- 在该窗口内计算 RSI
+
+### Fractal Dimension(20)
+
+方法：
+
+- 使用 Higuchi 简化方法
+- 比较 n 期和 n/2 期的路径长度变化
+- `FD = 1 + ln(path_n / path_half) / ln(2)`
+
+### Hurst Exponent(20)
+
+方法：
+
+- 使用 R/S 分析法
+- 计算均值偏差累积极差 R 和标准差 S
+- `Hurst = ln(R/S) / ln(N)`
+- H > 0.5 趋势持续，H < 0.5 均值回归
+
+### Entropy(20)
+
+方法：
+
+- 对最近 20 根收益率做 10 bin 直方图
+- 计算 Shannon 信息熵：`H = -sum(p * log2(p))`
+- 归一化到 0~1
+
+### Realized Volatility(10)
+
+方法：
+
+- `RV = sqrt(sum(return_1², 10))`
+
+### Yang-Zhang Volatility(20)
+
+方法：
+
+- 结合 overnight（开盘跳空）方差、open-to-close 方差和 Rogers-Satchell 方差
+- `YZ = sqrt(overnight_var + k * oc_var + (1-k) * rs_var)`
+- 比单一估计方法更高效且无偏
+
+### Intraday Intensity(20)
+
+方法：
+
+- `II = (2*close - high - low) / (high - low) * volume`
+- 做 20 周期 SMA 平滑
+
+### Volume Weighted RSI(14)
+
+方法：
+
+- 上涨幅度按 volume 加权，下跌幅度按 volume 加权
+- 再按标准 RSI 公式计算
+
+### Relative Volume(5)
+
+方法：
+
+- `RV5 = volume / SMA(volume, 5)`
+
+### Tick Intensity
+
+方法：
+
+- `Tick Intensity = abs(close - open) / (high - low)`
+- 即实体绝对值占全K线范围的比例
+
+### Amihud Illiquidity(20)
+
+方法：
+
+- `Amihud = mean(abs(return) / volume, 20)`
+- 值越大表示流动性越差
+
+### Kyle Lambda(20)
+
+方法：
+
+- 对最近 20 根 `abs(return)` 和 `volume` 做线性回归
+- `Kyle Lambda = 回归斜率`
+- 反映单位成交量对价格的影响程度
+
+### Return Dispersion(20)
+
+方法：
+
+- `Return Dispersion = std(return_1, 20) / abs(mean(return_1, 20))`
+- 即变异系数，反映收益率的离散程度
+
+### Overnight Gap %
+
+方法：
+
+- `Gap = (open - prev_close) / prev_close * 100`
+- 反映相邻K线间的跳空幅度
 
 ## 时间对齐方法
 
