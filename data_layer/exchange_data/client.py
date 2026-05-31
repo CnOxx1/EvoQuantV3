@@ -5,6 +5,7 @@ import ccxt
 from loguru import logger
 
 from config.settings import EXCHANGE_CONFIG, API_KEYS, REQUEST_TIMEOUT, MAX_RETRIES, RETRY_DELAY, PROXY_URL
+from data_layer.exchange_data.circuit_breaker import circuit_registry, CircuitOpenError
 
 
 class ExchangeClientManager:
@@ -121,14 +122,24 @@ class ExchangeClientManager:
 
 
 def retry_on_failure(func):
-    """装饰器：对交易所API调用进行自动重试"""
+    """装饰器：对交易所API调用进行自动重试，集成熔断器保护。"""
     def wrapper(*args, **kwargs):
+        # 从参数中推断交易所名称作为熔断器 key
+        breaker_name = _infer_breaker_name(func, args, kwargs)
+        breaker = circuit_registry.get(breaker_name)
+
+        if not breaker.allow_request():
+            raise CircuitOpenError(breaker_name)
+
         last_exception = None
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                return func(*args, **kwargs)
+                result = func(*args, **kwargs)
+                breaker.record_success()
+                return result
             except (ccxt.NetworkError, ccxt.ExchangeNotAvailable) as e:
                 last_exception = e
+                breaker.record_failure()
                 logger.warning(
                     f"[{func.__name__}] 网络错误 (第{attempt}/{MAX_RETRIES}次): {e}"
                 )
@@ -136,6 +147,7 @@ def retry_on_failure(func):
                     time.sleep(RETRY_DELAY * attempt)
             except ccxt.RateLimitExceeded as e:
                 last_exception = e
+                breaker.record_failure()
                 wait_time = RETRY_DELAY * attempt * 2
                 logger.warning(
                     f"[{func.__name__}] 频率限制 (第{attempt}/{MAX_RETRIES}次), "
@@ -145,6 +157,20 @@ def retry_on_failure(func):
                     time.sleep(wait_time)
             except ccxt.ExchangeError as e:
                 logger.error(f"[{func.__name__}] 交易所错误: {e}")
+                breaker.record_failure()
                 raise
         raise last_exception
     return wrapper
+
+
+def _infer_breaker_name(func, args, kwargs) -> str:
+    """从函数参数推断熔断器名称（exchange_name 或 self.manager 上下文）。"""
+    # 尝试从 kwargs 获取
+    if "exchange_name" in kwargs:
+        return f"exchange:{kwargs['exchange_name']}"
+    # 尝试从位置参数获取（跳过 self）
+    # 常见模式: self, exchange_name, symbol, ...
+    for arg in args:
+        if isinstance(arg, str) and arg in ("binance", "okx", "bybit"):
+            return f"exchange:{arg}"
+    return f"exchange:{func.__name__}"

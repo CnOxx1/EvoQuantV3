@@ -46,11 +46,8 @@ def get_time_slice_range(
     domains: str | None = Query(None, description="逗号分隔的域列表"),
 ) -> dict[str, Any]:
     """获取时间范围内的多个快照。"""
-    try:
-        ts_start = datetime.fromisoformat(start)
-        ts_end = datetime.fromisoformat(end)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid timestamp: {e}")
+    from api.routers._helpers import validate_time_range
+    ts_start, ts_end = validate_time_range(start, end)
 
     symbol_list = [s.strip() for s in symbols.split(",")] if symbols else None
     domain_list = [d.strip() for d in domains.split(",")] if domains else None
@@ -76,18 +73,16 @@ def get_feature_history(
     timeframe: str = Query("1h", description="K线周期"),
 ) -> dict[str, Any]:
     """获取指定资产的连续特征历史序列。"""
-    try:
-        ts_start = datetime.fromisoformat(start)
-        ts_end = datetime.fromisoformat(end)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid timestamp: {e}")
+    from api.routers._helpers import validate_time_range, validate_symbol
+    ts_start, ts_end = validate_time_range(start, end)
+    validated_symbol = validate_symbol(symbol)
 
     feature_list = [f.strip() for f in features.split(",")] if features else None
 
     svc = get_time_slice_service()
     try:
         result = svc.get_feature_history(
-            symbol=symbol,
+            symbol=validated_symbol,
             start=ts_start,
             end=ts_end,
             features=feature_list,

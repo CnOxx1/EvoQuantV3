@@ -16,6 +16,7 @@ from api.routers._helpers import (
     _risk_level,
     _safe_float,
     _zscore,
+    validate_symbol,
 )
 from config.symbols import (
     SECTOR_DEFINITIONS,
@@ -111,7 +112,7 @@ def multi_asset_compare(
     symbols: str = Query(..., description="逗号分隔的 2-5 个符号"),
 ) -> dict[str, Any]:
     """2-5 资产横向对比 + 排名 + 分歧检测。"""
-    sym_list = [_normalize_symbol(s.strip()) for s in symbols.split(",")]
+    sym_list = [validate_symbol(s.strip()) for s in symbols.split(",")]
     if len(sym_list) < 2 or len(sym_list) > 5:
         raise HTTPException(status_code=400, detail="需要 2-5 个符号")
 

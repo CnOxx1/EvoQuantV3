@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from api.cache import cache
+from api.query_cache import query_cache
 from api.models import SymbolInfo, SymbolsResponse
 from api.routers.bundle import router as bundle_router
 from api.routers.cross_asset import router as cross_asset_router
@@ -109,7 +110,9 @@ _rate_limiter = _RateLimiter(_RATE_LIMIT_MAX_REQUESTS, _RATE_LIMIT_WINDOW_SECOND
 async def _lifespan(application: FastAPI):
     """管理 API 生命周期：启动缓存清理线程，关闭时停止。"""
     cache.start()
+    query_cache.start()
     yield
+    query_cache.stop()
     cache.stop()
 
 
@@ -244,6 +247,7 @@ def get_metrics():
     """运维指标端点 — 暴露缓存命中率、限流状态等内部指标。"""
     return {
         "cache": cache.metrics,
+        "query_cache": query_cache.metrics,
         "rate_limiter": {
             "max_requests": _RATE_LIMIT_MAX_REQUESTS,
             "window_seconds": _RATE_LIMIT_WINDOW_SECONDS,

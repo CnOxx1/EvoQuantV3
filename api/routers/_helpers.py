@@ -5,10 +5,28 @@ from __future__ import annotations
 import functools
 import hashlib
 import math
+from datetime import datetime, timedelta
 from typing import Any
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
+
+
+# 合法符号集合（延迟加载避免循环导入）
+_VALID_SYMBOLS: set[str] | None = None
+_VALID_BASES: set[str] | None = None
+
+# 时间范围查询最大跨度（防止全表扫描）
+MAX_TIME_RANGE_DAYS = 90
+
+
+def _load_valid_symbols() -> tuple[set[str], set[str]]:
+    global _VALID_SYMBOLS, _VALID_BASES
+    if _VALID_SYMBOLS is None:
+        from config.symbols import TARGET_SYMBOLS
+        _VALID_SYMBOLS = set(TARGET_SYMBOLS)
+        _VALID_BASES = {s.split("/")[0] for s in TARGET_SYMBOLS}
+    return _VALID_SYMBOLS, _VALID_BASES
 
 
 def _normalize_symbol(symbol: str) -> str:
@@ -17,6 +35,46 @@ def _normalize_symbol(symbol: str) -> str:
     if not normalized.endswith("/USDT"):
         normalized = f"{normalized}/USDT"
     return normalized
+
+
+def validate_symbol(symbol: str) -> str:
+    """统一符号格式并校验是否属于资产宇宙，不合法则抛 HTTPException 422。"""
+    normalized = _normalize_symbol(symbol)
+    valid_symbols, valid_bases = _load_valid_symbols()
+    if normalized not in valid_symbols:
+        # 兼容只传 base 的情况（如 "BTC"）
+        base = normalized.split("/")[0]
+        if base not in valid_bases:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unknown symbol: {symbol}. Valid bases: {sorted(valid_bases)}",
+            )
+    return normalized
+
+
+def validate_time_range(
+    start: str, end: str, max_days: int = MAX_TIME_RANGE_DAYS
+) -> tuple[datetime, datetime]:
+    """解析并校验时间范围，返回 (start_dt, end_dt)。
+
+    校验：格式合法、end > start、跨度不超过 max_days。
+    """
+    try:
+        ts_start = datetime.fromisoformat(start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid start timestamp: {start}")
+    try:
+        ts_end = datetime.fromisoformat(end)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid end timestamp: {end}")
+    if ts_end <= ts_start:
+        raise HTTPException(status_code=400, detail="end must be after start")
+    if (ts_end - ts_start) > timedelta(days=max_days):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Time range exceeds maximum of {max_days} days",
+        )
+    return ts_start, ts_end
 
 
 def _safe_float(v: Any) -> float | None:

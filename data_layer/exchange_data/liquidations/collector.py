@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timezone
 from collections import defaultdict
 
-import requests
+import httpx
 from loguru import logger
 
 from config.settings import EXCHANGE_DERIVATIVES_CONFIG
@@ -42,7 +42,7 @@ class LiquidationsCollector:
         url = "https://www.okx.com/api/v5/public/liquidation-orders"
         params = {"instType": "SWAP", "uly": uly, "state": "filled"}
         try:
-            resp = requests.get(url, params=params, timeout=10)
+            resp = httpx.get(url, params=params, timeout=10)
             resp.raise_for_status()
             data = resp.json()
             if data.get("code") != "0":

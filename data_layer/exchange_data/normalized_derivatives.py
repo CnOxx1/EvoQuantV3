@@ -1,10 +1,9 @@
 import json
 import time
-import urllib.error
 import urllib.parse
-import urllib.request
 from functools import wraps
 
+import httpx
 from loguru import logger
 
 from config.settings import EXCHANGE_DERIVATIVES_CONFIG, MAX_RETRIES, RETRY_DELAY
@@ -20,8 +19,8 @@ def retry_on_failure(func):
             except (
                 TimeoutError,
                 OSError,
-                urllib.error.HTTPError,
-                urllib.error.URLError,
+                httpx.HTTPStatusError,
+                httpx.RequestError,
                 ValueError,
             ) as exc:
                 last_exception = exc
@@ -42,25 +41,26 @@ class NormalizedDerivativesClient:
     def __init__(self):
         self.timeout_seconds = 20
         self.user_agent = EXCHANGE_DERIVATIVES_CONFIG["user_agent"]
-
-    def _build_request(self, url: str) -> urllib.request.Request:
-        return urllib.request.Request(
-            url,
+        self._client = httpx.Client(
+            timeout=self.timeout_seconds,
             headers={
                 "User-Agent": self.user_agent,
                 "Accept": "application/json,text/plain;q=0.9,*/*;q=0.8",
             },
+            follow_redirects=True,
         )
 
     @retry_on_failure
     def _fetch_text(self, url: str) -> str:
-        request = self._build_request(url)
-        with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
-            return response.read().decode("utf-8")
+        response = self._client.get(url)
+        response.raise_for_status()
+        return response.text
 
     @retry_on_failure
     def fetch_json(self, url: str):
-        return json.loads(self._fetch_text(url))
+        response = self._client.get(url)
+        response.raise_for_status()
+        return response.json()
 
     @staticmethod
     def append_query(url: str, params: dict[str, object]) -> str:
