@@ -104,7 +104,7 @@ def get_klines(
 
     db = get_analytics_db()
     rows = db.fetch_all(
-        """SELECT open_time, open, high, low, close, volume, quote_volume,
+        """SELECT open_time, open, high, low, close, volume,
                   exchange_count, source_exchanges
            FROM merged_klines
            WHERE symbol = ? AND timeframe = ?

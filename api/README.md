@@ -75,6 +75,9 @@ python main.py --modules api_server
 | `/exchange/comparison/{symbol}` | GET | 跨交易所对比快照（价差、执行偏好） |
 | `/exchange/open-interest/{symbol}` | GET | 持仓量快照 |
 | `/exchange/liquidations/{symbol}` | GET | 清算数据 |
+| `/exchange/trade-flow/{symbol}` | GET | 买卖压力（按交易所，含 CVD） |
+| `/exchange/basis/{symbol}` | GET | 现货-期货基差（按交易所） |
+| `/exchange/positioning/{symbol}` | GET | 多空比（按交易所） |
 
 ### 宏观数据
 
@@ -115,6 +118,34 @@ python main.py --modules api_server
 | `/sentiment/market-breadth` | GET | 市场广度快照（多空比、价格广度） |
 | `/sentiment/market-breadth/history` | GET | 市场广度历史序列 |
 | `/sentiment/summary` | GET | 情感 + 广度合并摘要 |
+
+### 数据质量 & 就绪度
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/data-quality/audit/latest` | GET | 最新数据质量审计快照（含解析后的 JSON 字段） |
+| `/data-quality/audit/history` | GET | 审计历史（摘要列，默认 48 条） |
+| `/data-quality/readiness/latest` | GET | 最新资产就绪度快照（含解析后的 bundle） |
+| `/data-quality/readiness/history` | GET | 就绪度趋势（默认 48 条） |
+| `/data-quality/market-structure` | GET | 最新市场结构快照 |
+| `/data-quality/collection-runs` | GET | 数据采集运行记录（支持 module/status 过滤） |
+
+### 特征标准化
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/features/composites/{symbol}` | GET | 单资产所有复合分数 |
+| `/features/composites?name=` | GET | 指定复合分数的跨资产排名 |
+| `/features/details/{symbol}` | GET | 单资产所有标准化特征明细 |
+| `/features/ranking?feature=` | GET | 指定特征的跨资产排名 |
+
+### 另类数据
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/alternative/developer/{symbol}` | GET | GitHub 开发者活动指标 |
+| `/alternative/stablecoin-flows` | GET | 稳定币供应/流动数据（支持 entity 过滤） |
+| `/alternative/factors` | GET | 通用因子探索（支持 category 过滤） |
 
 ### 时间切片（历史回溯）
 
@@ -433,11 +464,14 @@ api/
     ├── signals.py           # /signals — 综合量化信号（Bridge 核心）
     ├── technical.py         # /technical — 技术指标 + K线
     ├── risk.py              # /risk — 组合风险 / VaR / 波动率
-    ├── exchange.py          # /exchange — 资金费率 / 订单簿 / 对比
+    ├── exchange.py          # /exchange — 资金费率 / 订单簿 / 基差 / 多空比
     ├── macro.py             # /macro — 宏观因子快照
     ├── cross_asset.py       # /cross-asset — 跨资产分析
     ├── onchain.py           # /onchain — 链上数据
-    └── sentiment.py         # /sentiment — 新闻情感 + 市场广度
+    ├── sentiment.py         # /sentiment — 新闻情感 + 市场广度
+    ├── data_quality.py      # /data-quality — 审计 / 就绪度 / 市场结构
+    ├── features.py          # /features — 特征标准化复合分数与明细
+    └── alternative.py       # /alternative — 另类数据（开发者 / 稳定币 / 因子）
 ```
 
 ---

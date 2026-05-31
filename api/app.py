@@ -25,6 +25,9 @@ from api.routers.sentiment import router as sentiment_router
 from api.routers.signals import router as signals_router
 from api.routers.technical import router as technical_router
 from api.routers.time_slice import router as time_slice_router
+from api.routers.data_quality import router as data_quality_router
+from api.routers.features import router as features_router
+from api.routers.alternative import router as alternative_router
 from config.symbols import SYMBOL_UNIVERSE
 
 app = FastAPI(
@@ -55,6 +58,9 @@ app.include_router(macro_router)
 app.include_router(cross_asset_router)
 app.include_router(onchain_router)
 app.include_router(sentiment_router)
+app.include_router(data_quality_router)
+app.include_router(features_router)
+app.include_router(alternative_router)
 
 
 @app.get("/symbols", response_model=SymbolsResponse, tags=["symbols"])

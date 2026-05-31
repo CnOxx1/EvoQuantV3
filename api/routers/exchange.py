@@ -262,3 +262,96 @@ def get_liquidations(symbol: str) -> dict[str, Any]:
         "total_liquidation_value_usd": total_liq,
         "by_exchange": by_exchange,
     }
+
+
+@router.get("/trade-flow/{symbol}")
+def get_trade_flow(symbol: str) -> dict[str, Any]:
+    """返回指定资产的买卖压力（按交易所）。"""
+    normalized = _normalize_symbol(symbol)
+    if normalized not in TARGET_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol '{normalized}' not in universe.")
+
+    db = get_exchange_db()
+    rows = db.fetch_all(
+        """SELECT symbol, exchange, market_type, interval, open_time,
+                  trade_count, buy_notional, sell_notional,
+                  net_taker_notional, cvd,
+                  aggressive_buy_notional, aggressive_sell_notional
+           FROM latest_trade_flow_bars
+           WHERE symbol = ?
+           ORDER BY open_time DESC""",
+        (normalized,),
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No trade flow data found.")
+
+    by_exchange = {}
+    for r in rows:
+        ex = r["exchange"]
+        if ex not in by_exchange:
+            by_exchange[ex] = []
+        by_exchange[ex].append(dict(r))
+
+    return {"symbol": normalized, "exchange_count": len(by_exchange), "by_exchange": by_exchange}
+
+
+@router.get("/basis/{symbol}")
+def get_basis(symbol: str) -> dict[str, Any]:
+    """返回指定资产的现货-期货基差（按交易所）。"""
+    normalized = _normalize_symbol(symbol)
+    if normalized not in TARGET_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol '{normalized}' not in universe.")
+
+    db = get_exchange_db()
+    rows = db.fetch_all(
+        """SELECT symbol, exchange, timestamp, spot_price, mark_price,
+                  index_price, basis_bps, annualized_basis_bps, funding_rate
+           FROM latest_basis_snapshots
+           WHERE symbol = ?
+           ORDER BY timestamp DESC""",
+        (normalized,),
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No basis data found.")
+
+    by_exchange = {r["exchange"]: dict(r) for r in rows}
+    basis_values = [r["basis_bps"] for r in rows if r["basis_bps"] is not None]
+    avg_basis = sum(basis_values) / len(basis_values) if basis_values else None
+
+    return {
+        "symbol": normalized,
+        "avg_basis_bps": round(avg_basis, 2) if avg_basis else None,
+        "by_exchange": by_exchange,
+    }
+
+
+@router.get("/positioning/{symbol}")
+def get_positioning(symbol: str) -> dict[str, Any]:
+    """返回指定资产的多空比（按交易所）。"""
+    normalized = _normalize_symbol(symbol)
+    if normalized not in TARGET_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol '{normalized}' not in universe.")
+
+    db = get_exchange_db()
+    rows = db.fetch_all(
+        """SELECT symbol, exchange, timestamp, long_ratio, short_ratio,
+                  long_short_ratio, top_trader_long_ratio,
+                  top_trader_short_ratio
+           FROM latest_positioning_snapshots
+           WHERE symbol = ?
+           ORDER BY timestamp DESC""",
+        (normalized,),
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="No positioning data found.")
+
+    by_exchange = {r["exchange"]: dict(r) for r in rows}
+    ls_ratios = [r["long_short_ratio"] for r in rows if r["long_short_ratio"] is not None]
+    avg_ls = sum(ls_ratios) / len(ls_ratios) if ls_ratios else None
+
+    return {
+        "symbol": normalized,
+        "avg_long_short_ratio": round(avg_ls, 4) if avg_ls else None,
+        "by_exchange": by_exchange,
+    }
+
