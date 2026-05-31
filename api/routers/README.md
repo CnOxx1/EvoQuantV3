@@ -1,0 +1,56 @@
+# API 路由模块 `api/routers`
+
+## 模块定位
+
+`api/routers` 包含所有 FastAPI 路由定义，每个文件对应一个独立的功能域。路由只负责参数解析、调用底层服务和格式化响应，不包含业务逻辑。
+
+## 模块代码树
+
+```text
+api/routers/
+  __init__.py               # 包入口
+  _helpers.py               # 共享工具函数（符号归一化、DB 连接）
+  health.py                 # 健康检查
+  bundle.py                 # AI 主 bundle 聚合
+  domains.py                # 域级数据查询
+  time_slice.py             # 时间切片查询
+  technical.py              # 基础技术指标
+  technical_deep.py         # 深度技术指标分析
+  features.py               # 标准化特征
+  cross_asset.py            # 跨资产分析
+  cross_asset_history.py    # 跨资产历史序列
+  risk.py                   # 风险指标
+  portfolio_analytics.py    # 组合风险分析
+  signals.py                # 交易信号
+  sentiment.py              # 新闻情感
+  news_intel.py             # 新闻情报
+  macro.py                  # 宏观上下文
+  overview.py               # 市场总览
+  screener.py               # 资产筛选
+  market_info.py            # 市场信息
+  catalogs.py               # 目录查询
+  data_quality.py           # 数据质量
+  alternative.py            # 另类数据
+  analytics_ts.py           # 分析时序
+  aggregate.py              # 聚合端点
+  exchange.py               # 交易所数据
+  strategy.py               # 策略端点
+  monitor.py                # 监控端点
+  onchain.py                # 链上数据
+  derivatives.py            # 衍生品数据
+  orderflow.py              # 订单流
+  ai_context.py             # AI 上下文
+  microstructure.py         # 微观结构
+  factor_explorer.py        # 因子探索
+```
+
+## 路由注册
+
+所有路由在 `api/app.py` 中通过 `app.include_router()` 注册，每个路由带有独立的 `prefix` 和 `tags`。
+
+## 设计原则
+
+- 每个路由文件只做参数校验和响应格式化
+- 业务逻辑下沉到 `logic_layer` 或直接查询数据库
+- 共享的符号归一化、DB 获取等逻辑放在 `_helpers.py`
+- 所有端点返回 JSON，字段命名使用 snake_case
