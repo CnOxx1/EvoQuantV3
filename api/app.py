@@ -37,6 +37,11 @@ from api.routers.orderflow import router as orderflow_router
 from api.routers.derivatives import router as derivatives_router
 from api.routers.news_intel import router as news_intel_router
 from api.routers.ai_context import router as ai_context_router
+from api.routers.technical_deep import router as technical_deep_router
+from api.routers.portfolio_analytics import router as portfolio_analytics_router
+from api.routers.microstructure import router as microstructure_router
+from api.routers.cross_asset_history import router as cross_asset_history_router
+from api.routers.factor_explorer import router as factor_explorer_router
 from config.symbols import SYMBOL_UNIVERSE
 
 app = FastAPI(
@@ -79,6 +84,13 @@ app.include_router(orderflow_router)
 app.include_router(derivatives_router)
 app.include_router(news_intel_router)
 app.include_router(ai_context_router)
+
+# 第三批路由
+app.include_router(technical_deep_router)
+app.include_router(portfolio_analytics_router)
+app.include_router(microstructure_router)
+app.include_router(cross_asset_history_router)
+app.include_router(factor_explorer_router)
 
 
 @app.get("/symbols", response_model=SymbolsResponse, tags=["symbols"])
