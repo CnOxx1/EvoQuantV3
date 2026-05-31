@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import argparse
 import sys
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.cache import cache
 from api.models import SymbolInfo, SymbolsResponse
 from api.routers.bundle import router as bundle_router
 from api.routers.cross_asset import router as cross_asset_router
@@ -44,10 +46,20 @@ from api.routers.cross_asset_history import router as cross_asset_history_router
 from api.routers.factor_explorer import router as factor_explorer_router
 from config.symbols import SYMBOL_UNIVERSE
 
+
+@asynccontextmanager
+async def _lifespan(application: FastAPI):
+    """管理 API 生命周期：启动缓存清理线程，关闭时停止。"""
+    cache.start()
+    yield
+    cache.stop()
+
+
 app = FastAPI(
     title="EvoQuant Data API",
     description="AI 市场数据供给层对外接口 — 提供结构化、质量自知的市场信息",
     version="2.0.0",
+    lifespan=_lifespan,
 )
 
 app.add_middleware(

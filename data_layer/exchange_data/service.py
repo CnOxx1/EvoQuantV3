@@ -1871,6 +1871,126 @@ class ExchangeDataService:
         )
         self.collect_derivatives_once()
 
+    async def collect_once_async(self, include_backfill: bool = False):
+        """异步执行一次完整采集 — 利用 asyncio 并发调度独立的采集任务。
+
+        适用于 AsyncIOScheduler 模式，将互相独立的采集任务并发执行。
+        """
+        import asyncio
+
+        loop = asyncio.get_event_loop()
+
+        # market_info 必须先完成（后续采集依赖交易对信息）
+        await loop.run_in_executor(
+            None,
+            lambda: self._run_collection_job(
+                source_name="market_info",
+                job_name="market_info_async",
+                func=lambda: self.market_info_collector.collect(force=True),
+                metadata={"mode": "async", "force": True},
+            ),
+        )
+
+        # kline 采集
+        if include_backfill:
+            await loop.run_in_executor(None, self.kline_collector.backfill_all)
+        else:
+            kline_tasks = [
+                loop.run_in_executor(
+                    None,
+                    lambda tf=tf: self._run_collection_job(
+                        source_name=f"kline_{tf}",
+                        job_name="kline_async",
+                        func=lambda tf=tf: self.kline_collector.collect_timeframe(tf),
+                        metadata={"mode": "async", "timeframe": tf},
+                    ),
+                )
+                for tf in KLINE_TIMEFRAMES
+            ]
+            await asyncio.gather(*kline_tasks, return_exceptions=True)
+
+        # 独立采集任务并发执行
+        independent_tasks = [
+            loop.run_in_executor(
+                None,
+                lambda: self._run_collection_job(
+                    source_name="ticker",
+                    job_name="ticker_async",
+                    func=self.ticker_collector.collect,
+                    metadata={"mode": "async"},
+                ),
+            ),
+            loop.run_in_executor(
+                None,
+                lambda: self._run_collection_job(
+                    source_name="funding",
+                    job_name="funding_async",
+                    func=self.funding_collector.collect,
+                    metadata={"mode": "async"},
+                ),
+            ),
+            loop.run_in_executor(
+                None,
+                lambda: self._run_collection_job(
+                    source_name="orderbook",
+                    job_name="orderbook_async",
+                    func=self.orderbook_collector.collect,
+                    metadata={"mode": "async"},
+                ),
+            ),
+        ]
+        await asyncio.gather(*independent_tasks, return_exceptions=True)
+
+        # 衍生品采集并发
+        derivatives_tasks = [
+            loop.run_in_executor(
+                None,
+                lambda: self._run_collection_job(
+                    source_name="trade_flow",
+                    job_name="trade_flow_async",
+                    func=self.trades_collector.collect,
+                    metadata={"mode": "async"},
+                ),
+            ),
+            loop.run_in_executor(
+                None,
+                lambda: self._run_collection_job(
+                    source_name="open_interest",
+                    job_name="open_interest_async",
+                    func=self.open_interest_collector.collect,
+                    metadata={"mode": "async"},
+                ),
+            ),
+            loop.run_in_executor(
+                None,
+                lambda: self._run_collection_job(
+                    source_name="liquidations",
+                    job_name="liquidations_async",
+                    func=self.liquidations_collector.collect,
+                    metadata={"mode": "async"},
+                ),
+            ),
+            loop.run_in_executor(
+                None,
+                lambda: self._run_collection_job(
+                    source_name="long_short_ratio",
+                    job_name="long_short_ratio_async",
+                    func=self.long_short_ratio_collector.collect,
+                    metadata={"mode": "async"},
+                ),
+            ),
+            loop.run_in_executor(
+                None,
+                lambda: self._run_collection_job(
+                    source_name="basis",
+                    job_name="basis_async",
+                    func=self.basis_collector.collect,
+                    metadata={"mode": "async"},
+                ),
+            ),
+        ]
+        await asyncio.gather(*derivatives_tasks, return_exceptions=True)
+
     def collect_derivatives_once(self):
         """执行一次衍生品结构采集。"""
         self._run_collection_job(
@@ -3979,6 +4099,195 @@ class ExchangeDataService:
             seconds=cleanup_interval,
             id="exchange_cleanup",
             name="交易所高频快照清理",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(300, cleanup_interval),
+        )
+        return scheduler
+
+    def build_async_scheduler(self):
+        """构建 AsyncIOScheduler — 利用 asyncio 事件循环调度采集任务。"""
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        scheduler = AsyncIOScheduler()
+        market_info_interval = SCHEDULER_CONFIG["market_info_interval"]
+        kline_interval = SCHEDULER_CONFIG["kline_interval"]
+        ticker_interval = SCHEDULER_CONFIG["ticker_interval"]
+        funding_interval = SCHEDULER_CONFIG["funding_interval"]
+        cleanup_interval = EXCHANGE_DATA_RETENTION["cleanup_interval"]
+        trade_flow_interval = EXCHANGE_DERIVATIVES_CONFIG["trade_flow_interval_seconds"]
+        open_interest_interval = EXCHANGE_DERIVATIVES_CONFIG["open_interest_interval_seconds"]
+        liquidation_interval = EXCHANGE_DERIVATIVES_CONFIG["liquidation_interval_seconds"]
+        positioning_interval = EXCHANGE_DERIVATIVES_CONFIG["positioning_interval_seconds"]
+        basis_interval = EXCHANGE_DERIVATIVES_CONFIG["basis_interval_seconds"]
+
+        scheduler.add_job(
+            lambda: self._run_collection_job(
+                source_name="market_info",
+                job_name="market_info_async_scheduler",
+                func=lambda: self.market_info_collector.collect(force=False),
+                metadata={"mode": "async_scheduler", "force": False},
+            ),
+            "interval",
+            seconds=market_info_interval,
+            id="market_info",
+            name="交易对静态信息采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(60, market_info_interval),
+        )
+        for timeframe in KLINE_TIMEFRAMES:
+            interval_seconds = self.kline_collector.TIMEFRAME_INTERVAL_SECONDS.get(
+                timeframe, kline_interval,
+            )
+            scheduler.add_job(
+                lambda tf=timeframe: self._run_collection_job(
+                    source_name=f"kline_{tf}",
+                    job_name="kline_async_scheduler",
+                    func=lambda tf=tf: self.kline_collector.collect_timeframe(tf),
+                    metadata={"mode": "async_scheduler", "timeframe": tf},
+                ),
+                "interval",
+                seconds=interval_seconds,
+                id=f"kline_{timeframe}",
+                name=f"K线增量更新[{timeframe}](async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(60, interval_seconds),
+            )
+        scheduler.add_job(
+            lambda: self._run_collection_job(
+                source_name="ticker",
+                job_name="ticker_async_scheduler",
+                func=self.ticker_collector.collect,
+                metadata={"mode": "async_scheduler"},
+            ),
+            "interval",
+            seconds=ticker_interval,
+            id="ticker",
+            name="实时行情采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(15, ticker_interval * 3),
+        )
+        scheduler.add_job(
+            lambda: self._run_collection_job(
+                source_name="funding",
+                job_name="funding_async_scheduler",
+                func=self.funding_collector.collect,
+                metadata={"mode": "async_scheduler"},
+            ),
+            "interval",
+            seconds=funding_interval,
+            id="funding",
+            name="资金费率采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(60, funding_interval),
+        )
+
+        from config.symbols import SymbolTier, symbols_by_tier
+        from config.collection_tiers import get_orderbook_interval
+
+        for tier in SymbolTier:
+            tier_symbols = symbols_by_tier(tier)
+            tier_interval = get_orderbook_interval(tier)
+            scheduler.add_job(
+                lambda syms=tier_symbols: self._run_collection_job(
+                    source_name="orderbook",
+                    job_name="orderbook_tiered_async_scheduler",
+                    func=lambda syms=syms: self._collect_orderbooks_for_symbols(syms),
+                    metadata={"mode": "async_scheduler", "tier": tier.value},
+                ),
+                "interval",
+                seconds=tier_interval,
+                id=f"orderbook_{tier.value}",
+                name=f"深度数据采集[{tier.value}](async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(15, tier_interval * 3),
+            )
+        scheduler.add_job(
+            lambda: self._run_collection_job(
+                source_name="trade_flow",
+                job_name="trade_flow_async_scheduler",
+                func=self.trades_collector.collect,
+                metadata={"mode": "async_scheduler"},
+            ),
+            "interval",
+            seconds=trade_flow_interval,
+            id="trade_flow",
+            name="成交与主动买卖流采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(30, trade_flow_interval * 3),
+        )
+        scheduler.add_job(
+            lambda: self._run_collection_job(
+                source_name="open_interest",
+                job_name="open_interest_async_scheduler",
+                func=self.open_interest_collector.collect,
+                metadata={"mode": "async_scheduler"},
+            ),
+            "interval",
+            seconds=open_interest_interval,
+            id="open_interest",
+            name="持仓量采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(60, open_interest_interval * 3),
+        )
+        scheduler.add_job(
+            lambda: self._run_collection_job(
+                source_name="liquidations",
+                job_name="liquidations_async_scheduler",
+                func=self.liquidations_collector.collect,
+                metadata={"mode": "async_scheduler"},
+            ),
+            "interval",
+            seconds=liquidation_interval,
+            id="liquidations",
+            name="清算聚合采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(60, liquidation_interval * 3),
+        )
+        scheduler.add_job(
+            lambda: self._run_collection_job(
+                source_name="long_short_ratio",
+                job_name="long_short_ratio_async_scheduler",
+                func=self.long_short_ratio_collector.collect,
+                metadata={"mode": "async_scheduler"},
+            ),
+            "interval",
+            seconds=positioning_interval,
+            id="long_short_ratio",
+            name="多空比采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(60, positioning_interval * 3),
+        )
+        scheduler.add_job(
+            lambda: self._run_collection_job(
+                source_name="basis",
+                job_name="basis_async_scheduler",
+                func=self.basis_collector.collect,
+                metadata={"mode": "async_scheduler"},
+            ),
+            "interval",
+            seconds=basis_interval,
+            id="basis",
+            name="basis 计算(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(60, basis_interval * 3),
+        )
+        scheduler.add_job(
+            self.cleanup_historical_data,
+            "interval",
+            seconds=cleanup_interval,
+            id="exchange_cleanup",
+            name="交易所高频快照清理(async)",
             coalesce=True,
             max_instances=1,
             misfire_grace_time=max(300, cleanup_interval),

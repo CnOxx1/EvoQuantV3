@@ -22,10 +22,26 @@ logic_layer/logic_pipeline/
 | 阶段 | 模块 | 依赖 |
 | --- | --- | --- |
 | Phase 1 | `technical_indicators` | 原始 klines |
-| Phase 2 | `feature_standardization`, `cross_asset_analysis`, `exchange_comparison`, `macro_context`, `news_sentiment` | Phase 1 或原始数据 |
+| Phase 2 | `feature_standardization`, `cross_asset_analysis`, `exchange_comparison`, `macro_context`, `news_sentiment`, `market_structure` | Phase 1 或原始数据 |
 | Phase 3 | `portfolio_risk`, `market_breadth`, `asset_readiness` | Phase 2 |
 | Phase 4 | `ai_market_context` | Phase 3（最终聚合） |
 | Phase 5 | `pipeline_latency` | 只读监控 |
+
+## Phase 2 并行执行
+
+Phase 2 的 6 个模块互相独立，使用 `concurrent.futures.ThreadPoolExecutor` 并行执行：
+
+- 默认 `max_workers=4`，可通过环境变量 `LOGIC_PIPELINE_PHASE2_WORKERS` 调整
+- 单个模块失败不影响其他模块（错误隔离）
+- 相比串行执行，Phase 2 整体耗时可减少 40-60%
+
+Phase 1/3/4/5 保持串行执行（有依赖关系或只有 1 个任务）。
+
+## API 缓存失效
+
+管道每次全链路执行完毕后，会自动调用 `api.cache.invalidate_all()` 清空 API 层的 TTL 内存缓存，保证下游消费者在管道刷新后能立即获取最新数据。
+
+如果 API 进程未启动或缓存模块不可用，失效操作会静默跳过。
 
 ## 运行方式
 

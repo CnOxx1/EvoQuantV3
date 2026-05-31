@@ -377,7 +377,7 @@ data_layer/
 - `once`
   - 执行一次完整采集
 - `scheduler`
-  - 按调度配置长期运行
+  - 按调度配置长期运行（默认 `BlockingScheduler`，加 `--async-scheduler` 切换为 `AsyncIOScheduler`）
 - `funding-backfill`
   - 单独回填历史资金费率
 - `context-burst`
@@ -386,6 +386,19 @@ data_layer/
   - 单独执行一轮衍生品结构采集
 - `liquidations-repair`
   - 基于 `raw_payload_json` 修复旧版 `liquidations` 把未知字段写成 `0` 的历史污染
+
+### 异步调度模式（推荐）
+
+`scheduler` 模式支持通过 `--async-scheduler` 参数切换为 `AsyncIOScheduler`：
+
+```bash
+proxychains4 python -m data_layer.exchange_data.runner --mode scheduler --async-scheduler
+```
+
+优势：
+- 利用 asyncio 事件循环，采集任务间无阻塞等待
+- 配合 `collect_once_async()` 方法，独立采集任务并发执行
+- 适合高频采集场景（ticker 5s / orderbook 3s），降低调度延迟
 
 ## 推荐开发阶段执行顺序
 

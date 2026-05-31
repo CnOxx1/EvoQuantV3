@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -26,13 +27,16 @@ DEFAULT_INTERVAL_SECONDS = int(
     os.environ.get("LOGIC_PIPELINE_INTERVAL_SECONDS", "300")
 )
 
+# Phase 2 并行线程数
+PHASE2_MAX_WORKERS = int(os.environ.get("LOGIC_PIPELINE_PHASE2_WORKERS", "4"))
+
 
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def _run_phase(phase_name: str, tasks: list[tuple[str, callable]]) -> dict[str, str]:
-    """执行一个阶段内的所有任务，返回 {module_name: status}。"""
+    """执行一个阶段内的所有任务（串行），返回 {module_name: status}。"""
     results = {}
     for module_name, task_fn in tasks:
         started = time.monotonic()
@@ -52,6 +56,47 @@ def _run_phase(phase_name: str, tasks: list[tuple[str, callable]]) -> dict[str, 
             )
             results[module_name] = f"error: {type(exc).__name__}"
     return results
+
+
+def _run_phase_parallel(
+    phase_name: str,
+    tasks: list[tuple[str, callable]],
+    max_workers: int = PHASE2_MAX_WORKERS,
+) -> dict[str, str]:
+    """并行执行一个阶段内的所有任务，返回 {module_name: status}。
+
+    单个模块失败不影响其他模块。
+    """
+    results = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_name = {}
+        for module_name, task_fn in tasks:
+            future = executor.submit(_execute_task, phase_name, module_name, task_fn)
+            future_to_name[future] = module_name
+        for future in as_completed(future_to_name):
+            module_name = future_to_name[future]
+            results[module_name] = future.result()
+    return results
+
+
+def _execute_task(phase_name: str, module_name: str, task_fn: callable) -> str:
+    """执行单个任务并返回状态字符串。"""
+    started = time.monotonic()
+    try:
+        task_fn()
+        elapsed = time.monotonic() - started
+        logger.info(
+            "逻辑管道 [{}] {} 完成 ({:.1f}s)",
+            phase_name, module_name, elapsed,
+        )
+        return "success"
+    except Exception as exc:
+        elapsed = time.monotonic() - started
+        logger.error(
+            "逻辑管道 [{}] {} 失败 ({:.1f}s): {}",
+            phase_name, module_name, elapsed, exc,
+        )
+        return f"error: {type(exc).__name__}"
 
 
 def run_full_pipeline() -> dict[str, object]:
@@ -125,7 +170,7 @@ def run_full_pipeline() -> dict[str, object]:
         finally:
             svc.close()
 
-    results = _run_phase("Phase2", [
+    results = _run_phase_parallel("Phase2", [
         ("feature_standardization", _feature_standardization),
         ("cross_asset_analysis", _cross_asset_analysis),
         ("exchange_comparison", _exchange_comparison),
@@ -214,6 +259,9 @@ def run_full_pipeline() -> dict[str, object]:
         (pipeline_end - pipeline_start).total_seconds(),
     )
 
+    # 管道完成后清空 API 缓存，保证数据一致性
+    _invalidate_api_cache()
+
     return {
         "started_at": pipeline_start.isoformat(),
         "finished_at": pipeline_end.isoformat(),
@@ -221,6 +269,17 @@ def run_full_pipeline() -> dict[str, object]:
         "total_count": total_count,
         "results": all_results,
     }
+
+
+def _invalidate_api_cache() -> None:
+    """通知 API 缓存层清空全部缓存。"""
+    try:
+        from api.cache import cache
+        cleared = cache.invalidate_all()
+        if cleared:
+            logger.info("已清空 API 缓存 ({} 条)", cleared)
+    except Exception as exc:
+        logger.debug("API 缓存清空跳过（API 未启动或导入失败）: {}", exc)
 
 
 def build_scheduler(interval_seconds: int | None = None) -> BlockingScheduler:

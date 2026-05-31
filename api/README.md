@@ -766,6 +766,54 @@ api/
 3. **延迟加载** — 数据库连接和服务实例在首次请求时才初始化
 4. **独立进程** — 不影响数据采集管道运行
 5. **容错** — 单域失败不影响其他域返回
+6. **TTL 缓存** — 高频只读端点做短期内存缓存，减少重复 SQLite 查询
+
+---
+
+## API 响应缓存
+
+API 层内置轻量级 TTL 内存缓存（`api/cache.py`），对高频只读端点做短期缓存，避免逻辑管道刷新间隔内的重复查库。
+
+### 缓存策略
+
+| 端点类别 | TTL | 缓存 Key 模式 |
+|---|---|---|
+| `/bundle/*` | 60s | `bundle:{path}` |
+| `/technical/*` | 60s | `tech:{path}:{params}` |
+| `/technical-deep/*` | 60s | `tech_deep:{path}:{params}` |
+| `/features/*` | 120s | `features:{path}:{params}` |
+| `/cross-asset/*` | 120s | `cross:{path}:{params}` |
+| `/risk/*` | 120s | `risk:{path}:{params}` |
+| `/macro/*` | 300s | `macro:{path}:{params}` |
+| `/health` | 10s | `health:{path}` |
+| `/symbols` | 3600s | `symbols:{path}` |
+
+### 缓存失效
+
+- 逻辑管道每次全链路执行完毕后自动调用 `cache.invalidate_all()` 清空全部缓存
+- 保证管道刷新后下游消费者立即获取最新数据
+- 缓存命中时响应头包含 `X-Cache: HIT`
+
+### 使用方式
+
+在 router 端点上添加 `@cached_response` 装饰器：
+
+```python
+from fastapi import Request
+from api.routers._helpers import cached_response
+
+@router.get("/bundle/{entity}")
+@cached_response("bundle", ttl=60)
+def get_bundle(entity: str, request: Request):
+    ...
+```
+
+### 实现细节
+
+- 基于 `time.monotonic()` + dict，无外部依赖
+- 线程安全（threading.Lock）
+- 惰性清理（get 时检查过期）+ 后台线程定期清理（30s 间隔）
+- 通过 FastAPI lifespan 管理启停
 
 ---
 

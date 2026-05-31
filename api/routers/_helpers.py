@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import functools
+import hashlib
 import math
 from typing import Any
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
 
 
 def _normalize_symbol(symbol: str) -> str:
@@ -118,3 +123,86 @@ def _detect_divergence(series_a: list[float], series_b: list[float]) -> dict:
         div_type = "none"
     strength = abs(a_trend - b_trend) / (abs(a_trend) + abs(b_trend) + 1e-9)
     return {"divergence": div_type, "strength": round(strength, 4)}
+
+
+def cached_response(prefix: str, ttl: float = 60.0):
+    """装饰器：对 FastAPI 端点做 TTL 缓存。
+
+    用法::
+
+        @router.get("/bundle/{entity}")
+        @cached_response("bundle", ttl=60)
+        def get_bundle(entity: str, request: Request):
+            ...
+
+    缓存 key = prefix:path:query_hash
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            request: Request | None = kwargs.get("request")
+            if request is None:
+                for arg in args:
+                    if isinstance(arg, Request):
+                        request = arg
+                        break
+            cache_key = _build_cache_key(prefix, request)
+            from api.cache import cache
+
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return JSONResponse(
+                    content=cached,
+                    headers={"X-Cache": "HIT"},
+                )
+            result = await func(*args, **kwargs) if _is_coroutine(func) else func(*args, **kwargs)
+            cache.set(cache_key, result, ttl)
+            return result
+
+        @functools.wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            request: Request | None = kwargs.get("request")
+            if request is None:
+                for arg in args:
+                    if isinstance(arg, Request):
+                        request = arg
+                        break
+            cache_key = _build_cache_key(prefix, request)
+            from api.cache import cache
+
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return JSONResponse(
+                    content=cached,
+                    headers={"X-Cache": "HIT"},
+                )
+            result = func(*args, **kwargs)
+            cache.set(cache_key, result, ttl)
+            return result
+
+        import asyncio
+
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        return sync_wrapper
+
+    return decorator
+
+
+def _is_coroutine(func) -> bool:
+    import asyncio
+    return asyncio.iscoroutinefunction(func)
+
+
+def _build_cache_key(prefix: str, request: Request | None) -> str:
+    """从请求构建缓存 key。"""
+    if request is None:
+        return prefix
+    path = request.url.path
+    query = str(sorted(request.query_params.items()))
+    query_hash = hashlib.md5(query.encode()).hexdigest()[:8] if query != "[]" else ""
+    parts = [prefix, path]
+    if query_hash:
+        parts.append(query_hash)
+    return ":".join(parts)
