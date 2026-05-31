@@ -1176,5 +1176,37 @@ class MacroDataService:
         )
         return scheduler
 
+    def build_async_scheduler(
+        self,
+        factor_ids: list[str] | None = None,
+    ):
+        """构建 AsyncIOScheduler — 利用 asyncio 事件循环调度采集任务。"""
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        scheduler = AsyncIOScheduler()
+        scheduler.add_job(
+            self._run_market_job,
+            "interval",
+            seconds=MACRO_CONFIG["market_interval_seconds"],
+            id="macro_market",
+            name="宏观市场行情采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(60, MACRO_CONFIG["market_interval_seconds"]),
+            kwargs={"factor_ids": factor_ids},
+        )
+        scheduler.add_job(
+            self._run_rate_job,
+            "interval",
+            seconds=MACRO_CONFIG["level_interval_seconds"],
+            id="macro_rates",
+            name="宏观利率因子采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(300, MACRO_CONFIG["level_interval_seconds"]),
+            kwargs={"factor_ids": factor_ids},
+        )
+        return scheduler
+
     def close(self):
         self.db.close()

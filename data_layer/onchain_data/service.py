@@ -1735,5 +1735,209 @@ class OnchainDataService:
             )
         return scheduler
 
+    def build_async_scheduler(
+        self,
+        entity_keys: list[str] | None = None,
+        interval: str | None = None,
+        lookback_hours: int | None = None,
+    ):
+        """构建 AsyncIOScheduler — 利用 asyncio 事件循环调度采集任务。"""
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        scheduler = AsyncIOScheduler()
+        enabled_sources = {
+            source.source_name
+            for source in load_onchain_sources()
+        }
+
+        if "exchange_flow" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["exchange_flow_interval_seconds"],
+                id="onchain_exchange_flow",
+                name="链上交易所净流采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["exchange_flow_interval_seconds"]),
+                kwargs={
+                    "source_name": "exchange_flow",
+                    "entity_keys": entity_keys,
+                    "interval": interval or ONCHAIN_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "whale_activity" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["whale_activity_interval_seconds"],
+                id="onchain_whale_activity",
+                name="链上鲸鱼异动采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["whale_activity_interval_seconds"]),
+                kwargs={
+                    "source_name": "whale_activity",
+                    "entity_keys": entity_keys,
+                    "interval": interval or ONCHAIN_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "stablecoin_flow" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["stablecoin_flow_interval_seconds"],
+                id="onchain_stablecoin_flow",
+                name="稳定币流入交易所采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["stablecoin_flow_interval_seconds"]),
+                kwargs={
+                    "source_name": "stablecoin_flow",
+                    "entity_keys": entity_keys,
+                    "interval": interval or ONCHAIN_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "bridge_netflow" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["bridge_netflow_interval_seconds"],
+                id="onchain_bridge_netflow",
+                name="桥资金净流采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["bridge_netflow_interval_seconds"]),
+                kwargs={
+                    "source_name": "bridge_netflow",
+                    "entity_keys": entity_keys,
+                    "interval": interval or ONCHAIN_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "exchange_reserve" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["exchange_reserve_interval_seconds"],
+                id="onchain_exchange_reserve",
+                name="交易所储备采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["exchange_reserve_interval_seconds"]),
+                kwargs={
+                    "source_name": "exchange_reserve",
+                    "entity_keys": entity_keys,
+                    "interval": interval or ONCHAIN_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "protocol_tvl" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["protocol_tvl_interval_seconds"],
+                id="onchain_protocol_tvl",
+                name="协议 TVL 采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["protocol_tvl_interval_seconds"]),
+                kwargs={
+                    "source_name": "protocol_tvl",
+                    "entity_keys": entity_keys,
+                    "interval": interval or ONCHAIN_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "network_usage" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["network_usage_interval_seconds"],
+                id="onchain_network_usage",
+                name="链使用率采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["network_usage_interval_seconds"]),
+                kwargs={
+                    "source_name": "network_usage",
+                    "entity_keys": entity_keys,
+                    "interval": interval or ONCHAIN_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "staking_flow" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["staking_flow_interval_seconds"],
+                id="onchain_staking_flow",
+                name="质押净流采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["staking_flow_interval_seconds"]),
+                kwargs={
+                    "source_name": "staking_flow",
+                    "entity_keys": entity_keys,
+                    "interval": interval or ONCHAIN_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "market_sentiment" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["market_sentiment_interval_seconds"],
+                id="onchain_market_sentiment",
+                name="市场情绪指数采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["market_sentiment_interval_seconds"]),
+                kwargs={
+                    "source_name": "market_sentiment",
+                    "entity_keys": entity_keys,
+                    "interval": interval or "1d",
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "global_market" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["global_market_interval_seconds"],
+                id="onchain_global_market",
+                name="全球市场数据采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["global_market_interval_seconds"]),
+                kwargs={
+                    "source_name": "global_market",
+                    "entity_keys": entity_keys,
+                    "interval": interval or "1h",
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        if "defi_yields" in enabled_sources:
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=ONCHAIN_CONFIG["defi_yields_interval_seconds"],
+                id="onchain_defi_yields",
+                name="DeFi 收益率采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, ONCHAIN_CONFIG["defi_yields_interval_seconds"]),
+                kwargs={
+                    "source_name": "defi_yields",
+                    "entity_keys": entity_keys,
+                    "interval": interval or "1d",
+                    "lookback_hours": lookback_hours or ONCHAIN_CONFIG["default_lookback_hours"],
+                },
+            )
+        return scheduler
+
     def close(self):
         self.db.close()

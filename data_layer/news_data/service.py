@@ -1318,5 +1318,42 @@ class NewsDataService:
         )
         return scheduler
 
+    def build_async_scheduler(
+        self,
+        hours: int | None = None,
+        limit_per_source: int | None = None,
+        source_names: list[str] | None = None,
+        categories: list[str] | None = None,
+        tags: list[str] | None = None,
+        source_groups: list[str] | None = None,
+    ):
+        """构建 AsyncIOScheduler — 利用 asyncio 事件循环调度采集任务。"""
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        scheduler = AsyncIOScheduler()
+        scheduler.add_job(
+            self._run_scheduled_collect,
+            "interval",
+            seconds=NEWS_CONFIG["interval_seconds"],
+            id="news_articles",
+            name="新闻数据采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(60, NEWS_CONFIG["interval_seconds"]),
+            kwargs={
+                "hours": hours if hours is not None else NEWS_CONFIG["lookback_hours"],
+                "limit_per_source": (
+                    limit_per_source
+                    if limit_per_source is not None
+                    else NEWS_CONFIG["max_items_per_source"]
+                ),
+                "source_names": source_names,
+                "categories": categories,
+                "tags": tags,
+                "source_groups": source_groups,
+            },
+        )
+        return scheduler
+
     def close(self):
         self.db.close()

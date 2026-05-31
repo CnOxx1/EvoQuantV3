@@ -1316,5 +1316,38 @@ class EventCalendarDataService:
         )
         return scheduler
 
+    def build_async_scheduler(
+        self,
+        lookahead_days: int | None = None,
+        source_names: list[str] | None = None,
+        event_types: list[str] | None = None,
+        symbols: list[str] | None = None,
+    ):
+        """构建 AsyncIOScheduler — 利用 asyncio 事件循环调度采集任务。"""
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        scheduler = AsyncIOScheduler()
+        scheduler.add_job(
+            self._run_scheduled_collect,
+            "interval",
+            seconds=EVENT_CALENDAR_CONFIG["interval_seconds"],
+            id="event_calendar_events",
+            name="事件日历采集(async)",
+            coalesce=True,
+            max_instances=1,
+            misfire_grace_time=max(300, EVENT_CALENDAR_CONFIG["interval_seconds"]),
+            kwargs={
+                "lookahead_days": (
+                    lookahead_days
+                    if lookahead_days is not None
+                    else EVENT_CALENDAR_CONFIG["lookahead_days"]
+                ),
+                "source_names": source_names,
+                "event_types": event_types,
+                "symbols": symbols,
+            },
+        )
+        return scheduler
+
     def close(self):
         self.db.close()

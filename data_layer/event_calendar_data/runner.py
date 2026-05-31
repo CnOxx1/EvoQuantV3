@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import json
 import signal
 import sys
@@ -55,6 +56,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-initial-run",
         action="store_true",
         help="scheduler 模式下跳过启动时的首轮采集",
+    )
+    parser.add_argument(
+        "--async-scheduler",
+        action="store_true",
+        help="scheduler 模式下使用 AsyncIOScheduler（推荐）",
     )
     parser.add_argument(
         "--list-sources",
@@ -187,8 +193,16 @@ def main():
             symbols=symbols,
         )
 
+    if args.async_scheduler:
+        _run_async_scheduler(service, args.lookahead_days, source_names, event_types, symbols)
+    else:
+        _run_blocking_scheduler(service, args.lookahead_days, source_names, event_types, symbols)
+
+
+def _run_blocking_scheduler(service, lookahead_days, source_names, event_types, symbols):
+    """使用 BlockingScheduler 运行（传统模式）。"""
     scheduler = service.build_scheduler(
-        lookahead_days=args.lookahead_days,
+        lookahead_days=lookahead_days,
         source_names=source_names,
         event_types=event_types,
         symbols=symbols,
@@ -206,11 +220,44 @@ def main():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    logger.info("event_calendar_data 调度器已启动，按 Ctrl+C 停止")
+    logger.info("event_calendar_data 调度器已启动（BlockingScheduler），按 Ctrl+C 停止")
     try:
         scheduler.start()
     finally:
         service.close()
+
+
+def _run_async_scheduler(service, lookahead_days, source_names, event_types, symbols):
+    """使用 AsyncIOScheduler 运行 — 利用 asyncio 事件循环。"""
+    scheduler = service.build_async_scheduler(
+        lookahead_days=lookahead_days,
+        source_names=source_names,
+        event_types=event_types,
+        symbols=symbols,
+    )
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    def shutdown(signum, frame):
+        logger.info("收到关闭信号，正在停止 event_calendar_data 异步调度器...")
+        try:
+            scheduler.shutdown(wait=False)
+        except Exception:
+            logger.debug("调度器已经停止，无需重复关闭")
+        loop.call_soon_threadsafe(loop.stop)
+
+    signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGTERM, shutdown)
+
+    scheduler.start()
+    logger.info("event_calendar_data 异步调度器已启动（AsyncIOScheduler），按 Ctrl+C 停止")
+    try:
+        loop.run_forever()
+    finally:
+        scheduler.shutdown(wait=False)
+        service.close()
+        loop.close()
 
 
 if __name__ == "__main__":

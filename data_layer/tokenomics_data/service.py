@@ -1469,5 +1469,51 @@ class TokenomicsDataService:
             )
         return scheduler
 
+    def build_async_scheduler(
+        self,
+        entity_keys: list[str] | None = None,
+        interval: str | None = None,
+        lookback_hours: int | None = None,
+    ):
+        """构建 AsyncIOScheduler — 利用 asyncio 事件循环调度采集任务。"""
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        scheduler = AsyncIOScheduler()
+        enabled_sources = {source.source_name for source in load_tokenomics_sources()}
+        source_config = {
+            "circulating_supply": TOKENOMICS_CONFIG["circulating_supply_interval_seconds"],
+            "unlock_schedule": TOKENOMICS_CONFIG["unlock_schedule_interval_seconds"],
+            "unlock_realization": TOKENOMICS_CONFIG["unlock_realization_interval_seconds"],
+            "treasury_wallet_flow": TOKENOMICS_CONFIG["treasury_wallet_flow_interval_seconds"],
+            "staking_ratio": TOKENOMICS_CONFIG["staking_ratio_interval_seconds"],
+        }
+        source_titles = {
+            "circulating_supply": "流通盘采集(async)",
+            "unlock_schedule": "未来解锁计划采集(async)",
+            "unlock_realization": "已实现解锁采集(async)",
+            "treasury_wallet_flow": "基金会钱包流向采集(async)",
+            "staking_ratio": "质押率采集(async)",
+        }
+        for source_name, interval_seconds in source_config.items():
+            if source_name not in enabled_sources:
+                continue
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=interval_seconds,
+                id=f"tokenomics_{source_name}",
+                name=source_titles[source_name],
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, interval_seconds),
+                kwargs={
+                    "source_name": source_name,
+                    "entity_keys": entity_keys,
+                    "interval": interval or TOKENOMICS_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or TOKENOMICS_CONFIG["default_lookback_hours"],
+                },
+            )
+        return scheduler
+
     def close(self):
         self.db.close()

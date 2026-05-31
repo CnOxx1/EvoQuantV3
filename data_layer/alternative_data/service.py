@@ -1696,5 +1696,72 @@ class AlternativeDataService:
             )
         return scheduler
 
+    def build_async_scheduler(
+        self,
+        source_names: list[str] | None = None,
+        entity_keys: list[str] | None = None,
+    ):
+        """构建 AsyncIOScheduler — 利用 asyncio 事件循环调度采集任务。"""
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        requested_sources = self._normalize_sources(source_names)
+        entity_keys = self._normalize_entity_keys(entity_keys)
+        scheduler = AsyncIOScheduler()
+
+        if self._should_run_source(
+            requested_sources,
+            "google_trends",
+            ALTERNATIVE_CONFIG["enable_google_trends"],
+        ):
+            scheduler.add_job(
+                self._run_google_trends_job,
+                "interval",
+                seconds=ALTERNATIVE_CONFIG["google_trends_interval_seconds"],
+                id="alternative_google_trends",
+                name="Google Trends 搜索热度采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(
+                    300,
+                    ALTERNATIVE_CONFIG["google_trends_interval_seconds"],
+                ),
+                kwargs={"entity_keys": entity_keys},
+            )
+
+        if self._should_run_source(
+            requested_sources,
+            "github",
+            ALTERNATIVE_CONFIG["enable_github"],
+        ):
+            scheduler.add_job(
+                self._run_github_job,
+                "interval",
+                seconds=ALTERNATIVE_CONFIG["github_interval_seconds"],
+                id="alternative_github",
+                name="GitHub 开发者活跃度采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(300, ALTERNATIVE_CONFIG["github_interval_seconds"]),
+                kwargs={"entity_keys": entity_keys},
+            )
+
+        if self._should_run_source(
+            requested_sources,
+            "stablecoin",
+            ALTERNATIVE_CONFIG["enable_stablecoin"],
+        ):
+            scheduler.add_job(
+                self._run_stablecoin_job,
+                "interval",
+                seconds=ALTERNATIVE_CONFIG["stablecoin_interval_seconds"],
+                id="alternative_stablecoin",
+                name="稳定币供给与链分布采集(async)",
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(300, ALTERNATIVE_CONFIG["stablecoin_interval_seconds"]),
+                kwargs={"entity_keys": entity_keys},
+            )
+        return scheduler
+
     def close(self):
         self.db.close()

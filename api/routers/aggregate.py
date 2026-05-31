@@ -115,16 +115,26 @@ def multi_asset_compare(
         raise HTTPException(status_code=400, detail="需要 2-5 个符号")
 
     exchange_db = get_exchange_db()
+
+    # Batch query: tickers
+    placeholders = ",".join("?" for _ in sym_list)
+    ticker_rows = exchange_db.fetch_all(
+        f"SELECT * FROM latest_tickers WHERE symbol IN ({placeholders}) AND exchange = 'binance'",
+        tuple(sym_list),
+    )
+    ticker_map = {row["symbol"]: row for row in ticker_rows}
+
+    # Batch query: funding rates
+    funding_rows = exchange_db.fetch_all(
+        f"SELECT symbol, funding_rate FROM latest_funding_rates WHERE symbol IN ({placeholders}) AND exchange = 'binance'",
+        tuple(sym_list),
+    )
+    funding_map = {row["symbol"]: row for row in funding_rows}
+
     results = []
     for sym in sym_list:
-        ticker = exchange_db.fetch_one(
-            "SELECT * FROM latest_tickers WHERE symbol = ? AND exchange = 'binance'",
-            (sym,),
-        )
-        funding = exchange_db.fetch_one(
-            "SELECT funding_rate FROM latest_funding_rates WHERE symbol = ? AND exchange = 'binance'",
-            (sym,),
-        )
+        ticker = ticker_map.get(sym)
+        funding = funding_map.get(sym)
         results.append({
             "symbol": sym,
             "price": _safe_float(ticker["last_price"]) if ticker else None,
@@ -155,15 +165,24 @@ def multi_asset_compare(
 def sector_snapshot() -> dict[str, Any]:
     """板块聚合视图（领涨/领跌、板块统计、轮动阶段）。"""
     exchange_db = get_exchange_db()
-    sectors: dict[str, list[dict]] = {}
 
+    # Batch query: all sector symbols in one query
+    all_sector_syms = []
+    for syms in SECTOR_DEFINITIONS.values():
+        all_sector_syms.extend(syms)
+    all_sector_syms = list(set(all_sector_syms))
+    placeholders = ",".join("?" for _ in all_sector_syms)
+    ticker_rows = exchange_db.fetch_all(
+        f"SELECT symbol, last_price, change_24h, quote_volume_24h FROM latest_tickers WHERE symbol IN ({placeholders}) AND exchange = 'binance'",
+        tuple(all_sector_syms),
+    )
+    ticker_map = {row["symbol"]: row for row in ticker_rows}
+
+    sectors: dict[str, list[dict]] = {}
     for sector_name, syms in SECTOR_DEFINITIONS.items():
         sector_assets = []
         for sym in syms:
-            ticker = exchange_db.fetch_one(
-                "SELECT last_price, change_24h, quote_volume_24h FROM latest_tickers WHERE symbol = ? AND exchange = 'binance'",
-                (sym,),
-            )
+            ticker = ticker_map.get(sym)
             if ticker:
                 sector_assets.append({
                     "symbol": sym,
@@ -200,15 +219,23 @@ def derivatives_heatmap() -> dict[str, Any]:
     exchange_db = get_exchange_db()
     items = []
 
+    # Batch query: all funding rates + all OI in 2 queries instead of 2N
+    placeholders = ",".join("?" for _ in TARGET_SYMBOLS)
+    funding_rows = exchange_db.fetch_all(
+        f"SELECT symbol, funding_rate, mark_price, index_price FROM latest_funding_rates WHERE symbol IN ({placeholders}) AND exchange = 'binance'",
+        tuple(TARGET_SYMBOLS),
+    )
+    funding_map = {row["symbol"]: row for row in funding_rows}
+
+    oi_rows = exchange_db.fetch_all(
+        f"SELECT symbol, open_interest_contracts FROM latest_open_interest_snapshots WHERE symbol IN ({placeholders}) AND exchange = 'binance'",
+        tuple(TARGET_SYMBOLS),
+    )
+    oi_map = {row["symbol"]: row for row in oi_rows}
+
     for sym in TARGET_SYMBOLS:
-        funding = exchange_db.fetch_one(
-            "SELECT funding_rate, mark_price, index_price FROM latest_funding_rates WHERE symbol = ? AND exchange = 'binance'",
-            (sym,),
-        )
-        oi_row = exchange_db.fetch_one(
-            "SELECT open_interest_contracts FROM latest_open_interest_snapshots WHERE symbol = ? AND exchange = 'binance'",
-            (sym,),
-        )
+        funding = funding_map.get(sym)
+        oi_row = oi_map.get(sym)
         rate = _safe_float(funding["funding_rate"]) if funding else None
         mark = _safe_float(funding["mark_price"]) if funding else None
         index_p = _safe_float(funding["index_price"]) if funding else None

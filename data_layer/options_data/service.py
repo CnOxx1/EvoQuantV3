@@ -2613,5 +2613,57 @@ class OptionsDataService:
             )
         return scheduler
 
+    def build_async_scheduler(
+        self,
+        entity_keys: list[str] | None = None,
+        interval: str | None = None,
+        lookback_hours: int | None = None,
+    ):
+        """构建 AsyncIOScheduler — 利用 asyncio 事件循环调度采集任务。"""
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        scheduler = AsyncIOScheduler()
+        enabled_sources = {source.source_name for source in load_options_sources()}
+        source_config = {
+            "vol_surface": OPTIONS_CONFIG["vol_surface_interval_seconds"],
+            "relative_value": OPTIONS_CONFIG["relative_value_interval_seconds"],
+            "strike_concentration": OPTIONS_CONFIG["strike_concentration_interval_seconds"],
+            "gamma_exposure": OPTIONS_CONFIG["gamma_exposure_interval_seconds"],
+            "flow_activity": OPTIONS_CONFIG["flow_activity_interval_seconds"],
+            "expiry_structure": OPTIONS_CONFIG["expiry_structure_interval_seconds"],
+            "hedge_pressure": OPTIONS_CONFIG["hedge_pressure_interval_seconds"],
+            "positioning": OPTIONS_CONFIG["positioning_interval_seconds"],
+        }
+        source_titles = {
+            "vol_surface": "期权隐含波动率曲面采集(async)",
+            "relative_value": "期权 IV 相对 realized vol 采集(async)",
+            "strike_concentration": "期权墙位与行权价拥挤度采集(async)",
+            "gamma_exposure": "期权 gamma regime 采集(async)",
+            "flow_activity": "期权增量成交流采集(async)",
+            "expiry_structure": "期权到期桶期限结构采集(async)",
+            "hedge_pressure": "期权动态对冲压力采集(async)",
+            "positioning": "期权持仓结构采集(async)",
+        }
+        for source_name, interval_seconds in source_config.items():
+            if source_name not in enabled_sources:
+                continue
+            scheduler.add_job(
+                self._run_source_job,
+                "interval",
+                seconds=interval_seconds,
+                id=f"options_{source_name}",
+                name=source_titles[source_name],
+                coalesce=True,
+                max_instances=1,
+                misfire_grace_time=max(120, interval_seconds),
+                kwargs={
+                    "source_name": source_name,
+                    "entity_keys": self._normalize_entity_keys(entity_keys),
+                    "interval": interval or OPTIONS_CONFIG["default_interval"],
+                    "lookback_hours": lookback_hours or OPTIONS_CONFIG["default_lookback_hours"],
+                },
+            )
+        return scheduler
+
     def close(self):
         self.db.close()
