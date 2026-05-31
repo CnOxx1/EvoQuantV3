@@ -303,6 +303,13 @@
   - `tickers / orderbook_snapshots / funding_rates` 支持定时删除超过保留期的历史快照，避免 SQLite 长期膨胀。
 - 面向技术指标模块的限界读取：
   - 下游 `technical_indicators` 在增量刷新时，只读取计算窗口需要的上下文快照，并额外保留每个交易所 cutoff 前最后一条锚点样本，不再全历史扫描。
+- 熔断器保护：
+  - 交易所 API 调用集成熔断器（`circuit_breaker.py`），连续失败 5 次后进入 OPEN 状态，60s 冷却后探测恢复。
+  - 避免交易所宕机时反复重试浪费资源和级联失败。
+  - 配置：`CB_FAILURE_THRESHOLD`（默认 5）、`CB_RECOVERY_TIMEOUT`（默认 60s）。
+- HTTP 客户端升级：
+  - `normalized_derivatives.py` 从 `urllib.request` 迁移到 `httpx`，支持连接池复用和 HTTP/2。
+  - `liquidations/collector.py` 从 `requests` 迁移到 `httpx`，减少连接建立开销。
 
 ## 为什么这些数据适合 AI 量化
 

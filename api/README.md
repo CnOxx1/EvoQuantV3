@@ -863,12 +863,72 @@ def get_bundle(entity: str, request: Request):
     "hit_rate_pct": 95.7,
     "size": 42
   },
+  "query_cache": {
+    "hits": 500,
+    "misses": 80,
+    "dedup_hits": 12,
+    "total_requests": 580,
+    "hit_rate_pct": 86.2,
+    "size": 35,
+    "max_size": 500
+  },
   "rate_limiter": {
     "max_requests": 200,
     "window_seconds": 60,
     "tracked_ips": 5
   }
 }
+```
+
+---
+
+## 服务层查询缓存
+
+API 层内置两级缓存：
+
+| 层 | 模块 | 缓存对象 | 用途 |
+|---|---|---|---|
+| L1 响应缓存 | `api/cache.py` | HTTP 响应 JSON | 相同 URL + 参数直接返回 |
+| L2 查询缓存 | `api/query_cache.py` | DB 查询结果 | 多端点查同一张表时共享结果 |
+
+### 查询缓存特点
+
+- **请求合并** — 同一 key 并发请求只执行一次 DB 查询，其他请求等待结果
+- **容量上限** — 默认 max_size=500，满时淘汰最早过期的条目
+- **TTL 过期** — 每个查询结果可指定独立 TTL
+- **管道刷新清空** — 逻辑管道执行完毕后同时清空 L1 和 L2 缓存
+
+### 使用方式
+
+```python
+from api.query_cache import query_cache
+
+rows = query_cache.get_or_fetch(
+    "latest_tickers:binance",
+    lambda: exchange_db.fetch_all("SELECT * FROM latest_tickers WHERE exchange = 'binance'"),
+    ttl=30.0,
+)
+```
+
+---
+
+## 输入验证
+
+API 层对请求参数做前置校验，避免无效查询打到数据库：
+
+| 校验项 | 行为 | HTTP 状态码 |
+|---|---|---|
+| 符号不在 SYMBOL_UNIVERSE 中 | 返回合法 base 列表 | `422` |
+| 时间范围 end ≤ start | 拒绝 | `400` |
+| 时间范围超过 90 天 | 拒绝（防止全表扫描） | `400` |
+
+校验函数在 `api/routers/_helpers.py`：
+
+```python
+from api.routers._helpers import validate_symbol, validate_time_range
+
+normalized = validate_symbol("BTC")      # → "BTC/USDT" 或抛 422
+start, end = validate_time_range(start_str, end_str)  # 或抛 400
 ```
 
 ---
