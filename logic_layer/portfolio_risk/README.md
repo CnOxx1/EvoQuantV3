@@ -18,17 +18,85 @@ logic_layer/portfolio_risk/
   runner.py         # CLI 运行入口
 ```
 
-## 核心计算
+## 计算公式
 
-| 指标 | 方法 | 说明 |
-| --- | --- | --- |
-| 组合波动率 | `w^T * Cov * w` | 日度波动率 |
-| 年化波动率 | `daily_vol * sqrt(365)` | 加密市场全年无休 |
-| VaR 95% | 参数法（正态） | `vol * 1.645` |
-| VaR 99% | 参数法（正态） | `vol * 2.326` |
-| 风险贡献 | 边际贡献分解 | 每个资产对组合风险的贡献比例 |
-| 集中度 | HHI 指数 | 权重集中度 |
-| 分散化比率 | 加权平均个体波动 / 组合波动 | >1 表示分散化有效 |
+### 1. 组合波动率（Portfolio Volatility）
+
+```
+σ²_portfolio = w^T × Cov × w = ΣΣ w_i × w_j × Cov(i,j)
+σ_portfolio = sqrt(σ²_portfolio)
+```
+
+- `w` = 权重向量，`Σw_i = 1.0`
+- `Cov` = 协方差矩阵（由 `cross_asset_analysis` 提供）
+
+年化波动率：
+
+```
+σ_annual = σ_daily × sqrt(365)
+```
+
+使用 365 天而非 252 天，因为加密市场全年无休。
+
+### 2. 在险价值（Value at Risk）
+
+参数法，假设正态分布：
+
+```
+VaR_95% = σ_daily × 1.645
+VaR_99% = σ_daily × 2.326
+```
+
+含义：在 95%/99% 置信度下，单日最大预期损失比例。
+
+### 3. 风险贡献（Risk Contribution）
+
+```
+MC_i = (Cov × w)_i = Σ_j (Cov(i,j) × w_j)
+RC_i = w_i × MC_i / σ_portfolio
+```
+
+- `MC_i` = 资产 i 的边际风险贡献
+- `RC_i` = 资产 i 的风险贡献（绝对值）
+- `Σ RC_i = σ_portfolio`
+
+### 4. 协方差矩阵构建
+
+从相关性矩阵和个体波动率构建：
+
+```
+Cov(i, j) = Corr(i, j) × σ_i × σ_j
+```
+
+- `Corr(i, j)` 来自 `cross_asset_analysis` 的 Pearson 相关性矩阵
+- `σ_i` 为资产 i 的日度波动率
+
+### 5. 集中度（Concentration）
+
+HHI（Herfindahl-Hirschman Index）：
+
+```
+HHI = Σ w_i²
+```
+
+- HHI = 1.0 表示完全集中在单一资产
+- HHI = 1/N 表示等权分配
+
+有效资产数：
+
+```
+Effective_N = 1 / HHI
+```
+
+### 6. 分散化比率（Diversification Ratio）
+
+```
+DR = (Σ w_i × σ_i) / σ_portfolio
+```
+
+- DR > 1 表示分散化产生了风险降低效果
+- DR = 1 表示资产完全正相关，无分散化收益
+- DR 越大，分散化效果越好
 
 ## 设计原则
 
