@@ -228,6 +228,55 @@ EvoQuant/
 - [ ] 执行层：下单、滑点控制、跨所路由
 - [ ] 组合层：多资产权重、再平衡、回撤控制
 
+## 更新记录
+
+### 2025-05-31
+
+**v2.2 — 可靠性与性能加固**
+
+- 熔断器模式：交易所 API 连续失败 5 次自动熔断，60s 冷却后探测恢复
+- API 输入验证：symbol 校验 SYMBOL_UNIVERSE、时间范围上限 90 天防全表扫描
+- httpx 替代 urllib/requests：连接池复用、HTTP/2 支持
+- 服务层查询缓存：多端点共享 DB 查询结果 + 请求合并（并发去重）
+
+**v2.1 — 生产运维加固**
+
+- 慢查询日志：超过阈值的 SQL 自动 WARNING（`DB_SLOW_QUERY_THRESHOLD_MS`）
+- 缓存命中率指标：hits / misses / hit_rate_pct
+- Phase 2 超时保护：并行模块超时不阻塞其他模块（默认 300s）
+- 启动配置校验：`validate_config()` 检查调度间隔、保留策略合理性
+- 指数退避重启：daemon 崩溃后 2s → 4s → 8s ... 最高 60s 退避
+- 三阶段优雅关停：SIGINT → SIGTERM → SIGKILL
+- `/metrics` 端点：缓存、查询缓存、限流器运维指标
+
+**v2.0 — API 安全与中间件**
+
+- 请求追踪：每个请求注入 `X-Request-ID`
+- 滑动窗口限流：按 IP 限制请求频率（默认 200/min）
+- 全局异常处理：未捕获异常返回安全 JSON，不泄露 traceback
+- CORS 限制：通过环境变量配置允许来源
+- 结构化日志：全 router 统一 loguru + 异常上下文
+
+**v1.1 — 数据层优化**
+
+- API TTL 缓存：高频只读端点短期内存缓存 + 管道刷新后自动失效
+- Phase 2 并行执行：逻辑管道独立模块 ThreadPoolExecutor 并行
+- AsyncIOScheduler：7 个数据层模块支持异步调度
+- N+1 批量化：aggregate 路由 WHERE IN 替代循环逐条查询
+- SQL GROUP BY 优化：funding 聚合改为数据库侧计算
+
+**v1.0 — 基础架构**
+
+- 3 交易所 × 18 资产 × 8 数据域完整采集
+- 228 个技术指标（含 Ehlers 自适应、分形维度、微观结构）
+- 14 个逻辑层模块：标准化、跨资产、风险、AI 上下文
+- 100+ REST API 端点
+- 3 域数据库拆分（exchange_data / market_data / analytics）
+- 数据质量治理：WMI 指数、freshness 窗口、is_ready_for_ai
+- Point-in-time 时间切片 + 特征历史序列
+
+---
+
 ## License
 
 本仓库使用 [`GPL-3.0`](LICENSE) 许可证。
