@@ -341,3 +341,81 @@ def positioning_extremes(
 
     extremes.sort(key=lambda x: x["reversal_risk"], reverse=True)
     return {"threshold": threshold, "count": len(extremes), "extremes": extremes[:30]}
+
+
+@router.get("/funding-prediction/{symbol}")
+def funding_prediction(symbol: str) -> dict[str, Any]:
+    """下期资金费率预测（均值回归 + 动量模型）。"""
+    normalized = _normalize_symbol(symbol)
+    if normalized not in TARGET_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol {symbol} not in universe")
+    db = get_exchange_db()
+    rows = db.fetch_all(
+        "SELECT funding_rate, timestamp FROM latest_funding_rates "
+        "WHERE symbol = ? ORDER BY timestamp DESC LIMIT 21",
+        (normalized,),
+    )
+    if len(rows) < 5:
+        raise HTTPException(status_code=404, detail=f"Insufficient funding data for {symbol}")
+    rates = [_safe_float(r.get("funding_rate")) or 0 for r in reversed(rows)]
+    mean_rate = sum(rates) / len(rates)
+    current = rates[-1]
+    momentum = (rates[-1] - rates[-3]) / 3 if len(rates) >= 3 else 0
+    alpha = 0.3
+    predicted = alpha * mean_rate + (1 - alpha) * (current + momentum)
+    zscore = _zscore(rates, current)
+    if abs(zscore) > 2:
+        direction_bias = "long_crowded" if zscore > 0 else "short_crowded"
+    elif abs(zscore) > 1:
+        direction_bias = "slight_long" if zscore > 0 else "slight_short"
+    else:
+        direction_bias = "neutral"
+    return {
+        "symbol": normalized,
+        "current_rate": round(current, 6),
+        "predicted_next": round(predicted, 6),
+        "mean_rate_21": round(mean_rate, 6),
+        "zscore": round(zscore, 3),
+        "direction_bias": direction_bias,
+        "cumulative_7d": round(sum(rates[-21:]) if len(rates) >= 21 else sum(rates), 6),
+        "data_source": "latest_funding_rates",
+    }
+
+
+@router.get("/basis-signal/{symbol}")
+def basis_signal(symbol: str) -> dict[str, Any]:
+    """基差均值回归信号。"""
+    normalized = _normalize_symbol(symbol)
+    if normalized not in TARGET_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol {symbol} not in universe")
+    db = get_exchange_db()
+    rows = db.fetch_all(
+        "SELECT spot_price, futures_price, timestamp FROM latest_funding_rates "
+        "WHERE symbol = ? AND spot_price IS NOT NULL AND futures_price IS NOT NULL "
+        "ORDER BY timestamp DESC LIMIT 30",
+        (normalized,),
+    )
+    if len(rows) < 5:
+        raise HTTPException(status_code=404, detail=f"Insufficient basis data for {symbol}")
+    bases = []
+    for r in reversed(rows):
+        spot = _safe_float(r.get("spot_price")) or 0
+        fut = _safe_float(r.get("futures_price")) or 0
+        if spot > 0:
+            bases.append((fut - spot) / spot)
+    if not bases:
+        raise HTTPException(status_code=404, detail="Cannot compute basis")
+    current_basis = bases[-1]
+    mean_basis = sum(bases) / len(bases)
+    zscore = _zscore(bases, current_basis)
+    regime = "contango" if current_basis > 0.0005 else ("backwardation" if current_basis < -0.0005 else "flat")
+    signal_strength = max(-1.0, min(1.0, -zscore * 0.5))
+    return {
+        "symbol": normalized,
+        "current_basis_pct": round(current_basis * 100, 4),
+        "mean_basis_pct": round(mean_basis * 100, 4),
+        "basis_zscore": round(zscore, 3),
+        "regime": regime,
+        "mean_reversion_signal": round(signal_strength, 3),
+        "data_source": "latest_funding_rates",
+    }

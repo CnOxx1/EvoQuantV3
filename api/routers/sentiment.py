@@ -236,3 +236,51 @@ def get_sentiment_labels(
     if not rows:
         raise HTTPException(status_code=404, detail="No sentiment labels found.")
     return {"count": len(rows), "labels": [dict(r) for r in rows]}
+
+
+@router.get("/signal/{symbol}")
+def get_sentiment_signal(symbol: str) -> dict[str, Any]:
+    """情绪-价格信号（reversal/confirmation/divergence）。"""
+    normalized = _normalize_symbol(symbol)
+    if normalized not in TARGET_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol {symbol} not in universe")
+    db = get_analytics_db()
+    rows = db.fetch_all(
+        "SELECT * FROM sentiment_signals WHERE symbol = ? ORDER BY ts DESC LIMIT 5",
+        (normalized,),
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No sentiment signal for {symbol}")
+    latest = rows[0]
+    return {
+        "symbol": normalized,
+        "ts": latest.get("ts"),
+        "signal_type": latest.get("signal_type"),
+        "confidence": latest.get("confidence"),
+        "description": latest.get("description"),
+        "recent_signals": rows,
+        "data_source": "sentiment_signal",
+    }
+
+
+@router.get("/causality/{symbol}")
+def get_causality(symbol: str) -> dict[str, Any]:
+    """Granger 因果检验结果（情绪是否领先价格）。"""
+    normalized = _normalize_symbol(symbol)
+    if normalized not in TARGET_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol {symbol} not in universe")
+    db = get_analytics_db()
+    row = db.fetch_one(
+        "SELECT * FROM sentiment_causality WHERE symbol = ? ORDER BY ts DESC LIMIT 1",
+        (normalized,),
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail=f"No causality data for {symbol}")
+    return {
+        "symbol": normalized,
+        "ts": row.get("ts"),
+        "sentiment_leads_price": row.get("sentiment_leads_price"),
+        "correlation": row.get("correlation"),
+        "lag_periods": row.get("lag_periods"),
+        "data_source": "sentiment_signal",
+    }

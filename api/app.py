@@ -51,6 +51,16 @@ from api.routers.portfolio_analytics import router as portfolio_analytics_router
 from api.routers.microstructure import router as microstructure_router
 from api.routers.cross_asset_history import router as cross_asset_history_router
 from api.routers.factor_explorer import router as factor_explorer_router
+from api.routers.social_sentiment import router as social_sentiment_router
+from api.routers.whale_tracker import router as whale_tracker_router
+from api.routers.orderflow_micro import router as orderflow_micro_router
+from api.routers.defi import router as defi_router
+from api.routers.bridge_flow import router as bridge_flow_router
+from api.routers.regulatory import router as regulatory_router
+from api.routers.regime import router as regime_router
+from api.routers.anomaly import router as anomaly_router
+from api.routers.liquidity import router as liquidity_router
+from api.routers.volatility import router as volatility_router
 from config.symbols import SYMBOL_UNIVERSE
 
 # ---------------------------------------------------------------------------
@@ -226,6 +236,16 @@ app.include_router(portfolio_analytics_router)
 app.include_router(microstructure_router)
 app.include_router(cross_asset_history_router)
 app.include_router(factor_explorer_router)
+app.include_router(social_sentiment_router)
+app.include_router(whale_tracker_router)
+app.include_router(orderflow_micro_router)
+app.include_router(defi_router)
+app.include_router(bridge_flow_router)
+app.include_router(regulatory_router)
+app.include_router(regime_router)
+app.include_router(anomaly_router)
+app.include_router(liquidity_router)
+app.include_router(volatility_router)
 
 
 # ---------------------------------------------------------------------------
