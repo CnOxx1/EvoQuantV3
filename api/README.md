@@ -229,6 +229,61 @@ python main.py --modules api_server
 | `/ai-context/data-freshness` | GET | 数据新鲜度报告（哪些数据过期） |
 | `/ai-context/trading-readiness/{symbol}` | GET | 单资产可交易性评估 |
 
+### 技术指标深度分析
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/technical-deep/indicator/{symbol}` | GET | 单指标时序提取（指定字段名） |
+| `/technical-deep/multi/{symbol}` | GET | 多指标批量提取（逗号分隔字段） |
+| `/technical-deep/extremes/{symbol}` | GET | 极端读数检测（RSI/BB/Stoch/CCI 超买超卖） |
+| `/technical-deep/divergences/{symbol}` | GET | 价格 vs 指标背离检测（RSI/MACD/OBV） |
+| `/technical-deep/regime/{symbol}` | GET | 技术体制分类（趋势/震荡/高波动，基于 ADX+ATR+BB） |
+| `/technical-deep/scanner` | GET | 全市场指标条件扫描（gt/lt/cross_above/cross_below） |
+| `/technical-deep/available-fields` | GET | 列出所有可用指标字段（PRAGMA 动态获取） |
+
+### 组合分析
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/portfolio/snapshot` | GET | 最新组合风险快照（权重/VaR/集中度完整解析） |
+| `/portfolio/drawdown` | GET | 最大回撤 + 当前回撤 + 回撤区间 |
+| `/portfolio/concentration` | GET | HHI 集中度 + 有效资产数 + 趋势 |
+| `/portfolio/var-decomposition` | GET | VaR 分解（各资产风险贡献） |
+| `/portfolio/correlation-risk` | GET | 组合相关性聚类风险（高相关配对检测） |
+| `/portfolio/risk-trend` | GET | 风险指标趋势（VaR/vol 斜率 + 方向） |
+
+### 市场微观结构
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/microstructure/volatility-profile/{symbol}` | GET | 多时间框架波动率结构（1h/4h/1d） |
+| `/microstructure/volume-profile/{symbol}` | GET | 成交量分布（VPOC/VAH/VAL + 分 bin 明细） |
+| `/microstructure/spread-history/{symbol}` | GET | 历史买卖价差演变 |
+| `/microstructure/session-stats/{symbol}` | GET | 日内时段统计（亚洲/欧洲/美洲） |
+| `/microstructure/gap-analysis/{symbol}` | GET | 价格跳空分析（方向 + 幅度） |
+| `/microstructure/liquidity-heatmap/{symbol}` | GET | 按小时/星期聚合流动性热力图 |
+
+### 跨资产历史
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/cross-asset-history/correlation` | GET | 相关性矩阵历史趋势 |
+| `/cross-asset-history/correlation/pair` | GET | 两资产配对相关性历史 |
+| `/cross-asset-history/relative-strength/{symbol}` | GET | 单资产 RS 排名历史 |
+| `/cross-asset-history/sector-rotation` | GET | 板块轮动阶段历史 |
+| `/cross-asset-history/fund-flow` | GET | 资金流历史趋势 |
+| `/cross-asset-history/exchange-comparison/{symbol}` | GET | 跨交易所对比历史 |
+
+### 因子探索
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/factors/search` | GET | 全域因子搜索（关键字匹配 name/description/category） |
+| `/factors/timeseries/{domain}/{factor_id}` | GET | 统一因子时序获取 |
+| `/factors/correlation` | GET | 任意两因子相关性计算（Pearson） |
+| `/factors/summary` | GET | 全域因子概览（数量/新鲜度/覆盖率） |
+| `/factors/domains` | GET | 列出所有因子域及其 catalog |
+
 ### 时间切片（历史回溯）
 
 | 端点 | 方法 | 说明 |
@@ -679,10 +734,12 @@ api/
     ├── time_slice.py        # /time-slice — 历史快照与特征序列
     ├── signals.py           # /signals — 综合量化信号（Bridge 核心）
     ├── technical.py         # /technical — 技术指标 + K线
+    ├── technical_deep.py    # /technical-deep — 技术指标深度分析（时序/极端/背离/体制/扫描）
     ├── risk.py              # /risk — 组合风险 / VaR / 波动率
     ├── exchange.py          # /exchange — 资金费率 / 订单簿 / 基差 / 多空比
     ├── macro.py             # /macro — 宏观因子快照
     ├── cross_asset.py       # /cross-asset — 跨资产分析
+    ├── cross_asset_history.py # /cross-asset-history — 跨资产历史序列
     ├── onchain.py           # /onchain — 链上数据
     ├── sentiment.py         # /sentiment — 新闻情感 + 市场广度
     ├── data_quality.py      # /data-quality — 审计 / 就绪度 / 市场结构
@@ -694,7 +751,10 @@ api/
     ├── orderflow.py         # /orderflow — 订单流智能（CVD / 大单 / 深度 / 滑点）
     ├── derivatives.py       # /derivatives — 衍生品复合信号（健康评分 / 杠杆 / 挤压）
     ├── news_intel.py        # /news-intel — 新闻情报（信号 / 事件 / 叙事 / 监管）
-    └── ai_context.py        # /ai-context — AI 决策上下文（bundle / 状态 / 套利 / 新鲜度）
+    ├── ai_context.py        # /ai-context — AI 决策上下文（bundle / 状态 / 套利 / 新鲜度）
+    ├── portfolio_analytics.py # /portfolio — 组合分析（快照/回撤/集中度/VaR分解/趋势）
+    ├── microstructure.py    # /microstructure — 市场微观结构（波动率/成交量/价差/跳空）
+    └── factor_explorer.py   # /factors — 因子探索（搜索/时序/相关性/概览）
 ```
 
 ---
