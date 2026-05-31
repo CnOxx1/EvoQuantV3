@@ -184,6 +184,51 @@ python main.py --modules api_server
 | `/monitor/positioning-extremes` | GET | 持仓极端告警（拥挤度） |
 | `/monitor/oi-divergence` | GET | OI 与价格背离检测 |
 
+### 订单流智能
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/orderflow/cvd/{symbol}` | GET | CVD 时序 + 价格背离检测 |
+| `/orderflow/aggression/{symbol}` | GET | 多交易所买卖侵略性对比 |
+| `/orderflow/whale-trades/{symbol}` | GET | 大单检测（百分位筛选） |
+| `/orderflow/depth-heatmap/{symbol}` | GET | 订单簿深度热力图（挂单墙检测） |
+| `/orderflow/imbalance-history/{symbol}` | GET | 订单簿失衡时序 + 趋势检测 |
+| `/orderflow/market-impact/{symbol}` | GET | 滑点估算 + 最优执行交易所 |
+| `/orderflow/summary` | GET | 全市场订单流摘要排名 |
+
+### 衍生品复合信号
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/derivatives/health/{symbol}` | GET | 统一衍生品健康评分（funding+basis+positioning+OI+liquidation） |
+| `/derivatives/leverage-map` | GET | 全市场杠杆热力图（哪些资产最拥挤） |
+| `/derivatives/funding-curve/{symbol}` | GET | 资金费率历史 + 体制检测 + 均值回归信号 |
+| `/derivatives/oi-divergence/{symbol}` | GET | OI vs 价格背离（挤压风险检测） |
+| `/derivatives/liquidation-levels/{symbol}` | GET | 清算集中区域估算 |
+| `/derivatives/positioning-extremes` | GET | 全市场持仓极端筛选（拥挤交易=反转风险） |
+
+### 新闻情报
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/news-intel/signal` | GET | 新闻驱动交易信号（加权情感动量） |
+| `/news-intel/events/upcoming` | GET | 即将到来的市场事件（解锁、日历） |
+| `/news-intel/narrative/{symbol}` | GET | 单资产主导叙事提取 |
+| `/news-intel/cross-asset-sentiment` | GET | 全资产情感热力图 |
+| `/news-intel/regulatory-radar` | GET | 监管新闻过滤（突发风险） |
+| `/news-intel/source-reliability` | GET | 新闻源可靠性统计 |
+
+### AI 决策上下文
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/ai-context/decision-bundle/{symbol}` | GET | AI 决策所需全部信息一次返回 |
+| `/ai-context/market-state` | GET | 全局市场状态（结构+就绪度+广度） |
+| `/ai-context/factor-regime` | GET | 全资产因子体制矩阵 |
+| `/ai-context/arbitrage-opportunities` | GET | 跨交易所套利机会 |
+| `/ai-context/data-freshness` | GET | 数据新鲜度报告（哪些数据过期） |
+| `/ai-context/trading-readiness/{symbol}` | GET | 单资产可交易性评估 |
+
 ### 时间切片（历史回溯）
 
 | 端点 | 方法 | 说明 |
@@ -627,7 +672,7 @@ api/
 ├── models.py                # Pydantic response schemas
 └── routers/
     ├── __init__.py
-    ├── _helpers.py          # 共享工具函数（normalize/safe_float/zscore/percentile）
+    ├── _helpers.py          # 共享工具函数（normalize/safe_float/zscore/percentile/slope/divergence）
     ├── bundle.py            # /bundle — AI 市场上下文 bundle
     ├── domains.py           # /domains — 各域健康状态
     ├── health.py            # /health — 管道健康 + WMI
@@ -645,7 +690,11 @@ api/
     ├── alternative.py       # /alternative — 另类数据（开发者 / 稳定币 / 因子）
     ├── aggregate.py         # /aggregate — 聚合查询（全维度画像 / 对比 / 热力图）
     ├── strategy.py          # /strategy — AI 策略辅助（多因子 / 入场出场 / 套利）
-    └── monitor.py           # /monitor — 实时监控（告警 / 突破 / 异常检测）
+    ├── monitor.py           # /monitor — 实时监控（告警 / 突破 / 异常检测）
+    ├── orderflow.py         # /orderflow — 订单流智能（CVD / 大单 / 深度 / 滑点）
+    ├── derivatives.py       # /derivatives — 衍生品复合信号（健康评分 / 杠杆 / 挤压）
+    ├── news_intel.py        # /news-intel — 新闻情报（信号 / 事件 / 叙事 / 监管）
+    └── ai_context.py        # /ai-context — AI 决策上下文（bundle / 状态 / 套利 / 新鲜度）
 ```
 
 ---
