@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from loguru import logger
 
 from api.dependencies import get_exchange_db, get_market_db
 from api.routers._helpers import _safe_float
@@ -133,12 +134,9 @@ def get_exchange_flow(symbol: str) -> dict[str, Any]:
         if onchain_row:
             onchain_netflow = _safe_float(onchain_row["value"])
     except Exception:
-        pass
+        pass  # onchain data optional — graceful degradation
 
     return {
-        "symbol": normalized,
-        "signal": signal,
-        "flow_score": round(flow_score, 1),
         "open_interest_contracts": oi_contracts,
         "oi_change_1h": oi_change_1h,
         "oi_change_24h": oi_change_24h,
@@ -235,7 +233,7 @@ def get_whale_activity(symbol: str) -> dict[str, Any]:
         if onchain_row:
             onchain_whale_count = _safe_float(onchain_row["value"])
     except Exception:
-        pass
+        pass  # onchain whale data optional — graceful degradation
 
     rate = _safe_float(funding["funding_rate"]) if funding else None
 

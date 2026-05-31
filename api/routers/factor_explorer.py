@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from loguru import logger
 
 from api.dependencies import get_market_db
 from api.routers._helpers import _safe_float
@@ -32,7 +33,7 @@ def get_factor_domains() -> dict[str, Any]:
             if row:
                 count = row["cnt"]
         except Exception:
-            pass
+            pass  # table may not exist yet
         domains.append({"domain": domain, "catalog_table": tables["catalog"], "factor_count": count})
 
     return {"domain_count": len(domains), "domains": domains}
@@ -62,7 +63,7 @@ def search_factors(
                 entry["domain"] = dom
                 results.append(entry)
         except Exception:
-            continue
+            continue  # table may not exist yet
 
     return {"query": q, "domain": domain, "result_count": len(results), "results": results}
 
@@ -198,13 +199,13 @@ def get_factor_summary() -> dict[str, Any]:
             if cat_row:
                 info["factor_count"] = cat_row["cnt"]
         except Exception:
-            pass
+            pass  # table may not exist yet
         try:
             ts_row = db.fetch_one(f"SELECT COUNT(*) as cnt FROM {tables['timeseries']}", ())
             if ts_row:
                 info["timeseries_rows"] = ts_row["cnt"]
         except Exception:
-            pass
+            pass  # table may not exist yet
         try:
             latest_row = db.fetch_one(
                 f"SELECT MAX(observation_time) as latest FROM {tables['timeseries']}", ()

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from loguru import logger
 
 from api.dependencies import get_pipeline_latency_service
 from api.models import DomainListItem, DomainsListResponse
@@ -33,7 +34,8 @@ def list_domains() -> DomainsListResponse:
     svc = get_pipeline_latency_service()
     try:
         report = svc.measure_all()
-    except Exception:
+    except Exception as e:
+        logger.warning("domains health check failed: {}: {}", type(e).__name__, e)
         return DomainsListResponse(
             domains=[
                 DomainListItem(name=d, status="unknown") for d in AVAILABLE_DOMAINS

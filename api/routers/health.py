@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter
+from loguru import logger
 
 from api.dependencies import get_ai_market_context_service, get_pipeline_latency_service
 from api.models import HealthSummary
@@ -29,7 +30,8 @@ def get_health() -> HealthSummary:
         }
         summary = report.summary
         pipeline_status = summary.get("health", "unknown")
-    except Exception:
+    except Exception as e:
+        logger.warning("health latency check failed: {}: {}", type(e).__name__, e)
         domains = {}
         summary = {}
         pipeline_status = "unknown"
@@ -40,8 +42,8 @@ def get_health() -> HealthSummary:
         svc = get_ai_market_context_service()
         bundle = svc.build_bundle_for_entity("BTC/USDT")
         wmi_data = bundle.get("world_model_index") or {}
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("health WMI check failed: {}: {}", type(e).__name__, e)
 
     return HealthSummary(
         status=pipeline_status,

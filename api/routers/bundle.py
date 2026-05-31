@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from loguru import logger
 
 from api.dependencies import get_ai_market_context_service
 from config.symbols import TARGET_SYMBOLS
@@ -30,7 +31,8 @@ def get_bundle(symbol: str) -> dict[str, Any]:
     try:
         bundle = svc.build_bundle_for_entity(normalized)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("bundle build failed for {}: {}: {}", normalized, type(e).__name__, e)
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
     return bundle
 
 
@@ -47,6 +49,7 @@ def get_bundle_summary() -> dict[str, Any]:
                 "coverage_score": bundle.get("coverage_score"),
                 "world_model_index": bundle.get("world_model_index"),
             }
-        except Exception:
+        except Exception as e:
+            logger.warning("bundle summary failed for {}: {}", symbol, e)
             results[symbol] = {"data_quality_flag": "error", "error": True}
     return {"symbols": results, "count": len(results)}

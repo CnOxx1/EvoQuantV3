@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from loguru import logger
 
 from api.dependencies import get_analytics_db, get_exchange_db
 from config.symbols import TARGET_EXCHANGES, TARGET_SYMBOLS
@@ -95,13 +96,21 @@ def get_all_funding_rates() -> dict[str, Any]:
             "timestamp": row["timestamp"],
         }
 
-    for sym, data in result.items():
-        rates = [v["funding_rate"] for v in data["rates"].values() if v["funding_rate"] is not None]
-        if rates:
-            avg = sum(rates) / len(rates)
-            data["avg_rate"] = round(avg, 6)
-            data["annualized_rate"] = round(avg * 3 * 365, 4)
-            data["is_elevated"] = abs(avg) > 0.001
+    # Compute averages using SQL aggregation for better performance
+    agg_rows = db.fetch_all(
+        """SELECT symbol, AVG(funding_rate) as avg_rate, COUNT(*) as cnt
+           FROM latest_funding_rates
+           WHERE funding_rate IS NOT NULL
+           GROUP BY symbol""",
+        (),
+    )
+    for agg in agg_rows:
+        sym = agg["symbol"]
+        if sym in result and agg["avg_rate"] is not None:
+            avg = agg["avg_rate"]
+            result[sym]["avg_rate"] = round(avg, 6)
+            result[sym]["annualized_rate"] = round(avg * 3 * 365, 4)
+            result[sym]["is_elevated"] = abs(avg) > 0.001
 
     return {
         "symbol_count": len(result),

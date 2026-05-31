@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from loguru import logger
 
 from api.dependencies import get_time_slice_service
 
@@ -31,7 +32,8 @@ def get_time_slice(
     try:
         result = svc.get_slice_at(ts, symbols=symbol_list, domains=domain_list)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("time_slice failed at {}: {}: {}", timestamp, type(e).__name__, e)
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
     return result.__dict__ if hasattr(result, "__dict__") else result
 
 
@@ -59,7 +61,8 @@ def get_time_slice_range(
             ts_start, ts_end, interval, symbols=symbol_list, domains=domain_list
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("time_slice range {}-{} failed: {}: {}", start, end, type(e).__name__, e)
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
     return result.__dict__ if hasattr(result, "__dict__") else result
 
 
@@ -92,5 +95,6 @@ def get_feature_history(
             timeframe=timeframe,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("feature_history {} failed: {}: {}", symbol, type(e).__name__, e)
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
     return result.__dict__ if hasattr(result, "__dict__") else result

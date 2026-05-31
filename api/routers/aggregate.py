@@ -6,6 +6,7 @@ import math
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from loguru import logger
 
 from api.dependencies import get_exchange_db
 from api.routers._helpers import (
