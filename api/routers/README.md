@@ -54,3 +54,8 @@ api/routers/
 - 业务逻辑下沉到 `logic_layer` 或直接查询数据库
 - 共享的符号归一化、DB 获取等逻辑放在 `_helpers.py`
 - 所有端点返回 JSON，字段命名使用 snake_case
+
+## 性能优化
+
+- `aggregate.py` 的 `multi_asset_compare`、`sector_snapshot`、`derivatives_heatmap` 端点使用 `WHERE symbol IN (...)` 批量查询替代逐 symbol 循环查询，避免 N+1 查询问题
+- 批量查询后在 Python 侧按 symbol 分组，查询次数从 O(N) 降低到 O(1)

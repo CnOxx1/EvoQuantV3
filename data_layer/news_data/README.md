@@ -602,6 +602,15 @@ python -m data_layer.news_data.runner --list-sources --groups research_security_
 python -m data_layer.news_data.runner --mode scheduler
 ```
 
+当前 `scheduler` 模式同时支持两种调度器：
+
+- `BlockingScheduler`（默认）：传统阻塞式调度
+- `AsyncIOScheduler`（通过 `--async-scheduler` 开启）：利用 asyncio 事件循环调度，适合与其他 async 组件共存的部署环境
+
+```bash
+python -m data_layer.news_data.runner --mode scheduler --async-scheduler
+```
+
 调度器默认行为：
 
 - 每次定时任务使用独立的数据库连接，避免 APScheduler 工作线程复用主线程 SQLite 连接

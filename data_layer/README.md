@@ -476,6 +476,9 @@ data_layer/
 - `funding-backfill`：补最近一段时间资金费率。
 - `context-burst`：短时间快速积累 `ticker / funding / orderbook` 样本。
 - `scheduler`：长期稳定运行，持续沉淀数据库样本。
+  - 所有数据层模块的 `scheduler` 模式现在都同时支持 `BlockingScheduler`（默认）和 `AsyncIOScheduler`（通过 `--async-scheduler` 开启）
+  - `AsyncIOScheduler` 利用 asyncio 事件循环调度，适合与其他 async 组件共存的部署环境
+  - 已支持 `--async-scheduler` 的模块：`exchange_data / onchain_data / tokenomics_data / macro_data / news_data / alternative_data / options_data / event_calendar_data`
 - `news-scheduler`：持续抓取新闻与公告，沉淀文本事件样本。
 - `macro-bootstrap`：初始化宏观因子目录并回填市场因子、利率、真实利率、通胀预期和信用利差历史。
 - `macro-scheduler`：持续更新宏观上下文，给 AI 提供最新跨市场背景。

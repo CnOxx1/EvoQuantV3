@@ -206,6 +206,18 @@ python -m data_layer.onchain_data.runner --mode once --sources exchange_flow,bri
 python -m data_layer.onchain_data.runner --mode once --entities BTC,ETH,SOLANA,AAVE
 ```
 
+常驻调度（BlockingScheduler，默认）：
+
+```bash
+python -m data_layer.onchain_data.runner --mode scheduler
+```
+
+常驻调度（AsyncIOScheduler，推荐与其他 async 组件共存时使用）：
+
+```bash
+python -m data_layer.onchain_data.runner --mode scheduler --async-scheduler
+```
+
 查看当前 latest bundle：
 
 ```bash

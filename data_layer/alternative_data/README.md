@@ -557,6 +557,7 @@ CLI 验证入口：
 - `python -m data_layer.alternative_data.runner --mode once`
 - `python -m data_layer.alternative_data.runner --mode bootstrap`
 - `python -m data_layer.alternative_data.runner --mode scheduler`
+- `python -m data_layer.alternative_data.runner --mode scheduler --async-scheduler`
 - `python -m data_layer.alternative_data.runner --reload-registry`
 
 当前可选参数：

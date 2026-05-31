@@ -61,7 +61,8 @@ event_calendar_data/
   - `normalized_json`
   - `ics`
 - 已将每个事件源的采集结果写入 `collection_runs`
-- `once` 和 `scheduler` 两条运行路径现在都会写入 `collection_runs`，不再出现“首轮启动有 run 台账，后续常驻调度却没有真实运行记录”的断层
+- `once` 和 `scheduler` 两条运行路径现在都会写入 `collection_runs`，不再出现"首轮启动有 run 台账，后续常驻调度却没有真实运行记录"的断层
+- `scheduler` 模式现在同时支持 `BlockingScheduler`（默认）和 `AsyncIOScheduler`（通过 `--async-scheduler` 开启），适合与其他 async 组件共存的部署环境
 - 已将每个事件源的覆盖状态标准化为 `configuration_ready / health_status / is_ready_for_ai / data_quality_flags / quality_notes`
 - 已新增未来事件上下文 bundle，可直接输出未来 24h / 7d / 30d 事件、重点事件、symbol watchlist，以及默认事件宇宙 breadth 诊断
 

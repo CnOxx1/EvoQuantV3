@@ -137,6 +137,18 @@ python -m data_layer.tokenomics_data.runner --list-entities
 python -m data_layer.tokenomics_data.runner --print-context
 ```
 
+常驻调度（BlockingScheduler，默认）：
+
+```bash
+python -m data_layer.tokenomics_data.runner --mode scheduler
+```
+
+常驻调度（AsyncIOScheduler，推荐与其他 async 组件共存时使用）：
+
+```bash
+python -m data_layer.tokenomics_data.runner --mode scheduler --async-scheduler
+```
+
 `--print-context` 现在会同时回答：
 
 - 当前 bundle 覆盖了多少目标资产、多少目标因子

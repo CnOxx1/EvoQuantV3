@@ -446,6 +446,19 @@ python -m data_layer.options_data.runner --print-context
 python -m data_layer.options_data.runner --print-coverage
 ```
 
+常驻调度（BlockingScheduler，默认）：
+
+```bash
+python -m data_layer.options_data.runner --mode scheduler
+```
+
+常驻调度（AsyncIOScheduler，推荐与其他 async 组件共存时使用）：
+
+```bash
+python -m data_layer.options_data.runner --mode scheduler --async-scheduler
+```
+```
+
 ## 质量约束
 
 当前模块不是“拿到一点期权数据就算完成”，而是明确要求能回答下面几件事：

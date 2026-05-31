@@ -491,6 +491,19 @@ data_layer/
 - `macro_level`
   - 默认每日 `1` 次
 
+当前 `scheduler` 模式同时支持两种调度器：
+
+- `BlockingScheduler`（默认）：传统阻塞式调度
+- `AsyncIOScheduler`（通过 `--async-scheduler` 开启）：利用 asyncio 事件循环调度，适合与其他 async 组件共存的部署环境
+
+```bash
+# 默认 BlockingScheduler
+python -m data_layer.macro_data.runner --mode scheduler
+
+# AsyncIOScheduler
+python -m data_layer.macro_data.runner --mode scheduler --async-scheduler
+```
+
 如果你更关心先把常驻采集跑起来，而不是强依赖启动时的全量历史回填，可以：
 
 - 保持默认行为，让模块在启动时尽量补齐历史，但单因子超时不会打死整个 `macro_data`
