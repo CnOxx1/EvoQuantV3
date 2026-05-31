@@ -49,6 +49,12 @@
 | `pipeline_latency` | 所有域最新数据时间戳 | 端到端延迟指标与管道健康评估 |
 | `ai_market_context` | 所有上游结果 | 最终 AI 市场上下文 bundle |
 | `logic_pipeline` | 所有逻辑层模块 | 全链路定时编排（5 阶段依赖执行） |
+| `regime_detection` | 技术指标 + 波动率 + 成交量 + 相关性 | 市场状态分类（trending_up/down, ranging, crisis） |
+| `anomaly_detection` | 价格 + 成交量 + 资金费率 + 相关性矩阵 | 统计异常事件（spike, surge, extreme, break） |
+| `liquidity_analysis` | 盘口深度 + 成交量 + 价格影响 | 滑点模型、深度评分（0-100）、流动性枯竭预警 |
+| `volatility_forecast` | 历史收益率 + IV + 已实现波动率 | EWMA 预测、波动率锥、RV-IV 价差 |
+| `funding_rate_model` | 资金费率历史 + 基差 + 持仓量 | 费率预测、基差均值回归信号 |
+| `sentiment_signal` | 社交情绪 + 价格序列 | Granger 因果、极端反转信号、情绪-价格背离 |
 
 ## 数据流全景
 

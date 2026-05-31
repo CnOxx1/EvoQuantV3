@@ -5,7 +5,7 @@
 大多数量化项目从"策略"出发，EvoQuant 从"理解"出发。它解决的核心问题是：AI 在做交易决策前，需要一个完整、诚实、可回溯的市场认知底座。
 
 ```text
-3 交易所 × 18 资产 × 8 数据域 × 228 技术指标 × 实时质量治理
+3 交易所 × 18 资产 × 14 数据域 × 228 技术指标 × 实时质量治理
 → AI 随时可查的完整市场上下文
 ```
 
@@ -14,7 +14,7 @@
 | 传统量化数据管道 | EvoQuant |
 | --- | --- |
 | 单交易所单币种 | 3 交易所 × 18 资产，多源交叉验证 |
-| 只有 K 线和指标 | 8 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics |
+| 只有 K 线和指标 | 14 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics + 社交情绪 + 巨鲸追踪 + 订单流 + DeFi 协议 + 跨链桥流 + 监管动态 |
 | 缺失数据静默忽略 | 显式标记 stale / missing / partial，AI 知道自己"不知道什么" |
 | 固定参数指标 | 228 个指标含自适应 Ehlers 系列、分形维度、Hurst 指数 |
 | 只能看当前 | Point-in-time 回溯：查询任意历史时刻的完整市场状态 |
@@ -41,6 +41,12 @@
 | 链上 | 公链 + DeFi | 每小时 | TVL、跨链流、交易所储备、质押 |
 | 期权 | Deribit 等 | 每小时 | 波动率曲面、Gamma 暴露、持仓集中度 |
 | Tokenomics | 链上 + 项目方 | 每日 | 解锁计划、流通变化、国库流动 |
+| 社交情绪 | LunarCrush / Santiment | 30 分钟 | 情绪评分、社交量、影响力加权 |
+| 巨鲸追踪 | WhaleAlert / Arkham / Nansen | 15 分钟 | 大额转账、钱包标签、交易所流向 |
+| 订单流 | Binance / Bybit / OKX aggTrades | 5 分钟 | CVD、大单占比、买卖压力 |
+| DeFi 协议 | DefiLlama | 1 小时 | TVL 变化、借贷利率、DEX 成交量 |
+| 跨链桥流 | DefiLlama Bridges | 1 小时 | 跨链资金净流、链间资本迁移 |
+| 监管动态 | CryptoCompare / SEC | 2 小时 | 监管事件、ETF 进展、政策变化 |
 
 ## 技术指标体系
 
@@ -85,21 +91,26 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │                        AI Consumer Layer                         │
 │              REST API (100+ endpoints) / Bundle Query            │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Logic Layer (14 modules)                 │
+│                         Logic Layer (20 modules)                 │
 │  technical_indicators → feature_standardization → cross_asset   │
 │  macro_context → news_sentiment → portfolio_risk                │
 │  market_breadth → asset_readiness → ai_market_context           │
 │  pipeline_latency → time_slice → logic_pipeline                 │
+│  regime_detection → anomaly_detection → liquidity_analysis      │
+│  volatility_forecast → funding_rate_model → sentiment_signal    │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Data Layer (9 modules)                   │
+│                         Data Layer (15 modules)                  │
 │  exchange_data │ macro_data │ news_data │ onchain_data          │
 │  options_data │ tokenomics_data │ event_calendar │ alternative  │
+│  social_sentiment │ whale_tracker │ orderflow │ defi_protocol   │
+│  bridge_flow │ regulatory_data │ data_quality                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                         Storage Layer                            │
 │  SQLite (3 域拆分) │ latest_* 快照 │ 历史表 │ 质量审计表       │
 ├─────────────────────────────────────────────────────────────────┤
 │                         External Sources                         │
 │  Binance │ OKX │ Bybit │ DeFiLlama │ Deribit │ 宏观数据源      │
+│  LunarCrush │ Santiment │ Arkham │ Nansen │ WhaleAlert │ SEC   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -151,9 +162,9 @@ pytest -q
 ```text
 EvoQuant/
 ├── config/          目标资产、调度、日志与环境配置
-├── data_layer/      外部数据采集、标准化、落库（9 个常驻数据模块）
+├── data_layer/      外部数据采集、标准化、落库（15 个常驻数据模块）
 ├── database/        SQLite 建表、迁移、路由和读写入口
-├── logic_layer/     AI-ready 特征、上下文和治理结果（14 个逻辑模块）
+├── logic_layer/     AI-ready 特征、上下文和治理结果（20 个逻辑模块）
 ├── api/             对外 REST API 服务（100+ 端点）
 ├── tests/           单元测试与模块测试
 └── main.py          统一入口，模块注册与进程管理（指数退避重启 + 三阶段优雅关停）
@@ -177,6 +188,12 @@ EvoQuant/
 | `time_slice` | 任意历史时刻的完整市场快照 + 特征历史序列 |
 | `pipeline_latency` | 各域端到端数据新鲜度与管道健康状态 |
 | `logic_pipeline` | 全链路定时编排（每 5 分钟按依赖顺序执行） |
+| `regime_detection` | 市场状态分类（trending_up/down, ranging, crisis）多因子分类器 |
+| `anomaly_detection` | 统计异常检测（价格尖刺、成交量激增、资金费率极端、相关性断裂） |
+| `liquidity_analysis` | 滑点建模、深度评分（0-100）、流动性枯竭预警 |
+| `volatility_forecast` | 已实现波动率、EWMA 预测、波动率锥、RV-IV 价差 |
+| `funding_rate_model` | 资金费率预测、基差均值回归信号 |
+| `sentiment_signal` | 情绪-价格 Granger 因果、极端反转信号、背离检测 |
 
 ## API
 
@@ -213,6 +230,8 @@ EvoQuant/
 - [x] 新闻情感标注 + 事件分类
 - [x] 数据管道延迟追踪
 - [x] 100+ REST API 端点
+- [x] 6 个新数据域：社交情绪、巨鲸追踪、订单流、DeFi 协议、跨链桥流、监管动态
+- [x] 6 个新逻辑模块：Regime 检测、异常检测、流动性分析、波动率预测、资金费率模型、情绪信号
 
 ### P2 — 进行中
 
@@ -231,6 +250,13 @@ EvoQuant/
 ## 更新记录
 
 ### 2025-05-31
+
+**v2.3 — 数据域扩展与逻辑层增强**
+
+- 6 个新数据采集模块：social_sentiment_data（社交情绪）、whale_tracker_data（巨鲸追踪）、orderflow_data（订单流）、defi_protocol_data（DeFi 协议）、bridge_flow_data（跨链桥流）、regulatory_data（监管动态）
+- 6 个新逻辑分析模块：regime_detection（市场状态分类）、anomaly_detection（异常检测）、liquidity_analysis（流动性分析）、volatility_forecast（波动率预测）、funding_rate_model（资金费率模型）、sentiment_signal（情绪信号）
+- 数据域从 8 个扩展到 14 个，逻辑模块从 14 个扩展到 20 个
+- 所有新模块遵循项目标准：独立目录、README.md、runner/service/client/models/repository 结构
 
 **v2.2 — 可靠性与性能加固**
 

@@ -37,6 +37,12 @@
 | `tokenomics_data` | 供给、解锁、基金会钱包、质押 | 供给压力与未来解锁上下文 |
 | `options_data` | IV 曲面、Gamma、墙位、成交意图、对冲压力 | 期权结构化因子与主 bundle |
 | `alternative_data` | Trends、GitHub、稳定币供给 | 补充证据与广度诊断 |
+| `social_sentiment_data` | Twitter/LunarCrush/Santiment 社交情绪 | 情绪评分、社交量、影响力加权 |
+| `whale_tracker_data` | WhaleAlert/Arkham/Nansen 大额转账 | 巨鲸动向、钱包标签、交易所流向 |
+| `orderflow_data` | Binance/Bybit/OKX aggTrades | CVD、大单占比、买卖压力分布 |
+| `defi_protocol_data` | DefiLlama TVL/借贷/DEX | TVL 变化率、借贷利率、DEX 成交量 |
+| `bridge_flow_data` | DefiLlama Bridges 跨链流 | 跨链资金净流、链间资本迁移方向 |
+| `regulatory_data` | CryptoCompare/SEC 监管事件 | 监管事件分类、ETF 进展、政策影响 |
 | `data_quality` | 跨模块审计 | `world_model_status` 与 critical gaps |
 
 ## 模块详述
@@ -302,11 +308,59 @@ data_layer/
     audit.py                     # 市场世界模型审计与快照落库
     health.py                    # 统一健康状态、quality flag 与 AI-ready 判定
     runner.py                    # CLI 与常驻巡检入口
+  social_sentiment_data/
+    README.md                    # 社交情绪模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # LunarCrush / Santiment / Twitter API 请求封装
+    models.py                    # 社交情绪数据模型定义
+    repository.py                # 数据库读写与快照维护
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  whale_tracker_data/
+    README.md                    # 巨鲸追踪模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # WhaleAlert / Arkham / Nansen API 请求封装
+    models.py                    # 巨鲸转账数据模型定义
+    repository.py                # 数据库读写与快照维护
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  orderflow_data/
+    README.md                    # 订单流模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # Binance / Bybit / OKX aggTrades 请求封装
+    models.py                    # 订单流数据模型定义
+    repository.py                # 数据库读写与快照维护
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  defi_protocol_data/
+    README.md                    # DeFi 协议模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # DefiLlama TVL / 借贷 / DEX API 请求封装
+    models.py                    # DeFi 协议数据模型定义
+    repository.py                # 数据库读写与快照维护
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  bridge_flow_data/
+    README.md                    # 跨链桥流模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # DefiLlama Bridges API 请求封装
+    models.py                    # 跨链桥流数据模型定义
+    repository.py                # 数据库读写与快照维护
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  regulatory_data/
+    README.md                    # 监管动态模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # CryptoCompare / SEC API 请求封装
+    models.py                    # 监管事件数据模型定义
+    repository.py                # 数据库读写与快照维护
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
 ```
 
 ## 当前对 AI 的供数结构
 
-当前数据层已经形成八条原始输入链，目标不是在采集层直接做判断，而是先把原始背景抓全、抓稳、抓成统一结构，再交给 AI 使用：
+当前数据层已经形成十四条原始输入链，目标不是在采集层直接做判断，而是先把原始背景抓全、抓稳、抓成统一结构，再交给 AI 使用：
 
 - `exchange_data`
   - 提供价格、成交、盘口、资金费率等交易所市场原始输入
@@ -331,10 +385,34 @@ data_layer/
   - 同时支持列出模块内部的 `source / factor / entity` 注册表，方便后续扩展与运维核对
   - 实体清单已外置为 JSON，后续维护不再需要直接改源码常量
   - registry 改动后可由长运行进程自动感知，也可以用 `--reload-registry` 强制刷新校验
+- `social_sentiment_data`
+  - 提供 Twitter/LunarCrush/Santiment 社交情绪评分、社交量、影响力加权情绪等背景输入
+  - 采集频率 30 分钟，覆盖 TARGET_SYMBOLS 全部资产
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的情绪上下文
+- `whale_tracker_data`
+  - 提供 WhaleAlert/Arkham/Nansen 大额转账、钱包标签、交易所流向等巨鲸行为输入
+  - 采集频率 15 分钟，追踪 BTC/ETH/USDT/USDC 等主要资产大额异动
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的巨鲸动向上下文
+- `orderflow_data`
+  - 提供 Binance/Bybit/OKX aggTrades 聚合的 CVD、大单占比、买卖压力分布等微观结构输入
+  - 采集频率 5 分钟，覆盖 TARGET_SYMBOLS 全部资产
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的订单流上下文
+- `defi_protocol_data`
+  - 提供 DefiLlama TVL 变化率、借贷利率（Aave/Compound）、DEX 成交量等 DeFi 协议输入
+  - 采集频率 1 小时，覆盖主流 DeFi 协议
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的 DeFi 协议上下文
+- `bridge_flow_data`
+  - 提供 DefiLlama Bridges 跨链资金净流、链间资本迁移方向等输入
+  - 采集频率 1 小时，覆盖主流 L1/L2 链
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的跨链资金流上下文
+- `regulatory_data`
+  - 提供 CryptoCompare/SEC 监管事件分类、ETF 审批进展、政策变化等输入
+  - 采集频率 2 小时，追踪全球主要监管动态
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的监管动态上下文
 
 当前 `main.py` 默认会自动拉起完整的数据层常驻模块集合：
 
-- `exchange_data / macro_data / news_data / event_calendar_data / onchain_data / alternative_data / tokenomics_data / options_data / data_quality_audit`
+- `exchange_data / macro_data / news_data / event_calendar_data / onchain_data / alternative_data / tokenomics_data / options_data / social_sentiment_data / whale_tracker_data / orderflow_data / defi_protocol_data / bridge_flow_data / regulatory_data / data_quality_audit`
 - `technical_indicators / exchange_comparison / ai_market_context` 这类逻辑层任务仍保持手动启动，避免把“采集层”和“分析层”混成同一条默认运行链
 
 当前总入口的常驻模块监管语义也已经收紧为“保住真实供数优先”：
