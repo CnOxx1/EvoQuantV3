@@ -268,6 +268,8 @@ EvoQuant/
 - 异步采集基础设施：`gather_with_concurrency()` + `run_in_thread()` 支持并行化交易所 API 调用
 - 事件驱动缓存失效：按模块粒度清空受影响的缓存前缀，替代全量清空
 - 分块批量写入：`execute_many_chunked()` 支持大批量 INSERT 分块提交，降低 WAL 积压
+- Gzip 响应压缩：GZipMiddleware 自动压缩 >1KB 响应体，减少 60-80% 传输体积
+- mypy 类型检查：渐进式严格配置，api/database/config 模块强制类型注解
 - 依赖版本锁定：requirements.txt 全部 pin 到精确版本
 - .gitignore 补充：排除根目录 *.db 文件（防止 6GB+ 误提交）
 
