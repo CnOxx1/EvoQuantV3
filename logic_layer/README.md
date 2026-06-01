@@ -55,6 +55,11 @@
 | `volatility_forecast` | 历史收益率 + IV + 已实现波动率 | EWMA 预测、波动率锥、RV-IV 价差 |
 | `funding_rate_model` | 资金费率历史 + 基差 + 持仓量 | 费率预测、基差均值回归信号 |
 | `sentiment_signal` | 社交情绪 + 价格序列 | Granger 因果、极端反转信号、情绪-价格背离 |
+| `temporal_pattern` | merged_klines + funding_rates | 日内季节性、月度效应、减半周期相位、期权到期引力 |
+| `flow_decomposition` | orderflow_data + whale_tracker | VPIN、smart/dumb money 分离、积累/派发阶段 |
+| `contagion_risk` | cross_asset + onchain + defi_protocol | 条件相关性、CoVaR、级联风险、稳定币脱锚概率 |
+| `alpha_decay` | 所有逻辑层信号 | 信号半衰期、拥挤度检测、信号惊喜指数、跨信号背离 |
+| `narrative_regime` | news + social_sentiment + alternative | 叙事状态机、叙事生命周期、叙事→资金流映射 |
 
 ## 数据流全景
 
@@ -119,6 +124,28 @@ logic_layer/
     models.py, repository.py, runner.py, service.py
   logic_pipeline/
     runner.py, service.py
+  regime_detection/
+    detector.py, models.py, repository.py, runner.py, service.py
+  anomaly_detection/
+    detector.py, models.py, repository.py, runner.py, service.py
+  liquidity_analysis/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  volatility_forecast/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  funding_rate_model/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  sentiment_signal/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  temporal_pattern/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  flow_decomposition/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  contagion_risk/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  alpha_decay/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  narrative_regime/
+    analyzer.py, models.py, repository.py, runner.py, service.py
 ```
 
 ## 各模块详述
@@ -179,9 +206,29 @@ logic_layer/
 
 全链路定时编排。按依赖顺序执行逻辑层全部模块，每 5 分钟（`LOGIC_PIPELINE_INTERVAL_SECONDS`）一次。分 5 个阶段：Phase 1 technical_indicators → Phase 2 feature_standardization/cross_asset/exchange_comparison/macro_context/news_sentiment → Phase 3 portfolio_risk/market_breadth/asset_readiness → Phase 4 ai_market_context → Phase 5 pipeline_latency。各阶段内模块独立执行，单个失败不阻断后续阶段。由 `main.py` 作为 autostart daemon 自动拉起。
 
+### temporal_pattern
+
+时间模式识别。基于 `merged_klines` 和 `funding_rates` 历史数据，计算日内季节性（按小时/星期聚合历史收益率和成交量）、月度效应（按月统计历史表现）、减半周期相位（距下次减半天数 + 历史类比匹配）、期权到期引力（距最近到期日天数 + max pain 距离）和 Funding 8h 结算周期模式。结果写入 `temporal_patterns` 和 `seasonal_profiles` 表。
+
+### flow_decomposition
+
+资金流分解。基于 `orderflow_data` 和 `whale_tracker` 数据，计算 VPIN（将成交量按 bucket 分组，计算买卖不平衡概率）、smart money 识别（大单 + 低波动时段 = informed）、散户识别（小单 + 高波动时段 = uninformed）和积累/派发阶段检测。结果写入 `flow_decomposition` 和 `vpin_history` 表。VPIN > 0.8 标记为闪崩高风险。
+
+### contagion_risk
+
+传染风险建模。基于 `cross_asset_analysis`、`onchain_data` 和 `defi_protocol_data` 数据，计算条件相关性（下跌 >2σ 时的相关性 vs 正常时期）、CoVaR（资产 B 在资产 A 处于 5% 尾部时的 VaR）、尾部 Beta（极端下跌时的 beta 放大倍数）和稳定币脱锚概率。结果写入 `contagion_metrics` 和 `cascade_risk` 表。输出系统性风险评分（0-100）。
+
+### alpha_decay
+
+信号衰减与拥挤度。读取所有逻辑层信号输出，计算信号半衰期（信号发出后收益率的自相关衰减速度）、拥挤度（多个独立信号同时强烈看多/看空 = 拥挤）、信号惊喜指数（当前信号值偏离近期分布的 z-score）和跨信号背离（基本面 vs 技术面方向不一致）。结果写入 `signal_decay` 和 `crowding_index` 表。
+
+### narrative_regime
+
+叙事状态机。基于 `news_data`、`social_sentiment_data` 和 `alternative_data` 数据，通过关键词聚类提取市场叙事，判断叙事生命周期阶段（emerging/growing/peak/decaying），计算叙事 attention 与相关 token 价格/成交量的相关性，检测叙事传染路径。结果写入 `market_narratives` 和 `narrative_transitions` 表。
+
 ## AI 输出结构
 
-当前逻辑层输出 13 类 AI 可消费结果：
+当前逻辑层输出 18 类 AI 可消费结果：
 
 | 输出 | 核心价值 |
 | --- | --- |
@@ -197,6 +244,11 @@ logic_layer/
 | `time_slice` | 任意历史时刻的完整市场快照回溯 + 特征历史序列 |
 | `news_sentiment` | 新闻情感/事件类型/影响范围结构化标注 |
 | `pipeline_latency` | 各域端到端延迟与管道健康状态 |
+| `temporal_pattern` | 日内季节性、月度效应、减半周期、期权到期引力 |
+| `flow_decomposition` | VPIN、smart/dumb money 分离、积累/派发阶段 |
+| `contagion_risk` | 条件相关性、CoVaR、级联风险、稳定币脱锚概率 |
+| `alpha_decay` | 信号半衰期、拥挤度、信号惊喜、跨信号背离 |
+| `narrative_regime` | 叙事状态机、生命周期、叙事→资金流映射 |
 
 最终由 `ai_market_context` 统一聚合为单一 bundle 供 AI 消费。
 

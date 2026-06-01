@@ -43,6 +43,10 @@
 | `defi_protocol_data` | DefiLlama TVL/借贷/DEX | TVL 变化率、借贷利率、DEX 成交量 |
 | `bridge_flow_data` | DefiLlama Bridges 跨链流 | 跨链资金净流、链间资本迁移方向 |
 | `regulatory_data` | CryptoCompare/SEC 监管事件 | 监管事件分类、ETF 进展、政策影响 |
+| `etf_flow_data` | BTC/ETH ETF 每日净流入 | 净流入趋势、累计 AUM、异常流入 z-score |
+| `perpetual_basis_curve` | 期货期限结构（perp/季度/双季度） | contango/backwardation、曲线斜率、roll yield |
+| `mev_data` | MEV 提取量、三明治攻击、清算 MEV | MEV 趋势、散户压力、builder 集中度 |
+| `cefi_lending_rate` | CeFi 借贷利率（Binance/OKX/Bybit） | CeFi-DeFi 利差、利率倒挂、去杠杆信号 |
 | `data_quality` | 跨模块审计 | `world_model_status` 与 critical gaps |
 
 ## 模块详述
@@ -55,6 +59,10 @@
 - `tokenomics_data`：采集供给压力背景，当前已实现 `circulating_supply`、`unlock_schedule`、`unlock_realization`、`treasury_wallet_flow`、`staking_ratio`，并统一标准化到 `tokenomics_timeseries`、`latest_tokenomics_timeseries` 与 `token_unlock_events`。当前 latest bundle 还会额外输出 `coverage_summary / configured_universe_summary / source_health / source_health_summary / data_quality_flags / quality_notes / upcoming_unlock_events / unlock_horizon_summary`，明确告诉 AI 当前供给证据是否足够直接参与市场判断，以及未来 `24h / 7d / 30d` 的真实解锁压力是否已经清晰可见。`load_source_coverage()` 里的 `is_ready_for_ai` 现在也已继续收紧，不再把“最近运行成功但实体/因子覆盖仍不完整，或 latest 混入 partial/fallback/stale/unknown 样本”的 source 误判为可直接供 AI 使用。现在 `load_latest_context_bundle()` 也已经统一按 `is_ready_for_ai` 过滤主视图，不再只排除 registry 未就绪的钱包流；所有非 AI-ready source 的真实 latest 点和未来解锁事件都会从 AI 主 bundle 中剥离，只保留在 `raw_* / ai_excluded_sources / source_health / raw_upcoming_unlock_event_count / raw_unlock_horizon_summary` 等诊断字段里。对于 `treasury_wallet_flow`，现在还额外要求 `treasury_wallet_groups.json` 的钱包组口径达到可核验门槛；如果 registry 仍是 placeholder、没有真实地址数量或缺少来源引用，这路数据仍可落库，但不会被标成可直接给 AI 使用。`configured_universe_summary` 还会直接提示当前默认 tokenomics 资产宇宙是否仍偏窄，更适合做核心执行资产供给跟踪，而不是更广的 cross-asset breadth 判断；在 `factor_ids` 等过滤查询下也会正确降为 `filtered`。
 - `options_data`：采集期权侧的前瞻证据，当前已实现 `ATM IV 7d/30d`、`IV term structure`、`25d risk reversal / butterfly`、`realized vol 7d/30d`、`IV-RV spread`、`max pain / call wall / put wall distance`、`top strike / near expiry / ATM strike concentration`、`net gamma / gamma flip / gamma wall`、`top gamma / near expiry gamma concentration`、`call/put buyer premium share`、`net call / net put premium flow`、`opening / near expiry / block flow share`、`7d / 30d / 90d+` 到期桶 OI share、`7d / 30d` 到期桶 gamma share、`7d / 30d` 到期桶 premium flow share、`vanna / charm / volga / vomma / color exposure`、`vanna / charm flip distance`、`near expiry charm / color share`、`put/call OI ratio`、`near expiry / largest expiry OI concentration`，并统一标准化到 `options_timeseries` 与 `latest_options_timeseries`。当前默认资产宇宙已对齐 `BTC,ETH,SOL,SUI`，latest bundle 也会额外输出 `coverage_summary / configured_universe_summary / source_health / venue_coverage_summary / latest_quality_flag_breakdown / data_quality_flags / quality_notes`，明确告诉 AI 当前期权证据是否真的同时覆盖了目标资产集合和关键 venue。`load_source_coverage()` 里的 `is_ready_for_ai` 现在也已继续收紧，不再把“venue 看起来齐了，但 latest 混入 partial/fallback/stale/unknown，或实体/因子覆盖仍不完整”的 source 误判为可直接供 AI 使用。`load_latest_context_bundle()` 现在也会把非 AI-ready 期权 source 从 `row_count / entity_count / source_counts / leaders / sources / latest_quality_*` 这些 AI 直接消费字段里剥离，只在 `raw_as_of / raw_row_count / raw_entity_count / raw_source_counts / raw_latest_quality_* / ai_excluded_sources / source_health` 等诊断字段里保留真实已落库快照。`configured_universe_summary` 还会直接提示当前默认期权宇宙是否仍偏向核心风险代理，而不是更广的市场 breadth 视角；只有在 `factor_ids`、`entity_keys` 或真正把默认 source 宇宙缩成子集的 `source_names` 过滤查询下才会降为 `filtered`，不会再把“显式传完整默认 source 集合”的情况误报成默认宇宙缺口。
 - `alternative_data`：补充特征模块，当前已实现 Google Trends 搜索热度、attention shock、cross-query 标准化、related query/topic 叙事特征、GitHub 活跃度，以及稳定币供给/链分布和 `mint / burn / bridge` 事件化历史采集，并统一标准化到 `alternative_timeseries` 与 `latest_alternative_timeseries`。当前 latest bundle 已对齐 `as_of=真实最新观测时间`，并额外输出 `coverage_summary / configured_universe_summary / source_health / source_health_summary / data_quality_flags / quality_notes`。`load_source_coverage()` 里的 `is_ready_for_ai` 现在也已收紧，不再把“最近运行成功但仍是 P1 experimental、实体覆盖不完整、或 latest 混入 partial/fallback/stale/unknown 样本”的 source 误判为可直接供 AI 使用，同时补充了 `ready_for_ai_source_count / not_ready_for_ai_source_count`。`load_latest_context_bundle()` 现在也会把非 AI-ready source 从 AI 直接消费的 `sources / row_count / source_counts / latest_quality_flag_breakdown` 里剥离，只在 `raw_* / ai_excluded_sources / source_health` 等诊断字段里保留真实已落库快照。其中 Google Trends 仍属于实验性 P1 source，而 `configured_universe_summary` 会直接提示当前默认补充特征宇宙是否仍偏向核心关注对象，尚不足以代表更广市场 breadth；只有在 `entity_keys`、`factor_ids` 或真正把默认 source 宇宙缩成子集的 `source_names` 过滤查询下才会降为 `filtered`，避免把局部查询误判成默认 registry 宇宙不足。
+- `etf_flow_data`：采集 BTC/ETH 现货 ETF 每日资金流数据，当前已接入 SoSoValue API，追踪各发行商（BlackRock、Fidelity、Grayscale 等）的每日净流入、总 AUM、份额变化和溢价/折价率。数据按交易日更新，落库到 `etf_daily_flows` 和 `etf_flow_summary`。`load_latest_context_bundle()` 输出最近 7 天净流入趋势、累计 AUM 变化、连续流入/流出天数和单日异常流入检测（z-score > 2 标记为异常）。ETF 资金流是当前 BTC/ETH 最大的边际买卖力量来源。
+- `perpetual_basis_curve`：采集完整期货期限结构，当前已接入 Binance/OKX/Bybit 的永续合约、季度合约和双季度合约价格。每小时采集一次，计算各合约相对现货的 basis 百分比和年化 basis，落库到 `futures_term_structure` 和 `basis_curve_snapshot`。`load_latest_context_bundle()` 输出当前期限结构形态（contango/backwardation/flat）、曲线斜率变化趋势、7 日 roll yield 估算和期限溢价异常检测。
+- `mev_data`：采集以太坊 MEV（最大可提取价值）数据，当前已接入 Flashbots API 和 EigenPhi。每 30 分钟采集一次，追踪每个区块的 MEV 奖励、三明治攻击次数、套利次数、清算次数和 builder 信息，落库到 `mev_blocks` 和 `mev_agg`。`load_latest_context_bundle()` 输出 1h/24h MEV 提取量趋势、三明治攻击频率（散户压力指标）、清算 MEV 占比（DeFi 压力指标）和 builder 集中度（HHI）。
+- `cefi_lending_rate`：采集 CeFi 平台借贷利率，当前已接入 Binance Earn、OKX Earn 和 Bybit Earn 的活期/定期产品利率。每小时采集一次，追踪各平台各资产的供给 APY、借贷 APY 和资金利用率，落库到 `cefi_lending_rates` 和 `lending_rate_spread`。`load_latest_context_bundle()` 输出 CeFi vs DeFi 利率价差、利率倒挂检测（DeFi > CeFi = 去杠杆信号）、各平台利率排名和利率趋势方向。
 - `data_quality`：不采集外部市场数据，而是统一维护数据层健康语义、`quality_flag` 汇总、AI-ready 判定和跨模块市场世界模型审计。当前已经支持 `--mode once / --mode scheduler / --print-market-audit / --save-market-audit`，会基于各模块真实 `load_source_coverage()` 与数据库真实 `latest_* / history` 表，持续判断 `exchange / macro / news / event_calendar / onchain / tokenomics / options / alternative` 这些证据带到底是 `ready / stale / insufficient / unconfigured / missing`，并把审计结果同时落到 `data_quality_audit_snapshots` 与 `collection_runs`，明确告诉你“整套数据层是否真的足够给 AI 看市场”，而不是只看某个单点模块是否还活着。
 
 ## 跨模块审计
@@ -356,6 +364,34 @@ data_layer/
     repository.py                # 数据库读写与快照维护
     runner.py                    # CLI 运行入口
     service.py                   # 模块编排、调度与 context bundle
+  etf_flow_data/
+    README.md                    # ETF 资金流模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # SoSoValue API 请求封装
+    models.py                    # ETF 资金流数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  perpetual_basis_curve/
+    README.md                    # 期货期限结构模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # Binance / OKX / Bybit 季度合约请求封装
+    models.py                    # 期限结构数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  mev_data/
+    README.md                    # MEV 数据模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # Flashbots / EigenPhi API 请求封装
+    models.py                    # MEV 数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  cefi_lending_rate/
+    README.md                    # CeFi 借贷利率模块说明与维护入口
+    __init__.py                  # 模块包入口
+    client.py                    # Binance / OKX / Bybit Earn API 请求封装
+    models.py                    # 借贷利率数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
 ```
 
 ## 当前对 AI 的供数结构
@@ -409,6 +445,22 @@ data_layer/
   - 提供 CryptoCompare/SEC 监管事件分类、ETF 审批进展、政策变化等输入
   - 采集频率 2 小时，追踪全球主要监管动态
   - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的监管动态上下文
+- `etf_flow_data`
+  - 提供 BTC/ETH 现货 ETF 每日净流入、AUM、溢价/折价率等边际资金力量输入
+  - 采集频率每日（按交易日更新），追踪 BlackRock/Fidelity/Grayscale 等主要发行商
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的 ETF 资金流上下文
+- `perpetual_basis_curve`
+  - 提供完整期货期限结构（永续/季度/双季度）、contango/backwardation 形态、曲线斜率和 roll yield 等输入
+  - 采集频率 1 小时，覆盖 Binance/OKX/Bybit 三大交易所
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的期限结构上下文
+- `mev_data`
+  - 提供以太坊 MEV 提取量、三明治攻击频率、套利和清算 MEV、builder 集中度等 DeFi 压力输入
+  - 采集频率 30 分钟，追踪 Flashbots 和 EigenPhi 数据
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的 MEV 压力上下文
+- `cefi_lending_rate`
+  - 提供 CeFi 平台（Binance/OKX/Bybit）借贷利率、CeFi-DeFi 利差和利率倒挂信号等输入
+  - 采集频率 1 小时，追踪活期/定期产品的供给和借贷利率
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的借贷利率上下文
 
 当前 `main.py` 默认会自动拉起完整的数据层常驻模块集合：
 

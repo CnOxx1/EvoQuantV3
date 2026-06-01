@@ -5,7 +5,7 @@
 大多数量化项目从"策略"出发，EvoQuant 从"理解"出发。它解决的核心问题是：AI 在做交易决策前，需要一个完整、诚实、可回溯的市场认知底座。
 
 ```text
-3 交易所 × 18 资产 × 14 数据域 × 228 技术指标 × 实时质量治理
+3 交易所 × 18 资产 × 18 数据域 × 228 技术指标 × 实时质量治理
 → AI 随时可查的完整市场上下文
 ```
 
@@ -14,7 +14,7 @@
 | 传统量化数据管道 | EvoQuant |
 | --- | --- |
 | 单交易所单币种 | 3 交易所 × 18 资产，多源交叉验证 |
-| 只有 K 线和指标 | 14 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics + 社交情绪 + 巨鲸追踪 + 订单流 + DeFi 协议 + 跨链桥流 + 监管动态 |
+| 只有 K 线和指标 | 18 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics + 社交情绪 + 巨鲸追踪 + 订单流 + DeFi 协议 + 跨链桥流 + 监管动态 + ETF 资金流 + 期货期限结构 + MEV + CeFi 借贷利率 |
 | 缺失数据静默忽略 | 显式标记 stale / missing / partial，AI 知道自己"不知道什么" |
 | 固定参数指标 | 228 个指标含自适应 Ehlers 系列、分形维度、Hurst 指数 |
 | 只能看当前 | Point-in-time 回溯：查询任意历史时刻的完整市场状态 |
@@ -47,6 +47,10 @@
 | DeFi 协议 | DefiLlama | 1 小时 | TVL 变化、借贷利率、DEX 成交量 |
 | 跨链桥流 | DefiLlama Bridges | 1 小时 | 跨链资金净流、链间资本迁移 |
 | 监管动态 | CryptoCompare / SEC | 2 小时 | 监管事件、ETF 进展、政策变化 |
+| ETF 资金流 | SoSoValue | 每日 | 净流入趋势、累计 AUM、异常流入 z-score |
+| 期货期限结构 | Binance / OKX / Bybit | 1 小时 | contango/backwardation、曲线斜率、roll yield |
+| MEV | Flashbots / EigenPhi | 30 分钟 | 三明治攻击频率、清算 MEV、builder 集中度 |
+| CeFi 借贷利率 | Binance / OKX / Bybit Earn | 1 小时 | CeFi-DeFi 利差、利率倒挂、去杠杆信号 |
 
 ## 技术指标体系
 
@@ -91,19 +95,22 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │                        AI Consumer Layer                         │
 │              REST API (200+ endpoints) / Bundle Query            │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Logic Layer (20 modules)                 │
+│                         Logic Layer (25 modules)                 │
 │  technical_indicators → feature_standardization → cross_asset   │
 │  macro_context → news_sentiment → portfolio_risk                │
 │  market_breadth → asset_readiness → ai_market_context           │
 │  pipeline_latency → time_slice → logic_pipeline                 │
 │  regime_detection → anomaly_detection → liquidity_analysis      │
 │  volatility_forecast → funding_rate_model → sentiment_signal    │
+│  temporal_pattern → flow_decomposition → contagion_risk         │
+│  alpha_decay → narrative_regime                                 │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Data Layer (15 modules)                  │
+│                         Data Layer (19 modules)                  │
 │  exchange_data │ macro_data │ news_data │ onchain_data          │
 │  options_data │ tokenomics_data │ event_calendar │ alternative  │
 │  social_sentiment │ whale_tracker │ orderflow │ defi_protocol   │
 │  bridge_flow │ regulatory_data │ data_quality                   │
+│  etf_flow_data │ perpetual_basis_curve │ mev_data │ cefi_lending│
 ├─────────────────────────────────────────────────────────────────┤
 │                         Storage Layer                            │
 │  SQLite (3 域拆分) │ latest_* 快照 │ 历史表 │ 质量审计表       │
@@ -111,6 +118,7 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │                         External Sources                         │
 │  Binance │ OKX │ Bybit │ DeFiLlama │ Deribit │ 宏观数据源      │
 │  LunarCrush │ Santiment │ Arkham │ Nansen │ WhaleAlert │ SEC   │
+│  SoSoValue │ Flashbots │ EigenPhi                              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

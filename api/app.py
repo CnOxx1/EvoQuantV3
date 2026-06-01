@@ -61,6 +61,15 @@ from api.routers.regime import router as regime_router
 from api.routers.anomaly import router as anomaly_router
 from api.routers.liquidity import router as liquidity_router
 from api.routers.volatility import router as volatility_router
+from api.routers.etf_flow import router as etf_flow_router
+from api.routers.basis_curve import router as basis_curve_router
+from api.routers.mev import router as mev_router
+from api.routers.cefi_lending import router as cefi_lending_router
+from api.routers.temporal_pattern import router as temporal_pattern_router
+from api.routers.flow_decomposition import router as flow_decomposition_router
+from api.routers.contagion_risk import router as contagion_risk_router
+from api.routers.alpha_decay import router as alpha_decay_router
+from api.routers.narrative_regime import router as narrative_regime_router
 from config.symbols import SYMBOL_UNIVERSE
 
 # ---------------------------------------------------------------------------
@@ -246,6 +255,15 @@ app.include_router(regime_router)
 app.include_router(anomaly_router)
 app.include_router(liquidity_router)
 app.include_router(volatility_router)
+app.include_router(etf_flow_router)
+app.include_router(basis_curve_router)
+app.include_router(mev_router)
+app.include_router(cefi_lending_router)
+app.include_router(temporal_pattern_router)
+app.include_router(flow_decomposition_router)
+app.include_router(contagion_risk_router)
+app.include_router(alpha_decay_router)
+app.include_router(narrative_regime_router)
 
 
 # ---------------------------------------------------------------------------

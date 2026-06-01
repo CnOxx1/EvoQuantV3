@@ -42,6 +42,25 @@ api/routers/
   ai_context.py             # AI 上下文
   microstructure.py         # 微观结构
   factor_explorer.py        # 因子探索
+  social_sentiment.py       # 社交情绪
+  whale_tracker.py          # 巨鲸追踪
+  orderflow_micro.py        # 微观订单流
+  defi.py                   # DeFi 协议
+  bridge_flow.py            # 跨链桥流
+  regulatory.py             # 监管动态
+  regime.py                 # 市场状态
+  anomaly.py                # 异常检测
+  liquidity.py              # 流动性分析
+  volatility.py             # 波动率预测
+  etf_flow.py               # ETF 资金流
+  basis_curve.py            # 期货期限结构
+  mev.py                    # MEV 数据
+  cefi_lending.py           # CeFi 借贷利率
+  temporal_pattern.py       # 时间模式
+  flow_decomposition.py     # 资金流分解
+  contagion_risk.py         # 传染风险
+  alpha_decay.py            # 信号衰减
+  narrative_regime.py       # 叙事状态机
 ```
 
 ## 路由注册
