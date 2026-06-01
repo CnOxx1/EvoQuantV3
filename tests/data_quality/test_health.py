@@ -356,6 +356,11 @@ def test_data_layer_audit_service_includes_asset_readiness_summary(tmp_path, mon
             "tokenomics_data": lambda local_db: StubCoverageService(healthy_coverage),
             "options_data": lambda local_db: StubCoverageService(healthy_coverage),
             "alternative_data": lambda local_db: StubCoverageService(healthy_coverage),
+            "perpetual_dex_data": lambda local_db: StubCoverageService(healthy_coverage),
+            "onchain_address_data": lambda local_db: StubCoverageService(healthy_coverage),
+            "dex_liquidity_data": lambda local_db: StubCoverageService(healthy_coverage),
+            "gas_network_data": lambda local_db: StubCoverageService(healthy_coverage),
+            "governance_data": lambda local_db: StubCoverageService(healthy_coverage),
             "asset_readiness": lambda local_db: asset_readiness_stub,
         },
     )

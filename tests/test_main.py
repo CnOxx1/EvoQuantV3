@@ -44,6 +44,13 @@ def test_resolve_modules_defaults_to_autostart_daemons():
         "tokenomics_data",
         "options_data",
         "data_quality_audit",
+        "perpetual_dex_data",
+        "onchain_address_data",
+        "dex_liquidity_data",
+        "gas_network_data",
+        "governance_data",
+        "logic_pipeline",
+        "api_server",
     ]
 
 
