@@ -44,6 +44,60 @@ def get_narrative_transitions(
     return {"count": len(rows), "transitions": rows}
 
 
+@router.get("/by-phase/{phase}")
+def get_by_phase(phase: str) -> dict[str, Any]:
+    """按生命周期阶段过滤。"""
+    valid_phases = ("emerging", "growing", "peak", "decaying")
+    if phase not in valid_phases:
+        raise HTTPException(status_code=400, detail=f"Invalid phase. Must be one of: {valid_phases}")
+    db = get_analytics_db()
+    rows = db.fetch_all(
+        "SELECT * FROM market_narratives WHERE lifecycle_phase = ? "
+        "ORDER BY attention_score DESC",
+        (phase,),
+    )
+    return {"phase": phase, "count": len(rows), "narratives": rows}
+
+
+@router.get("/attention-ranking")
+def get_attention_ranking(
+    limit: int = Query(20, ge=1, le=50, description="返回条数"),
+) -> dict[str, Any]:
+    """按注意力评分排名。"""
+    db = get_analytics_db()
+    rows = db.fetch_all(
+        "SELECT * FROM market_narratives "
+        "ORDER BY attention_score DESC LIMIT ?",
+        (limit,),
+    )
+    return {"count": len(rows), "ranking": rows}
+
+
+@router.get("/tokens/{narrative_id}")
+def get_narrative_tokens(narrative_id: str) -> dict[str, Any]:
+    """叙事关联 token。"""
+    db = get_analytics_db()
+    rows = db.fetch_all(
+        "SELECT * FROM narrative_tokens WHERE narrative_id = ? "
+        "ORDER BY relevance_score DESC",
+        (narrative_id,),
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No tokens for narrative {narrative_id}")
+    return {"narrative_id": narrative_id, "count": len(rows), "tokens": rows}
+
+
+@router.get("/emerging")
+def get_emerging_narratives() -> dict[str, Any]:
+    """新兴叙事（早期机会）。"""
+    db = get_analytics_db()
+    rows = db.fetch_all(
+        "SELECT * FROM market_narratives WHERE lifecycle_phase = 'emerging' "
+        "ORDER BY ts DESC, attention_score DESC LIMIT 20",
+    )
+    return {"count": len(rows), "emerging": rows}
+
+
 @router.get("/context")
 def get_narrative_context() -> dict[str, Any]:
     """叙事状态机 AI 上下文 bundle。"""
