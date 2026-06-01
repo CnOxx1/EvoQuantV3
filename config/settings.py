@@ -32,7 +32,7 @@ def _default_tracked_asset_entity_keys() -> str:
 DEFAULT_TRACKED_ASSET_ENTITY_KEYS = _default_tracked_asset_entity_keys()
 
 # 日志配置
-LOG_LEVEL = "INFO"
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 
 # 交易所配置
