@@ -151,6 +151,11 @@ app = FastAPI(
 # 中间件（注册顺序：后注册的先执行）
 # ---------------------------------------------------------------------------
 
+# Gzip 压缩 — 响应体超过 1KB 时自动压缩（减少 60-80% 传输体积）
+from starlette.middleware.gzip import GZipMiddleware
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 # CORS — 限制允许的来源
 app.add_middleware(
     CORSMiddleware,
