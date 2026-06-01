@@ -71,7 +71,7 @@ class DatabaseRouter:
         return mapping[domain]
 
     def get_manager(self, domain: Domain) -> "DBManager":
-        """获取指定域的 DBManager（懒加载、缓存、自动建表）。"""
+        """获取指定域的 DBManager（懒加载、缓存、自动建表 + 索引）。"""
         if domain not in self._managers:
             from database.db_manager import DBManager
 
@@ -83,8 +83,32 @@ class DatabaseRouter:
                 db.init_market_data_tables()
             elif domain == Domain.ANALYTICS:
                 db.init_analytics_tables()
+            # 自动补充优化索引
+            self._ensure_domain_indexes(domain, db)
             self._managers[domain] = db
         return self._managers[domain]
+
+    def _ensure_domain_indexes(self, domain: Domain, db: "DBManager") -> None:
+        """为指定域补充优化索引（幂等）。"""
+        try:
+            from database.indexes import (
+                ANALYTICS_INDEXES,
+                EXCHANGE_DATA_INDEXES,
+                MARKET_DATA_INDEXES,
+                _apply_indexes,
+            )
+
+            mapping = {
+                Domain.EXCHANGE_DATA: EXCHANGE_DATA_INDEXES,
+                Domain.MARKET_DATA: MARKET_DATA_INDEXES,
+                Domain.ANALYTICS: ANALYTICS_INDEXES,
+            }
+            indexes = mapping.get(domain, [])
+            if indexes:
+                _apply_indexes(db.conn, indexes)
+                db.conn.commit()
+        except Exception as exc:
+            logger.debug("域 {} 索引优化跳过: {}", domain.value, exc)
 
     def get_analytics_db(self) -> "DBManager":
         """返回 analytics 域 DBManager，附带 ATTACH + VIEW 跨域读取能力。

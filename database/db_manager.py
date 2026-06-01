@@ -2950,6 +2950,44 @@ class DBManager:
         self._log_slow_query(sql, start)
         return cursor
 
+    def execute_many_chunked(
+        self,
+        sql: str,
+        params_list: list[tuple],
+        chunk_size: int = 500,
+        commit_per_chunk: bool = False,
+    ) -> int:
+        """分块批量执行，适用于大批量写入（>1000 条）。
+
+        Parameters
+        ----------
+        sql : str
+            INSERT/UPDATE SQL
+        params_list : list[tuple]
+            参数列表
+        chunk_size : int
+            每块大小，默认 500（SQLite 最优实践）
+        commit_per_chunk : bool
+            是否每块提交一次（降低 WAL 积压，代价是非原子性）
+
+        Returns
+        -------
+        int
+            总写入行数
+        """
+        if not params_list:
+            return 0
+        total = 0
+        start = time.monotonic()
+        for i in range(0, len(params_list), chunk_size):
+            chunk = params_list[i:i + chunk_size]
+            self.conn.executemany(sql, chunk)
+            total += len(chunk)
+            if commit_per_chunk:
+                self.conn.commit()
+        self._log_slow_query(f"chunked({len(params_list)}): {sql[:100]}", start)
+        return total
+
     def commit(self):
         """提交事务"""
         self.conn.commit()

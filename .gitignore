@@ -28,6 +28,9 @@ PUBLIC_RELEASE_AUDIT.md
 database/*.db
 database/*.db-shm
 database/*.db-wal
+*.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 

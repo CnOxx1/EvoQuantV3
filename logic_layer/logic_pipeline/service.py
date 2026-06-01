@@ -2,7 +2,11 @@
 
 按依赖顺序执行逻辑层全部模块，生成 AI 可消费的完整市场上下文。
 
-执行顺序：
+支持两种执行模式：
+  1. 经典模式（默认）：固定 5 阶段串行/并行混合
+  2. DAG 模式：基于依赖图自动分层并行（设置 LOGIC_PIPELINE_USE_DAG=1 启用）
+
+执行顺序（经典模式）：
   Phase 1: technical_indicators（依赖原始 klines）
   Phase 2: feature_standardization, cross_asset_analysis, exchange_comparison,
            macro_context, news_sentiment（互相独立，依赖 Phase 1 或原始数据）
@@ -32,6 +36,9 @@ PHASE2_MAX_WORKERS = int(os.environ.get("LOGIC_PIPELINE_PHASE2_WORKERS", "4"))
 
 # Phase 2 单模块超时（秒），超时后标记为 timeout 但不影响其他模块
 PHASE2_TASK_TIMEOUT = int(os.environ.get("LOGIC_PIPELINE_PHASE2_TIMEOUT", "300"))
+
+# 是否启用 DAG 模式
+USE_DAG = os.environ.get("LOGIC_PIPELINE_USE_DAG", "0") == "1"
 
 
 def _utc_now() -> datetime:
@@ -117,24 +124,126 @@ def _execute_task(phase_name: str, module_name: str, task_fn: callable) -> str:
 def run_full_pipeline() -> dict[str, object]:
     """执行逻辑层全链路，返回各阶段结果摘要。"""
     pipeline_start = _utc_now()
+
+    if USE_DAG:
+        all_results = _run_dag_pipeline()
+    else:
+        all_results = _run_classic_pipeline()
+
+    pipeline_end = _utc_now()
+    success_count = sum(1 for v in all_results.values() if v == "success")
+    total_count = len(all_results)
+
+    logger.info(
+        "逻辑管道全链路完成: {}/{} 成功, 耗时 {:.1f}s{}",
+        success_count, total_count,
+        (pipeline_end - pipeline_start).total_seconds(),
+        " [DAG模式]" if USE_DAG else "",
+    )
+
+    # 管道完成后按模块粒度清空 API 缓存
+    _invalidate_api_cache_by_modules(
+        [k for k, v in all_results.items() if v == "success"]
+    )
+
+    return {
+        "started_at": pipeline_start.isoformat(),
+        "finished_at": pipeline_end.isoformat(),
+        "success_count": success_count,
+        "total_count": total_count,
+        "mode": "dag" if USE_DAG else "classic",
+        "results": all_results,
+    }
+
+
+def _run_dag_pipeline() -> dict[str, str]:
+    """DAG 模式：基于依赖图自动分层并行执行。"""
+    from logic_layer.logic_pipeline.dag_scheduler import ModuleNode, run_dag
+
+    nodes = [
+        ModuleNode("technical_indicators", _make_technical_indicators()),
+        ModuleNode("feature_standardization", _make_feature_standardization(),
+                   depends_on=["technical_indicators"]),
+        ModuleNode("cross_asset_analysis", _make_cross_asset_analysis(),
+                   depends_on=["technical_indicators"]),
+        ModuleNode("exchange_comparison", _make_exchange_comparison()),
+        ModuleNode("macro_context", _make_macro_context()),
+        ModuleNode("news_sentiment", _make_news_sentiment()),
+        ModuleNode("market_structure", _make_market_structure()),
+        ModuleNode("portfolio_risk", _make_portfolio_risk(),
+                   depends_on=["cross_asset_analysis"]),
+        ModuleNode("market_breadth", _make_market_breadth()),
+        ModuleNode("asset_readiness", _make_asset_readiness(),
+                   depends_on=["feature_standardization", "cross_asset_analysis"]),
+        ModuleNode("ai_market_context", _make_ai_market_context(),
+                   depends_on=["portfolio_risk", "market_breadth", "asset_readiness"]),
+        ModuleNode("pipeline_latency", _make_pipeline_latency(),
+                   depends_on=["ai_market_context"]),
+    ]
+    return run_dag(nodes)
+
+
+def _run_classic_pipeline() -> dict[str, str]:
+    """经典模式：固定 5 阶段串行/并行混合。"""
     all_results: dict[str, str] = {}
 
     # === Phase 1: 技术指标 ===
-    def _technical_indicators():
+    results = _run_phase("Phase1", [
+        ("technical_indicators", _make_technical_indicators()),
+    ])
+    all_results.update(results)
+
+    # === Phase 2: 独立模块（互不依赖） ===
+    results = _run_phase_parallel("Phase2", [
+        ("feature_standardization", _make_feature_standardization()),
+        ("cross_asset_analysis", _make_cross_asset_analysis()),
+        ("exchange_comparison", _make_exchange_comparison()),
+        ("macro_context", _make_macro_context()),
+        ("news_sentiment", _make_news_sentiment()),
+        ("market_structure", _make_market_structure()),
+    ])
+    all_results.update(results)
+
+    # === Phase 3: 依赖 Phase 2 的模块 ===
+    results = _run_phase("Phase3", [
+        ("portfolio_risk", _make_portfolio_risk()),
+        ("market_breadth", _make_market_breadth()),
+        ("asset_readiness", _make_asset_readiness()),
+    ])
+    all_results.update(results)
+
+    # === Phase 4: 最终 AI 上下文聚合 ===
+    results = _run_phase("Phase4", [
+        ("ai_market_context", _make_ai_market_context()),
+    ])
+    all_results.update(results)
+
+    # === Phase 5: 管道延迟监控 ===
+    results = _run_phase("Phase5", [
+        ("pipeline_latency", _make_pipeline_latency()),
+    ])
+    all_results.update(results)
+
+    return all_results
+
+
+# ------------------------------------------------------------------
+# 模块工厂函数（延迟导入，避免循环依赖）
+# ------------------------------------------------------------------
+
+def _make_technical_indicators() -> callable:
+    def _run():
         from logic_layer.technical_indicators.service import TechnicalIndicatorService
         svc = TechnicalIndicatorService()
         try:
             svc.refresh_all(None, None, None, full_refresh=False)
         finally:
             svc.close()
+    return _run
 
-    results = _run_phase("Phase1", [
-        ("technical_indicators", _technical_indicators),
-    ])
-    all_results.update(results)
 
-    # === Phase 2: 独立模块（互不依赖） ===
-    def _feature_standardization():
+def _make_feature_standardization() -> callable:
+    def _run():
         from logic_layer.feature_standardization.service import (
             FeatureStandardizationService,
         )
@@ -143,16 +252,22 @@ def run_full_pipeline() -> dict[str, object]:
             svc.run_standardization(timeframe="1h", save=True)
         finally:
             svc.close()
+    return _run
 
-    def _cross_asset_analysis():
+
+def _make_cross_asset_analysis() -> callable:
+    def _run():
         from logic_layer.cross_asset_analysis.service import CrossAssetAnalysisService
         svc = CrossAssetAnalysisService()
         try:
             svc.run_all()
         finally:
             svc.close()
+    return _run
 
-    def _exchange_comparison():
+
+def _make_exchange_comparison() -> callable:
+    def _run():
         from logic_layer.exchange_comparison.service import ExchangeComparisonService
         from logic_layer.exchange_comparison.models import ExchangeComparisonConfig
         svc = ExchangeComparisonService()
@@ -160,51 +275,55 @@ def run_full_pipeline() -> dict[str, object]:
             svc.build_latest_snapshots(config=ExchangeComparisonConfig())
         finally:
             svc.close()
+    return _run
 
-    def _macro_context():
+
+def _make_macro_context() -> callable:
+    def _run():
         from logic_layer.macro_context.service import MacroContextService
         svc = MacroContextService()
         try:
             svc.build_latest_snapshots()
         finally:
             svc.close()
+    return _run
 
-    def _news_sentiment():
+
+def _make_news_sentiment() -> callable:
+    def _run():
         from logic_layer.news_sentiment.service import NewsSentimentService
         svc = NewsSentimentService()
         try:
             svc.run_labeling(limit=200, save=True)
         finally:
             svc.close()
+    return _run
 
-    def _market_structure():
+
+def _make_market_structure() -> callable:
+    def _run():
         from logic_layer.market_structure.service import MarketStructureService
         svc = MarketStructureService()
         try:
             svc.save_snapshot()
         finally:
             svc.close()
+    return _run
 
-    results = _run_phase_parallel("Phase2", [
-        ("feature_standardization", _feature_standardization),
-        ("cross_asset_analysis", _cross_asset_analysis),
-        ("exchange_comparison", _exchange_comparison),
-        ("macro_context", _macro_context),
-        ("news_sentiment", _news_sentiment),
-        ("market_structure", _market_structure),
-    ])
-    all_results.update(results)
 
-    # === Phase 3: 依赖 Phase 2 的模块 ===
-    def _portfolio_risk():
+def _make_portfolio_risk() -> callable:
+    def _run():
         from logic_layer.portfolio_risk.service import PortfolioRiskService
         svc = PortfolioRiskService()
         try:
             svc.compute_risk(portfolio_name="default")
         finally:
             svc.close()
+    return _run
 
-    def _market_breadth():
+
+def _make_market_breadth() -> callable:
+    def _run():
         from logic_layer.market_breadth.service import MarketBreadthService
         svc = MarketBreadthService()
         try:
@@ -212,8 +331,11 @@ def run_full_pipeline() -> dict[str, object]:
             svc.save_snapshot(bundle)
         finally:
             svc.close()
+    return _run
 
-    def _asset_readiness():
+
+def _make_asset_readiness() -> callable:
+    def _run():
         from logic_layer.asset_readiness.service import AssetReadinessService
         svc = AssetReadinessService()
         try:
@@ -221,16 +343,11 @@ def run_full_pipeline() -> dict[str, object]:
             svc.save_snapshot(bundle)
         finally:
             svc.close()
+    return _run
 
-    results = _run_phase("Phase3", [
-        ("portfolio_risk", _portfolio_risk),
-        ("market_breadth", _market_breadth),
-        ("asset_readiness", _asset_readiness),
-    ])
-    all_results.update(results)
 
-    # === Phase 4: 最终 AI 上下文聚合 ===
-    def _ai_market_context():
+def _make_ai_market_context() -> callable:
+    def _run():
         from logic_layer.ai_market_context.service import AIMarketContextService
         svc = AIMarketContextService()
         try:
@@ -244,55 +361,70 @@ def run_full_pipeline() -> dict[str, object]:
             )
         finally:
             svc.close()
+    return _run
 
-    results = _run_phase("Phase4", [
-        ("ai_market_context", _ai_market_context),
-    ])
-    all_results.update(results)
 
-    # === Phase 5: 管道延迟监控 ===
-    def _pipeline_latency():
+def _make_pipeline_latency() -> callable:
+    def _run():
         from logic_layer.pipeline_latency.service import PipelineLatencyService
         svc = PipelineLatencyService()
         try:
             svc.measure_all()
         finally:
             svc.close()
+    return _run
 
-    results = _run_phase("Phase5", [
-        ("pipeline_latency", _pipeline_latency),
-    ])
-    all_results.update(results)
 
-    pipeline_end = _utc_now()
-    success_count = sum(1 for v in all_results.values() if v == "success")
-    total_count = len(all_results)
+def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
+    """按模块粒度清空相关 API 缓存（事件驱动失效）。
 
-    logger.info(
-        "逻辑管道全链路完成: {}/{} 成功, 耗时 {:.1f}s",
-        success_count, total_count,
-        (pipeline_end - pipeline_start).total_seconds(),
-    )
-
-    # 管道完成后清空 API 缓存，保证数据一致性
-    _invalidate_api_cache()
-
-    return {
-        "started_at": pipeline_start.isoformat(),
-        "finished_at": pipeline_end.isoformat(),
-        "success_count": success_count,
-        "total_count": total_count,
-        "results": all_results,
+    每个模块映射到一组缓存前缀，只清空受影响的缓存条目，
+    而非全量清空。如果超过 50% 模块完成，则全量清空。
+    """
+    # 模块 → 缓存前缀映射
+    MODULE_CACHE_PREFIXES: dict[str, list[str]] = {
+        "technical_indicators": ["tech:", "tech_deep:"],
+        "feature_standardization": ["features:"],
+        "cross_asset_analysis": ["cross:"],
+        "exchange_comparison": ["exchange:"],
+        "macro_context": ["macro:"],
+        "news_sentiment": ["sentiment:", "news:"],
+        "market_structure": ["microstructure:"],
+        "portfolio_risk": ["risk:", "portfolio:"],
+        "market_breadth": ["breadth:"],
+        "asset_readiness": ["readiness:"],
+        "ai_market_context": ["bundle:", "ai_context:"],
+        "pipeline_latency": ["health:"],
     }
 
-
-def _invalidate_api_cache() -> None:
-    """通知 API 缓存层清空全部缓存。"""
     try:
         from api.cache import cache
-        cleared = cache.invalidate_all()
-        if cleared:
-            logger.info("已清空 API 缓存 ({} 条)", cleared)
+        from api.query_cache import query_cache
+
+        # 超过半数模块完成 → 全量清空更高效
+        if len(completed_modules) > 6:
+            cleared = cache.invalidate_all()
+            query_cache.invalidate_all()
+            if cleared:
+                logger.info("已全量清空 API 缓存 ({} 条)", cleared)
+            return
+
+        # 按模块粒度清空
+        total_cleared = 0
+        for module in completed_modules:
+            prefixes = MODULE_CACHE_PREFIXES.get(module, [])
+            for prefix in prefixes:
+                total_cleared += cache.invalidate_prefix(prefix)
+
+        # query_cache 不支持前缀清空，全量清空
+        if completed_modules:
+            query_cache.invalidate_all()
+
+        if total_cleared:
+            logger.info(
+                "已按模块清空 API 缓存 ({} 条, 模块: {})",
+                total_cleared, ", ".join(completed_modules[:5]),
+            )
     except Exception as exc:
         logger.debug("API 缓存清空跳过（API 未启动或导入失败）: {}", exc)
 
