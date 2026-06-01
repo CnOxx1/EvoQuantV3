@@ -70,6 +70,14 @@ from api.routers.flow_decomposition import router as flow_decomposition_router
 from api.routers.contagion_risk import router as contagion_risk_router
 from api.routers.alpha_decay import router as alpha_decay_router
 from api.routers.narrative_regime import router as narrative_regime_router
+from api.routers.perpetual_dex import router as perpetual_dex_router
+from api.routers.onchain_address import router as onchain_address_router
+from api.routers.dex_liquidity import router as dex_liquidity_router
+from api.routers.gas_network import router as gas_network_router
+from api.routers.governance import router as governance_router
+from api.routers.liquidation_cascade import router as liquidation_cascade_router
+from api.routers.cross_venue_arb import router as cross_venue_arb_router
+from api.routers.onchain_lead_lag import router as onchain_lead_lag_router
 from config.symbols import SYMBOL_UNIVERSE
 
 # ---------------------------------------------------------------------------
@@ -269,6 +277,14 @@ app.include_router(flow_decomposition_router)
 app.include_router(contagion_risk_router)
 app.include_router(alpha_decay_router)
 app.include_router(narrative_regime_router)
+app.include_router(perpetual_dex_router)
+app.include_router(onchain_address_router)
+app.include_router(dex_liquidity_router)
+app.include_router(gas_network_router)
+app.include_router(governance_router)
+app.include_router(liquidation_cascade_router)
+app.include_router(cross_venue_arb_router)
+app.include_router(onchain_lead_lag_router)
 
 
 # ---------------------------------------------------------------------------
