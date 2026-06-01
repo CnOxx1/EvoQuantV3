@@ -47,6 +47,11 @@
 | `perpetual_basis_curve` | 期货期限结构（perp/季度/双季度） | contango/backwardation、曲线斜率、roll yield |
 | `mev_data` | MEV 提取量、三明治攻击、清算 MEV | MEV 趋势、散户压力、builder 集中度 |
 | `cefi_lending_rate` | CeFi 借贷利率（Binance/OKX/Bybit） | CeFi-DeFi 利差、利率倒挂、去杠杆信号 |
+| `perpetual_dex_data` | dYdX/Hyperliquid/GMX 永续 DEX 数据 | 跨 DEX funding 对比、OI 分布、套利价差 |
+| `onchain_address_data` | Arkham/Etherscan 链上地址画像 | 巨鲸地址标签、资金流向、交易所净流 |
+| `dex_liquidity_data` | Uniswap V3/Curve 池流动性 | TVL 分布、tick 集中度、大额流动性事件 |
+| `gas_network_data` | Etherscan/Blocknative Gas 和网络 | Gas 价格、网络拥堵、Gas 尖刺检测 |
+| `governance_data` | Snapshot/Tally DAO 治理 | 提案状态、参与率、巨鲸投票集中度 |
 | `data_quality` | 跨模块审计 | `world_model_status` 与 critical gaps |
 
 ## 模块详述
@@ -63,7 +68,12 @@
 - `perpetual_basis_curve`：采集完整期货期限结构，当前已接入 Binance/OKX/Bybit 的永续合约、季度合约和双季度合约价格。每小时采集一次，计算各合约相对现货的 basis 百分比和年化 basis，落库到 `futures_term_structure` 和 `basis_curve_snapshot`。`load_latest_context_bundle()` 输出当前期限结构形态（contango/backwardation/flat）、曲线斜率变化趋势、7 日 roll yield 估算和期限溢价异常检测。
 - `mev_data`：采集以太坊 MEV（最大可提取价值）数据，当前已接入 Flashbots API 和 EigenPhi。每 30 分钟采集一次，追踪每个区块的 MEV 奖励、三明治攻击次数、套利次数、清算次数和 builder 信息，落库到 `mev_blocks` 和 `mev_agg`。`load_latest_context_bundle()` 输出 1h/24h MEV 提取量趋势、三明治攻击频率（散户压力指标）、清算 MEV 占比（DeFi 压力指标）和 builder 集中度（HHI）。
 - `cefi_lending_rate`：采集 CeFi 平台借贷利率，当前已接入 Binance Earn、OKX Earn 和 Bybit Earn 的活期/定期产品利率。每小时采集一次，追踪各平台各资产的供给 APY、借贷 APY 和资金利用率，落库到 `cefi_lending_rates` 和 `lending_rate_spread`。`load_latest_context_bundle()` 输出 CeFi vs DeFi 利率价差、利率倒挂检测（DeFi > CeFi = 去杠杆信号）、各平台利率排名和利率趋势方向。
-- `data_quality`：不采集外部市场数据，而是统一维护数据层健康语义、`quality_flag` 汇总、AI-ready 判定和跨模块市场世界模型审计。当前已经支持 `--mode once / --mode scheduler / --print-market-audit / --save-market-audit`，会基于各模块真实 `load_source_coverage()` 与数据库真实 `latest_* / history` 表，持续判断 `exchange / macro / news / event_calendar / onchain / tokenomics / options / alternative` 这些证据带到底是 `ready / stale / insufficient / unconfigured / missing`，并把审计结果同时落到 `data_quality_audit_snapshots` 与 `collection_runs`，明确告诉你“整套数据层是否真的足够给 AI 看市场”，而不是只看某个单点模块是否还活着。
+- `perpetual_dex_data`：采集去中心化永续合约交易所数据，当前已接入 dYdX v4、Hyperliquid 和 GMX v2。每 15 分钟采集一次，追踪各 DEX 的 funding rate、open interest、24h 成交量和交易笔数，落库到 `perp_dex_funding` 和 `perp_dex_volume`。`load_latest_context_bundle()` 输出跨 DEX funding 对比、OI 分布、成交量分布和 CEX-DEX 套利价差。
+- `onchain_address_data`：采集链上地址画像数据，当前已接入 Arkham Intelligence 和 Etherscan。每 10 分钟采集一次，追踪 6 个重点巨鲸地址的实体标签、资金流向和大额转账，落库到 `address_labels`、`address_flows` 和 `whale_moves`。`load_latest_context_bundle()` 输出巨鲸活跃度、净流方向和 top movers。
+- `dex_liquidity_data`：采集 DEX 池流动性数据，当前已接入 Uniswap V3 和 Curve 的 The Graph 子图。每 20 分钟采集一次，追踪 top 池的 TVL、tick 分布和 mint/burn 事件，落库到 `dex_pools`、`dex_tick_liquidity` 和 `dex_liquidity_events`。`load_latest_context_bundle()` 输出 TVL 分布、Top 5 集中度和大额流动性事件（>$100k）。
+- `gas_network_data`：采集以太坊 Gas 和网络状态数据，当前已接入 Etherscan Gas Oracle 和 Blocknative Gas API。每 5 分钟采集一次，追踪 base fee、priority fee、pending 交易数和区块利用率，落库到 `gas_prices`、`network_congestion` 和 `gas_spikes`。`load_latest_context_bundle()` 输出当前 Gas 水平、拥堵等级、近期尖刺和趋势方向。
+- `governance_data`：采集 DAO 治理投票数据，当前已接入 Snapshot（off-chain）和 Tally（on-chain）GraphQL API。每 30 分钟采集一次，追踪 5 个重点治理空间（Aave、Uniswap、Compound、Arbitrum、Optimism）的提案状态、投票分布和参与率，落库到 `governance_proposals`、`governance_votes` 和 `governance_activity`。`load_latest_context_bundle()` 输出活跃提案、参与率趋势、巨鲸投票集中度和治理健康评估。
+- `data_quality`：不采集外部市场数据，而是统一维护数据层健康语义、`quality_flag` 汇总、AI-ready 判定和跨模块市场世界模型审计。当前已经支持 `--mode once / --mode scheduler / --print-market-audit / --save-market-audit`，会基于各模块真实 `load_source_coverage()` 与数据库真实 `latest_* / history` 表，持续判断 `exchange / macro / news / event_calendar / onchain / tokenomics / options / alternative` 这些证据带到底是 `ready / stale / insufficient / unconfigured / missing`，并把审计结果同时落到 `data_quality_audit_snapshots` 与 `collection_runs`，明确告诉你"整套数据层是否真的足够给 AI 看市场"，而不是只看某个单点模块是否还活着。
 
 ## 跨模块审计
 
@@ -392,6 +402,36 @@ data_layer/
     models.py                    # 借贷利率数据模型定义
     runner.py                    # CLI 运行入口
     service.py                   # 模块编排、调度与 context bundle
+  perpetual_dex_data/
+    __init__.py                  # 模块包入口
+    client.py                    # dYdX / Hyperliquid / GMX API 请求封装
+    models.py                    # 永续 DEX 数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  onchain_address_data/
+    __init__.py                  # 模块包入口
+    client.py                    # Arkham / Etherscan API 请求封装
+    models.py                    # 链上地址画像数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  dex_liquidity_data/
+    __init__.py                  # 模块包入口
+    client.py                    # Uniswap V3 / Curve The Graph 子图请求封装
+    models.py                    # DEX 流动性数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  gas_network_data/
+    __init__.py                  # 模块包入口
+    client.py                    # Etherscan / Blocknative API 请求封装
+    models.py                    # Gas 和网络数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  governance_data/
+    __init__.py                  # 模块包入口
+    client.py                    # Snapshot / Tally GraphQL 请求封装
+    models.py                    # 治理投票数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
 ```
 
 ## 当前对 AI 的供数结构
@@ -461,6 +501,26 @@ data_layer/
   - 提供 CeFi 平台（Binance/OKX/Bybit）借贷利率、CeFi-DeFi 利差和利率倒挂信号等输入
   - 采集频率 1 小时，追踪活期/定期产品的供给和借贷利率
   - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的借贷利率上下文
+- `perpetual_dex_data`
+  - 提供 dYdX/Hyperliquid/GMX 永续 DEX 的 funding rate、open interest 和成交量等输入
+  - 采集频率 15 分钟，追踪跨 DEX 的 funding 差异和 OI 分布
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的永续 DEX 上下文
+- `onchain_address_data`
+  - 提供 Arkham/Etherscan 巨鲸地址画像、实体标签和资金流向等输入
+  - 采集频率 10 分钟，追踪 6 个重点巨鲸地址的动向
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的地址画像上下文
+- `dex_liquidity_data`
+  - 提供 Uniswap V3/Curve 池的 TVL、tick 分布和 mint/burn 事件等输入
+  - 采集频率 20 分钟，通过 The Graph 子图查询
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的 DEX 流动性上下文
+- `gas_network_data`
+  - 提供以太坊 Gas 价格、网络拥堵度和 Gas 尖刺检测等输入
+  - 采集频率 5 分钟，追踪 base fee、priority fee 和区块利用率
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的 Gas/网络上下文
+- `governance_data`
+  - 提供 Snapshot/Tally DAO 治理提案状态、投票分布和参与率等输入
+  - 采集频率 30 分钟，追踪 Aave/Uniswap/Compound/Arbitrum/Optimism 5 个治理空间
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的治理投票上下文
 
 当前 `main.py` 默认会自动拉起完整的数据层常驻模块集合：
 

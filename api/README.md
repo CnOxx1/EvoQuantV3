@@ -485,6 +485,107 @@ python main.py --modules api_server
 | `/narrative-regime/emerging` | GET | 新兴叙事（早期机会） |
 | `/narrative-regime/context` | GET | 叙事状态机 AI 上下文 bundle |
 
+### 永续 DEX
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/perpetual-dex/funding` | GET | 跨 DEX 最新 funding rate |
+| `/perpetual-dex/volume` | GET | 各 DEX 24h 成交量 |
+| `/perpetual-dex/funding-comparison` | GET | CEX vs DEX funding 对比 |
+| `/perpetual-dex/oi-distribution` | GET | 跨 DEX OI 分布 |
+| `/perpetual-dex/funding-history/{symbol}` | GET | 单资产 funding 历史 |
+| `/perpetual-dex/arb-spread` | GET | CEX-DEX 套利价差 |
+| `/perpetual-dex/context` | GET | 永续 DEX AI 上下文 bundle |
+
+### 链上地址画像
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/onchain-address/whale-moves` | GET | 最近巨鲸大额转账 |
+| `/onchain-address/flows/{address}` | GET | 单地址资金流 |
+| `/onchain-address/labels` | GET | 地址标签列表 |
+| `/onchain-address/net-flow` | GET | 追踪地址净流入/流出 |
+| `/onchain-address/top-movers` | GET | 最活跃地址排名 |
+| `/onchain-address/exchange-flow` | GET | 交易所流入/流出汇总 |
+| `/onchain-address/context` | GET | 链上地址 AI 上下文 bundle |
+
+### DEX 流动性
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/dex-liquidity/pools` | GET | Top 池列表（TVL 排序） |
+| `/dex-liquidity/tvl-distribution` | GET | TVL 分布统计 |
+| `/dex-liquidity/ticks/{pool_address}` | GET | 池 tick 流动性分布 |
+| `/dex-liquidity/events` | GET | 最近 mint/burn 事件 |
+| `/dex-liquidity/concentration` | GET | 流动性集中度（Top 5 占比） |
+| `/dex-liquidity/large-events` | GET | 大额流动性事件（>$100k） |
+| `/dex-liquidity/context` | GET | DEX 流动性 AI 上下文 bundle |
+
+### Gas/网络
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/gas-network/current` | GET | 当前 Gas 价格 |
+| `/gas-network/history` | GET | Gas 价格历史 |
+| `/gas-network/congestion` | GET | 网络拥堵状态 |
+| `/gas-network/spikes` | GET | Gas 尖刺事件 |
+| `/gas-network/avg-fee` | GET | 平均交易费用 |
+| `/gas-network/utilization` | GET | 区块利用率 |
+| `/gas-network/context` | GET | Gas/网络 AI 上下文 bundle |
+
+### 治理投票
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/governance/proposals` | GET | 活跃提案列表 |
+| `/governance/votes/{proposal_id}` | GET | 单提案投票详情 |
+| `/governance/activity` | GET | 治理活跃度指标 |
+| `/governance/whale-votes` | GET | 巨鲸投票记录 |
+| `/governance/participation` | GET | 参与率趋势 |
+| `/governance/quorum-risk` | GET | 法定人数风险提案 |
+| `/governance/protocol-ranking` | GET | 协议治理活跃度排名 |
+| `/governance/context` | GET | 治理投票 AI 上下文 bundle |
+
+### 清算级联
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/liquidation-cascade/clusters` | GET | 清算集群分布 |
+| `/liquidation-cascade/cascade-risk` | GET | 级联风险评估 |
+| `/liquidation-cascade/heatmap/{symbol}` | GET | 单资产清算热力图 |
+| `/liquidation-cascade/critical-levels` | GET | 关键清算价位 |
+| `/liquidation-cascade/leverage-distribution` | GET | 杠杆分布统计 |
+| `/liquidation-cascade/proximity-alert` | GET | 接近清算价位告警 |
+| `/liquidation-cascade/estimated-cascade` | GET | 级联链模拟 |
+| `/liquidation-cascade/context` | GET | 清算级联 AI 上下文 bundle |
+
+### 跨交易所套利
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/cross-venue-arb/opportunities` | GET | 当前套利机会 |
+| `/cross-venue-arb/spreads` | GET | 跨所价差快照 |
+| `/cross-venue-arb/persistence` | GET | 套利持续性分析 |
+| `/cross-venue-arb/efficiency-score` | GET | 市场效率评分 |
+| `/cross-venue-arb/venue-ranking` | GET | 交易所价格偏离排名 |
+| `/cross-venue-arb/cross-type` | GET | 按类型分类套利机会 |
+| `/cross-venue-arb/historical` | GET | 历史套利统计 |
+| `/cross-venue-arb/context` | GET | 跨所套利 AI 上下文 bundle |
+
+### 链上领先/滞后
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/onchain-lead-lag/signals` | GET | 最新领先/滞后信号 |
+| `/onchain-lead-lag/relations/{symbol}` | GET | 单资产信号关系 |
+| `/onchain-lead-lag/alerts` | GET | 信号触发告警 |
+| `/onchain-lead-lag/predictive-ranking` | GET | 信号预测力排名 |
+| `/onchain-lead-lag/optimal-lag/{signal_name}` | GET | 单信号最优滞后期 |
+| `/onchain-lead-lag/granger/{symbol}` | GET | Granger 因果检验结果 |
+| `/onchain-lead-lag/signal-history/{signal_name}` | GET | 信号历史序列 |
+| `/onchain-lead-lag/cross-signal` | GET | 跨信号相关性 |
+| `/onchain-lead-lag/context` | GET | 链上领先滞后 AI 上下文 bundle |
+
 ### 时间切片（历史回溯）
 
 | 端点 | 方法 | 说明 |
@@ -974,7 +1075,15 @@ api/
     ├── flow_decomposition.py # /flow-decomposition — 资金流分解（VPIN/smart money/排名）
     ├── contagion_risk.py    # /contagion-risk — 传染风险（系统评分/CoVaR/尾部Beta）
     ├── alpha_decay.py       # /alpha-decay — 信号衰减（半衰期/排名/背离/拥挤度）
-    └── narrative_regime.py  # /narrative-regime — 叙事状态机（活跃/转换/注意力/新兴）
+    ├── narrative_regime.py  # /narrative-regime — 叙事状态机（活跃/转换/注意力/新兴）
+    ├── perpetual_dex.py     # /perpetual-dex — 永续 DEX（funding/volume/OI/套利价差）
+    ├── onchain_address.py   # /onchain-address — 链上地址（巨鲸/流向/标签/交易所流）
+    ├── dex_liquidity.py     # /dex-liquidity — DEX 流动性（池/TVL/ticks/事件/集中度）
+    ├── gas_network.py       # /gas-network — Gas/网络（价格/拥堵/尖刺/利用率）
+    ├── governance.py        # /governance — 治理投票（提案/投票/参与率/巨鲸/排名）
+    ├── liquidation_cascade.py # /liquidation-cascade — 清算级联（集群/风险/热力图/杠杆）
+    ├── cross_venue_arb.py   # /cross-venue-arb — 跨所套利（机会/价差/持续性/效率）
+    └── onchain_lead_lag.py  # /onchain-lead-lag — 链上领先滞后（信号/Granger/预测力）
 ```
 
 ---

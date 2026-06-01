@@ -60,6 +60,9 @@
 | `contagion_risk` | cross_asset + onchain + defi_protocol | 条件相关性、CoVaR、级联风险、稳定币脱锚概率 |
 | `alpha_decay` | 所有逻辑层信号 | 信号半衰期、拥挤度检测、信号惊喜指数、跨信号背离 |
 | `narrative_regime` | news + social_sentiment + alternative | 叙事状态机、叙事生命周期、叙事→资金流映射 |
+| `liquidation_cascade` | exchange_data OI + klines + leverage | 清算集群检测、级联概率建模、清算热力图 |
+| `cross_venue_arbitrage` | exchange_data 多交易所价格 | 跨交易所价差检测、套利持续性、市场效率评分 |
+| `onchain_lead_lag` | onchain_data + exchange_data 价格 | 链上信号领先/滞后、Granger 因果、预测力排名 |
 
 ## 数据流全景
 
@@ -146,6 +149,12 @@ logic_layer/
     calculator.py, models.py, repository.py, runner.py, service.py
   narrative_regime/
     analyzer.py, models.py, repository.py, runner.py, service.py
+  liquidation_cascade/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  cross_venue_arbitrage/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  onchain_lead_lag/
+    calculator.py, models.py, repository.py, runner.py, service.py
 ```
 
 ## 各模块详述
@@ -226,6 +235,18 @@ logic_layer/
 
 叙事状态机。基于 `news_data`、`social_sentiment_data` 和 `alternative_data` 数据，通过关键词聚类提取市场叙事，判断叙事生命周期阶段（emerging/growing/peak/decaying），计算叙事 attention 与相关 token 价格/成交量的相关性，检测叙事传染路径。结果写入 `market_narratives` 和 `narrative_transitions` 表。
 
+### liquidation_cascade
+
+清算级联预测。基于 `exchange_data` 的 OI、价格和杠杆分布数据，按杠杆倍数（5x/10x/20x/50x/100x）模拟仓位分布，计算清算集群（按价格区间聚合）、级联概率（基于 size/volume 比率 + 距离衰减）、级联严重度分类（critical/high/medium/low）和清算热力图。结果写入 `liquidation_clusters`、`cascade_risk` 和 `liquidation_heatmap` 表。
+
+### cross_venue_arbitrage
+
+跨交易所套利检测。基于 `exchange_data` 多交易所价格数据，计算所有交易所配对的价差（bps）、检测超阈值套利机会、分析套利持续性（机会存续时间）、计算交易所间价格相关性和市场效率评分（0-100）。结果写入 `arb_opportunities`、`arb_persistence` 和 `venue_spreads` 表。
+
+### onchain_lead_lag
+
+链上信号领先/滞后分析。基于 `onchain_data` 和 `exchange_data` 价格序列，对 5 种链上信号（whale_net_flow、exchange_inflow、gas_spike、funding_rate、open_interest_change）× 3 个目标资产（BTC/ETH/SOL）计算交叉相关性、最优滞后期、Granger 因果检验和预测力（R²）。结果写入 `lead_lag_signals`、`onchain_price_relations` 和 `signal_alerts` 表。
+
 ## AI 输出结构
 
 当前逻辑层输出 18 类 AI 可消费结果：
@@ -249,6 +270,9 @@ logic_layer/
 | `contagion_risk` | 条件相关性、CoVaR、级联风险、稳定币脱锚概率 |
 | `alpha_decay` | 信号半衰期、拥挤度、信号惊喜、跨信号背离 |
 | `narrative_regime` | 叙事状态机、生命周期、叙事→资金流映射 |
+| `liquidation_cascade` | 清算集群、级联概率、清算热力图 |
+| `cross_venue_arbitrage` | 跨交易所价差、套利持续性、市场效率评分 |
+| `onchain_lead_lag` | 链上信号领先/滞后、Granger 因果、预测力排名 |
 
 最终由 `ai_market_context` 统一聚合为单一 bundle 供 AI 消费。
 

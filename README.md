@@ -5,7 +5,7 @@
 大多数量化项目从"策略"出发，EvoQuant 从"理解"出发。它解决的核心问题是：AI 在做交易决策前，需要一个完整、诚实、可回溯的市场认知底座。
 
 ```text
-3 交易所 × 18 资产 × 18 数据域 × 228 技术指标 × 实时质量治理
+3 交易所 × 18 资产 × 23 数据域 × 228 技术指标 × 实时质量治理
 → AI 随时可查的完整市场上下文
 ```
 
@@ -14,7 +14,7 @@
 | 传统量化数据管道 | EvoQuant |
 | --- | --- |
 | 单交易所单币种 | 3 交易所 × 18 资产，多源交叉验证 |
-| 只有 K 线和指标 | 18 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics + 社交情绪 + 巨鲸追踪 + 订单流 + DeFi 协议 + 跨链桥流 + 监管动态 + ETF 资金流 + 期货期限结构 + MEV + CeFi 借贷利率 |
+| 只有 K 线和指标 | 23 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics + 社交情绪 + 巨鲸追踪 + 订单流 + DeFi 协议 + 跨链桥流 + 监管动态 + ETF 资金流 + 期货期限结构 + MEV + CeFi 借贷利率 + 永续 DEX + 链上地址画像 + DEX 流动性 + Gas/网络 + 治理投票 |
 | 缺失数据静默忽略 | 显式标记 stale / missing / partial，AI 知道自己"不知道什么" |
 | 固定参数指标 | 228 个指标含自适应 Ehlers 系列、分形维度、Hurst 指数 |
 | 只能看当前 | Point-in-time 回溯：查询任意历史时刻的完整市场状态 |
@@ -51,6 +51,11 @@
 | 期货期限结构 | Binance / OKX / Bybit | 1 小时 | contango/backwardation、曲线斜率、roll yield |
 | MEV | Flashbots / EigenPhi | 30 分钟 | 三明治攻击频率、清算 MEV、builder 集中度 |
 | CeFi 借贷利率 | Binance / OKX / Bybit Earn | 1 小时 | CeFi-DeFi 利差、利率倒挂、去杠杆信号 |
+| 永续 DEX | dYdX / Hyperliquid / GMX | 15 分钟 | 跨 DEX funding 对比、OI 分布、套利价差 |
+| 链上地址画像 | Arkham / Etherscan | 10 分钟 | 巨鲸地址标签、资金流向、交易所净流 |
+| DEX 流动性 | Uniswap V3 / Curve (The Graph) | 20 分钟 | TVL 分布、tick 集中度、大额流动性事件 |
+| Gas/网络 | Etherscan / Blocknative | 5 分钟 | Gas 价格、网络拥堵、Gas 尖刺检测 |
+| 治理投票 | Snapshot / Tally | 30 分钟 | 提案状态、参与率、巨鲸投票集中度 |
 
 ## 技术指标体系
 
@@ -93,9 +98,9 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        AI Consumer Layer                         │
-│              REST API (270+ endpoints) / Bundle Query            │
+│              REST API (330+ endpoints) / Bundle Query            │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Logic Layer (25 modules)                 │
+│                         Logic Layer (28 modules)                 │
 │  technical_indicators → feature_standardization → cross_asset   │
 │  macro_context → news_sentiment → portfolio_risk                │
 │  market_breadth → asset_readiness → ai_market_context           │
@@ -104,13 +109,16 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │  volatility_forecast → funding_rate_model → sentiment_signal    │
 │  temporal_pattern → flow_decomposition → contagion_risk         │
 │  alpha_decay → narrative_regime                                 │
+│  liquidation_cascade → cross_venue_arbitrage → onchain_lead_lag │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Data Layer (19 modules)                  │
+│                         Data Layer (24 modules)                  │
 │  exchange_data │ macro_data │ news_data │ onchain_data          │
 │  options_data │ tokenomics_data │ event_calendar │ alternative  │
 │  social_sentiment │ whale_tracker │ orderflow │ defi_protocol   │
 │  bridge_flow │ regulatory_data │ data_quality                   │
 │  etf_flow_data │ perpetual_basis_curve │ mev_data │ cefi_lending│
+│  perpetual_dex_data │ onchain_address_data │ dex_liquidity_data │
+│  gas_network_data │ governance_data                             │
 ├─────────────────────────────────────────────────────────────────┤
 │                         Storage Layer                            │
 │  SQLite (3 域拆分) │ latest_* 快照 │ 历史表 │ 质量审计表       │
@@ -118,7 +126,8 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │                         External Sources                         │
 │  Binance │ OKX │ Bybit │ DeFiLlama │ Deribit │ 宏观数据源      │
 │  LunarCrush │ Santiment │ Arkham │ Nansen │ WhaleAlert │ SEC   │
-│  SoSoValue │ Flashbots │ EigenPhi                              │
+│  SoSoValue │ Flashbots │ EigenPhi │ dYdX │ Hyperliquid │ GMX  │
+│  Uniswap V3 │ Curve │ Etherscan │ Blocknative │ Snapshot │Tally│
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -170,10 +179,10 @@ pytest -q
 ```text
 EvoQuant/
 ├── config/          目标资产、调度、日志与环境配置
-├── data_layer/      外部数据采集、标准化、落库（15 个常驻数据模块）
+├── data_layer/      外部数据采集、标准化、落库（24 个数据模块）
 ├── database/        SQLite 建表、迁移、路由和读写入口
-├── logic_layer/     AI-ready 特征、上下文和治理结果（20 个逻辑模块）
-├── api/             对外 REST API 服务（300+ 端点）
+├── logic_layer/     AI-ready 特征、上下文和治理结果（28 个逻辑模块）
+├── api/             对外 REST API 服务（330+ 端点）
 ├── tests/           单元测试与模块测试
 └── main.py          统一入口，模块注册与进程管理（指数退避重启 + 三阶段优雅关停）
 ```
@@ -202,10 +211,18 @@ EvoQuant/
 | `volatility_forecast` | 已实现波动率、EWMA 预测、波动率锥、RV-IV 价差 |
 | `funding_rate_model` | 资金费率预测、基差均值回归信号 |
 | `sentiment_signal` | 情绪-价格 Granger 因果、极端反转信号、背离检测 |
+| `temporal_pattern` | 日内季节性、月度效应、减半周期相位、期权到期引力 |
+| `flow_decomposition` | VPIN、smart/dumb money 分离、积累/派发阶段 |
+| `contagion_risk` | 条件相关性、CoVaR、级联风险、稳定币脱锚概率 |
+| `alpha_decay` | 信号半衰期、拥挤度检测、信号惊喜指数、跨信号背离 |
+| `narrative_regime` | 叙事状态机、叙事生命周期、叙事→资金流映射 |
+| `liquidation_cascade` | 清算集群检测、级联概率建模、清算热力图 |
+| `cross_venue_arbitrage` | 跨交易所价差检测、套利持续性、市场效率评分 |
+| `onchain_lead_lag` | 链上信号领先/滞后分析、Granger 因果、预测力排名 |
 
 ## API
 
-300+ REST 端点，覆盖：
+330+ REST 端点，覆盖：
 
 - 技术指标深度分析（极值、背离、多周期）
 - 组合风险分析（VaR、风险贡献、集中度）
@@ -242,6 +259,9 @@ EvoQuant/
 - [x] 6 个新逻辑模块：Regime 检测、异常检测、流动性分析、波动率预测、资金费率模型、情绪信号
 - [x] 4 个新数据模块：ETF 资金流、期货期限结构、MEV 数据、CeFi 借贷利率
 - [x] 5 个新逻辑模块：时间模式识别、资金流分解、传染风险、信号衰减、叙事状态机
+- [x] 5 个新数据模块：永续 DEX（dYdX/Hyperliquid/GMX）、链上地址画像（Arkham/Etherscan）、DEX 流动性（Uniswap V3/Curve）、Gas/网络（Etherscan/Blocknative）、治理投票（Snapshot/Tally）
+- [x] 3 个新逻辑模块：清算级联预测、跨交易所套利检测、链上领先/滞后分析
+- [x] 8 个新 API 路由（61 端点）：永续 DEX、链上地址、DEX 流动性、Gas/网络、治理、清算级联、跨所套利、链上领先滞后
 
 ### P2 — 进行中
 
@@ -260,6 +280,13 @@ EvoQuant/
 ## 更新记录
 
 ### 2025-06-01
+
+**v2.6 — 数据域与逻辑层第三轮扩展**
+
+- 5 个新数据采集模块：perpetual_dex_data（dYdX/Hyperliquid/GMX 永续 DEX funding 和成交量）、onchain_address_data（Arkham/Etherscan 巨鲸地址画像和资金流）、dex_liquidity_data（Uniswap V3/Curve 池流动性 via The Graph）、gas_network_data（Etherscan/Blocknative Gas 和网络指标）、governance_data（Snapshot/Tally DAO 治理提案和投票）
+- 3 个新逻辑分析模块：liquidation_cascade（清算集群检测、级联概率、热力图）、cross_venue_arbitrage（跨交易所价差、套利持续性、市场效率评分）、onchain_lead_lag（链上信号领先/滞后、Granger 因果、预测力排名）
+- 8 个新 API 路由（61 端点）：/perpetual-dex(7)、/onchain-address(7)、/dex-liquidity(7)、/gas-network(7)、/governance(8)、/liquidation-cascade(8)、/cross-venue-arb(8)、/onchain-lead-lag(9)
+- 数据域从 18 个扩展到 23 个，逻辑模块从 25 个扩展到 28 个，API 端点数达 330+
 
 **v2.5 — 基础设施优化**
 
