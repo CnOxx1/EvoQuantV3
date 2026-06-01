@@ -261,6 +261,16 @@ EvoQuant/
 
 ### 2025-06-01
 
+**v2.5 — 基础设施优化**
+
+- 数据库索引优化：16 个复合索引覆盖高频查询列（symbol+exchange+timestamp DESC），初始化时自动创建
+- DAG 调度器：逻辑管道支持基于依赖图的并行执行（`LOGIC_PIPELINE_USE_DAG=1`），无依赖模块可跨阶段并行
+- 异步采集基础设施：`gather_with_concurrency()` + `run_in_thread()` 支持并行化交易所 API 调用
+- 事件驱动缓存失效：按模块粒度清空受影响的缓存前缀，替代全量清空
+- 分块批量写入：`execute_many_chunked()` 支持大批量 INSERT 分块提交，降低 WAL 积压
+- 依赖版本锁定：requirements.txt 全部 pin 到精确版本
+- .gitignore 补充：排除根目录 *.db 文件（防止 6GB+ 误提交）
+
 **v2.4 — 9 路由端点扩展**
 
 - 9 个新路由从 3 端点扩展到 7 端点（+36 端点），API 总端点数达 270+
