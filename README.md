@@ -289,6 +289,15 @@ EvoQuant/
 
 ### 2025-06-01
 
+**v2.7 — 工程化加固**
+
+- 8 个新模块单元测试（33 tests）：perpetual_dex_data、onchain_address_data、dex_liquidity_data、gas_network_data、governance_data、liquidation_cascade、cross_venue_arbitrage、onchain_lead_lag
+- 调度间隔集中化：8 个新数据模块的采集频率统一收入 `config/settings.py`，支持环境变量覆盖
+- 模块自动启动：5 个新数据模块注册到 `main.py`（autostart=True, daemon 模式）
+- 逻辑管道集成：3 个新逻辑模块接入 Phase 2 并行执行 + DAG 模式 + 事件驱动缓存失效
+- 数据质量审计扩展：5 个新数据模块纳入 `data_quality/audit.py` 证据带覆盖
+- 8 个模块级 README.md 文档
+
 **v2.6 — 数据域与逻辑层第三轮扩展**
 
 - 5 个新数据采集模块：perpetual_dex_data（dYdX/Hyperliquid/GMX 永续 DEX funding 和成交量）、onchain_address_data（Arkham/Etherscan 巨鲸地址画像和资金流）、dex_liquidity_data（Uniswap V3/Curve 池流动性 via The Graph）、gas_network_data（Etherscan/Blocknative Gas 和网络指标）、governance_data（Snapshot/Tally DAO 治理提案和投票）
