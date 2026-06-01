@@ -170,6 +170,11 @@ def _run_dag_pipeline() -> dict[str, str]:
         ModuleNode("macro_context", _make_macro_context()),
         ModuleNode("news_sentiment", _make_news_sentiment()),
         ModuleNode("market_structure", _make_market_structure()),
+        ModuleNode("liquidation_cascade", _make_liquidation_cascade(),
+                   depends_on=["technical_indicators"]),
+        ModuleNode("cross_venue_arbitrage", _make_cross_venue_arbitrage()),
+        ModuleNode("onchain_lead_lag", _make_onchain_lead_lag(),
+                   depends_on=["technical_indicators"]),
         ModuleNode("portfolio_risk", _make_portfolio_risk(),
                    depends_on=["cross_asset_analysis"]),
         ModuleNode("market_breadth", _make_market_breadth()),
@@ -201,6 +206,9 @@ def _run_classic_pipeline() -> dict[str, str]:
         ("macro_context", _make_macro_context()),
         ("news_sentiment", _make_news_sentiment()),
         ("market_structure", _make_market_structure()),
+        ("liquidation_cascade", _make_liquidation_cascade()),
+        ("cross_venue_arbitrage", _make_cross_venue_arbitrage()),
+        ("onchain_lead_lag", _make_onchain_lead_lag()),
     ])
     all_results.update(results)
 
@@ -375,6 +383,39 @@ def _make_pipeline_latency() -> callable:
     return _run
 
 
+def _make_liquidation_cascade() -> callable:
+    def _run():
+        from logic_layer.liquidation_cascade.service import LiquidationCascadeService
+        svc = LiquidationCascadeService()
+        try:
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_cross_venue_arbitrage() -> callable:
+    def _run():
+        from logic_layer.cross_venue_arbitrage.service import CrossVenueArbService
+        svc = CrossVenueArbService()
+        try:
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_onchain_lead_lag() -> callable:
+    def _run():
+        from logic_layer.onchain_lead_lag.service import OnchainLeadLagService
+        svc = OnchainLeadLagService()
+        try:
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
 def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
     """按模块粒度清空相关 API 缓存（事件驱动失效）。
 
@@ -395,6 +436,9 @@ def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
         "asset_readiness": ["readiness:"],
         "ai_market_context": ["bundle:", "ai_context:"],
         "pipeline_latency": ["health:"],
+        "liquidation_cascade": ["liquidation_cascade:"],
+        "cross_venue_arbitrage": ["cross_venue_arb:"],
+        "onchain_lead_lag": ["onchain_lead_lag:"],
     }
 
     try:

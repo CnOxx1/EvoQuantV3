@@ -97,6 +97,46 @@ DEFAULT_EVIDENCE_BAND_SPECS: tuple[EvidenceBandSpec, ...] = (
         latest_tables=("latest_alternative_timeseries",),
         history_tables=("alternative_timeseries",),
     ),
+    EvidenceBandSpec(
+        band_name="perpetual_dex",
+        module_name="perpetual_dex_data",
+        description="dYdX/Hyperliquid/GMX 永续 DEX funding 和成交量。",
+        required=False,
+        latest_tables=("perp_dex_funding",),
+        history_tables=("perp_dex_funding", "perp_dex_volume"),
+    ),
+    EvidenceBandSpec(
+        band_name="onchain_address",
+        module_name="onchain_address_data",
+        description="Arkham/Etherscan 巨鲸地址画像和资金流。",
+        required=False,
+        latest_tables=("whale_moves",),
+        history_tables=("address_flows", "whale_moves"),
+    ),
+    EvidenceBandSpec(
+        band_name="dex_liquidity",
+        module_name="dex_liquidity_data",
+        description="Uniswap V3/Curve 池 TVL 和 tick 流动性分布。",
+        required=False,
+        latest_tables=("dex_pools",),
+        history_tables=("dex_pools", "dex_liquidity_events"),
+    ),
+    EvidenceBandSpec(
+        band_name="gas_network",
+        module_name="gas_network_data",
+        description="以太坊 Gas 价格、网络拥堵和 Gas 尖刺。",
+        required=False,
+        latest_tables=("gas_prices",),
+        history_tables=("gas_prices", "network_congestion", "gas_spikes"),
+    ),
+    EvidenceBandSpec(
+        band_name="governance",
+        module_name="governance_data",
+        description="Snapshot/Tally DAO 治理提案和投票。",
+        required=False,
+        latest_tables=("governance_proposals",),
+        history_tables=("governance_proposals", "governance_votes", "governance_activity"),
+    ),
 )
 
 

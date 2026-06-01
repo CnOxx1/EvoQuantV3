@@ -160,6 +160,30 @@ SCHEDULER_CONFIG = {
     "data_quality_audit_interval": int(
         os.getenv("DATA_QUALITY_AUDIT_INTERVAL_SECONDS", "300")
     ),  # 跨模块数据质量审计：默认每5分钟
+    "perpetual_dex_interval": int(
+        os.getenv("PERPETUAL_DEX_INTERVAL_SECONDS", "900")
+    ),  # 永续 DEX 数据：默认每15分钟
+    "onchain_address_interval": int(
+        os.getenv("ONCHAIN_ADDRESS_INTERVAL_SECONDS", "600")
+    ),  # 链上地址画像：默认每10分钟
+    "dex_liquidity_interval": int(
+        os.getenv("DEX_LIQUIDITY_INTERVAL_SECONDS", "1200")
+    ),  # DEX 流动性：默认每20分钟
+    "gas_network_interval": int(
+        os.getenv("GAS_NETWORK_INTERVAL_SECONDS", "300")
+    ),  # Gas/网络：默认每5分钟
+    "governance_interval": int(
+        os.getenv("GOVERNANCE_INTERVAL_SECONDS", "1800")
+    ),  # 治理投票：默认每30分钟
+    "liquidation_cascade_interval": int(
+        os.getenv("LIQUIDATION_CASCADE_INTERVAL_SECONDS", "600")
+    ),  # 清算级联分析：默认每10分钟
+    "cross_venue_arb_interval": int(
+        os.getenv("CROSS_VENUE_ARB_INTERVAL_SECONDS", "300")
+    ),  # 跨所套利检测：默认每5分钟
+    "onchain_lead_lag_interval": int(
+        os.getenv("ONCHAIN_LEAD_LAG_INTERVAL_SECONDS", "1800")
+    ),  # 链上领先滞后分析：默认每30分钟
 }
 
 # 交易所数据保留策略（天）
