@@ -289,6 +289,13 @@ EvoQuant/
 
 ### 2025-06-01
 
+**v2.9 — 异常治理与架构可视化**
+
+- 项目级异常层次结构：`exceptions.py` 提供 `EvoQuantError` 基类 + 分层子类（DataLayerError / LogicLayerError / DatabaseError / APIError），携带 error_code 和 context
+- API 错误响应标准化：`api/errors.py` 统一返回 `{error_code, detail, request_id, timestamp}` 格式，覆盖 HTTPException / ValidationError / 兜底 Exception
+- 集成测试：`tests/integration/` 新增 7 个跨层测试（数据层→逻辑层流、多模块共享 DB、API 端点格式验证）
+- 架构图：`ARCHITECTURE.md` 包含 6 张 Mermaid 图（系统总览、数据流时序、DAG 调度、模块结构、质量治理、进程管理）
+
 **v2.8 — 测试覆盖扩展与工程治理**
 
 - 单元测试大幅扩展：新增 24 个测试文件，覆盖 10 个数据层模块和 14 个逻辑层模块，测试文件总数达 54 个
