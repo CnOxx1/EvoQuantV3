@@ -377,6 +377,114 @@ python main.py --modules api_server
 | `/volatility/ranking` | GET | 全资产波动率排名 |
 | `/volatility/rv-iv-spread/{symbol}` | GET | RV-IV 价差信号 |
 
+### ETF 资金流
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/etf-flow/daily` | GET | ETF 每日资金流列表 |
+| `/etf-flow/summary` | GET | ETF 资金流汇总（含累计净流入） |
+| `/etf-flow/issuer-ranking` | GET | 按净流入排名各发行商 |
+| `/etf-flow/premium-discount/{asset}` | GET | ETF 溢价/折价追踪 |
+| `/etf-flow/flow-streak/{asset}` | GET | 连续流入/流出天数统计 |
+| `/etf-flow/anomalies` | GET | 异常流入检测（z-score 超阈值） |
+| `/etf-flow/context` | GET | ETF 资金流 AI 上下文 bundle |
+
+### 期货期限结构（Basis Curve）
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/basis-curve/term-structure` | GET | 最新期限结构数据 |
+| `/basis-curve/snapshot` | GET | 最新曲线快照（contango/backwardation 判定） |
+| `/basis-curve/roll-yield/{symbol}` | GET | 7 日 roll yield 分析 |
+| `/basis-curve/slope-history/{symbol}` | GET | 曲线斜率历史趋势 |
+| `/basis-curve/exchange-comparison/{symbol}` | GET | 跨交易所 basis 对比 |
+| `/basis-curve/anomalies` | GET | 期限溢价/凸度异常检测 |
+| `/basis-curve/context` | GET | 期限结构 AI 上下文 bundle |
+
+### MEV 数据
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/mev/blocks` | GET | 最近 MEV 区块数据 |
+| `/mev/aggregation` | GET | MEV 聚合数据（按时间窗口） |
+| `/mev/builder-ranking` | GET | Builder 按 MEV 提取量排名 |
+| `/mev/sandwich-analysis` | GET | 三明治攻击频率和量 |
+| `/mev/liquidation-pressure` | GET | 清算 MEV 趋势 |
+| `/mev/concentration` | GET | Builder 集中度（HHI）趋势 |
+| `/mev/context` | GET | MEV AI 上下文 bundle |
+
+### CeFi 借贷利率
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/cefi-lending/rates` | GET | 最新 CeFi 借贷利率 |
+| `/cefi-lending/spread` | GET | CeFi vs DeFi 利率价差 |
+| `/cefi-lending/platform-ranking/{asset}` | GET | 各平台利率排名 |
+| `/cefi-lending/inversion-signals` | GET | 利率倒挂检测（DeFi > CeFi） |
+| `/cefi-lending/rate-history/{asset}` | GET | 利率历史趋势 |
+| `/cefi-lending/utilization/{asset}` | GET | 资金利用率追踪 |
+| `/cefi-lending/context` | GET | CeFi 借贷利率 AI 上下文 bundle |
+
+### 时间模式识别
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/temporal-pattern/patterns` | GET | 最新时间模式检测结果 |
+| `/temporal-pattern/seasonal/{symbol}` | GET | 季节性统计画像 |
+| `/temporal-pattern/hourly/{symbol}` | GET | 小时级季节性效应 |
+| `/temporal-pattern/day-of-week/{symbol}` | GET | 星期效应 |
+| `/temporal-pattern/halving-cycle` | GET | 减半周期相位 |
+| `/temporal-pattern/funding-cycle/{symbol}` | GET | Funding 8h 周期模式 |
+| `/temporal-pattern/context` | GET | 时间模式 AI 上下文 bundle |
+
+### 资金流分解
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/flow-decomposition/vpin/{symbol}` | GET | VPIN 最新值和历史 |
+| `/flow-decomposition/decomposition/{symbol}` | GET | 资金流分解结果 |
+| `/flow-decomposition/smart-money/{symbol}` | GET | Smart money 方向 |
+| `/flow-decomposition/accumulation/{symbol}` | GET | 积累/派发阶段 |
+| `/flow-decomposition/vpin-alerts` | GET | VPIN 高风险告警（>0.8） |
+| `/flow-decomposition/ranking` | GET | 全资产 VPIN 排名 |
+| `/flow-decomposition/context` | GET | 资金流分解 AI 上下文 bundle |
+
+### 传染风险
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/contagion-risk/metrics` | GET | 最新传染风险指标 |
+| `/contagion-risk/cascade` | GET | 当前级联风险评估 |
+| `/contagion-risk/systemic-score` | GET | 系统性风险总评分 |
+| `/contagion-risk/covar/{symbol}` | GET | 单资产 CoVaR 分析 |
+| `/contagion-risk/tail-beta/{symbol}` | GET | 尾部 Beta 放大倍数 |
+| `/contagion-risk/stablecoin-health` | GET | 稳定币脱锚概率 |
+| `/contagion-risk/context` | GET | 传染风险 AI 上下文 bundle |
+
+### 信号衰减（Alpha Decay）
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/alpha-decay/decay` | GET | 信号衰减分析结果 |
+| `/alpha-decay/crowding` | GET | 最新信号拥挤度指数 |
+| `/alpha-decay/half-life/{signal_name}` | GET | 单信号半衰期历史 |
+| `/alpha-decay/signal-ranking` | GET | 按衰减速率排名信号 |
+| `/alpha-decay/divergence` | GET | 跨信号背离检测 |
+| `/alpha-decay/crowding-history` | GET | 拥挤度历史趋势 |
+| `/alpha-decay/context` | GET | 信号衰减 AI 上下文 bundle |
+
+### 叙事状态机（Narrative Regime）
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/narrative-regime/active` | GET | 当前活跃的市场叙事列表 |
+| `/narrative-regime/transitions` | GET | 叙事阶段转换记录 |
+| `/narrative-regime/by-phase/{phase}` | GET | 按生命周期阶段过滤 |
+| `/narrative-regime/attention-ranking` | GET | 按注意力评分排名 |
+| `/narrative-regime/tokens/{narrative_id}` | GET | 叙事关联 token |
+| `/narrative-regime/emerging` | GET | 新兴叙事（早期机会） |
+| `/narrative-regime/context` | GET | 叙事状态机 AI 上下文 bundle |
+
 ### 时间切片（历史回溯）
 
 | 端点 | 方法 | 说明 |
@@ -857,7 +965,16 @@ api/
     ├── regime.py            # /regime — 市场状态（当前/历史/转换）
     ├── anomaly.py           # /anomaly — 异常检测（最近/活跃/市场风险）
     ├── liquidity.py         # /liquidity — 流动性分析（评分/滑点/预警/排名）
-    └── volatility.py        # /volatility — 波动率预测（EWMA/锥/排名/RV-IV）
+    ├── volatility.py        # /volatility — 波动率预测（EWMA/锥/排名/RV-IV）
+    ├── etf_flow.py          # /etf-flow — ETF 资金流（日流/发行商排名/溢折价/异常）
+    ├── basis_curve.py       # /basis-curve — 期限结构（快照/roll yield/斜率/跨所对比）
+    ├── mev.py               # /mev — MEV 数据（区块/builder排名/三明治/集中度）
+    ├── cefi_lending.py      # /cefi-lending — CeFi 借贷（利率/排名/倒挂/利用率）
+    ├── temporal_pattern.py  # /temporal-pattern — 时间模式（季节性/小时/星期/减半/funding）
+    ├── flow_decomposition.py # /flow-decomposition — 资金流分解（VPIN/smart money/排名）
+    ├── contagion_risk.py    # /contagion-risk — 传染风险（系统评分/CoVaR/尾部Beta）
+    ├── alpha_decay.py       # /alpha-decay — 信号衰减（半衰期/排名/背离/拥挤度）
+    └── narrative_regime.py  # /narrative-regime — 叙事状态机（活跃/转换/注意力/新兴）
 ```
 
 ---

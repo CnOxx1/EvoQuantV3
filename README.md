@@ -93,7 +93,7 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        AI Consumer Layer                         │
-│              REST API (200+ endpoints) / Bundle Query            │
+│              REST API (270+ endpoints) / Bundle Query            │
 ├─────────────────────────────────────────────────────────────────┤
 │                         Logic Layer (25 modules)                 │
 │  technical_indicators → feature_standardization → cross_asset   │
@@ -173,7 +173,7 @@ EvoQuant/
 ├── data_layer/      外部数据采集、标准化、落库（15 个常驻数据模块）
 ├── database/        SQLite 建表、迁移、路由和读写入口
 ├── logic_layer/     AI-ready 特征、上下文和治理结果（20 个逻辑模块）
-├── api/             对外 REST API 服务（200+ 端点）
+├── api/             对外 REST API 服务（300+ 端点）
 ├── tests/           单元测试与模块测试
 └── main.py          统一入口，模块注册与进程管理（指数退避重启 + 三阶段优雅关停）
 ```
@@ -205,7 +205,7 @@ EvoQuant/
 
 ## API
 
-200+ REST 端点，覆盖：
+300+ REST 端点，覆盖：
 
 - 技术指标深度分析（极值、背离、多周期）
 - 组合风险分析（VaR、风险贡献、集中度）
@@ -237,9 +237,11 @@ EvoQuant/
 - [x] Point-in-time 时间切片 + 特征历史序列
 - [x] 新闻情感标注 + 事件分类
 - [x] 数据管道延迟追踪
-- [x] 100+ REST API 端点
+- [x] 300+ REST API 端点
 - [x] 6 个新数据域：社交情绪、巨鲸追踪、订单流、DeFi 协议、跨链桥流、监管动态
 - [x] 6 个新逻辑模块：Regime 检测、异常检测、流动性分析、波动率预测、资金费率模型、情绪信号
+- [x] 4 个新数据模块：ETF 资金流、期货期限结构、MEV 数据、CeFi 借贷利率
+- [x] 5 个新逻辑模块：时间模式识别、资金流分解、传染风险、信号衰减、叙事状态机
 
 ### P2 — 进行中
 
