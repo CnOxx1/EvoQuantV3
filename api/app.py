@@ -78,6 +78,7 @@ from api.routers.governance import router as governance_router
 from api.routers.liquidation_cascade import router as liquidation_cascade_router
 from api.routers.cross_venue_arb import router as cross_venue_arb_router
 from api.routers.onchain_lead_lag import router as onchain_lead_lag_router
+from api.errors import register_error_handlers
 from config.symbols import SYMBOL_UNIVERSE
 
 # ---------------------------------------------------------------------------
@@ -200,29 +201,10 @@ async def rate_limit_middleware(request: Request, call_next):
 
 
 # ---------------------------------------------------------------------------
-# 全局异常处理 — 防止 traceback 泄露
+# 全局异常处理 — 标准化错误响应
 # ---------------------------------------------------------------------------
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """捕获所有未处理异常，返回安全的 JSON 响应。"""
-    request_id = getattr(request.state, "request_id", "unknown")
-    logger.error(
-        "unhandled exception [request_id={}] {} {}: {}: {}",
-        request_id,
-        request.method,
-        request.url.path,
-        type(exc).__name__,
-        exc,
-    )
-    return JSONResponse(
-        status_code=500,
-        content={
-            "detail": "Internal server error",
-            "error_type": type(exc).__name__,
-            "request_id": request_id,
-        },
-    )
+register_error_handlers(app)
 
 
 # ---------------------------------------------------------------------------
