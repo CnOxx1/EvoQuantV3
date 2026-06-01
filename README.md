@@ -289,6 +289,13 @@ EvoQuant/
 
 ### 2025-06-01
 
+**v2.8 — 测试覆盖扩展与工程治理**
+
+- 单元测试大幅扩展：新增 24 个测试文件，覆盖 10 个数据层模块和 14 个逻辑层模块，测试文件总数达 54 个
+- 结构化 JSON 日志：`config/logging.py` 重写为 JSON 格式输出，`LOG_LEVEL` 支持环境变量配置
+- 开发依赖管理：新增 `requirements-dev.txt`（pytest、ruff、mypy 等）
+- 预存测试修复：更新 `test_main.py` 和 `test_health.py` 以匹配当前模块注册表
+
 **v2.7 — 工程化加固**
 
 - 8 个新模块单元测试（33 tests）：perpetual_dex_data、onchain_address_data、dex_liquidity_data、gas_network_data、governance_data、liquidation_cascade、cross_venue_arbitrage、onchain_lead_lag

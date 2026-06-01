@@ -77,7 +77,7 @@
 | Python 源文件数量 | 248 个 |
 | Markdown 文档数量 | 53 个 |
 | JSON 注册表数量 | 10 个 |
-| 测试文件数量 | 22 个 |
+| 测试文件数量 | 54 个 |
 | 默认交易所数量 | 3 家 |
 | 默认目标交易资产 | 18 个主流资产（三层分频） |
 
@@ -3885,15 +3885,42 @@ tests/
   onchain_data/
   options_data/
   tokenomics_data/
+  test_alpha_decay.py
+  test_anomaly_detection.py
+  test_bridge_flow_data.py
+  test_cefi_lending_rate.py
+  test_contagion_risk.py
+  test_cross_asset_analysis.py
+  test_defi_protocol_data.py
+  test_etf_flow_data.py
+  test_flow_decomposition.py
+  test_funding_rate_model.py
+  test_liquidity_analysis.py
+  test_logic_pipeline.py
   test_main.py
+  test_mev_data.py
+  test_narrative_regime.py
+  test_orderflow_data.py
+  test_perpetual_basis_curve.py
+  test_perpetual_dex_data.py
+  test_portfolio_risk.py
+  test_regime_detection.py
+  test_regulatory_data.py
+  test_sentiment_signal.py
+  test_social_sentiment_data.py
+  test_temporal_pattern.py
+  test_volatility_forecast.py
+  test_whale_tracker_data.py
 ```
 
 ## 38.2 当前测试覆盖含义
 
-虽然当前仓库还不是一个超大规模企业项目，但这套测试目录已经说明两个事实：
+当前仓库测试文件已达 54 个，覆盖全部核心数据层和逻辑层模块：
 
 1. 每个核心模块都有独立测试入口。
 2. 测试是按模块能力组织，而不是随便堆在一起。
+3. 数据层测试使用 StaticMockClient 模式，验证 init_storage / collect_once / load_latest_context_bundle 全链路。
+4. 逻辑层测试验证 init_storage / load_latest_context_bundle / 核心分析方法的正确性。
 
 ## 38.3 典型测试价值
 
@@ -4355,7 +4382,32 @@ tests/macro_data/test_macro_module.py
 tests/news_data/test_news_module.py
 tests/onchain_data/test_onchain_module.py
 tests/options_data/test_options_module.py
+tests/test_alpha_decay.py
+tests/test_anomaly_detection.py
+tests/test_bridge_flow_data.py
+tests/test_cefi_lending_rate.py
+tests/test_contagion_risk.py
+tests/test_cross_asset_analysis.py
+tests/test_defi_protocol_data.py
+tests/test_etf_flow_data.py
+tests/test_flow_decomposition.py
+tests/test_funding_rate_model.py
+tests/test_liquidity_analysis.py
+tests/test_logic_pipeline.py
 tests/test_main.py
+tests/test_mev_data.py
+tests/test_narrative_regime.py
+tests/test_orderflow_data.py
+tests/test_perpetual_basis_curve.py
+tests/test_perpetual_dex_data.py
+tests/test_portfolio_risk.py
+tests/test_regime_detection.py
+tests/test_regulatory_data.py
+tests/test_sentiment_signal.py
+tests/test_social_sentiment_data.py
+tests/test_temporal_pattern.py
+tests/test_volatility_forecast.py
+tests/test_whale_tracker_data.py
 tests/tokenomics_data/test_tokenomics_module.py
 ```
 
