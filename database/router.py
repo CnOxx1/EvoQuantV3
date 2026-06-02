@@ -135,6 +135,10 @@ class DatabaseRouter:
         """返回 market_data 域 DBManager。"""
         return self.get_manager(Domain.MARKET_DATA)
 
+    def get_market_data_db(self) -> "DBManager":
+        """返回 market_data 域 DBManager（get_market_db 的别名）。"""
+        return self.get_manager(Domain.MARKET_DATA)
+
     def close_all(self):
         """关闭所有域连接。"""
         for manager in self._managers.values():

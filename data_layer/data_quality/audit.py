@@ -272,6 +272,31 @@ class DataLayerAuditService:
 
             return AssetReadinessService(db=db)
 
+        def build_perpetual_dex_service(db: DBManager):
+            from data_layer.perpetual_dex_data.service import PerpDexDataService
+
+            return PerpDexDataService(db=db)
+
+        def build_onchain_address_service(db: DBManager):
+            from data_layer.onchain_address_data.service import OnchainAddressService
+
+            return OnchainAddressService(db=db)
+
+        def build_dex_liquidity_service(db: DBManager):
+            from data_layer.dex_liquidity_data.service import DexLiquidityService
+
+            return DexLiquidityService(db=db)
+
+        def build_gas_network_service(db: DBManager):
+            from data_layer.gas_network_data.service import GasNetworkService
+
+            return GasNetworkService(db=db)
+
+        def build_governance_service(db: DBManager):
+            from data_layer.governance_data.service import GovernanceDataService
+
+            return GovernanceDataService(db=db)
+
         return {
             "exchange_data": build_exchange_service,
             "macro_data": build_macro_service,
@@ -282,6 +307,11 @@ class DataLayerAuditService:
             "options_data": build_options_service,
             "alternative_data": build_alternative_service,
             "asset_readiness": build_asset_readiness_service,
+            "perpetual_dex_data": build_perpetual_dex_service,
+            "onchain_address_data": build_onchain_address_service,
+            "dex_liquidity_data": build_dex_liquidity_service,
+            "gas_network_data": build_gas_network_service,
+            "governance_data": build_governance_service,
         }
 
     def __init__(
