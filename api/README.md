@@ -586,6 +586,136 @@ python main.py --modules api_server
 | `/onchain-lead-lag/cross-signal` | GET | 跨信号相关性 |
 | `/onchain-lead-lag/context` | GET | 链上领先滞后 AI 上下文 bundle |
 
+### 预测市场
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/prediction-market/markets` | GET | 活跃预测市场列表 |
+| `/prediction-market/crypto-markets` | GET | 加密相关预测市场 |
+| `/prediction-market/movers` | GET | 概率变化最大的市场 |
+| `/prediction-market/history/{market_id}` | GET | 单市场概率历史 |
+| `/prediction-market/context` | GET | 预测市场 AI 上下文 bundle |
+
+### 链上持有者
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/onchain-holder/distribution/{symbol}` | GET | 持有者分布（短期/长期/鲸鱼） |
+| `/onchain-holder/metrics/{symbol}` | GET | 链上指标（MVRV/SOPR/NUPL） |
+| `/onchain-holder/supply-profit/{symbol}` | GET | 供给盈利比例 |
+| `/onchain-holder/ranking` | GET | 按 MVRV 排名资产 |
+| `/onchain-holder/context` | GET | 链上持有者 AI 上下文 bundle |
+
+### 流动性质押
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/liquid-staking/overview` | GET | 流动性质押全局概览（总质押/APR/队列） |
+| `/liquid-staking/protocols` | GET | 各协议质押详情（Lido/Rocket Pool） |
+| `/liquid-staking/validator-queue` | GET | 验证者进出队列状态 |
+| `/liquid-staking/restaking` | GET | 再质押 TVL（EigenLayer） |
+| `/liquid-staking/context` | GET | 流动性质押 AI 上下文 bundle |
+
+### Mempool
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/mempool/stats` | GET | 当前 mempool 状态（pending 数/vsize/费率） |
+| `/mempool/large-txs` | GET | 大额 pending 交易列表 |
+| `/mempool/fee-trend` | GET | 手续费趋势（快/中/慢） |
+| `/mempool/pressure-index` | GET | Mempool 压力指数 |
+| `/mempool/context` | GET | Mempool AI 上下文 bundle |
+
+### 融资轮次
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/funding-round/recent` | GET | 最近融资轮次列表 |
+| `/funding-round/by-category` | GET | 按赛道分类融资统计 |
+| `/funding-round/top-investors` | GET | 头部 VC 活跃度排名 |
+| `/funding-round/trends` | GET | 融资趋势（月度金额/数量） |
+| `/funding-round/context` | GET | 融资轮次 AI 上下文 bundle |
+
+### 交易所储备
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/exchange-reserve/btc` | GET | BTC 交易所储备数据 |
+| `/exchange-reserve/eth` | GET | ETH 交易所储备数据 |
+| `/exchange-reserve/stablecoin` | GET | 稳定币交易所储备数据 |
+| `/exchange-reserve/netflow` | GET | 净流入/流出汇总 |
+| `/exchange-reserve/context` | GET | 交易所储备 AI 上下文 bundle |
+
+### 矿工数据
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/miner/stats` | GET | 矿工核心指标（算力/难度/收入） |
+| `/miner/outflows` | GET | 矿工链上流出数据 |
+| `/miner/hashrate-history` | GET | 算力历史趋势 |
+| `/miner/puell-multiple` | GET | Puell Multiple 当前值与历史分位 |
+| `/miner/context` | GET | 矿工数据 AI 上下文 bundle |
+
+### 衍生品情绪
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/derivatives-sentiment/fear-greed` | GET | 恐惧贪婪指数 |
+| `/derivatives-sentiment/long-short` | GET | 多空比（BTC/ETH） |
+| `/derivatives-sentiment/open-interest` | GET | 全市场 OI 总量与变化 |
+| `/derivatives-sentiment/put-call` | GET | 看跌/看涨比率 |
+| `/derivatives-sentiment/context` | GET | 衍生品情绪 AI 上下文 bundle |
+
+### 持有者行为分析
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/holder-behavior/state/{symbol}` | GET | 单资产持有者行为状态 |
+| `/holder-behavior/market-phase` | GET | 当前市场阶段（积累/派发） |
+| `/holder-behavior/signals` | GET | 持有者行为信号列表 |
+| `/holder-behavior/historical/{symbol}` | GET | 持有者行为历史分位 |
+| `/holder-behavior/context` | GET | 持有者行为 AI 上下文 bundle |
+
+### 流动性 Regime
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/liquidity-regime/state` | GET | 当前流动性状态（expansion/contraction/crisis） |
+| `/liquidity-regime/score` | GET | 流动性评分（0-100） |
+| `/liquidity-regime/spread` | GET | DeFi-CeFi 利差方向 |
+| `/liquidity-regime/stablecoin-pulse` | GET | 稳定币供给脉冲 |
+| `/liquidity-regime/context` | GET | 流动性 Regime AI 上下文 bundle |
+
+### 事件概率
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/event-probability/high-impact` | GET | 高影响力事件列表 |
+| `/event-probability/jumps` | GET | 概率跳变检测（24h > 10%） |
+| `/event-probability/asset-mapping` | GET | 事件→资产映射 |
+| `/event-probability/cross-validation` | GET | 事件-新闻交叉验证 |
+| `/event-probability/context` | GET | 事件概率 AI 上下文 bundle |
+
+### 矿工压力
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/miner-pressure/score` | GET | 矿工压力评分 |
+| `/miner-pressure/capitulation` | GET | 矿工投降指数 |
+| `/miner-pressure/halving-phase` | GET | 减半周期相位 |
+| `/miner-pressure/historical` | GET | 矿工压力历史 |
+| `/miner-pressure/context` | GET | 矿工压力 AI 上下文 bundle |
+
+### 综合情绪
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/sentiment-composite/score` | GET | 综合情绪评分（0-100） |
+| `/sentiment-composite/extremes` | GET | 极端情绪检测 |
+| `/sentiment-composite/divergence` | GET | 情绪-价格背离 |
+| `/sentiment-composite/reversal` | GET | 反转信号概率 |
+| `/sentiment-composite/context` | GET | 综合情绪 AI 上下文 bundle |
+
 ### 时间切片（历史回溯）
 
 | 端点 | 方法 | 说明 |
@@ -1083,7 +1213,20 @@ api/
     ├── governance.py        # /governance — 治理投票（提案/投票/参与率/巨鲸/排名）
     ├── liquidation_cascade.py # /liquidation-cascade — 清算级联（集群/风险/热力图/杠杆）
     ├── cross_venue_arb.py   # /cross-venue-arb — 跨所套利（机会/价差/持续性/效率）
-    └── onchain_lead_lag.py  # /onchain-lead-lag — 链上领先滞后（信号/Granger/预测力）
+    ├── onchain_lead_lag.py  # /onchain-lead-lag — 链上领先滞后（信号/Granger/预测力）
+    ├── prediction_market.py # /prediction-market — 预测市场（活跃市场/概率变化/历史）
+    ├── onchain_holder.py    # /onchain-holder — 链上持有者（分布/MVRV/SOPR/NUPL）
+    ├── liquid_staking.py    # /liquid-staking — 流动性质押（概览/协议/队列/再质押）
+    ├── mempool.py           # /mempool — Mempool（状态/大额TX/费率趋势/压力指数）
+    ├── funding_round.py     # /funding-round — 融资轮次（最近/赛道/VC排名/趋势）
+    ├── exchange_reserve.py  # /exchange-reserve — 交易所储备（BTC/ETH/稳定币/净流）
+    ├── miner.py             # /miner — 矿工数据（算力/流出/Puell/历史）
+    ├── derivatives_sentiment.py # /derivatives-sentiment — 衍生品情绪（恐贪/多空比/OI/PC比）
+    ├── holder_behavior.py   # /holder-behavior — 持有者行为（状态/市场阶段/信号/历史）
+    ├── liquidity_regime.py  # /liquidity-regime — 流动性Regime（状态/评分/利差/脉冲）
+    ├── event_probability.py # /event-probability — 事件概率（高影响/跳变/资产映射）
+    ├── miner_pressure.py    # /miner-pressure — 矿工压力（评分/投降/减半相位/历史）
+    └── sentiment_composite.py # /sentiment-composite — 综合情绪（评分/极端/背离/反转）
 ```
 
 ---

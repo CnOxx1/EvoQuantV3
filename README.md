@@ -5,7 +5,7 @@
 大多数量化项目从"策略"出发，EvoQuant 从"理解"出发。它解决的核心问题是：AI 在做交易决策前，需要一个完整、诚实、可回溯的市场认知底座。
 
 ```text
-3 交易所 × 18 资产 × 23 数据域 × 228 技术指标 × 实时质量治理
+3 交易所 × 18 资产 × 31 数据域 × 228 技术指标 × 实时质量治理
 → AI 随时可查的完整市场上下文
 ```
 
@@ -14,7 +14,7 @@
 | 传统量化数据管道 | EvoQuant |
 | --- | --- |
 | 单交易所单币种 | 3 交易所 × 18 资产，多源交叉验证 |
-| 只有 K 线和指标 | 23 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics + 社交情绪 + 巨鲸追踪 + 订单流 + DeFi 协议 + 跨链桥流 + 监管动态 + ETF 资金流 + 期货期限结构 + MEV + CeFi 借贷利率 + 永续 DEX + 链上地址画像 + DEX 流动性 + Gas/网络 + 治理投票 |
+| 只有 K 线和指标 | 31 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics + 社交情绪 + 巨鲸追踪 + 订单流 + DeFi 协议 + 跨链桥流 + 监管动态 + ETF 资金流 + 期货期限结构 + MEV + CeFi 借贷利率 + 永续 DEX + 链上地址画像 + DEX 流动性 + Gas/网络 + 治理投票 + 预测市场 + 链上持有者 + 流动性质押 + 内存池 + VC 融资 + 交易所储备 + 矿工数据 + 衍生品情绪 |
 | 缺失数据静默忽略 | 显式标记 stale / missing / partial，AI 知道自己"不知道什么" |
 | 固定参数指标 | 228 个指标含自适应 Ehlers 系列、分形维度、Hurst 指数 |
 | 只能看当前 | Point-in-time 回溯：查询任意历史时刻的完整市场状态 |
@@ -56,6 +56,14 @@
 | DEX 流动性 | Uniswap V3 / Curve (The Graph) | 20 分钟 | TVL 分布、tick 集中度、大额流动性事件 |
 | Gas/网络 | Etherscan / Blocknative | 5 分钟 | Gas 价格、网络拥堵、Gas 尖刺检测 |
 | 治理投票 | Snapshot / Tally | 30 分钟 | 提案状态、参与率、巨鲸投票集中度 |
+| 预测市场 | Polymarket | 15 分钟 | 事件概率、概率跳变、加密相关筛选 |
+| 链上持有者 | Blockchain.com / mempool.space | 1 小时 | MVRV/SOPR/NUPL、持有者分布、供给冲击 |
+| 流动性质押 | DefiLlama / EigenLayer / Beaconchain | 30 分钟 | 质押 TVL、验证者队列、再质押、LST 溢折价 |
+| 内存池 | mempool.space | 1 分钟 | 压力指数、大额待确认交易、Fee 趋势 |
+| VC 融资 | DefiLlama Raises | 每日 | 融资轮次、热门赛道、头部 VC 动向 |
+| 交易所储备 | DefiLlama / Blockchain.com | 30 分钟 | BTC/ETH/USDT 储备变化、净流入/流出 |
+| 矿工数据 | mempool.space / Blockchain.com | 1 小时 | 算力、Puell Multiple、矿工收入、难度调整 |
+| 衍生品情绪 | Alternative.me / Coinglass | 15 分钟 | 恐惧贪婪、多空比、OI、杠杆率、Put/Call |
 
 ## 技术指标体系
 
@@ -98,9 +106,9 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        AI Consumer Layer                         │
-│              REST API (330+ endpoints) / Bundle Query            │
+│              REST API (390+ endpoints) / Bundle Query            │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Logic Layer (28 modules)                 │
+│                         Logic Layer (33 modules)                 │
 │  technical_indicators → feature_standardization → cross_asset   │
 │  macro_context → news_sentiment → portfolio_risk                │
 │  market_breadth → asset_readiness → ai_market_context           │
@@ -110,8 +118,10 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │  temporal_pattern → flow_decomposition → contagion_risk         │
 │  alpha_decay → narrative_regime                                 │
 │  liquidation_cascade → cross_venue_arbitrage → onchain_lead_lag │
+│  holder_behavior → liquidity_regime → event_probability         │
+│  miner_pressure → market_sentiment_composite                    │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Data Layer (24 modules)                  │
+│                         Data Layer (32 modules)                  │
 │  exchange_data │ macro_data │ news_data │ onchain_data          │
 │  options_data │ tokenomics_data │ event_calendar │ alternative  │
 │  social_sentiment │ whale_tracker │ orderflow │ defi_protocol   │
@@ -119,6 +129,8 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │  etf_flow_data │ perpetual_basis_curve │ mev_data │ cefi_lending│
 │  perpetual_dex_data │ onchain_address_data │ dex_liquidity_data │
 │  gas_network_data │ governance_data                             │
+│  prediction_market │ onchain_holder │ liquid_staking │ mempool  │
+│  funding_round │ exchange_reserve │ miner_data │ deriv_sentiment│
 ├─────────────────────────────────────────────────────────────────┤
 │                         Storage Layer                            │
 │  SQLite (3 域拆分) │ latest_* 快照 │ 历史表 │ 质量审计表       │
@@ -128,6 +140,7 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │  LunarCrush │ Santiment │ Arkham │ Nansen │ WhaleAlert │ SEC   │
 │  SoSoValue │ Flashbots │ EigenPhi │ dYdX │ Hyperliquid │ GMX  │
 │  Uniswap V3 │ Curve │ Etherscan │ Blocknative │ Snapshot │Tally│
+│  Polymarket │ Alternative.me │ Coinglass │ Beaconchain          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -179,10 +192,10 @@ pytest -q
 ```text
 EvoQuant/
 ├── config/          目标资产、调度、日志与环境配置
-├── data_layer/      外部数据采集、标准化、落库（24 个数据模块）
+├── data_layer/      外部数据采集、标准化、落库（32 个数据模块）
 ├── database/        SQLite 建表、迁移、路由和读写入口
-├── logic_layer/     AI-ready 特征、上下文和治理结果（28 个逻辑模块）
-├── api/             对外 REST API 服务（330+ 端点）
+├── logic_layer/     AI-ready 特征、上下文和治理结果（33 个逻辑模块）
+├── api/             对外 REST API 服务（390+ 端点）
 ├── tests/           单元测试与模块测试
 └── main.py          统一入口，模块注册与进程管理（指数退避重启 + 三阶段优雅关停）
 ```
@@ -219,10 +232,15 @@ EvoQuant/
 | `liquidation_cascade` | 清算集群检测、级联概率建模、清算热力图 |
 | `cross_venue_arbitrage` | 跨交易所价差检测、套利持续性、市场效率评分 |
 | `onchain_lead_lag` | 链上信号领先/滞后分析、Granger 因果、预测力排名 |
+| `holder_behavior_analysis` | STH/LTH 供给分离、MVRV 分位、SOPR 状态机、积累/派发阶段 |
+| `liquidity_regime` | 全市场流动性状态分类（expansion/contraction/crisis）、DeFi-CeFi 利差 |
+| `event_probability` | 预测市场概率跳变检测、事件→资产映射、新闻交叉验证 |
+| `miner_pressure` | Puell Multiple 分位、矿工投降指数、减半周期相位、算力压力 |
+| `market_sentiment_composite` | 多维度综合情绪评分（0-100）、极端检测、情绪-价格背离、反转信号 |
 
 ## API
 
-330+ REST 端点，覆盖：
+390+ REST 端点，覆盖：
 
 - 技术指标深度分析（极值、背离、多周期）
 - 组合风险分析（VaR、风险贡献、集中度）
@@ -238,6 +256,19 @@ EvoQuant/
 - 清算级联（集群分布、级联概率、热力图、杠杆分布）
 - 跨交易所套利（价差检测、套利持续性、市场效率评分）
 - 链上领先/滞后（信号预测力、Granger 因果、最优滞后期）
+- 预测市场（活跃市场、概率变动、加密事件筛选）
+- 链上持有者（MVRV/SOPR/NUPL、持有者分布、结构变化）
+- 流动性质押（质押 TVL、验证者队列、再质押、APR 对比）
+- 内存池（压力指数、Fee 趋势、大额待确认交易）
+- VC 融资（近期轮次、赛道分布、顶级投资方）
+- 交易所储备（余额、净流入/流出、储备变化）
+- 矿工数据（指标历史、算力、Puell Multiple）
+- 衍生品情绪（恐惧贪婪、多空比、OI、杠杆率）
+- 持有者行为分析（市场阶段、行为信号、历史分位）
+- 流动性 Regime（状态、评分、DeFi-CeFi 利差）
+- 事件概率（高影响事件、概率跳变、资产映射）
+- 矿工压力（投降指数、减半周期、压力评分）
+- 综合情绪（评分、极端标记、背离、反转概率）
 
 启动后访问 `/docs`（Swagger）或 `/redoc`（ReDoc）查看完整接口文档。
 
@@ -270,6 +301,9 @@ EvoQuant/
 - [x] 5 个新数据模块：永续 DEX（dYdX/Hyperliquid/GMX）、链上地址画像（Arkham/Etherscan）、DEX 流动性（Uniswap V3/Curve）、Gas/网络（Etherscan/Blocknative）、治理投票（Snapshot/Tally）
 - [x] 3 个新逻辑模块：清算级联预测、跨交易所套利检测、链上领先/滞后分析
 - [x] 8 个新 API 路由（61 端点）：永续 DEX、链上地址、DEX 流动性、Gas/网络、治理、清算级联、跨所套利、链上领先滞后
+- [x] 8 个新数据模块：预测市场（Polymarket）、链上持有者（MVRV/SOPR/NUPL）、流动性质押（Lido/RocketPool/EigenLayer）、内存池（mempool.space）、VC 融资（DefiLlama Raises）、交易所储备、矿工数据、衍生品情绪
+- [x] 5 个新逻辑模块：持有者行为分析、流动性 Regime、事件概率、矿工压力、综合情绪评分
+- [x] 13 个新 API 路由（65 端点）：预测市场、链上持有者、流动性质押、内存池、VC 融资、交易所储备、矿工、衍生品情绪、持有者行为、流动性 Regime、事件概率、矿工压力、综合情绪
 
 ### P2 — 进行中
 
@@ -286,6 +320,16 @@ EvoQuant/
 - [ ] 组合层：多资产权重、再平衡、回撤控制
 
 ## 更新记录
+
+### 2025-06-02
+
+**v3.0 — AI 交易决策关键维度扩展**
+
+- 8 个新数据采集模块：prediction_market_data（Polymarket 预测市场概率）、onchain_holder_data（MVRV/SOPR/NUPL 链上持有者指标）、liquid_staking_data（Lido/RocketPool/EigenLayer 质押与再质押）、mempool_data（BTC 内存池压力与大额交易）、funding_round_data（VC 融资轮次与投资方动向）、exchange_reserve_data（交易所 BTC/ETH/USDT 储备净流动）、miner_data（算力/Puell Multiple/矿工收入/难度调整）、derivatives_sentiment_data（恐惧贪婪/多空比/OI/杠杆率）
+- 5 个新逻辑分析模块：holder_behavior_analysis（STH/LTH 分离 + SOPR 状态机 + 积累/派发阶段判定）、liquidity_regime（流动性状态分类 + DeFi-CeFi 利差 + 稳定币脉冲）、event_probability（预测市场概率跳变 + 事件→资产映射 + 新闻交叉验证）、miner_pressure（Puell 分位 + 矿工投降指数 + 减半周期相位）、market_sentiment_composite（多维度情绪加权评分 + 极端检测 + 背离反转信号）
+- 13 个新 API 路由（65 端点）：/prediction-market、/onchain-holder、/liquid-staking、/mempool、/funding-round、/exchange-reserve、/miner、/derivatives-sentiment、/holder-behavior、/liquidity-regime、/event-probability、/miner-pressure、/sentiment-composite
+- 数据域从 23 个扩展到 31 个，逻辑模块从 28 个扩展到 33 个，API 端点数达 390+
+- 逻辑管道 Phase 2 新增 5 个并行模块 + DAG 节点 + 缓存失效映射
 
 ### 2025-06-01
 

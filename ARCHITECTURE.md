@@ -14,12 +14,15 @@ graph TB
         EX_MEV["Flashbots / EigenPhi"]
         EX_SOCIAL["LunarCrush / Santiment"]
         EX_GOV["Snapshot / Tally"]
+        EX_PRED["Polymarket / Alternative.me / Coinglass"]
+        EX_MINING["mempool.space / Blockchain.com"]
     end
 
-    subgraph DataLayer["数据层 (24 模块)"]
+    subgraph DataLayer["数据层 (32 模块)"]
         DL_CORE["exchange / macro / news / onchain\noptions / tokenomics / event_calendar / alternative"]
         DL_EXT["social_sentiment / whale_tracker / orderflow\ndefi_protocol / bridge_flow / regulatory"]
         DL_NEW["etf_flow / basis_curve / mev / cefi_lending\nperp_dex / onchain_address / dex_liquidity\ngas_network / governance"]
+        DL_V3["prediction_market / onchain_holder / liquid_staking\nmempool / funding_round / exchange_reserve\nminer_data / derivatives_sentiment"]
         DL_QUALITY["data_quality (审计 + WMI)"]
     end
 
@@ -29,15 +32,16 @@ graph TB
         DB_AN["analytics.db\n逻辑结果/风险/指标"]
     end
 
-    subgraph LogicLayer["逻辑层 (28 模块)"]
+    subgraph LogicLayer["逻辑层 (33 模块)"]
         LL_CORE["technical_indicators / feature_standardization\ncross_asset_analysis / portfolio_risk"]
         LL_CONTEXT["macro_context / news_sentiment / exchange_comparison\nmarket_structure / market_breadth"]
         LL_AI["asset_readiness / ai_market_context\ntime_slice / pipeline_latency"]
         LL_ANALYSIS["regime_detection / anomaly_detection\nliquidity_analysis / volatility_forecast\nfunding_rate_model / sentiment_signal"]
         LL_ADVANCED["temporal_pattern / flow_decomposition\ncontagion_risk / alpha_decay / narrative_regime\nliquidation_cascade / cross_venue_arbitrage\nonchain_lead_lag"]
+        LL_V3["holder_behavior_analysis / liquidity_regime\nevent_probability / miner_pressure\nmarket_sentiment_composite"]
     end
 
-    subgraph API["API 层 (330+ 端点)"]
+    subgraph API["API 层 (390+ 端点)"]
         API_REST["FastAPI REST Server"]
         API_MW["中间件: CORS / 限流 / 追踪 / 压缩"]
     end
@@ -108,6 +112,11 @@ graph LR
         LC["liquidation_cascade"]
         CVA["cross_venue_arbitrage"]
         OLL["onchain_lead_lag"]
+        HBA["holder_behavior_analysis"]
+        LR["liquidity_regime"]
+        EP["event_probability"]
+        MP["miner_pressure"]
+        MSC["market_sentiment_composite"]
     end
 
     subgraph Phase3["Phase 3 串行"]
@@ -170,7 +179,7 @@ graph TB
     MAIN["main.py"] --> |spawn| D1["daemon: exchange_data"]
     MAIN --> |spawn| D2["daemon: macro_data"]
     MAIN --> |spawn| D3["daemon: news_data"]
-    MAIN --> |spawn| DN["daemon: ... (16 autostart)"]
+    MAIN --> |spawn| DN["daemon: ... (24 autostart)"]
     MAIN --> |spawn| LP["daemon: logic_pipeline"]
     MAIN --> |spawn| API["daemon: api_server"]
 

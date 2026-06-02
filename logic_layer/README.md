@@ -63,6 +63,11 @@
 | `liquidation_cascade` | exchange_data OI + klines + leverage | 清算集群检测、级联概率建模、清算热力图 |
 | `cross_venue_arbitrage` | exchange_data 多交易所价格 | 跨交易所价差检测、套利持续性、市场效率评分 |
 | `onchain_lead_lag` | onchain_data + exchange_data 价格 | 链上信号领先/滞后、Granger 因果、预测力排名 |
+| `holder_behavior_analysis` | onchain_holder_data + exchange_reserve_data | STH/LTH 行为分离、MVRV 分位、SOPR 状态机、供给冲击概率 |
+| `liquidity_regime` | liquid_staking_data + defi_protocol + cefi_lending + exchange_reserve | 流动性状态（expansion/contraction/crisis）、DeFi-CeFi 利差、稳定币脉冲 |
+| `event_probability` | prediction_market_data + news_data + regulatory_data | 事件市场定价概率、概率跳变检测、事件→资产映射 |
+| `miner_pressure` | miner_data + exchange_reserve_data | Puell Multiple 分位、矿工投降指数、减半周期相位、Hash Price |
+| `market_sentiment_composite` | derivatives_sentiment + social_sentiment + funding_rate_model + prediction_market | 综合情绪评分(0-100)、极端检测、情绪-价格背离、反转信号 |
 
 ## 数据流全景
 
@@ -154,6 +159,16 @@ logic_layer/
   cross_venue_arbitrage/
     calculator.py, models.py, repository.py, runner.py, service.py
   onchain_lead_lag/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  holder_behavior_analysis/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  liquidity_regime/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  event_probability/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  miner_pressure/
+    calculator.py, models.py, repository.py, runner.py, service.py
+  market_sentiment_composite/
     calculator.py, models.py, repository.py, runner.py, service.py
 ```
 
@@ -247,9 +262,29 @@ logic_layer/
 
 链上信号领先/滞后分析。基于 `onchain_data` 和 `exchange_data` 价格序列，对 5 种链上信号（whale_net_flow、exchange_inflow、gas_spike、funding_rate、open_interest_change）× 3 个目标资产（BTC/ETH/SOL）计算交叉相关性、最优滞后期、Granger 因果检验和预测力（R²）。结果写入 `lead_lag_signals`、`onchain_price_relations` 和 `signal_alerts` 表。
 
+### holder_behavior_analysis
+
+持有者行为分析。基于 `onchain_holder_data` 和 `exchange_reserve_data` 数据，计算长短期持有者行为分离（STH/LTH supply ratio 变化）、MVRV 分位判断（极值区 = 顶/底信号）、SOPR 状态机（>1 获利了结, <1 割肉投降）、供给冲击概率（illiquid supply 变化率）和积累/派发阶段判断。结果写入 `holder_behavior_states` 表。
+
+### liquidity_regime
+
+流动性状态判断。基于 `liquid_staking_data`、`defi_protocol_data`、`cefi_lending_rate` 和 `exchange_reserve_data` 数据，计算全市场流动性状态（expansion/neutral/contraction/crisis）、DeFi-CeFi 利差方向（套利信号）、稳定币供给脉冲（M2 crypto proxy）、质押/解质押净流动影响和流动性得分（0-100）。结果写入 `liquidity_regime_states` 表。
+
+### event_probability
+
+事件概率提取。基于 `prediction_market_data`、`news_data` 和 `regulatory_data` 数据，提取关键事件的市场定价概率、检测概率跳变（24h 变化 > 10%）、构建事件→资产映射（哪些事件影响哪些币）、与新闻情绪交叉验证。结果写入 `event_probability_states` 表。
+
+### miner_pressure
+
+矿工压力评估。基于 `miner_data` 和 `exchange_reserve_data` 数据，计算 Puell Multiple 分位（极低=矿工投降, 极高=过热）、矿工储备变化趋势、Hash Price vs 电力成本估算、减半周期相位（距上次/下次减半天数）和矿工投降指数。结果写入 `miner_pressure_states` 表。
+
+### market_sentiment_composite
+
+综合情绪评分。基于 `derivatives_sentiment_data`、`social_sentiment_data`、`funding_rate_model` 和 `prediction_market_data` 数据，计算综合情绪评分（0-100, 多维度加权）、情绪极端检测（极度恐惧/贪婪）、情绪-价格背离检测、反转信号强度和与 funding rate 的一致性/背离。结果写入 `composite_sentiment_states` 表。
+
 ## AI 输出结构
 
-当前逻辑层输出 18 类 AI 可消费结果：
+当前逻辑层输出 23 类 AI 可消费结果：
 
 | 输出 | 核心价值 |
 | --- | --- |
@@ -273,6 +308,11 @@ logic_layer/
 | `liquidation_cascade` | 清算集群、级联概率、清算热力图 |
 | `cross_venue_arbitrage` | 跨交易所价差、套利持续性、市场效率评分 |
 | `onchain_lead_lag` | 链上信号领先/滞后、Granger 因果、预测力排名 |
+| `holder_behavior_analysis` | STH/LTH 行为分离、MVRV 分位、SOPR 状态机、供给冲击概率 |
+| `liquidity_regime` | 流动性状态、DeFi-CeFi 利差、稳定币脉冲、流动性评分 |
+| `event_probability` | 事件市场定价概率、概率跳变检测、事件→资产映射 |
+| `miner_pressure` | 矿工压力评分、Puell Multiple、投降信号、减半相位 |
+| `market_sentiment_composite` | 综合情绪评分、极端检测、情绪-价格背离、反转信号 |
 
 最终由 `ai_market_context` 统一聚合为单一 bundle 供 AI 消费。
 

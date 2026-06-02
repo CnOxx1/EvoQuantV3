@@ -52,6 +52,14 @@
 | `dex_liquidity_data` | Uniswap V3/Curve 池流动性 | TVL 分布、tick 集中度、大额流动性事件 |
 | `gas_network_data` | Etherscan/Blocknative Gas 和网络 | Gas 价格、网络拥堵、Gas 尖刺检测 |
 | `governance_data` | Snapshot/Tally DAO 治理 | 提案状态、参与率、巨鲸投票集中度 |
+| `prediction_market_data` | Polymarket 预测市场 | 事件概率、概率跳变、加密相关事件筛选 |
+| `onchain_holder_data` | Blockchain.com / mempool.space 链上持有者 | MVRV/SOPR/NUPL、持有者分布、供给冲击 |
+| `liquid_staking_data` | DefiLlama / EigenLayer / Beaconchain | 质押 TVL、验证者队列、再质押、LST 溢折价 |
+| `mempool_data` | mempool.space BTC 内存池 | 压力指数、大额待确认交易、Fee 趋势 |
+| `funding_round_data` | DefiLlama Raises VC 融资 | 融资轮次、热门赛道、头部 VC 动向 |
+| `exchange_reserve_data` | DefiLlama / Blockchain.com 交易所储备 | BTC/ETH/USDT 储备变化、净流入/流出 |
+| `miner_data` | mempool.space / Blockchain.com 矿工数据 | 算力、Puell Multiple、矿工收入、难度调整 |
+| `derivatives_sentiment_data` | Alternative.me / Coinglass 衍生品情绪 | 恐惧贪婪、多空比、OI、杠杆率、Put/Call |
 | `data_quality` | 跨模块审计 | `world_model_status` 与 critical gaps |
 
 ## 模块详述
