@@ -108,6 +108,9 @@ from api.routers.depth_regime import router as depth_regime_router
 from api.routers.smart_money_conviction import router as smart_money_conviction_router
 from api.routers.defi_stress import router as defi_stress_router
 from api.routers.retail_fomo import router as retail_fomo_router
+from api.routers.overview import router as overview_router
+from api.routers.analytics_ts import router as analytics_ts_router
+from api.routers.screener import router as screener_router
 from api.errors import register_error_handlers
 from config.symbols import SYMBOL_UNIVERSE
 
@@ -327,6 +330,9 @@ app.include_router(depth_regime_router)
 app.include_router(smart_money_conviction_router)
 app.include_router(defi_stress_router)
 app.include_router(retail_fomo_router)
+app.include_router(overview_router)
+app.include_router(analytics_ts_router)
+app.include_router(screener_router)
 
 
 # ---------------------------------------------------------------------------
