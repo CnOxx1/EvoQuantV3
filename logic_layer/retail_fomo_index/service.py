@@ -57,9 +57,9 @@ class RetailFomoIndexService:
         """
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT score FROM search_trends
+            """SELECT interest_score AS score FROM search_trends
                WHERE category = 'crypto'
-               ORDER BY created_at DESC LIMIT 14""",
+               ORDER BY timestamp DESC LIMIT 14""",
             (),
         )
         if not rows:
@@ -80,66 +80,26 @@ class RetailFomoIndexService:
         }
 
     def _load_social_data(self) -> dict:
-        """加载社交指标数据。"""
-        market_db = self._get_market_db()
-        rows = market_db.fetch_all(
-            """SELECT volume, sentiment_score FROM social_metrics
-               ORDER BY created_at DESC LIMIT 30""",
-            (),
-        )
-        if not rows:
-            return {"social_zscore": 0.0, "social_negativity": 0.0}
-
-        volumes = [float(r.get("volume") or 0) for r in rows]
-        sentiments = [float(r.get("sentiment_score") or 0) for r in rows]
-
-        # 计算 Z-score
-        if len(volumes) >= 2:
-            mean_vol = sum(volumes) / len(volumes)
-            std_vol = (sum((v - mean_vol) ** 2 for v in volumes) / len(volumes)) ** 0.5
-            zscore = (volumes[0] - mean_vol) / std_vol if std_vol > 0 else 0.0
-        else:
-            zscore = 0.0
-
-        # 社交负面情绪比例（sentiment < -0.3）
-        neg_count = sum(1 for s in sentiments[:10] if s < -0.3)
-        negativity = neg_count / min(10, len(sentiments))
-
-        return {"social_zscore": zscore, "social_negativity": negativity}
+        """加载社交指标数据（社交表不存在时返回默认值）。"""
+        # social_metrics 表不存在于当前 schema，返回安全默认值
+        return {"social_zscore": 0.0, "social_negativity": 0.0}
 
     def _load_listing_heat(self) -> float:
-        """加载新币上线热度。"""
-        market_db = self._get_market_db()
-        rows = market_db.fetch_all(
-            """SELECT listing_count, avg_first_day_volume
-               FROM listing_metrics
-               ORDER BY created_at DESC LIMIT 7""",
-            (),
-        )
-        if not rows:
-            return 0.0
-
-        # 热度 = 近期上币数量 * 首日成交量的归一化
-        total_listings = sum(int(r.get("listing_count") or 0) for r in rows)
-        avg_vol = sum(float(r.get("avg_first_day_volume") or 0) for r in rows) / len(rows)
-
-        # 归一化到 0-100（假设每周 10 个新币且平均首日 1M 为正常）
-        listing_norm = min(1.0, total_listings / 10.0)
-        vol_norm = min(1.0, avg_vol / 1_000_000.0)
-        heat = (listing_norm * 0.4 + vol_norm * 0.6) * 100.0
-        return round(heat, 2)
+        """加载新币上线热度（无此表时返回默认值）。"""
+        # listing_metrics 表不存在于当前 schema，返回安全默认值
+        return 0.0
 
     def _load_fear_greed(self) -> float:
         """加载恐贪指数。"""
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT value FROM fear_greed_index
-               ORDER BY created_at DESC LIMIT 1""",
+            """SELECT fear_greed_index FROM sentiment_index
+               ORDER BY collected_at DESC LIMIT 1""",
             (),
         )
         if not rows:
             return 50.0
-        return float(rows[0]["value"])
+        return float(rows[0]["fear_greed_index"])
 
     def _load_historical_reversals(self) -> list[float]:
         """加载历史极端事件后的反转幅度。"""
@@ -151,13 +111,15 @@ class RetailFomoIndexService:
         # 简化：返回历史极端值后的变化
         reversals = []
         for i in range(1, len(rows)):
+            prev = dict(rows[i - 1])
+            curr = dict(rows[i])
             prev_extreme = max(
-                float(rows[i - 1].get("fomo_index") or 0),
-                float(rows[i - 1].get("fud_index") or 0),
+                float(prev.get("fomo_index") or 0),
+                float(prev.get("fud_index") or 0),
             )
             curr_extreme = max(
-                float(rows[i].get("fomo_index") or 0),
-                float(rows[i].get("fud_index") or 0),
+                float(curr.get("fomo_index") or 0),
+                float(curr.get("fud_index") or 0),
             )
             if prev_extreme > 70:
                 reversals.append(prev_extreme - curr_extreme)

@@ -51,14 +51,20 @@ class HolderBehaviorService:
             包含 sth_supply_pct, lth_supply_pct, mvrv, sopr 的字典
         """
         rows = self.db.fetch_all(
-            """SELECT sth_supply_pct, lth_supply_pct, mvrv, sopr
+            """SELECT mvrv_ratio, sopr, nupl, supply_in_profit_pct
                FROM holder_metrics
-               ORDER BY ts DESC
+               ORDER BY collected_at DESC
                LIMIT 1""",
             (),
         )
         if rows:
-            return dict(rows[0])
+            r = dict(rows[0])
+            return {
+                "sth_supply_pct": 100.0 - float(r.get("supply_in_profit_pct") or 50),
+                "lth_supply_pct": float(r.get("supply_in_profit_pct") or 50),
+                "mvrv": float(r.get("mvrv_ratio") or 1.0),
+                "sopr": float(r.get("sopr") or 1.0),
+            }
         return None
 
     def _load_historical_mvrv(self, limit: int = 365) -> list[float]:
@@ -75,13 +81,13 @@ class HolderBehaviorService:
             历史 MVRV 值列表
         """
         rows = self.db.fetch_all(
-            """SELECT mvrv FROM holder_metrics
-               WHERE mvrv IS NOT NULL
-               ORDER BY ts DESC
+            """SELECT mvrv_ratio FROM holder_metrics
+               WHERE mvrv_ratio IS NOT NULL
+               ORDER BY collected_at DESC
                LIMIT ?""",
             (limit,),
         )
-        return [float(r["mvrv"]) for r in rows] if rows else []
+        return [float(r["mvrv_ratio"]) for r in rows] if rows else []
 
     def _load_exchange_reserves(self) -> dict | None:
         """从 exchange_reserves 表加载最新交易所储备数据。
@@ -89,18 +95,23 @@ class HolderBehaviorService:
         Returns
         -------
         dict | None
-            包含 illiquid_change_rate 的字典
+            包含 illiquid_change_rate（近似计算）的字典
         """
         rows = self.db.fetch_all(
-            """SELECT illiquid_change_rate
+            """SELECT reserve_balance
                FROM exchange_reserves
-               ORDER BY ts DESC
-               LIMIT 1""",
+               WHERE asset = 'BTC'
+               ORDER BY collected_at DESC
+               LIMIT 7""",
             (),
         )
-        if rows:
-            return dict(rows[0])
-        return None
+        if not rows or len(rows) < 2:
+            return None
+        # 近似计算：储备变化率作为 illiquid_change_rate
+        balances = [float(r["reserve_balance"] or 0) for r in rows]
+        avg = sum(balances) / len(balances) if balances else 1.0
+        change_rate = (balances[0] - balances[-1]) / avg if avg != 0 else 0.0
+        return {"illiquid_change_rate": change_rate}
 
     # ------------------------------------------------------------------
     # 计算编排

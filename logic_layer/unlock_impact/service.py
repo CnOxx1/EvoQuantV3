@@ -58,8 +58,8 @@ class UnlockImpactService:
         """
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT token, unlock_amount_usd, unlock_date
-               FROM token_unlocks
+            """SELECT token, amount_usd AS unlock_amount_usd, unlock_date
+               FROM upcoming_unlocks
                ORDER BY unlock_date ASC LIMIT 20""",
             (),
         )

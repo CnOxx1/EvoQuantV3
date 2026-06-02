@@ -61,10 +61,11 @@ class LiquidationCascadeService:
         # 尝试从 open_interest 和 funding_rates 推算仓位分布
         like_pattern = f"{symbol}%"
         rows = self.db.fetch_all(
-            """SELECT symbol, open_interest, price
-               FROM open_interest
+            """SELECT symbol, open_interest_usd AS open_interest,
+                      COALESCE(open_interest_usd / NULLIF(open_interest_contracts, 0), 0) AS price
+               FROM open_interest_snapshots
                WHERE symbol LIKE ?
-               ORDER BY ts DESC
+               ORDER BY timestamp DESC
                LIMIT 100""",
             (like_pattern,),
         )
@@ -103,7 +104,7 @@ class LiquidationCascadeService:
         return positions
 
     def _get_current_price(self, symbol: str) -> float:
-        """从 merged_klines 获取最新价格。
+        """从 klines 获取最新价格。
 
         Parameters
         ----------
@@ -117,8 +118,8 @@ class LiquidationCascadeService:
         """
         like_pattern = f"{symbol}%"
         row = self.db.fetch_all(
-            """SELECT close FROM merged_klines
-               WHERE symbol LIKE ? AND timeframe = '1h'
+            """SELECT close FROM klines
+               WHERE symbol LIKE ?
                ORDER BY open_time DESC LIMIT 1""",
             (like_pattern,),
         )
@@ -127,11 +128,11 @@ class LiquidationCascadeService:
         return 0.0
 
     def _get_daily_volume(self, symbol: str) -> float:
-        """从 merged_klines 获取 24h 成交量（USD）。"""
+        """从 klines 获取 24h 成交量（USD）。"""
         like_pattern = f"{symbol}%"
         rows = self.db.fetch_all(
-            """SELECT volume, close FROM merged_klines
-               WHERE symbol LIKE ? AND timeframe = '1h'
+            """SELECT volume, close FROM klines
+               WHERE symbol LIKE ?
                ORDER BY open_time DESC LIMIT 24""",
             (like_pattern,),
         )
@@ -148,15 +149,13 @@ class LiquidationCascadeService:
         """获取当前未平仓合约总量（USD）。"""
         like_pattern = f"{symbol}%"
         row = self.db.fetch_all(
-            """SELECT open_interest, price FROM open_interest
+            """SELECT open_interest_usd FROM open_interest_snapshots
                WHERE symbol LIKE ?
-               ORDER BY ts DESC LIMIT 1""",
+               ORDER BY timestamp DESC LIMIT 1""",
             (like_pattern,),
         )
-        if row:
-            oi = float(row[0]["open_interest"]) if row[0]["open_interest"] else 0
-            price = float(row[0]["price"]) if row[0]["price"] else 0
-            return oi * price if price > 0 else oi
+        if row and row[0]["open_interest_usd"]:
+            return float(row[0]["open_interest_usd"])
         return 0.0
 
     # ------------------------------------------------------------------

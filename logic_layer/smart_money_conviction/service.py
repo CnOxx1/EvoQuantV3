@@ -57,9 +57,10 @@ class SmartMoneyConvictionService:
         """
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT direction, pnl_pct, size_usd
-               FROM whale_positions
-               ORDER BY created_at DESC LIMIT 50""",
+            """SELECT CASE WHEN pnl_24h > 0 THEN 'long' ELSE 'short' END AS direction,
+                      unrealized_pnl_pct AS pnl_pct, total_value_usd AS size_usd
+               FROM whale_portfolios
+               ORDER BY collected_at DESC LIMIT 50""",
             (),
         )
         if not rows:
@@ -90,19 +91,21 @@ class SmartMoneyConvictionService:
         }
 
     def _load_retail_flow(self) -> float:
-        """加载散户资金流向指标。"""
+        """加载散户资金流向指标（从 exchange_reserves 净流变化近似）。"""
         market_db = self._get_market_db()
+        # retail_flows 表不存在，用 exchange_reserves 的余额变化近似散户行为
         rows = market_db.fetch_all(
-            """SELECT net_flow FROM retail_flows
-               ORDER BY created_at DESC LIMIT 10""",
+            """SELECT reserve_balance FROM exchange_reserves
+               WHERE asset = 'USDT'
+               ORDER BY collected_at DESC LIMIT 10""",
             (),
         )
-        if not rows:
+        if not rows or len(rows) < 2:
             return 0.0
-        flows = [float(r["net_flow"]) for r in rows]
-        avg_flow = sum(flows) / len(flows)
-        # 归一化到 [-1, 1]
-        return max(-1.0, min(1.0, avg_flow / 1_000_000.0))
+        balances = [float(r["reserve_balance"] or 0) for r in rows]
+        # 余额增加=散户入场(正), 余额减少=散户离场(负)
+        avg_change = (balances[0] - balances[-1]) / max(1.0, abs(balances[-1]))
+        return max(-1.0, min(1.0, avg_change))
 
     def _load_pnl_series(self) -> list[float]:
         """加载历史 PnL 序列。"""

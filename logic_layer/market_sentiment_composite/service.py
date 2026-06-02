@@ -55,72 +55,74 @@ class MarketSentimentCompositeService:
         """从 sentiment_index 表读取最新恐惧贪婪指数。"""
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT value FROM sentiment_index
-               ORDER BY ts DESC LIMIT 1""",
+            """SELECT fear_greed_index FROM sentiment_index
+               ORDER BY collected_at DESC LIMIT 1""",
             (),
         )
         if rows:
-            return float(rows[0]["value"])
+            return float(rows[0]["fear_greed_index"])
         return 50.0  # 默认中性
 
     def _load_long_short_ratio(self) -> float:
         """从 derivatives_sentiment 表读取最新多空比。"""
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT long_short_ratio FROM derivatives_sentiment
-               ORDER BY ts DESC LIMIT 1""",
+            """SELECT btc_long_short_ratio FROM derivatives_sentiment
+               ORDER BY collected_at DESC LIMIT 1""",
             (),
         )
-        if rows:
-            return float(rows[0]["long_short_ratio"])
+        if rows and rows[0]["btc_long_short_ratio"] is not None:
+            return float(rows[0]["btc_long_short_ratio"])
         return 1.0  # 默认平衡
 
     def _load_funding_rate(self) -> float:
-        """从 derivatives_sentiment 表读取最新资金费率。"""
+        """从 derivatives_sentiment 表读取最新资金费率（近似用 estimated_leverage_ratio）。"""
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT funding_rate FROM derivatives_sentiment
-               ORDER BY ts DESC LIMIT 1""",
+            """SELECT estimated_leverage_ratio FROM derivatives_sentiment
+               ORDER BY collected_at DESC LIMIT 1""",
             (),
         )
-        if rows:
-            return float(rows[0]["funding_rate"])
+        if rows and rows[0]["estimated_leverage_ratio"] is not None:
+            # 用杠杆率近似资金费率方向：>1 = 偏多，<1 = 偏空
+            ratio = float(rows[0]["estimated_leverage_ratio"])
+            return (ratio - 1.0) * 0.01  # 归一化为类似资金费率的小数
         return 0.0
 
     def _load_social_sentiment(self) -> float:
-        """从 sentiment_index 表读取社交媒体情绪。"""
+        """从 sentiment_index 表读取社交媒体情绪（使用 fear_greed_index 近似）。"""
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT social_score FROM sentiment_index
-               ORDER BY ts DESC LIMIT 1""",
+            """SELECT fear_greed_index FROM sentiment_index
+               ORDER BY collected_at DESC LIMIT 1""",
             (),
         )
-        if rows and rows[0]["social_score"] is not None:
-            return float(rows[0]["social_score"])
+        if rows and rows[0]["fear_greed_index"] is not None:
+            return float(rows[0]["fear_greed_index"])
         return 50.0  # 默认中性
 
     def _load_sentiment_trend(self) -> float:
         """计算情绪趋势（最近 24h 变化率）。"""
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT value FROM sentiment_index
-               ORDER BY ts DESC LIMIT 24""",
+            """SELECT fear_greed_index FROM sentiment_index
+               ORDER BY collected_at DESC LIMIT 24""",
             (),
         )
         if len(rows) < 2:
             return 0.0
-        latest = float(rows[0]["value"])
-        oldest = float(rows[-1]["value"])
+        latest = float(rows[0]["fear_greed_index"])
+        oldest = float(rows[-1]["fear_greed_index"])
         if oldest == 0:
             return 0.0
         return (latest - oldest) / oldest
 
     def _load_price_trend(self) -> float:
         """计算价格趋势（最近 24h BTC 价格变化率）。"""
-        market_db = self._get_market_db()
-        rows = market_db.fetch_all(
-            """SELECT close FROM merged_klines
-               WHERE symbol = 'BTC/USDT' AND timeframe = '1h'
+        # klines 在 exchange_data DB 中，通过 analytics DB 的 VIEW 访问
+        rows = self.db.fetch_all(
+            """SELECT close FROM klines
+               WHERE symbol LIKE 'BTC%'
                ORDER BY open_time DESC LIMIT 24""",
             (),
         )

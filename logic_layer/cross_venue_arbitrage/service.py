@@ -69,9 +69,9 @@ class CrossVenueArbService:
             # 尝试从 merged_klines 查询各场所最新价格
             pair = f"{symbol}/USDT"
             rows = self.db.fetch_all(
-                """SELECT close, source
-                   FROM merged_klines
-                   WHERE symbol = ? AND source LIKE ?
+                """SELECT close, exchange AS source
+                   FROM klines
+                   WHERE symbol = ? AND exchange LIKE ?
                    ORDER BY open_time DESC LIMIT 1""",
                 (pair, f"%{venue}%"),
             )
@@ -123,8 +123,8 @@ class CrossVenueArbService:
         limit = hours * 60  # 假设 1 分钟粒度
         rows = self.db.fetch_all(
             """SELECT close
-               FROM merged_klines
-               WHERE symbol = ? AND source LIKE ?
+               FROM klines
+               WHERE symbol = ? AND exchange LIKE ?
                ORDER BY open_time DESC
                LIMIT ?""",
             (pair, f"%{venue}%", limit),

@@ -39,7 +39,7 @@ class EventProbabilityService:
     def _load_prediction_markets(self) -> list[dict]:
         """从 prediction_markets 表加载当前预测市场数据。"""
         rows = self.db.fetch_all(
-            """SELECT market_id, question, category, probability,
+            """SELECT market_id, question, category, outcome_yes_price AS probability,
                       volume_24h, liquidity
                FROM prediction_markets
                ORDER BY volume_24h DESC""",
@@ -50,10 +50,10 @@ class EventProbabilityService:
     def _load_market_history(self, market_id: str) -> list[dict]:
         """从 prediction_market_history 表加载历史概率。"""
         rows = self.db.fetch_all(
-            """SELECT probability, recorded_at
+            """SELECT outcome_yes_price AS probability, collected_at AS recorded_at
                FROM prediction_market_history
                WHERE market_id = ?
-               ORDER BY recorded_at DESC
+               ORDER BY collected_at DESC
                LIMIT 48""",
             (market_id,),
         )

@@ -57,10 +57,11 @@ class DepthRegimeService:
         """
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT bid_depth_total, ask_depth_total, bid_levels, ask_levels
-               FROM orderbook_snapshots
+            """SELECT bid_volume_total AS bid_depth_total, ask_volume_total AS ask_depth_total,
+                      '[]' AS bid_levels, '[]' AS ask_levels
+               FROM depth_snapshots
                WHERE symbol = ?
-               ORDER BY created_at DESC LIMIT 1""",
+               ORDER BY timestamp DESC LIMIT 1""",
             (symbol,),
         )
         if not rows:
@@ -69,7 +70,7 @@ class DepthRegimeService:
                 "imbalance": 0.0, "bid_levels": [], "ask_levels": [],
             }
 
-        r = rows[0]
+        r = dict(rows[0])
         bid_depth = float(r.get("bid_depth_total") or 0)
         ask_depth = float(r.get("ask_depth_total") or 0)
         total = bid_depth + ask_depth
@@ -85,13 +86,13 @@ class DepthRegimeService:
         }
 
     def _load_wall_data(self, symbol: str = "BTCUSDT") -> dict:
-        """加载挂单墙数据。"""
+        """加载挂单墙数据（从 depth_snapshots 的 buy/sell wall 字段近似）。"""
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT side, wall_size, avg_level_size, persistence_count
-               FROM orderbook_walls
+            """SELECT buy_wall_size, sell_wall_size, bid_volume_total, ask_volume_total
+               FROM depth_snapshots
                WHERE symbol = ?
-               ORDER BY created_at DESC LIMIT 2""",
+               ORDER BY timestamp DESC LIMIT 1""",
             (symbol,),
         )
         result = {
@@ -99,30 +100,28 @@ class DepthRegimeService:
             "avg_level_size": 1.0,
             "bid_persistence": 0, "ask_persistence": 0,
         }
-        for r in rows:
-            side = r.get("side", "")
-            if side == "bid":
-                result["bid_wall_size"] = float(r.get("wall_size") or 0)
-                result["bid_persistence"] = int(r.get("persistence_count") or 0)
-            elif side == "ask":
-                result["ask_wall_size"] = float(r.get("wall_size") or 0)
-                result["ask_persistence"] = int(r.get("persistence_count") or 0)
-            result["avg_level_size"] = float(r.get("avg_level_size") or 1)
+        if not rows:
+            return result
+        r = dict(rows[0])
+        result["bid_wall_size"] = float(r.get("buy_wall_size") or 0)
+        result["ask_wall_size"] = float(r.get("sell_wall_size") or 0)
+        total_depth = float(r.get("bid_volume_total") or 0) + float(r.get("ask_volume_total") or 0)
+        result["avg_level_size"] = total_depth / 20.0 if total_depth > 0 else 1.0
         return result
 
     def _load_price_change(self, symbol: str = "BTCUSDT") -> float:
         """加载最近价格变化率。"""
-        market_db = self._get_market_db()
-        rows = market_db.fetch_all(
-            """SELECT close_price FROM klines
+        # klines 在 exchange_data DB 中，通过 analytics DB 的 VIEW 访问
+        rows = self.db.fetch_all(
+            """SELECT close FROM klines
                WHERE symbol = ?
                ORDER BY open_time DESC LIMIT 2""",
             (symbol,),
         )
         if len(rows) < 2:
             return 0.0
-        curr = float(rows[0]["close_price"])
-        prev = float(rows[1]["close_price"])
+        curr = float(rows[0]["close"])
+        prev = float(rows[1]["close"])
         if prev <= 0:
             return 0.0
         return (curr - prev) / prev

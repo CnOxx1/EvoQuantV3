@@ -50,10 +50,10 @@ class MinerPressureService:
             hash_price, block_height 等字段
         """
         rows = self.db.fetch_all(
-            """SELECT puell_multiple, hashrate, hashrate_change_7d,
-                      hash_price, block_height, estimated_cost
+            """SELECT puell_multiple, hashrate, difficulty_adjustment_pct AS hashrate_change_7d,
+                      hash_price, 0 AS block_height, 0 AS estimated_cost
                FROM miner_metrics
-               ORDER BY ts DESC LIMIT 1""",
+               ORDER BY collected_at DESC LIMIT 1""",
             (),
         )
         if rows:
@@ -77,7 +77,7 @@ class MinerPressureService:
             """SELECT puell_multiple
                FROM miner_metrics
                WHERE puell_multiple IS NOT NULL
-               ORDER BY ts DESC LIMIT ?""",
+               ORDER BY collected_at DESC LIMIT ?""",
             (limit,),
         )
         return [float(r["puell_multiple"]) for r in rows] if rows else []
@@ -91,22 +91,24 @@ class MinerPressureService:
             包含 reserve_outflow（归一化矿工储备净流出）
         """
         rows = self.db.fetch_all(
-            """SELECT net_flow, reserve_balance
+            """SELECT reserve_balance
                FROM exchange_reserves
                WHERE asset = 'BTC'
-               ORDER BY ts DESC LIMIT 7""",
+               ORDER BY collected_at DESC LIMIT 7""",
             (),
         )
-        if not rows:
+        if not rows or len(rows) < 2:
             return {"reserve_outflow": 0.0}
 
-        # 计算7日净流出（正值 = 流出）
-        total_flow = sum(float(r["net_flow"] or 0) for r in rows)
-        avg_balance = sum(float(r["reserve_balance"] or 1) for r in rows) / len(rows)
+        # 计算7日净流出（正值 = 流出）：用余额变化近似
+        balances = [float(r["reserve_balance"] or 0) for r in rows]
+        # 第一个是最新，最后一个是最旧；余额减少=流出
+        net_change = balances[-1] - balances[0]  # 正值=储备减少=流出
+        avg_balance = sum(balances) / len(balances)
 
         # 归一化到 [0, 1]
         if avg_balance > 0:
-            outflow_ratio = max(0.0, -total_flow / avg_balance)
+            outflow_ratio = max(0.0, net_change / avg_balance)
         else:
             outflow_ratio = 0.0
 

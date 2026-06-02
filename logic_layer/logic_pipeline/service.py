@@ -415,6 +415,7 @@ def _make_liquidation_cascade() -> callable:
         from logic_layer.liquidation_cascade.service import LiquidationCascadeService
         svc = LiquidationCascadeService()
         try:
+            svc.init_storage()
             svc.run_all()
         finally:
             svc.close()
@@ -426,6 +427,7 @@ def _make_cross_venue_arbitrage() -> callable:
         from logic_layer.cross_venue_arbitrage.service import CrossVenueArbService
         svc = CrossVenueArbService()
         try:
+            svc.init_storage()
             svc.run_all()
         finally:
             svc.close()
@@ -437,6 +439,7 @@ def _make_onchain_lead_lag() -> callable:
         from logic_layer.onchain_lead_lag.service import OnchainLeadLagService
         svc = OnchainLeadLagService()
         try:
+            svc.init_storage()
             svc.run_all()
         finally:
             svc.close()

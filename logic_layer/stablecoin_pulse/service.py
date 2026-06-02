@@ -58,20 +58,21 @@ class StablecoinPulseService:
         """
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT mint_amount, burn_amount
-               FROM stablecoin_supply
-               ORDER BY created_at DESC LIMIT 24""",
+            """SELECT amount_usd, event_type
+               FROM stablecoin_mint_burns
+               WHERE event_type IN ('mint', 'burn')
+               ORDER BY timestamp DESC LIMIT 48""",
             (),
         )
         if not rows:
             return [], []
 
-        mints = [float(r["mint_amount"]) for r in rows if r["mint_amount"]]
-        burns = [float(r["burn_amount"]) for r in rows if r["burn_amount"]]
+        mints = [float(r["amount_usd"]) for r in rows if r["event_type"] == "mint" and r["amount_usd"]]
+        burns = [float(r["amount_usd"]) for r in rows if r["event_type"] == "burn" and r["amount_usd"]]
         return mints, burns
 
     def _load_chain_flows(self) -> dict[str, float]:
-        """从 chain_flows 加载各链净流入。
+        """从 stablecoin_chain_flows 加载各链净流入。
 
         Returns
         -------
@@ -80,9 +81,9 @@ class StablecoinPulseService:
         """
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT chain, net_flow
-               FROM chain_flows
-               ORDER BY created_at DESC LIMIT 50""",
+            """SELECT chain, net_flow_usd
+               FROM stablecoin_chain_flows
+               ORDER BY collected_at DESC LIMIT 50""",
             (),
         )
         if not rows:
@@ -91,7 +92,7 @@ class StablecoinPulseService:
         flows: dict[str, float] = {}
         for r in rows:
             chain = r["chain"]
-            flows[chain] = flows.get(chain, 0.0) + float(r["net_flow"])
+            flows[chain] = flows.get(chain, 0.0) + float(r["net_flow_usd"] or 0)
         return flows
 
     def _load_pulse_series(self) -> list[float]:
@@ -105,17 +106,17 @@ class StablecoinPulseService:
 
     def _load_btc_returns(self) -> list[float]:
         """加载 BTC 收益率序列。"""
-        market_db = self._get_market_db()
-        rows = market_db.fetch_all(
-            """SELECT close_price FROM klines
-               WHERE symbol = 'BTCUSDT'
+        # klines 在 exchange_data DB 中，通过 analytics DB 的 VIEW 访问
+        rows = self.db.fetch_all(
+            """SELECT close FROM klines
+               WHERE symbol LIKE 'BTC%'
                ORDER BY open_time ASC LIMIT 31""",
             (),
         )
         if len(rows) < 2:
             return []
 
-        prices = [float(r["close_price"]) for r in rows]
+        prices = [float(r["close"]) for r in rows]
         returns = []
         for i in range(1, len(prices)):
             if prices[i - 1] > 0:

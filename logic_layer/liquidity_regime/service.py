@@ -58,9 +58,9 @@ class LiquidityRegimeService:
         """
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT amount, asset
+            """SELECT total_staked AS amount, protocol AS asset
                FROM staking_positions
-               ORDER BY created_at DESC LIMIT 100""",
+               ORDER BY collected_at DESC LIMIT 100""",
             (),
         )
         if not rows:
@@ -95,15 +95,15 @@ class LiquidityRegimeService:
         """
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT reserve_amount
+            """SELECT reserve_balance
                FROM exchange_reserves
-               ORDER BY created_at DESC LIMIT 50""",
+               ORDER BY collected_at DESC LIMIT 50""",
             (),
         )
         if not rows:
             return {"reserve_change": 0.0}
 
-        amounts = [float(r["reserve_amount"]) for r in rows]
+        amounts = [float(r["reserve_balance"]) for r in rows]
         recent = amounts[:10]
         older = amounts[10:] if len(amounts) > 10 else amounts
         avg_recent = sum(recent) / len(recent) if recent else 0.0
@@ -119,7 +119,7 @@ class LiquidityRegimeService:
         """加载 DeFi 和 CeFi 借贷利率。
 
         从 staking_positions 近似 DeFi 利率，
-        从 cefi_lending_rate 字段读取 CeFi 利率。
+        从 lending_pools 读取 CeFi 利率。
 
         Returns
         -------
@@ -127,28 +127,28 @@ class LiquidityRegimeService:
             包含 defi_rate, cefi_rate 的字典
         """
         market_db = self._get_market_db()
-        # DeFi 利率近似：从 staking_positions 的 apy 字段
+        # DeFi 利率近似：从 staking_positions 的 staking_apr 字段
         defi_rows = market_db.fetch_all(
-            """SELECT apy FROM staking_positions
-               WHERE apy IS NOT NULL
-               ORDER BY created_at DESC LIMIT 10""",
+            """SELECT staking_apr FROM staking_positions
+               WHERE staking_apr IS NOT NULL
+               ORDER BY collected_at DESC LIMIT 10""",
             (),
         )
         defi_rate = 0.0
         if defi_rows:
-            rates = [float(r["apy"]) for r in defi_rows]
+            rates = [float(r["staking_apr"]) for r in defi_rows]
             defi_rate = sum(rates) / len(rates)
 
-        # CeFi 利率：从 exchange_reserves 的 lending_rate 字段
+        # CeFi 利率：从 lending_pools 的 supply_apy 字段
         cefi_rows = market_db.fetch_all(
-            """SELECT lending_rate FROM exchange_reserves
-               WHERE lending_rate IS NOT NULL
-               ORDER BY created_at DESC LIMIT 10""",
+            """SELECT supply_apy FROM lending_pools
+               WHERE supply_apy IS NOT NULL
+               ORDER BY collected_at DESC LIMIT 10""",
             (),
         )
         cefi_rate = 0.0
         if cefi_rows:
-            rates = [float(r["lending_rate"]) for r in cefi_rows]
+            rates = [float(r["supply_apy"]) for r in cefi_rows]
             cefi_rate = sum(rates) / len(rates)
 
         return {"defi_rate": defi_rate, "cefi_rate": cefi_rate}
@@ -163,15 +163,15 @@ class LiquidityRegimeService:
         """
         market_db = self._get_market_db()
         rows = market_db.fetch_all(
-            """SELECT reserve_amount FROM exchange_reserves
+            """SELECT reserve_balance FROM exchange_reserves
                WHERE asset IN ('USDT', 'USDC', 'DAI', 'BUSD')
-               ORDER BY created_at ASC LIMIT 50""",
+               ORDER BY collected_at ASC LIMIT 50""",
             (),
         )
         if len(rows) < 2:
             return []
 
-        amounts = [float(r["reserve_amount"]) for r in rows]
+        amounts = [float(r["reserve_balance"]) for r in rows]
         changes = []
         for i in range(1, len(amounts)):
             if amounts[i - 1] > 0:
