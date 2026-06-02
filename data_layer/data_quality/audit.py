@@ -378,10 +378,15 @@ class DataLayerAuditService:
         ]
 
     def _load_module_coverage(self, module_name: str) -> Mapping[str, object]:
-        factory = self.service_factories[module_name]
+        factory = self.service_factories.get(module_name)
+        if factory is None:
+            return {}
         service = factory(None)
         try:
-            return service.load_source_coverage()
+            loader = getattr(service, "load_source_coverage", None)
+            if not callable(loader):
+                return {}
+            return loader()
         finally:
             close = getattr(service, "close", None)
             if callable(close):
