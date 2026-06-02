@@ -78,6 +78,19 @@ from api.routers.governance import router as governance_router
 from api.routers.liquidation_cascade import router as liquidation_cascade_router
 from api.routers.cross_venue_arb import router as cross_venue_arb_router
 from api.routers.onchain_lead_lag import router as onchain_lead_lag_router
+from api.routers.prediction_market import router as prediction_market_router
+from api.routers.onchain_holder import router as onchain_holder_router
+from api.routers.liquid_staking import router as liquid_staking_router
+from api.routers.mempool import router as mempool_router
+from api.routers.funding_round import router as funding_round_router
+from api.routers.exchange_reserve import router as exchange_reserve_router
+from api.routers.miner import router as miner_router
+from api.routers.derivatives_sentiment import router as derivatives_sentiment_router
+from api.routers.holder_behavior import router as holder_behavior_router
+from api.routers.liquidity_regime import router as liquidity_regime_router
+from api.routers.event_probability import router as event_probability_router
+from api.routers.miner_pressure import router as miner_pressure_router
+from api.routers.sentiment_composite import router as sentiment_composite_router
 from api.errors import register_error_handlers
 from config.symbols import SYMBOL_UNIVERSE
 
@@ -267,6 +280,19 @@ app.include_router(governance_router)
 app.include_router(liquidation_cascade_router)
 app.include_router(cross_venue_arb_router)
 app.include_router(onchain_lead_lag_router)
+app.include_router(prediction_market_router)
+app.include_router(onchain_holder_router)
+app.include_router(liquid_staking_router)
+app.include_router(mempool_router)
+app.include_router(funding_round_router)
+app.include_router(exchange_reserve_router)
+app.include_router(miner_router)
+app.include_router(derivatives_sentiment_router)
+app.include_router(holder_behavior_router)
+app.include_router(liquidity_regime_router)
+app.include_router(event_probability_router)
+app.include_router(miner_pressure_router)
+app.include_router(sentiment_composite_router)
 
 
 # ---------------------------------------------------------------------------

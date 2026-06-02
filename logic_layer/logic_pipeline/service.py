@@ -175,6 +175,11 @@ def _run_dag_pipeline() -> dict[str, str]:
         ModuleNode("cross_venue_arbitrage", _make_cross_venue_arbitrage()),
         ModuleNode("onchain_lead_lag", _make_onchain_lead_lag(),
                    depends_on=["technical_indicators"]),
+        ModuleNode("holder_behavior_analysis", _make_holder_behavior_analysis()),
+        ModuleNode("liquidity_regime", _make_liquidity_regime()),
+        ModuleNode("event_probability", _make_event_probability()),
+        ModuleNode("miner_pressure", _make_miner_pressure()),
+        ModuleNode("market_sentiment_composite", _make_market_sentiment_composite()),
         ModuleNode("portfolio_risk", _make_portfolio_risk(),
                    depends_on=["cross_asset_analysis"]),
         ModuleNode("market_breadth", _make_market_breadth()),
@@ -209,6 +214,11 @@ def _run_classic_pipeline() -> dict[str, str]:
         ("liquidation_cascade", _make_liquidation_cascade()),
         ("cross_venue_arbitrage", _make_cross_venue_arbitrage()),
         ("onchain_lead_lag", _make_onchain_lead_lag()),
+        ("holder_behavior_analysis", _make_holder_behavior_analysis()),
+        ("liquidity_regime", _make_liquidity_regime()),
+        ("event_probability", _make_event_probability()),
+        ("miner_pressure", _make_miner_pressure()),
+        ("market_sentiment_composite", _make_market_sentiment_composite()),
     ])
     all_results.update(results)
 
@@ -416,6 +426,66 @@ def _make_onchain_lead_lag() -> callable:
     return _run
 
 
+def _make_holder_behavior_analysis() -> callable:
+    def _run():
+        from logic_layer.holder_behavior_analysis.service import HolderBehaviorService
+        svc = HolderBehaviorService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_liquidity_regime() -> callable:
+    def _run():
+        from logic_layer.liquidity_regime.service import LiquidityRegimeService
+        svc = LiquidityRegimeService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_event_probability() -> callable:
+    def _run():
+        from logic_layer.event_probability.service import EventProbabilityService
+        svc = EventProbabilityService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_miner_pressure() -> callable:
+    def _run():
+        from logic_layer.miner_pressure.service import MinerPressureService
+        svc = MinerPressureService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_market_sentiment_composite() -> callable:
+    def _run():
+        from logic_layer.market_sentiment_composite.service import MarketSentimentCompositeService
+        svc = MarketSentimentCompositeService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
 def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
     """按模块粒度清空相关 API 缓存（事件驱动失效）。
 
@@ -439,6 +509,11 @@ def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
         "liquidation_cascade": ["liquidation_cascade:"],
         "cross_venue_arbitrage": ["cross_venue_arb:"],
         "onchain_lead_lag": ["onchain_lead_lag:"],
+        "holder_behavior_analysis": ["holder_behavior:"],
+        "liquidity_regime": ["liquidity_regime:"],
+        "event_probability": ["event_probability:"],
+        "miner_pressure": ["miner_pressure:"],
+        "market_sentiment_composite": ["sentiment_composite:"],
     }
 
     try:
