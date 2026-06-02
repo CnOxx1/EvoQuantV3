@@ -14,6 +14,7 @@ from typing import Iterable, Sequence
 from loguru import logger
 
 from config.logging import setup_logger
+from config.settings import validate_config
 
 
 @dataclass(frozen=True)
@@ -533,6 +534,11 @@ def supervise_modules(
 def main():
     args = build_parser().parse_args()
     setup_logger("main")
+
+    # 启动时校验配置合理性
+    config_warnings = validate_config()
+    if config_warnings:
+        logger.warning("启动时发现 {} 条配置告警，请检查环境变量", len(config_warnings))
 
     if args.list_modules:
         print(format_module_list())
