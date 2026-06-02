@@ -91,6 +91,23 @@ from api.routers.liquidity_regime import router as liquidity_regime_router
 from api.routers.event_probability import router as event_probability_router
 from api.routers.miner_pressure import router as miner_pressure_router
 from api.routers.sentiment_composite import router as sentiment_composite_router
+from api.routers.stablecoin_flow import router as stablecoin_flow_router
+from api.routers.token_unlock import router as token_unlock_router
+from api.routers.orderbook_depth import router as orderbook_depth_router
+from api.routers.whale_pnl import router as whale_pnl_router
+from api.routers.nft_market import router as nft_market_router
+from api.routers.defi_liquidation import router as defi_liquidation_router
+from api.routers.dex_trade_flow import router as dex_trade_flow_router
+from api.routers.cross_chain_msg import router as cross_chain_msg_router
+from api.routers.lending_utilization import router as lending_utilization_router
+from api.routers.search_trend import router as search_trend_router
+from api.routers.exchange_announcement import router as exchange_announcement_router
+from api.routers.stablecoin_pulse import router as stablecoin_pulse_router
+from api.routers.unlock_impact import router as unlock_impact_router
+from api.routers.depth_regime import router as depth_regime_router
+from api.routers.smart_money_conviction import router as smart_money_conviction_router
+from api.routers.defi_stress import router as defi_stress_router
+from api.routers.retail_fomo import router as retail_fomo_router
 from api.errors import register_error_handlers
 from config.symbols import SYMBOL_UNIVERSE
 
@@ -293,6 +310,23 @@ app.include_router(liquidity_regime_router)
 app.include_router(event_probability_router)
 app.include_router(miner_pressure_router)
 app.include_router(sentiment_composite_router)
+app.include_router(stablecoin_flow_router)
+app.include_router(token_unlock_router)
+app.include_router(orderbook_depth_router)
+app.include_router(whale_pnl_router)
+app.include_router(nft_market_router)
+app.include_router(defi_liquidation_router)
+app.include_router(dex_trade_flow_router)
+app.include_router(cross_chain_msg_router)
+app.include_router(lending_utilization_router)
+app.include_router(search_trend_router)
+app.include_router(exchange_announcement_router)
+app.include_router(stablecoin_pulse_router)
+app.include_router(unlock_impact_router)
+app.include_router(depth_regime_router)
+app.include_router(smart_money_conviction_router)
+app.include_router(defi_stress_router)
+app.include_router(retail_fomo_router)
 
 
 # ---------------------------------------------------------------------------

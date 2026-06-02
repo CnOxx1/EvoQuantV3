@@ -180,6 +180,17 @@ def _run_dag_pipeline() -> dict[str, str]:
         ModuleNode("event_probability", _make_event_probability()),
         ModuleNode("miner_pressure", _make_miner_pressure()),
         ModuleNode("market_sentiment_composite", _make_market_sentiment_composite()),
+        ModuleNode("stablecoin_pulse", _make_stablecoin_pulse(),
+                   depends_on=["technical_indicators"]),
+        ModuleNode("unlock_impact", _make_unlock_impact(),
+                   depends_on=["technical_indicators"]),
+        ModuleNode("depth_regime", _make_depth_regime(),
+                   depends_on=["technical_indicators"]),
+        ModuleNode("smart_money_conviction", _make_smart_money_conviction(),
+                   depends_on=["technical_indicators"]),
+        ModuleNode("defi_stress", _make_defi_stress(),
+                   depends_on=["technical_indicators"]),
+        ModuleNode("retail_fomo_index", _make_retail_fomo_index()),
         ModuleNode("portfolio_risk", _make_portfolio_risk(),
                    depends_on=["cross_asset_analysis"]),
         ModuleNode("market_breadth", _make_market_breadth()),
@@ -219,6 +230,12 @@ def _run_classic_pipeline() -> dict[str, str]:
         ("event_probability", _make_event_probability()),
         ("miner_pressure", _make_miner_pressure()),
         ("market_sentiment_composite", _make_market_sentiment_composite()),
+        ("stablecoin_pulse", _make_stablecoin_pulse()),
+        ("unlock_impact", _make_unlock_impact()),
+        ("depth_regime", _make_depth_regime()),
+        ("smart_money_conviction", _make_smart_money_conviction()),
+        ("defi_stress", _make_defi_stress()),
+        ("retail_fomo_index", _make_retail_fomo_index()),
     ])
     all_results.update(results)
 
@@ -486,6 +503,78 @@ def _make_market_sentiment_composite() -> callable:
     return _run
 
 
+def _make_stablecoin_pulse() -> callable:
+    def _run():
+        from logic_layer.stablecoin_pulse.service import StablecoinPulseService
+        svc = StablecoinPulseService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_unlock_impact() -> callable:
+    def _run():
+        from logic_layer.unlock_impact.service import UnlockImpactService
+        svc = UnlockImpactService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_depth_regime() -> callable:
+    def _run():
+        from logic_layer.depth_regime.service import DepthRegimeService
+        svc = DepthRegimeService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_smart_money_conviction() -> callable:
+    def _run():
+        from logic_layer.smart_money_conviction.service import SmartMoneyConvictionService
+        svc = SmartMoneyConvictionService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_defi_stress() -> callable:
+    def _run():
+        from logic_layer.defi_stress.service import DefiStressService
+        svc = DefiStressService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
+def _make_retail_fomo_index() -> callable:
+    def _run():
+        from logic_layer.retail_fomo_index.service import RetailFomoIndexService
+        svc = RetailFomoIndexService()
+        try:
+            svc.init_storage()
+            svc.run_all()
+        finally:
+            svc.close()
+    return _run
+
+
 def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
     """按模块粒度清空相关 API 缓存（事件驱动失效）。
 
@@ -514,6 +603,12 @@ def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
         "event_probability": ["event_probability:"],
         "miner_pressure": ["miner_pressure:"],
         "market_sentiment_composite": ["sentiment_composite:"],
+        "stablecoin_pulse": ["stablecoin_pulse:"],
+        "unlock_impact": ["unlock_impact:"],
+        "depth_regime": ["depth_regime:"],
+        "smart_money_conviction": ["smart_money_conviction:"],
+        "defi_stress": ["defi_stress:"],
+        "retail_fomo_index": ["retail_fomo:"],
     }
 
     try:

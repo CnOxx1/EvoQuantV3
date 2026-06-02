@@ -184,6 +184,39 @@ SCHEDULER_CONFIG = {
     "onchain_lead_lag_interval": int(
         os.getenv("ONCHAIN_LEAD_LAG_INTERVAL_SECONDS", "1800")
     ),  # 链上领先滞后分析：默认每30分钟
+    "stablecoin_flow_interval": int(
+        os.getenv("STABLECOIN_FLOW_INTERVAL_SECONDS", "300")
+    ),  # 稳定币事件流：默认每5分钟
+    "token_unlock_interval": int(
+        os.getenv("TOKEN_UNLOCK_INTERVAL_SECONDS", "3600")
+    ),  # 代币解锁监控：默认每1小时
+    "cex_orderbook_depth_interval": int(
+        os.getenv("CEX_ORDERBOOK_DEPTH_INTERVAL_SECONDS", "30")
+    ),  # 深度盘口：默认每30秒
+    "whale_wallet_pnl_interval": int(
+        os.getenv("WHALE_WALLET_PNL_INTERVAL_SECONDS", "1800")
+    ),  # 巨鲸 PnL：默认每30分钟
+    "nft_market_interval": int(
+        os.getenv("NFT_MARKET_INTERVAL_SECONDS", "900")
+    ),  # NFT 市场：默认每15分钟
+    "defi_liquidation_interval": int(
+        os.getenv("DEFI_LIQUIDATION_INTERVAL_SECONDS", "120")
+    ),  # DeFi 清算：默认每2分钟
+    "dex_trade_flow_interval": int(
+        os.getenv("DEX_TRADE_FLOW_INTERVAL_SECONDS", "300")
+    ),  # DEX 大单：默认每5分钟
+    "cross_chain_messaging_interval": int(
+        os.getenv("CROSS_CHAIN_MESSAGING_INTERVAL_SECONDS", "600")
+    ),  # 跨链消息：默认每10分钟
+    "lending_utilization_interval": int(
+        os.getenv("LENDING_UTILIZATION_INTERVAL_SECONDS", "300")
+    ),  # 借贷利用率：默认每5分钟
+    "search_trend_interval": int(
+        os.getenv("SEARCH_TREND_INTERVAL_SECONDS", "14400")
+    ),  # 搜索趋势：默认每4小时
+    "exchange_announcement_interval": int(
+        os.getenv("EXCHANGE_ANNOUNCEMENT_INTERVAL_SECONDS", "900")
+    ),  # 交易所公告：默认每15分钟
 }
 
 # 交易所数据保留策略（天）
