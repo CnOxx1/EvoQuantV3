@@ -367,6 +367,17 @@ EvoQuant/
 
 ## 更新记录
 
+### 2025-06-03
+
+**v3.2 — 核心基础设施升级（基类抽象 + API 分页 + PostgreSQL 后端）**
+
+- `core/` 基类抽象层：BaseDataClient（熔断器 + 令牌桶限流 + 指数退避重试）、BaseDataService、BaseDataRunner、BaseAnalyticsRepository、BaseAnalyticsService、BaseAnalyticsRunner，新模块继承后只需实现业务逻辑
+- API 分页机制：`api/pagination.py` 提供游标分页（keyset）+ 偏移分页，ABSOLUTE_MAX_LIMIT=1000 防止 OOM，5 个示范端点（exchange/technical/stablecoin_flow/whale_pnl/defi_liquidation）
+- PostgreSQL 生产后端：`database/backends/` 多后端抽象（SQLite 默认 / PostgreSQL 生产），psycopg2 ThreadedConnectionPool（min=5, max=20），SQL 方言自动适配（? → %s、datetime() → NOW()、INSERT OR REPLACE → UPSERT）
+- Alembic 迁移：`alembic/` 目录支持 PostgreSQL 3 Schema（exchange_data/market_data/analytics）迁移管理
+- `/health/db` 端点：连接池状态监控
+- 向后兼容：默认 DB_BACKEND=sqlite，所有 89 个现有路由和测试无需修改
+
 ### 2025-06-02
 
 **v3.1 — AI 认知盲区补全**
