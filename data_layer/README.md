@@ -60,6 +60,17 @@
 | `exchange_reserve_data` | DefiLlama / Blockchain.com 交易所储备 | BTC/ETH/USDT 储备变化、净流入/流出 |
 | `miner_data` | mempool.space / Blockchain.com 矿工数据 | 算力、Puell Multiple、矿工收入、难度调整 |
 | `derivatives_sentiment_data` | Alternative.me / Coinglass 衍生品情绪 | 恐惧贪婪、多空比、OI、杠杆率、Put/Call |
+| `stablecoin_flow_data` | 稳定币 mint/burn 事件、跨链净流 | 实时铸造/销毁脉冲、链迁移方向、24h 聚合 |
+| `token_unlock_realtime` | 代币解锁计划与事件 | 未来 7 天解锁排序、历史解锁→价格相关性 |
+| `cex_orderbook_depth` | 5000 档全量盘口深度 | 流动性结构、滑点曲线、买卖墙 |
+| `whale_wallet_pnl` | 巨鲸钱包盈亏与持仓 | Smart Money 聚合 PnL、持仓变化、信念指数 |
+| `nft_market_data` | NFT 收藏品统计与市场 | 蓝筹指数、wash-adjusted 交易量、ETH 相关性 |
+| `defi_liquidation_data` | Aave/Compound 清算事件 | 清算事件流、风险仓位(HF<1.2)、清算量趋势 |
+| `dex_trade_flow` | DEX 大单交易流 | 大单流、Smart Money 链上活动、MEV 受害率 |
+| `cross_chain_messaging` | LayerZero/Wormhole/Axelar 消息 | 跨链消息速率、迁移信号、链活跃度排名 |
+| `lending_utilization` | Aave/Compound/Morpho 借贷池 | 接近 kink 的池、利用率趋势、借贷成本预警 |
+| `search_trend_data` | Google Trends 加密搜索热度 | 加密搜索动量、FOMO 代理、突破关键词 |
+| `exchange_announcement` | Binance/OKX/Bybit 公告 | 上币/下币、维护窗口、即将发生事件 |
 | `data_quality` | 跨模块审计 | `world_model_status` 与 critical gaps |
 
 ## 模块详述
@@ -440,6 +451,72 @@ data_layer/
     models.py                    # 治理投票数据模型定义
     runner.py                    # CLI 运行入口
     service.py                   # 模块编排、调度与 context bundle
+  stablecoin_flow_data/
+    __init__.py                  # 模块包入口
+    client.py                    # DefiLlama Stablecoins API 请求封装
+    models.py                    # 稳定币事件数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  token_unlock_realtime/
+    __init__.py                  # 模块包入口
+    client.py                    # TokenUnlocks API 请求封装
+    models.py                    # 代币解锁数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  cex_orderbook_depth/
+    __init__.py                  # 模块包入口
+    client.py                    # Binance/OKX/Bybit 深度 API 请求封装
+    models.py                    # 盘口深度数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  whale_wallet_pnl/
+    __init__.py                  # 模块包入口
+    client.py                    # DeBank/Arkham API 请求封装
+    models.py                    # 巨鲸 PnL 数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  nft_market_data/
+    __init__.py                  # 模块包入口
+    client.py                    # Reservoir/Blur API 请求封装
+    models.py                    # NFT 市场数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  defi_liquidation_data/
+    __init__.py                  # 模块包入口
+    client.py                    # Aave/Compound subgraph 请求封装
+    models.py                    # DeFi 清算数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  dex_trade_flow/
+    __init__.py                  # 模块包入口
+    client.py                    # 0x/1inch API 请求封装
+    models.py                    # DEX 交易流数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  cross_chain_messaging/
+    __init__.py                  # 模块包入口
+    client.py                    # LayerZero/Wormhole/Axelar API 请求封装
+    models.py                    # 跨链消息数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  lending_utilization/
+    __init__.py                  # 模块包入口
+    client.py                    # Aave/Compound/Morpho subgraph 请求封装
+    models.py                    # 借贷利用率数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  search_trend_data/
+    __init__.py                  # 模块包入口
+    client.py                    # pytrends Google Trends 请求封装
+    models.py                    # 搜索趋势数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
+  exchange_announcement/
+    __init__.py                  # 模块包入口
+    client.py                    # Binance/OKX/Bybit 公告 API 请求封装
+    models.py                    # 交易所公告数据模型定义
+    runner.py                    # CLI 运行入口
+    service.py                   # 模块编排、调度与 context bundle
 ```
 
 ## 当前对 AI 的供数结构
@@ -529,11 +606,55 @@ data_layer/
   - 提供 Snapshot/Tally DAO 治理提案状态、投票分布和参与率等输入
   - 采集频率 30 分钟，追踪 Aave/Uniswap/Compound/Arbitrum/Optimism 5 个治理空间
   - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的治理投票上下文
+- `stablecoin_flow_data`
+  - 提供稳定币链上 mint/burn 事件流、跨链净流和 24h 聚合等输入
+  - 采集频率 5 分钟，追踪 USDT/USDC/DAI/FDUSD 主要稳定币
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的稳定币事件上下文
+- `token_unlock_realtime`
+  - 提供代币解锁计划、解锁事件和预期卖压等输入
+  - 采集频率 1 小时，追踪未来 30 天内所有重大解锁
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的解锁压力上下文
+- `cex_orderbook_depth`
+  - 提供 5000 档全量盘口深度、买卖墙和滑点曲线等输入
+  - 采集频率 30 秒，覆盖 Binance/OKX/Bybit 三大交易所
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的深度结构上下文
+- `whale_wallet_pnl`
+  - 提供巨鲸钱包 PnL 追踪、持仓变化和信念指数等输入
+  - 采集频率 30 分钟，追踪 DeBank/Arkham 标记的 Smart Money 地址
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的巨鲸盈亏上下文
+- `nft_market_data`
+  - 提供 NFT 蓝筹收藏品统计、wash-adjusted 交易量和市场概览等输入
+  - 采集频率 15 分钟，通过 Reservoir/Blur API 追踪 Top 50 收藏品
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的 NFT 市场上下文
+- `defi_liquidation_data`
+  - 提供 Aave/Compound 真实链上清算事件、健康因子分布等输入
+  - 采集频率 2 分钟，通过 The Graph 子图实时追踪清算
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的 DeFi 清算上下文
+- `dex_trade_flow`
+  - 提供 DEX 大单交易流、路由器成交量和 MEV 受害率等输入
+  - 采集频率 5 分钟，追踪 >$50K 的 DEX 交易
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的 DEX 交易流上下文
+- `cross_chain_messaging`
+  - 提供 LayerZero/Wormhole/Axelar 跨链消息速率和迁移信号等输入
+  - 采集频率 10 分钟，追踪主要跨链消息协议活跃度
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的跨链消息上下文
+- `lending_utilization`
+  - 提供 Aave/Compound/Morpho 借贷池利用率、利率和 kink 状态等输入
+  - 采集频率 5 分钟，追踪主要借贷协议所有池
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的借贷利用率上下文
+- `search_trend_data`
+  - 提供 Google Trends 加密关键词搜索热度、动量和 FOMO 信号等输入
+  - 采集频率 4 小时，追踪加密核心关键词和新兴话题
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的搜索趋势上下文
+- `exchange_announcement`
+  - 提供 Binance/OKX/Bybit 上币/下币/维护公告和事件分类等输入
+  - 采集频率 15 分钟，自动分类公告类型和提取受影响代币
+  - 同时提供 `load_latest_context_bundle()` 输出 AI 可消费的交易所公告上下文
 
 当前 `main.py` 默认会自动拉起完整的数据层常驻模块集合：
 
-- `exchange_data / macro_data / news_data / event_calendar_data / onchain_data / alternative_data / tokenomics_data / options_data / social_sentiment_data / whale_tracker_data / orderflow_data / defi_protocol_data / bridge_flow_data / regulatory_data / data_quality_audit`
-- `technical_indicators / exchange_comparison / ai_market_context` 这类逻辑层任务仍保持手动启动，避免把“采集层”和“分析层”混成同一条默认运行链
+- `exchange_data / macro_data / news_data / event_calendar_data / onchain_data / alternative_data / tokenomics_data / options_data / social_sentiment_data / whale_tracker_data / orderflow_data / defi_protocol_data / bridge_flow_data / regulatory_data / data_quality_audit / stablecoin_flow_data / token_unlock_realtime / cex_orderbook_depth / whale_wallet_pnl / nft_market_data / defi_liquidation_data / dex_trade_flow / cross_chain_messaging / lending_utilization / search_trend_data / exchange_announcement`
+- `technical_indicators / exchange_comparison / ai_market_context` 这类逻辑层任务仍保持手动启动，避免把"采集层"和"分析层"混成同一条默认运行链
 
 当前总入口的常驻模块监管语义也已经收紧为“保住真实供数优先”：
 

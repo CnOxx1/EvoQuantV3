@@ -68,6 +68,12 @@
 | `event_probability` | prediction_market_data + news_data + regulatory_data | 事件市场定价概率、概率跳变检测、事件→资产映射 |
 | `miner_pressure` | miner_data + exchange_reserve_data | Puell Multiple 分位、矿工投降指数、减半周期相位、Hash Price |
 | `market_sentiment_composite` | derivatives_sentiment + social_sentiment + funding_rate_model + prediction_market | 综合情绪评分(0-100)、极端检测、情绪-价格背离、反转信号 |
+| `stablecoin_pulse` | stablecoin_flow_data, exchange_reserve_data | 净铸造脉冲、链迁移方向、expansion/contraction 信号 |
+| `unlock_impact` | token_unlock_realtime, merged_klines, liquidity_analysis | 预期卖压、历史解锁→价格反应、冲击评分 |
+| `depth_regime` | cex_orderbook_depth, merged_klines | 深度 regime 分类、买卖墙强度、滑点曲线建模 |
+| `smart_money_conviction` | whale_wallet_pnl, onchain_holder_data, flow_decomposition | Smart Money 聚合 PnL、信念评分、与散户背离 |
+| `defi_stress` | defi_liquidation_data, lending_utilization, liquid_staking_data | DeFi 压力指数、级联概率、协议风险排名 |
+| `retail_fomo_index` | search_trend_data, social_sentiment_data, derivatives_sentiment_data, exchange_announcement | FOMO/FUD 指数、逆向信号、反转概率 |
 
 ## 数据流全景
 
@@ -170,6 +176,18 @@ logic_layer/
     calculator.py, models.py, repository.py, runner.py, service.py
   market_sentiment_composite/
     calculator.py, models.py, repository.py, runner.py, service.py
+  stablecoin_pulse/
+    calculator.py, repository.py, runner.py, service.py
+  unlock_impact/
+    calculator.py, repository.py, runner.py, service.py
+  depth_regime/
+    calculator.py, repository.py, runner.py, service.py
+  smart_money_conviction/
+    calculator.py, repository.py, runner.py, service.py
+  defi_stress/
+    calculator.py, repository.py, runner.py, service.py
+  retail_fomo_index/
+    calculator.py, repository.py, runner.py, service.py
 ```
 
 ## 各模块详述
@@ -282,9 +300,33 @@ logic_layer/
 
 综合情绪评分。基于 `derivatives_sentiment_data`、`social_sentiment_data`、`funding_rate_model` 和 `prediction_market_data` 数据，计算综合情绪评分（0-100, 多维度加权）、情绪极端检测（极度恐惧/贪婪）、情绪-价格背离检测、反转信号强度和与 funding rate 的一致性/背离。结果写入 `composite_sentiment_states` 表。
 
+### stablecoin_pulse
+
+稳定币脉冲分析。基于 `stablecoin_flow_data` 和 `exchange_reserve_data` 数据，计算净铸造脉冲（24h 滚动净 mint 归一化）、链迁移方向（最大净流入链）、expansion/contraction 信号分类和与 BTC 价格方向的 Pearson 相关性。结果写入 `stablecoin_pulse_states` 表。
+
+### unlock_impact
+
+解锁冲击评估。基于 `token_unlock_realtime`、`merged_klines` 和 `liquidity_analysis` 数据，计算预期卖压（unlock_amount / daily_volume）、历史解锁→价格反应、流动性吸收容量和复合冲击评分。结果写入 `unlock_impact_states` 表。
+
+### depth_regime
+
+深度 regime 分类。基于 `cex_orderbook_depth` 和 `merged_klines` 数据，计算深度 regime（thick/thin/asymmetric/vacuum）、买卖墙强度与持续性、迭代滑点曲线建模和深度-价格背离。结果写入 `depth_regime_states` 表。
+
+### smart_money_conviction
+
+Smart Money 信念分析。基于 `whale_wallet_pnl`、`onchain_holder_data` 和 `flow_decomposition` 数据，计算 Smart Money 聚合 PnL 趋势、信念评分（高 PnL + 加仓 = 最高信念）、5 级方向分类和与散户流的背离。结果写入 `smart_money_conviction_states` 表。
+
+### defi_stress
+
+DeFi 压力建模。基于 `defi_liquidation_data`、`lending_utilization` 和 `liquid_staking_data` 数据，计算 DeFi 压力指数（0-100）、级联概率（HF 分布→价格跌 X% 时预期清算量）、协议风险排名和系统性阈值检测。结果写入 `defi_stress_states` 表。
+
+### retail_fomo_index
+
+散户 FOMO 指数。基于 `search_trend_data`、`social_sentiment_data`、`derivatives_sentiment_data` 和 `exchange_announcement` 数据，计算 FOMO 复合指数（搜索 + 社交量 + 上币热度 + 恐贪极端）、逆向信号、FUD 复合指数和历史极端→反转相关性。结果写入 `retail_fomo_states` 表。
+
 ## AI 输出结构
 
-当前逻辑层输出 23 类 AI 可消费结果：
+当前逻辑层输出 31 类 AI 可消费结果：
 
 | 输出 | 核心价值 |
 | --- | --- |
@@ -313,6 +355,12 @@ logic_layer/
 | `event_probability` | 事件市场定价概率、概率跳变检测、事件→资产映射 |
 | `miner_pressure` | 矿工压力评分、Puell Multiple、投降信号、减半相位 |
 | `market_sentiment_composite` | 综合情绪评分、极端检测、情绪-价格背离、反转信号 |
+| `stablecoin_pulse` | 净铸造脉冲、expansion/contraction 信号、链迁移方向 |
+| `unlock_impact` | 预期卖压比、冲击评分、历史反应匹配 |
+| `depth_regime` | 深度 regime 分类、墙位预警、滑点估算 |
+| `smart_money_conviction` | Smart Money 信念指数、方向、散户背离 |
+| `defi_stress` | DeFi 压力指数、级联概率、最高风险协议 |
+| `retail_fomo_index` | FOMO/FUD 指数、逆向信号强度、反转概率 |
 
 最终由 `ai_market_context` 统一聚合为单一 bundle 供 AI 消费。
 

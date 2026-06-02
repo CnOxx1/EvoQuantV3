@@ -5,7 +5,7 @@
 大多数量化项目从"策略"出发，EvoQuant 从"理解"出发。它解决的核心问题是：AI 在做交易决策前，需要一个完整、诚实、可回溯的市场认知底座。
 
 ```text
-3 交易所 × 18 资产 × 31 数据域 × 228 技术指标 × 实时质量治理
+3 交易所 × 18 资产 × 43 数据域 × 228 技术指标 × 实时质量治理
 → AI 随时可查的完整市场上下文
 ```
 
@@ -14,7 +14,7 @@
 | 传统量化数据管道 | EvoQuant |
 | --- | --- |
 | 单交易所单币种 | 3 交易所 × 18 资产，多源交叉验证 |
-| 只有 K 线和指标 | 31 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics + 社交情绪 + 巨鲸追踪 + 订单流 + DeFi 协议 + 跨链桥流 + 监管动态 + ETF 资金流 + 期货期限结构 + MEV + CeFi 借贷利率 + 永续 DEX + 链上地址画像 + DEX 流动性 + Gas/网络 + 治理投票 + 预测市场 + 链上持有者 + 流动性质押 + 内存池 + VC 融资 + 交易所储备 + 矿工数据 + 衍生品情绪 |
+| 只有 K 线和指标 | 43 个数据域：行情 + 宏观 + 新闻 + 链上 + 期权 + 衍生品 + 事件 + Tokenomics + 社交情绪 + 巨鲸追踪 + 订单流 + DeFi 协议 + 跨链桥流 + 监管动态 + ETF 资金流 + 期货期限结构 + MEV + CeFi 借贷利率 + 永续 DEX + 链上地址画像 + DEX 流动性 + Gas/网络 + 治理投票 + 预测市场 + 链上持有者 + 流动性质押 + 内存池 + VC 融资 + 交易所储备 + 矿工数据 + 衍生品情绪 + 稳定币事件流 + 代币解锁实时 + 深度盘口 + 巨鲸 PnL + NFT 市场 + DeFi 清算 + DEX 交易流 + 跨链消息 + 借贷利用率 + 搜索趋势 + 交易所公告 |
 | 缺失数据静默忽略 | 显式标记 stale / missing / partial，AI 知道自己"不知道什么" |
 | 固定参数指标 | 228 个指标含自适应 Ehlers 系列、分形维度、Hurst 指数 |
 | 只能看当前 | Point-in-time 回溯：查询任意历史时刻的完整市场状态 |
@@ -64,6 +64,17 @@
 | 交易所储备 | DefiLlama / Blockchain.com | 30 分钟 | BTC/ETH/USDT 储备变化、净流入/流出 |
 | 矿工数据 | mempool.space / Blockchain.com | 1 小时 | 算力、Puell Multiple、矿工收入、难度调整 |
 | 衍生品情绪 | Alternative.me / Coinglass | 15 分钟 | 恐惧贪婪、多空比、OI、杠杆率、Put/Call |
+| 稳定币事件流 | DefiLlama Stablecoins | 5 分钟 | 实时 mint/burn 脉冲、链迁移方向、24h 聚合 |
+| 代币解锁实时 | TokenUnlocks | 1 小时 | 未来 7 天解锁排序、预期卖压、解锁→价格相关性 |
+| 深度盘口 | Binance / OKX / Bybit | 30 秒 | 5000 档全量、滑点曲线、买卖墙、流动性真空 |
+| 巨鲸 PnL | DeBank / Arkham | 30 分钟 | Smart Money 聚合 PnL、持仓方向、信念指数 |
+| NFT 市场 | Reservoir / Blur | 15 分钟 | 蓝筹指数、wash-adjusted 交易量、ETH 相关性 |
+| DeFi 清算 | Aave/Compound (The Graph) | 2 分钟 | 真实清算事件、HF<1.2 风险仓位、清算量趋势 |
+| DEX 交易流 | 0x / 1inch | 5 分钟 | 大单流(>$50K)、Smart Money 链上活动、MEV 受害率 |
+| 跨链消息 | LayerZero / Wormhole / Axelar | 10 分钟 | 消息速率、迁移信号、链活跃度排名 |
+| 借贷利用率 | Aave/Compound/Morpho (The Graph) | 5 分钟 | 接近 kink 池、利用率趋势、借贷成本预警 |
+| 搜索趋势 | Google Trends (pytrends) | 4 小时 | 加密搜索动量、FOMO 代理、突破关键词 |
+| 交易所公告 | Binance / OKX / Bybit | 15 分钟 | 上币/下币、维护窗口、即将发生事件 |
 
 ## 技术指标体系
 
@@ -106,9 +117,9 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        AI Consumer Layer                         │
-│              REST API (390+ endpoints) / Bundle Query            │
+│              REST API (477 endpoints) / Bundle Query            │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Logic Layer (33 modules)                 │
+│                         Logic Layer (39 modules)                 │
 │  technical_indicators → feature_standardization → cross_asset   │
 │  macro_context → news_sentiment → portfolio_risk                │
 │  market_breadth → asset_readiness → ai_market_context           │
@@ -120,8 +131,10 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │  liquidation_cascade → cross_venue_arbitrage → onchain_lead_lag │
 │  holder_behavior → liquidity_regime → event_probability         │
 │  miner_pressure → market_sentiment_composite                    │
+│  stablecoin_pulse → unlock_impact → depth_regime          │
+│  smart_money_conviction → defi_stress → retail_fomo_index │
 ├─────────────────────────────────────────────────────────────────┤
-│                         Data Layer (32 modules)                  │
+│                         Data Layer (43 modules)                  │
 │  exchange_data │ macro_data │ news_data │ onchain_data          │
 │  options_data │ tokenomics_data │ event_calendar │ alternative  │
 │  social_sentiment │ whale_tracker │ orderflow │ defi_protocol   │
@@ -131,6 +144,9 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │  gas_network_data │ governance_data                             │
 │  prediction_market │ onchain_holder │ liquid_staking │ mempool  │
 │  funding_round │ exchange_reserve │ miner_data │ deriv_sentiment│
+│  stablecoin_flow │ token_unlock │ cex_depth │ whale_pnl  │
+│  nft_market │ defi_liquidation │ dex_trade_flow          │
+│  cross_chain_msg │ lending_util │ search_trend │ exch_ann│
 ├─────────────────────────────────────────────────────────────────┤
 │                         Storage Layer                            │
 │  SQLite (3 域拆分) │ latest_* 快照 │ 历史表 │ 质量审计表       │
@@ -192,10 +208,10 @@ pytest -q
 ```text
 EvoQuant/
 ├── config/          目标资产、调度、日志与环境配置
-├── data_layer/      外部数据采集、标准化、落库（32 个数据模块）
+├── data_layer/      外部数据采集、标准化、落库（43 个数据模块）
 ├── database/        SQLite 建表、迁移、路由和读写入口
-├── logic_layer/     AI-ready 特征、上下文和治理结果（33 个逻辑模块）
-├── api/             对外 REST API 服务（390+ 端点）
+├── logic_layer/     AI-ready 特征、上下文和治理结果（39 个逻辑模块）
+├── api/             对外 REST API 服务（477 端点）
 ├── tests/           单元测试与模块测试
 └── main.py          统一入口，模块注册与进程管理（指数退避重启 + 三阶段优雅关停）
 ```
@@ -237,10 +253,16 @@ EvoQuant/
 | `event_probability` | 预测市场概率跳变检测、事件→资产映射、新闻交叉验证 |
 | `miner_pressure` | Puell Multiple 分位、矿工投降指数、减半周期相位、算力压力 |
 | `market_sentiment_composite` | 多维度综合情绪评分（0-100）、极端检测、情绪-价格背离、反转信号 |
+| `stablecoin_pulse` | 稳定币脉冲：净铸造归一化、链迁移方向、expansion/contraction 信号 |
+| `unlock_impact` | 解锁冲击：预期卖压比、流动性吸收容量、历史反应匹配 |
+| `depth_regime` | 深度 Regime：thick/thin/asymmetric/vacuum 分类、墙位、滑点曲线 |
+| `smart_money_conviction` | Smart Money 信念：PnL 趋势、信念评分、与散户背离 |
+| `defi_stress` | DeFi 压力：压力指数(0-100)、跌 5/10/20% 级联概率、协议风险排名 |
+| `retail_fomo_index` | 散户 FOMO：FOMO/FUD 指数(0-100)、逆向信号强度、反转概率 |
 
 ## API
 
-390+ REST 端点，覆盖：
+477 REST 端点，覆盖：
 
 - 技术指标深度分析（极值、背离、多周期）
 - 组合风险分析（VaR、风险贡献、集中度）
@@ -269,6 +291,23 @@ EvoQuant/
 - 事件概率（高影响事件、概率跳变、资产映射）
 - 矿工压力（投降指数、减半周期、压力评分）
 - 综合情绪（评分、极端标记、背离、反转概率）
+- 稳定币事件流（实时 mint/burn、链净流、24h 脉冲）
+- 代币解锁（未来解锁排序、高冲击解锁、历史反应）
+- 盘口深度（全量深度、买卖墙、滑点曲线、深度 regime）
+- 巨鲸 PnL（Smart Money 组合、Top 表现者、信念方向）
+- NFT 市场（收藏品统计、市场概览、wash-adjusted 数据）
+- DeFi 清算（真实清算事件、健康因子分布、协议对比）
+- DEX 交易流（大单流、路由器统计、MEV 受害率）
+- 跨链消息（协议统计、消息量、链活跃排名）
+- 借贷利用率（池状态、高利用率预警、利率趋势）
+- 搜索趋势（热度、动量、Top 关键词）
+- 交易所公告（最近公告、上币事件、按交易所筛选）
+- 稳定币脉冲（expansion/contraction 信号、链流方向）
+- 解锁冲击（高冲击解锁 Top5、价格影响估算）
+- 深度 Regime（regime 状态、墙位预警、滑点估算）
+- Smart Money 信念（信念指数、方向、散户背离）
+- DeFi 压力（压力评分、级联概率、高风险协议）
+- 散户 FOMO（FOMO/FUD 指数、逆向信号、反转概率）
 
 启动后访问 `/docs`（Swagger）或 `/redoc`（ReDoc）查看完整接口文档。
 
@@ -304,6 +343,10 @@ EvoQuant/
 - [x] 8 个新数据模块：预测市场（Polymarket）、链上持有者（MVRV/SOPR/NUPL）、流动性质押（Lido/RocketPool/EigenLayer）、内存池（mempool.space）、VC 融资（DefiLlama Raises）、交易所储备、矿工数据、衍生品情绪
 - [x] 5 个新逻辑模块：持有者行为分析、流动性 Regime、事件概率、矿工压力、综合情绪评分
 - [x] 13 个新 API 路由（65 端点）：预测市场、链上持有者、流动性质押、内存池、VC 融资、交易所储备、矿工、衍生品情绪、持有者行为、流动性 Regime、事件概率、矿工压力、综合情绪
+- [x] 11 个新数据模块：stablecoin_flow_data（稳定币事件流）、token_unlock_realtime（代币解锁实时）、cex_orderbook_depth（5000 档全量深度）、whale_wallet_pnl（巨鲸 PnL）、nft_market_data（NFT 市场）、defi_liquidation_data（DeFi 清算事件）、dex_trade_flow（DEX 大单流）、cross_chain_messaging（跨链消息）、lending_utilization（借贷利用率）、search_trend_data（搜索趋势）、exchange_announcement（交易所公告）
+- [x] 6 个新逻辑模块：stablecoin_pulse（稳定币脉冲）、unlock_impact（解锁冲击评估）、depth_regime（深度 Regime 分类）、smart_money_conviction（Smart Money 信念）、defi_stress（DeFi 压力建模）、retail_fomo_index（散户 FOMO 指数）
+- [x] 17 个新 API 路由（85 端点）：/stablecoin-flow、/token-unlock、/orderbook-depth、/whale-pnl、/nft-market、/defi-liquidation、/dex-trade-flow、/cross-chain-msg、/lending-utilization、/search-trend、/exchange-announcement、/stablecoin-pulse、/unlock-impact、/depth-regime、/smart-money-conviction、/defi-stress、/retail-fomo
+- [x] 数据域从 32 个扩展到 43 个，逻辑模块从 33 个扩展到 39 个，API 端点数达 477
 
 ### P2 — 进行中
 
@@ -322,6 +365,15 @@ EvoQuant/
 ## 更新记录
 
 ### 2025-06-02
+
+**v3.1 — AI 认知盲区补全**
+
+- 11 个新数据采集模块：stablecoin_flow_data（稳定币链上 mint/burn 事件流）、token_unlock_realtime（代币解锁实时追踪）、cex_orderbook_depth（5000 档全量深度盘口）、whale_wallet_pnl（巨鲸钱包 PnL 追踪）、nft_market_data（NFT 市场数据）、defi_liquidation_data（DeFi 真实清算事件）、dex_trade_flow（DEX 大单交易流）、cross_chain_messaging（跨链消息协议）、lending_utilization（借贷协议利用率）、search_trend_data（搜索趋势热度）、exchange_announcement（交易所公告）
+- 6 个新逻辑分析模块：stablecoin_pulse（净铸造脉冲 + expansion/contraction 信号）、unlock_impact（预期卖压 + 流动性吸收 + 冲击评分）、depth_regime（深度 regime 分类 + 墙位预警 + 滑点建模）、smart_money_conviction（Smart Money 信念指数 + 散户背离）、defi_stress（DeFi 压力指数 + 级联概率 + 协议风险排名）、retail_fomo_index（FOMO/FUD 指数 + 逆向信号 + 反转概率）
+- 17 个新 API 路由（85 端点）：/stablecoin-flow、/token-unlock、/orderbook-depth、/whale-pnl、/nft-market、/defi-liquidation、/dex-trade-flow、/cross-chain-msg、/lending-utilization、/search-trend、/exchange-announcement、/stablecoin-pulse、/unlock-impact、/depth-regime、/smart-money-conviction、/defi-stress、/retail-fomo
+- 数据域从 32 个扩展到 43 个，逻辑模块从 33 个扩展到 39 个，API 端点数达 477
+- 逻辑管道 Phase 2 新增 6 个并行模块 + DAG 节点 + 缓存失效映射
+- 文档同步更新：README.md、data_layer/README.md、logic_layer/README.md、api/routers/README.md 全部对齐 v3.1 模块清单
 
 **v3.0 — AI 交易决策关键维度扩展**
 

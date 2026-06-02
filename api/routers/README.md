@@ -61,6 +61,44 @@ api/routers/
   contagion_risk.py         # 传染风险
   alpha_decay.py            # 信号衰减
   narrative_regime.py       # 叙事状态机
+  perpetual_dex.py            # 永续 DEX
+  onchain_address.py          # 链上地址画像
+  dex_liquidity.py            # DEX 流动性
+  gas_network.py              # Gas/网络
+  governance.py               # 治理投票
+  liquidation_cascade.py      # 清算级联
+  cross_venue_arb.py          # 跨所套利
+  onchain_lead_lag.py         # 链上领先滞后
+  prediction_market.py        # 预测市场
+  onchain_holder.py           # 链上持有者
+  liquid_staking.py           # 流动性质押
+  mempool.py                  # 内存池
+  funding_round.py            # VC 融资
+  exchange_reserve.py         # 交易所储备
+  miner.py                    # 矿工数据
+  derivatives_sentiment.py    # 衍生品情绪
+  holder_behavior.py          # 持有者行为
+  liquidity_regime.py         # 流动性 Regime
+  event_probability.py        # 事件概率
+  miner_pressure.py           # 矿工压力
+  sentiment_composite.py      # 综合情绪
+  stablecoin_flow.py          # 稳定币事件流
+  token_unlock.py             # 代币解锁
+  orderbook_depth.py          # 盘口深度
+  whale_pnl.py                # 巨鲸 PnL
+  nft_market.py               # NFT 市场
+  defi_liquidation.py         # DeFi 清算
+  dex_trade_flow.py           # DEX 交易流
+  cross_chain_msg.py          # 跨链消息
+  lending_utilization.py      # 借贷利用率
+  search_trend.py             # 搜索趋势
+  exchange_announcement.py    # 交易所公告
+  stablecoin_pulse.py         # 稳定币脉冲
+  unlock_impact.py            # 解锁冲击
+  depth_regime.py             # 深度 Regime
+  smart_money_conviction.py   # Smart Money 信念
+  defi_stress.py              # DeFi 压力
+  retail_fomo.py              # 散户 FOMO
 ```
 
 ## 路由注册
