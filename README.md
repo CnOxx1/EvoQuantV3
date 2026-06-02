@@ -377,6 +377,8 @@ EvoQuant/
 - Alembic 迁移：`alembic/` 目录支持 PostgreSQL 3 Schema（exchange_data/market_data/analytics）迁移管理
 - `/health/db` 端点：连接池状态监控
 - 向后兼容：默认 DB_BACKEND=sqlite，所有 89 个现有路由和测试无需修改
+- Bug 修复：`database/router.py` 添加 `get_market_data_db()` 方法别名，修复 8 个 v3.1 逻辑模块 AttributeError
+- Bug 修复：`data_quality/audit.py` 注册 5 个缺失模块到 service_factories（perpetual_dex_data、onchain_address_data、dex_liquidity_data、gas_network_data、governance_data），修复 KeyError 崩溃
 
 ### 2025-06-02
 
