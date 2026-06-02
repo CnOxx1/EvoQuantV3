@@ -149,7 +149,8 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 │  cross_chain_msg │ lending_util │ search_trend │ exch_ann│
 ├─────────────────────────────────────────────────────────────────┤
 │                         Storage Layer                            │
-│  SQLite (3 域拆分) │ latest_* 快照 │ 历史表 │ 质量审计表       │
+│  SQLite (3 域拆分) / PostgreSQL (生产)                           │
+│  latest_* 快照 │ 历史表 │ 质量审计表 │ Alembic 迁移             │
 ├─────────────────────────────────────────────────────────────────┤
 │                         External Sources                         │
 │  Binance │ OKX │ Bybit │ DeFiLlama │ Deribit │ 宏观数据源      │
@@ -208,10 +209,12 @@ pytest -q
 ```text
 EvoQuant/
 ├── config/          目标资产、调度、日志与环境配置
+├── core/            基类抽象层（BaseDataClient/Service/Runner、BaseAnalyticsService/Runner）
 ├── data_layer/      外部数据采集、标准化、落库（43 个数据模块）
-├── database/        SQLite 建表、迁移、路由和读写入口
+├── database/        数据库管理（SQLite/PostgreSQL 双后端、Alembic 迁移）
 ├── logic_layer/     AI-ready 特征、上下文和治理结果（39 个逻辑模块）
-├── api/             对外 REST API 服务（477 端点）
+├── api/             对外 REST API 服务（477 端点，支持游标分页）
+├── alembic/         PostgreSQL Schema 迁移脚本
 ├── tests/           单元测试与模块测试
 └── main.py          统一入口，模块注册与进程管理（指数退避重启 + 三阶段优雅关停）
 ```

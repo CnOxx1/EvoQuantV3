@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
 from api.dependencies import get_analytics_db
+from api.pagination import CursorParams, build_keyset_query, paginated_response
 from config.symbols import TARGET_SYMBOLS
 
 router = APIRouter(prefix="/technical", tags=["technical"])
@@ -123,3 +124,30 @@ def get_klines(
         "count": len(records),
         "klines": records,
     }
+
+
+@router.get("/indicators/paginated/{symbol}")
+def get_indicators_paginated(
+    symbol: str,
+    timeframe: str = Query("1h", description="K 线周期"),
+    cursor: Optional[str] = Query(None, description="分页游标"),
+    limit: int = Query(50, ge=1, le=1000, description="每页条数"),
+) -> dict[str, Any]:
+    """技术指标历史（游标分页）。"""
+    normalized = _normalize_symbol(symbol)
+    if normalized not in TARGET_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol '{normalized}' not in universe.")
+    if timeframe not in _VALID_TIMEFRAMES:
+        raise HTTPException(status_code=400, detail=f"Invalid timeframe. Valid: {_VALID_TIMEFRAMES}")
+
+    db = get_analytics_db()
+    params = CursorParams(cursor=cursor, limit=limit)
+    sql, sql_params = build_keyset_query(
+        base_sql="SELECT rowid, * FROM technical_indicators WHERE symbol = ? AND timeframe = ?",
+        base_params=(normalized, timeframe),
+        cursor_params=params,
+        timestamp_col="open_time",
+        id_col="rowid",
+    )
+    rows = db.fetch_all(sql, sql_params)
+    return paginated_response(rows, params, timestamp_col="open_time", id_col="rowid")

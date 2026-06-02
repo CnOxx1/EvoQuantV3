@@ -54,3 +54,15 @@ def get_health() -> HealthSummary:
         domains=domains,
         summary=summary,
     )
+
+
+@router.get("/db")
+def get_db_health() -> dict:
+    """数据库后端连接池健康状态。"""
+    from database.router import DatabaseRouter
+    try:
+        dr = DatabaseRouter()
+        return dr.get_backend_health()
+    except Exception as e:
+        logger.warning("health db check failed: {}: {}", type(e).__name__, e)
+        return {"status": "error", "error": str(e)}

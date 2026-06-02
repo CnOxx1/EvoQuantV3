@@ -16,6 +16,23 @@ EXCHANGE_DATA_DB_PATH = os.path.join(DATABASE_DIR, "exchange_data.db")
 MARKET_DATA_DB_PATH = os.path.join(DATABASE_DIR, "market_data.db")
 ANALYTICS_DB_PATH = os.path.join(DATABASE_DIR, "analytics.db")
 
+# 数据库后端配置 (sqlite | postgres)
+DB_BACKEND = os.getenv("DB_BACKEND", "sqlite").strip().lower()
+
+# PostgreSQL 连接配置
+PG_HOST = os.getenv("PG_HOST", "localhost")
+PG_PORT = int(os.getenv("PG_PORT", "5432"))
+PG_DATABASE = os.getenv("PG_DATABASE", "evoquant")
+PG_USER = os.getenv("PG_USER", "evoquant")
+PG_PASSWORD = os.getenv("PG_PASSWORD", "")
+DB_POOL_MIN = int(os.getenv("DB_POOL_MIN", "5"))
+DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", "20"))
+
+# PostgreSQL Schema 映射
+PG_SCHEMA_EXCHANGE = os.getenv("PG_SCHEMA_EXCHANGE", "exchange_data")
+PG_SCHEMA_MARKET = os.getenv("PG_SCHEMA_MARKET", "market_data")
+PG_SCHEMA_ANALYTICS = os.getenv("PG_SCHEMA_ANALYTICS", "analytics")
+
 
 def _default_tracked_asset_entity_keys() -> str:
     assets: list[str] = []

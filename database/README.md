@@ -48,7 +48,14 @@ database/
   db_manager.py                  # SQLite 初始化、建表、迁移与域表管理
   router.py                      # 域路由器：按写入频率分配 DBManager 实例
   schemas.py                     # 表名常量与域映射（init 方法 / 物理表名）
+  pool_config.py                 # 连接池配置 dataclass（环境变量驱动）
   migrate_split.py               # 从 crypto_data.db 迁移到 3 域文件的脚本
+  backends/                      # 多后端抽象层
+    __init__.py                  # 工厂函数 get_backend(backend_type, **kwargs)
+    base.py                      # DatabaseBackend ABC（execute/fetch/commit/health_check）
+    sqlite_backend.py            # SQLite 实现（WAL + thread-local）
+    postgres_backend.py          # PostgreSQL 实现（psycopg2 + ThreadedConnectionPool）
+    query_adapter.py             # SQL 方言适配器（? ↔ %s、datetime() ↔ NOW()）
   exchange_data.db               # 高频交易所数据（运行时生成）
   market_data.db                 # 中低频市场数据（运行时生成）
   analytics.db                   # 逻辑层输出与审计（运行时生成）
@@ -89,6 +96,52 @@ python -m database.migrate_split --dry-run
 # 执行迁移
 python -m database.migrate_split
 ```
+
+## PostgreSQL 后端（生产环境）
+
+v3.2 引入多后端架构，支持在开发环境使用 SQLite、生产环境切换到 PostgreSQL：
+
+```text
+DB_BACKEND=sqlite (默认，开发/测试)
+  → SQLiteBackend → 现有 sqlite3.connect() 逻辑不变
+
+DB_BACKEND=postgres (生产)
+  → PostgresBackend → psycopg2.pool.ThreadedConnectionPool
+  → Schema 映射: exchange_data / market_data / analytics
+  → 连接池: min=5, max=20 (可配置)
+  → 查询自动适配: ? → %s, datetime('now') → NOW()
+```
+
+### 启用 PostgreSQL
+
+1. 安装依赖：`pip install psycopg2-binary==2.9.9 alembic==1.13.1`
+2. 配置环境变量（参考 `.env.example`）：
+
+```bash
+DB_BACKEND=postgres
+PG_HOST=localhost
+PG_PORT=5432
+PG_DATABASE=evoquant
+PG_USER=evoquant
+PG_PASSWORD=your_password
+DB_POOL_MIN=5
+DB_POOL_MAX=20
+```
+
+3. 运行 Alembic 迁移：
+
+```bash
+alembic upgrade head
+```
+
+4. 验证连接：启动 API 后访问 `/health/db` 查看连接池状态
+
+### 兼容性保证
+
+- DBManager 的 `execute/fetch_one/fetch_all/commit/close` 接口不变
+- 所有 89 个路由无需修改（`query_adapter` 自动转换 SQL 方言）
+- 默认 `DB_BACKEND=sqlite`，不影响开发环境
+- SQLite 3 域拆分 → PostgreSQL 3 Schema 映射（exchange_data / market_data / analytics）
 
 ## 表组速览
 

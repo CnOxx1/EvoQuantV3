@@ -726,6 +726,48 @@ python main.py --modules api_server
 
 ---
 
+## 分页
+
+v3.2 引入标准化分页机制，防止大表全量返回导致 OOM。分页工具位于 `api/pagination.py`。
+
+### 两种模式
+
+| 模式 | 适用场景 | 参数 |
+|------|---------|------|
+| 游标分页（Keyset） | 大数据集、时序数据 | `cursor`, `limit` |
+| 偏移分页（Offset） | 小数据集、简单列表 | `page`, `page_size` |
+
+### 游标分页端点（示范）
+
+| 端点 | 说明 |
+|------|------|
+| `/exchange/funding-rates/paginated/{symbol}` | 资金费率游标分页 |
+| `/technical/indicators/paginated/{symbol}` | 技术指标游标分页 |
+| `/stablecoin-flow/events/paginated` | 稳定币事件游标分页 |
+| `/whale-pnl/history/paginated` | 巨鲸 PnL 游标分页 |
+| `/defi-liquidation/events/paginated` | DeFi 清算事件游标分页 |
+
+### 响应格式
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "next_cursor": "eyJ0cyI6IjIwMjQtMDEtMDEiLCJpZCI6MTAwfQ==",
+    "has_more": true,
+    "page_size": 50,
+    "total_count": 1234
+  }
+}
+```
+
+### 限制
+
+- 默认 `limit=50`，最大 `limit=1000`（ABSOLUTE_MAX_LIMIT）
+- `cursor=null` 时等价于无分页（向后兼容）
+
+---
+
 ## 端点详细说明
 
 ### GET /signals/{symbol}

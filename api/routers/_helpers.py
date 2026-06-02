@@ -11,6 +11,18 @@ from typing import Any
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
+# 分页工具 re-export
+from api.pagination import (
+    ABSOLUTE_MAX_LIMIT,
+    CursorParams,
+    OffsetParams,
+    build_keyset_query,
+    build_offset_query,
+    encode_cursor,
+    offset_paginated_response,
+    paginated_response,
+)
+
 
 # 合法符号集合（延迟加载避免循环导入）
 _VALID_SYMBOLS: set[str] | None = None

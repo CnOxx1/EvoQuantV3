@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from loguru import logger
 
 from api.dependencies import get_analytics_db, get_exchange_db
+from api.pagination import CursorParams, build_keyset_query, paginated_response
 from config.symbols import TARGET_EXCHANGES, TARGET_SYMBOLS
 
 router = APIRouter(prefix="/exchange", tags=["exchange"])
@@ -72,6 +73,30 @@ def get_funding_rates(
             "count": len(records),
             "history": records,
         }
+
+
+@router.get("/funding-rates/paginated/{symbol}")
+def get_funding_rates_paginated(
+    symbol: str,
+    cursor: Optional[str] = Query(None, description="分页游标"),
+    limit: int = Query(50, ge=1, le=1000, description="每页条数"),
+) -> dict[str, Any]:
+    """资金费率历史（游标分页）。"""
+    normalized = _normalize_symbol(symbol)
+    if normalized not in TARGET_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Symbol '{normalized}' not in universe.")
+
+    db = get_exchange_db()
+    params = CursorParams(cursor=cursor, limit=limit)
+    sql, sql_params = build_keyset_query(
+        base_sql="SELECT rowid, exchange, funding_rate, mark_price, timestamp FROM funding_rates WHERE symbol = ?",
+        base_params=(normalized,),
+        cursor_params=params,
+        timestamp_col="timestamp",
+        id_col="rowid",
+    )
+    rows = db.fetch_all(sql, sql_params)
+    return paginated_response(rows, params, timestamp_col="timestamp", id_col="rowid")
 
 
 @router.get("/funding")

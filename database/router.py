@@ -1,9 +1,10 @@
-"""数据库域路由器：按写入频率将表分配到不同 SQLite 文件。
+"""数据库域路由器：按写入频率将表分配到不同 SQLite 文件或 PostgreSQL schema。
 
 使用方式：
 - 数据层模块：router.get_manager(Domain.EXCHANGE_DATA)
 - 逻辑层模块：router.get_analytics_db()（自动 ATTACH 其他域 + 创建 VIEW）
 - 测试/向后兼容：DatabaseRouter(single_file=True) 或直接 DBManager(":memory:")
+- PostgreSQL: DB_BACKEND=postgres 时自动切换后端
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from __future__ import annotations
 import os
 import sqlite3
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from loguru import logger
 
@@ -139,3 +140,49 @@ class DatabaseRouter:
         for manager in self._managers.values():
             manager.close()
         self._managers.clear()
+
+    def get_backend_health(self) -> dict[str, Any]:
+        """返回当前后端健康状态（供 /health/db 使用）。"""
+        from config.settings import DB_BACKEND
+
+        if DB_BACKEND == "postgres":
+            from database.pool_config import PoolConfig
+            from database.backends.postgres_backend import PostgresBackend
+
+            cfg = PoolConfig()
+            # 尝试获取池状态（不一定有活跃连接）
+            return {
+                "backend": "postgres",
+                "config": {
+                    "host": cfg.pg_host,
+                    "port": cfg.pg_port,
+                    "database": cfg.pg_database,
+                    "pool_min": cfg.pool_min,
+                    "pool_max": cfg.pool_max,
+                },
+                "domains": [d.value for d in Domain],
+            }
+        else:
+            import os
+            from config.settings import (
+                EXCHANGE_DATA_DB_PATH,
+                MARKET_DATA_DB_PATH,
+                ANALYTICS_DB_PATH,
+            )
+
+            def _db_info(path: str) -> dict:
+                exists = os.path.exists(path)
+                return {
+                    "path": path,
+                    "exists": exists,
+                    "size_mb": round(os.path.getsize(path) / 1024 / 1024, 1) if exists else 0,
+                }
+
+            return {
+                "backend": "sqlite",
+                "databases": {
+                    "exchange_data": _db_info(EXCHANGE_DATA_DB_PATH),
+                    "market_data": _db_info(MARKET_DATA_DB_PATH),
+                    "analytics": _db_info(ANALYTICS_DB_PATH),
+                },
+            }
