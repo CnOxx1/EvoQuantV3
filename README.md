@@ -330,6 +330,7 @@ EvoQuant/
 - 13 个新 API 路由（65 端点）：/prediction-market、/onchain-holder、/liquid-staking、/mempool、/funding-round、/exchange-reserve、/miner、/derivatives-sentiment、/holder-behavior、/liquidity-regime、/event-probability、/miner-pressure、/sentiment-composite
 - 数据域从 23 个扩展到 31 个，逻辑模块从 28 个扩展到 33 个，API 端点数达 390+
 - 逻辑管道 Phase 2 新增 5 个并行模块 + DAG 节点 + 缓存失效映射
+- 文档同步更新：README.md、ARCHITECTURE.md、data_layer/README.md、logic_layer/README.md、api/README.md 全部对齐 v3.0 模块清单与端点表
 
 ### 2025-06-01
 
