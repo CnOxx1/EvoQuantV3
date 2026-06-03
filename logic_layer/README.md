@@ -60,20 +60,20 @@
 | `contagion_risk` | cross_asset + onchain + defi_protocol | 条件相关性、CoVaR、级联风险、稳定币脱锚概率 |
 | `alpha_decay` | 所有逻辑层信号 | 信号半衰期、拥挤度检测、信号惊喜指数、跨信号背离 |
 | `narrative_regime` | news + social_sentiment + alternative | 叙事状态机、叙事生命周期、叙事→资金流映射 |
-| `liquidation_cascade` | exchange_data OI + klines + leverage | 清算集群检测、级联概率建模、清算热力图 |
-| `cross_venue_arbitrage` | exchange_data 多交易所价格 | 跨交易所价差检测、套利持续性、市场效率评分 |
+| `liquidation_cascade` | open_interest_snapshots + klines | 清算集群检测、级联概率建模、清算热力图 |
+| `cross_venue_arbitrage` | klines（多 exchange）+ tickers | 跨交易所价差检测、套利持续性、市场效率评分 |
 | `onchain_lead_lag` | onchain_data + exchange_data 价格 | 链上信号领先/滞后、Granger 因果、预测力排名 |
-| `holder_behavior_analysis` | onchain_holder_data + exchange_reserve_data | STH/LTH 行为分离、MVRV 分位、SOPR 状态机、供给冲击概率 |
-| `liquidity_regime` | liquid_staking_data + defi_protocol + cefi_lending + exchange_reserve | 流动性状态（expansion/contraction/crisis）、DeFi-CeFi 利差、稳定币脉冲 |
+| `holder_behavior_analysis` | holder_metrics + exchange_reserves | STH/LTH 行为分离、MVRV 分位、SOPR 状态机、供给冲击概率 |
+| `liquidity_regime` | staking_positions + exchange_reserves + lending_pools | 流动性状态（expansion/contraction/crisis）、DeFi-CeFi 利差、稳定币脉冲 |
 | `event_probability` | prediction_market_data + news_data + regulatory_data | 事件市场定价概率、概率跳变检测、事件→资产映射 |
-| `miner_pressure` | miner_data + exchange_reserve_data | Puell Multiple 分位、矿工投降指数、减半周期相位、Hash Price |
-| `market_sentiment_composite` | derivatives_sentiment + social_sentiment + funding_rate_model + prediction_market | 综合情绪评分(0-100)、极端检测、情绪-价格背离、反转信号 |
-| `stablecoin_pulse` | stablecoin_flow_data, exchange_reserve_data | 净铸造脉冲、链迁移方向、expansion/contraction 信号 |
-| `unlock_impact` | token_unlock_realtime, merged_klines, liquidity_analysis | 预期卖压、历史解锁→价格反应、冲击评分 |
-| `depth_regime` | cex_orderbook_depth, merged_klines | 深度 regime 分类、买卖墙强度、滑点曲线建模 |
-| `smart_money_conviction` | whale_wallet_pnl, onchain_holder_data, flow_decomposition | Smart Money 聚合 PnL、信念评分、与散户背离 |
-| `defi_stress` | defi_liquidation_data, lending_utilization, liquid_staking_data | DeFi 压力指数、级联概率、协议风险排名 |
-| `retail_fomo_index` | search_trend_data, social_sentiment_data, derivatives_sentiment_data, exchange_announcement | FOMO/FUD 指数、逆向信号、反转概率 |
+| `miner_pressure` | miner_metrics + exchange_reserves | Puell Multiple 分位、矿工投降指数、减半周期相位、Hash Price |
+| `market_sentiment_composite` | sentiment_index + derivatives_sentiment + klines | 综合情绪评分(0-100)、极端检测、情绪-价格背离、反转信号 |
+| `stablecoin_pulse` | stablecoin_mint_burns + stablecoin_chain_flows + klines | 净铸造脉冲、链迁移方向、expansion/contraction 信号 |
+| `unlock_impact` | upcoming_unlocks + klines + orderbook_snapshots | 预期卖压、历史解锁→价格反应、冲击评分 |
+| `depth_regime` | depth_snapshots + klines | 深度 regime 分类、买卖墙强度、滑点曲线建模 |
+| `smart_money_conviction` | whale_portfolios + exchange_reserves | Smart Money 聚合 PnL、信念评分、与散户背离 |
+| `defi_stress` | defi_liquidations + lending_pools | DeFi 压力指数、级联概率、协议风险排名 |
+| `retail_fomo_index` | search_trends + sentiment_index | FOMO/FUD 指数、逆向信号、反转概率 |
 
 ## 数据流全景
 

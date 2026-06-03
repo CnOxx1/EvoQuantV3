@@ -6,9 +6,10 @@
 
 ## 输入数据
 
-| 来源模块 | 数据 |
-|---|---|
-| exchange_data | Open Interest、K 线价格、杠杆分布 |
+| 来源模块 | 数据表 | 用途 |
+|---|---|---|
+| exchange_data | open_interest_snapshots | OI 数据（open_interest_usd, open_interest_contracts） |
+| exchange_data | klines | 最新价格、24h 成交量 |
 
 ## 计算内容
 

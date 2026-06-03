@@ -6,16 +6,16 @@
 
 ## 输入数据
 
-| 来源模块 | 数据 |
-|---|---|
-| exchange_data | 多交易所实时价格（Binance/OKX/Bybit） |
+| 来源模块 | 数据表 | 用途 |
+|---|---|---|
+| exchange_data | klines | 各交易所最新收盘价（通过 exchange 字段区分场所） |
+| exchange_data | tickers | 备用价格源（last_price） |
 
 ## 计算内容
 
 - 价差检测：计算所有交易所配对的实时价差（bps）
-- 持续性分析：套利机会存续时间统计与衰减曲线
-- 交易所相关性：各交易所间价格的滚动相关系数
-- 利润估算：扣除手续费和滑点后的净套利空间
+- 持续性分析：套利机会存续时间统计与频率
+- 利润估算：基于 spread_bps 和假定交易规模估算套利利润
 - 市场效率评分：0-100 综合评分（100 = 完全有效）
 
 ## 数据库表
@@ -26,12 +26,13 @@
 |---|---|---|
 | ts | TEXT | 检测时间戳 |
 | symbol | TEXT | 交易对 |
-| venue_a | TEXT | 交易所 A |
-| venue_b | TEXT | 交易所 B |
+| venue_buy | TEXT | 买入交易所 |
+| venue_sell | TEXT | 卖出交易所 |
+| price_buy | REAL | 买入价格 |
+| price_sell | REAL | 卖出价格 |
 | spread_bps | REAL | 价差（基点） |
-| direction | TEXT | 套利方向（A→B / B→A） |
-| net_profit_bps | REAL | 扣费后净利润（基点） |
-| is_actionable | INTEGER | 是否可执行 |
+| estimated_profit_usd | REAL | 预估利润（美元） |
+| latency_ms | INTEGER | 延迟（毫秒） |
 
 ### arb_persistence
 
@@ -40,10 +41,9 @@
 | ts | TEXT | 统计时间戳 |
 | symbol | TEXT | 交易对 |
 | venue_pair | TEXT | 交易所配对 |
-| avg_duration_seconds | REAL | 平均持续时间（秒） |
-| occurrence_count | INTEGER | 出现次数 |
-| max_spread_bps | REAL | 最大价差（基点） |
-| decay_half_life_s | REAL | 价差半衰期（秒） |
+| avg_spread_bps | REAL | 平均价差（基点） |
+| duration_seconds | INTEGER | 持续时间（秒） |
+| frequency_per_hour | REAL | 每小时出现频率 |
 
 ### venue_spreads
 
@@ -51,10 +51,10 @@
 |---|---|---|
 | ts | TEXT | 计算时间戳 |
 | symbol | TEXT | 交易对 |
-| venue_pair | TEXT | 交易所配对 |
-| mean_spread_bps | REAL | 平均价差（基点） |
-| correlation | REAL | 价格相关系数 |
-| efficiency_score | INTEGER | 市场效率评分（0-100） |
+| venue_a | TEXT | 交易所 A |
+| venue_b | TEXT | 交易所 B |
+| mid_spread_bps | REAL | 中间价差（基点） |
+| bid_ask_cross | INTEGER | 是否存在买卖交叉（0/1） |
 
 ## 运行方式
 
