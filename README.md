@@ -216,6 +216,7 @@ EvoQuant/
 ├── api/             对外 REST API 服务（477 端点，支持游标分页）
 ├── alembic/         PostgreSQL Schema 迁移脚本
 ├── tests/           单元测试与模块测试
+├── monitoring/      Prometheus 指标导出 + Grafana 仪表盘（Docker Compose 部署）
 └── main.py          统一入口，模块注册与进程管理（指数退避重启 + 三阶段优雅关停）
 ```
 
@@ -323,6 +324,39 @@ EvoQuant/
 - 数据库说明：[database/README.md](database/README.md)
 - AI 数据能力总览：[AI_DATA_CAPABILITIES.md](AI_DATA_CAPABILITIES.md)
 
+## 监控与可观测性
+
+EvoQuant 集成了 Prometheus + Grafana 监控栈，提供 14 个核心指标和 3 个预置仪表盘。
+
+**快速启动监控：**
+
+```bash
+pip install prometheus_client
+cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
+# Grafana: http://localhost:3000 (admin/evoquant)
+# Prometheus: http://localhost:9090
+```
+
+**核心指标：**
+
+| 指标 | 类型 | 含义 |
+| --- | --- | --- |
+| `evoquant_http_requests_total` | Counter | HTTP 请求总数 (method/path/status) |
+| `evoquant_http_request_duration_seconds` | Histogram | 请求延迟 P50/P95/P99 |
+| `evoquant_module_status` | Gauge | 模块运行状态 (1=运行/0=停止/-1=禁用) |
+| `evoquant_domain_freshness_status` | Gauge | 域数据新鲜度 |
+| `evoquant_wmi_score` | Gauge | 世界模型指数 (0-100) |
+| `evoquant_pipeline_phase_duration_seconds` | Histogram | 管道阶段执行时长 |
+| `evoquant_database_size_bytes` | Gauge | 数据库文件大小 |
+| `evoquant_market_alerts_total` | Counter | 市场告警计数 |
+
+**3 个预置仪表盘：**
+- **System Overview** — 健康状态、WMI 评分、模块表、API 请求率、延迟分位数
+- **Pipeline Health** — 域新鲜度地图、延迟时间线、阶段执行时长、管道趋势
+- **Market Alerts** — 告警总数、类型/严重度分布、速率趋势
+
+**优雅降级：** 未安装 `prometheus_client` 时系统正常运行，仅不导出指标。现有 `/metrics` JSON 端点不受影响。
+
 ## Roadmap
 
 ### P1 — 已完成
@@ -353,8 +387,8 @@ EvoQuant/
 
 ### P2 — 进行中
 
+- [x] 监控告警：Prometheus 指标导出 + Grafana 可视化仪表盘（3 个预置 Dashboard）
 - [ ] 增量导出：Parquet/Arrow 格式，供 ML pipeline 批量训练
-- [ ] 监控告警：数据断流自动推送
 - [ ] 预测验证框架：AI 预测 → 对比实际 → 统计准确率
 - [ ] 数据保留策略：K 线/资金费率保留 2 年+
 
@@ -368,6 +402,16 @@ EvoQuant/
 ## 更新记录
 
 ### 2025-06-03
+
+**v3.3 — 监控与可观测性（Prometheus + Grafana）**
+
+- `monitoring/` 目录：完整 Prometheus 指标导出 + Docker Compose 部署 Grafana/Prometheus
+- 14 个 Prometheus 指标：HTTP 请求（Counter/Histogram/Gauge）、模块状态/重启/Uptime、域延迟/新鲜度、WMI 评分、管道阶段时长、数据库大小、市场告警
+- FastAPI 中间件自动记录请求延迟和并发数（路径归一化防止高基数）
+- 3 个预置 Grafana 仪表盘：System Overview、Pipeline Health、Market Alerts
+- Docker Compose 一键部署：Prometheus（15s 抓取、30 天保留）+ Grafana（自动 provision 数据源和仪表盘）
+- 优雅降级：`prometheus_client` 未安装时系统正常运行，所有监控代码用 try/except ImportError 保护
+- 现有文件最小侵入：api/app.py (+5 行)、main.py (+15 行)、logic_layer/logic_pipeline/service.py (+12 行)
 
 **v3.2 — 核心基础设施升级（基类抽象 + API 分页 + PostgreSQL 后端）**
 

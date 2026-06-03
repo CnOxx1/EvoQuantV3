@@ -186,3 +186,40 @@ graph TB
     MAIN --> |supervise| RESTART["指数退避重启\n2s → 4s → 8s → ... → 60s"]
     MAIN --> |SIGINT| GRACEFUL["三阶段关停\nSIGINT → SIGTERM → SIGKILL"]
 ```
+
+## 监控与可观测性
+
+```mermaid
+graph LR
+    subgraph EvoQuant
+        API["/metrics/prometheus\n(FastAPI endpoint)"]
+        MW["PrometheusMiddleware\n(HTTP 指标)"]
+        MC["module_collector\n(模块状态)"]
+        PC["pipeline_collector\n(域延迟/健康)"]
+        DC["database_collector\n(DB 文件大小)"]
+    end
+
+    MW --> API
+    MC --> API
+    PC --> API
+    DC --> API
+
+    API --> |15s scrape| PROM["Prometheus\n:9090\n30 天保留"]
+    PROM --> GRAF["Grafana\n:3000"]
+
+    subgraph Dashboards
+        D1["System Overview"]
+        D2["Pipeline Health"]
+        D3["Market Alerts"]
+    end
+
+    GRAF --> D1
+    GRAF --> D2
+    GRAF --> D3
+```
+
+**指标采集链路：**
+- HTTP 中间件 → `evoquant_http_requests_total` / `_duration_seconds` / `_in_progress`
+- main.py 后台线程（15s）→ `evoquant_module_status` / `_restart_count` / `_uptime_seconds`
+- /metrics/prometheus 后台线程（15s）→ `evoquant_domain_*` / `evoquant_wmi_score` / `evoquant_database_size_bytes`
+- logic_pipeline 阶段回调 → `evoquant_pipeline_phase_duration_seconds` / `_total_duration_seconds`
