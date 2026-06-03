@@ -40,6 +40,13 @@ PHASE2_TASK_TIMEOUT = int(os.environ.get("LOGIC_PIPELINE_PHASE2_TIMEOUT", "300")
 # 是否启用 DAG 模式
 USE_DAG = os.environ.get("LOGIC_PIPELINE_USE_DAG", "0") == "1"
 
+# Prometheus 管道阶段计时（优雅降级）
+try:
+    from monitoring.metrics import PIPELINE_PHASE_DURATION, PIPELINE_TOTAL_DURATION
+    _METRICS_AVAILABLE = True
+except ImportError:
+    _METRICS_AVAILABLE = False
+
 
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
@@ -57,6 +64,8 @@ def _run_phase(phase_name: str, tasks: list[tuple[str, callable]]) -> dict[str, 
                 "逻辑管道 [{}] {} 完成 ({:.1f}s)",
                 phase_name, module_name, elapsed,
             )
+            if _METRICS_AVAILABLE:
+                PIPELINE_PHASE_DURATION.labels(phase=phase_name, module=module_name, status="success").observe(elapsed)
             results[module_name] = "success"
         except Exception as exc:
             elapsed = time.monotonic() - started
@@ -64,6 +73,8 @@ def _run_phase(phase_name: str, tasks: list[tuple[str, callable]]) -> dict[str, 
                 "逻辑管道 [{}] {} 失败 ({:.1f}s): {}",
                 phase_name, module_name, elapsed, exc,
             )
+            if _METRICS_AVAILABLE:
+                PIPELINE_PHASE_DURATION.labels(phase=phase_name, module=module_name, status="error").observe(elapsed)
             results[module_name] = f"error: {type(exc).__name__}"
     return results
 
@@ -111,6 +122,8 @@ def _execute_task(phase_name: str, module_name: str, task_fn: callable) -> str:
             "逻辑管道 [{}] {} 完成 ({:.1f}s)",
             phase_name, module_name, elapsed,
         )
+        if _METRICS_AVAILABLE:
+            PIPELINE_PHASE_DURATION.labels(phase=phase_name, module=module_name, status="success").observe(elapsed)
         return "success"
     except Exception as exc:
         elapsed = time.monotonic() - started
@@ -118,6 +131,8 @@ def _execute_task(phase_name: str, module_name: str, task_fn: callable) -> str:
             "逻辑管道 [{}] {} 失败 ({:.1f}s): {}",
             phase_name, module_name, elapsed, exc,
         )
+        if _METRICS_AVAILABLE:
+            PIPELINE_PHASE_DURATION.labels(phase=phase_name, module=module_name, status="error").observe(elapsed)
         return f"error: {type(exc).__name__}"
 
 
@@ -131,13 +146,17 @@ def run_full_pipeline() -> dict[str, object]:
         all_results = _run_classic_pipeline()
 
     pipeline_end = _utc_now()
+    total_elapsed = (pipeline_end - pipeline_start).total_seconds()
     success_count = sum(1 for v in all_results.values() if v == "success")
     total_count = len(all_results)
+
+    if _METRICS_AVAILABLE:
+        PIPELINE_TOTAL_DURATION.observe(total_elapsed)
 
     logger.info(
         "逻辑管道全链路完成: {}/{} 成功, 耗时 {:.1f}s{}",
         success_count, total_count,
-        (pipeline_end - pipeline_start).total_seconds(),
+        total_elapsed,
         " [DAG模式]" if USE_DAG else "",
     )
 

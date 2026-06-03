@@ -114,6 +114,14 @@ from api.routers.screener import router as screener_router
 from api.errors import register_error_handlers
 from config.symbols import SYMBOL_UNIVERSE
 
+# Prometheus 监控（优雅降级：未安装 prometheus_client 时跳过）
+try:
+    from monitoring.middleware import PrometheusMiddleware
+    from monitoring.exporters.prometheus_endpoint import metrics_router
+    _MONITORING_AVAILABLE = True
+except ImportError:
+    _MONITORING_AVAILABLE = False
+
 # ---------------------------------------------------------------------------
 # 配置
 # ---------------------------------------------------------------------------
@@ -197,6 +205,10 @@ app = FastAPI(
 from starlette.middleware.gzip import GZipMiddleware
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Prometheus HTTP 指标中间件
+if _MONITORING_AVAILABLE:
+    app.add_middleware(PrometheusMiddleware)
 
 # CORS — 限制允许的来源
 app.add_middleware(
@@ -333,6 +345,10 @@ app.include_router(retail_fomo_router)
 app.include_router(overview_router)
 app.include_router(analytics_ts_router)
 app.include_router(screener_router)
+
+# Prometheus 指标端点
+if _MONITORING_AVAILABLE:
+    app.include_router(metrics_router)
 
 
 # ---------------------------------------------------------------------------

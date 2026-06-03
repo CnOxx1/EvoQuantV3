@@ -1,0 +1,94 @@
+{
+  "uid": "evoquant-pipeline-health",
+  "title": "EvoQuant - Pipeline Health",
+  "tags": ["evoquant"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": {"from": "now-1h", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Stale Domains",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [{"expr": "count(evoquant_domain_freshness_status >= 2) OR vector(0)", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 1, "color": "yellow"}, {"value": 3, "color": "red"}]}
+        }
+      },
+      "options": {"colorMode": "background", "graphMode": "none"}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Fresh Domains",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "targets": [{"expr": "count(evoquant_domain_freshness_status == 0) OR vector(0)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "green"}]}}}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Pipeline Last Duration",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "targets": [{"expr": "histogram_quantile(0.5, rate(evoquant_pipeline_total_duration_seconds_bucket[10m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 300, "color": "yellow"}, {"value": 600, "color": "red"}]}}}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Pipeline Phases (Errors)",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "targets": [{"expr": "sum(rate(evoquant_pipeline_phase_duration_seconds_count{status=\"error\"}[5m])) OR vector(0)", "refId": "A"}],
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 0.01, "color": "red"}]}}}
+    },
+    {
+      "id": 5,
+      "type": "state-timeline",
+      "title": "Domain Freshness Status Map",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
+      "targets": [{"expr": "evoquant_domain_freshness_status", "legendFormat": "{{domain}}", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Fresh", "color": "green"}}},
+            {"type": "value", "options": {"1": {"text": "Acceptable", "color": "yellow"}}},
+            {"type": "value", "options": {"2": {"text": "Stale", "color": "orange"}}},
+            {"type": "value", "options": {"3": {"text": "Unavailable", "color": "red"}}}
+          ],
+          "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 1, "color": "yellow"}, {"value": 2, "color": "orange"}, {"value": 3, "color": "red"}]}
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Domain Latency",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+      "targets": [{"expr": "evoquant_domain_latency_seconds", "legendFormat": "{{domain}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "fillOpacity": 5, "spanNulls": true}}}
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Pipeline Phase Duration (by module)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "targets": [{"expr": "rate(evoquant_pipeline_phase_duration_seconds_sum[5m])", "legendFormat": "{{module}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "bars", "stacking": {"mode": "normal"}, "fillOpacity": 80}}}
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Pipeline Total Duration Trend",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(evoquant_pipeline_total_duration_seconds_bucket[10m])) by (le))", "legendFormat": "P50", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, sum(rate(evoquant_pipeline_total_duration_seconds_bucket[10m])) by (le))", "legendFormat": "P95", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "fillOpacity": 10}}}
+    }
+  ]
+}

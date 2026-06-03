@@ -602,6 +602,26 @@ def stop_modules(
             continue
 
 
+def _start_metrics_exporter(children: list) -> None:
+    """启动后台线程，每 15 秒导出模块状态到 Prometheus 指标。"""
+    try:
+        from monitoring.collectors.module_collector import export_module_status
+    except ImportError:
+        return
+
+    from threading import Thread
+
+    def _loop():
+        while True:
+            try:
+                export_module_status({mp.spec.name: mp for mp in children})
+            except Exception:
+                pass
+            time.sleep(15)
+
+    Thread(target=_loop, daemon=True, name="metrics-exporter").start()
+
+
 def supervise_modules(
     module_specs: Sequence[ModuleSpec],
     python_executable: str | None = None,
@@ -613,6 +633,10 @@ def supervise_modules(
         launch_module(spec, python_executable=python_executable)
         for spec in module_specs
     ]
+
+    # 启动 Prometheus 模块状态导出线程（优雅降级）
+    _start_metrics_exporter(children)
+
     previous_handlers = {}
 
     def handle_signal(signum, frame):
