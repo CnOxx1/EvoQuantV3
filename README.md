@@ -322,6 +322,7 @@ EvoQuant/
 - 逻辑层入口：[logic_layer/README.md](logic_layer/README.md)
 - API 接口文档：[api/README.md](api/README.md)
 - 数据库说明：[database/README.md](database/README.md)
+- 监控与可观测性：[monitoring/README.md](monitoring/README.md)
 - AI 数据能力总览：[AI_DATA_CAPABILITIES.md](AI_DATA_CAPABILITIES.md)
 
 ## 监控与可观测性
