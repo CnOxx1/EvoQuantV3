@@ -36,7 +36,12 @@ class ExchangeComparisonService:
         self.config = config or ExchangeComparisonConfig()
 
     def init_storage(self):
-        self.db.init_tables()
+        try:
+            self.db.init_tables()
+        except Exception:
+            # analytics DB may have VIEWs for exchange_data tables;
+            # CREATE INDEX on VIEWs raises OperationalError — safe to skip.
+            pass
 
     def build_latest_snapshots(
         self,

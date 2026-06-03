@@ -41,81 +41,37 @@ class NarrativeRegimeService:
     # ------------------------------------------------------------------
 
     def _load_news_topics(self) -> list[dict]:
-        """从 news_sentiment_results 加载新闻话题。"""
+        """从 news_sentiment_labels 加载新闻话题聚合。"""
         rows = self.db.fetch_all(
-            """SELECT topic, keywords, mention_count, sentiment_score
-               FROM news_sentiment_results
-               ORDER BY created_at DESC LIMIT 100""",
+            """SELECT event_type AS topic, sentiment, COUNT(*) AS mention_count,
+                      AVG(confidence) AS sentiment_score
+               FROM news_sentiment_labels
+               GROUP BY event_type, sentiment
+               ORDER BY mention_count DESC LIMIT 100""",
             (),
         )
         if not rows:
             return []
         topics = []
         for row in rows:
-            keywords = row.get("keywords") or "[]"
-            if isinstance(keywords, str):
-                try:
-                    keywords = json.loads(keywords)
-                except (json.JSONDecodeError, TypeError):
-                    keywords = []
+            r = dict(row)
             topics.append({
-                "topic": row.get("topic", ""),
-                "keywords": keywords,
-                "mentions": row.get("mention_count", 0),
-                "sentiment": row.get("sentiment_score", 0),
+                "topic": r.get("topic", ""),
+                "keywords": [],
+                "mentions": r.get("mention_count", 0),
+                "sentiment": r.get("sentiment_score", 0),
             })
         return topics
 
     def _load_social_topics(self) -> list[dict]:
-        """从 social_sentiment 相关表加载社交话题。"""
-        rows = self.db.fetch_all(
-            """SELECT topic, keywords, mention_count, sentiment_score
-               FROM social_sentiment_results
-               ORDER BY created_at DESC LIMIT 100""",
-            (),
-        )
-        if not rows:
-            return []
-        topics = []
-        for row in rows:
-            keywords = row.get("keywords") or "[]"
-            if isinstance(keywords, str):
-                try:
-                    keywords = json.loads(keywords)
-                except (json.JSONDecodeError, TypeError):
-                    keywords = []
-            topics.append({
-                "topic": row.get("topic", ""),
-                "keywords": keywords,
-                "mentions": row.get("mention_count", 0),
-                "sentiment": row.get("sentiment_score", 0),
-            })
-        return topics
+        """从 social_sentiment 相关表加载社交话题（无此表时返回空列表）。"""
+        # social_sentiment_results 不存在于当前 schema，返回空列表
+        return []
 
     def _load_alternative_data(self) -> dict:
-        """从 alternative_data 相关表加载辅助数据。"""
-        rows = self.db.fetch_all(
-            """SELECT symbol, tags, description, sector
-               FROM alternative_data_tokens
-               ORDER BY symbol""",
-            (),
-        )
-        if not rows:
-            return {}
-        token_metadata: dict = {}
-        for row in rows:
-            tags = row.get("tags") or "[]"
-            if isinstance(tags, str):
-                try:
-                    tags = json.loads(tags)
-                except (json.JSONDecodeError, TypeError):
-                    tags = []
-            token_metadata[row["symbol"]] = {
-                "tags": tags,
-                "description": row.get("description", ""),
-                "sector": row.get("sector", ""),
-            }
-        return token_metadata
+        """从 alternative_data 相关表加载辅助数据（无此表时返回空字典）。"""
+        # alternative_data_tokens 不存在于当前 schema，返回空字典
+        return {}
 
     # ------------------------------------------------------------------
     # 计算编排

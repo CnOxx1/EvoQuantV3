@@ -11,7 +11,7 @@ class FundingRateModelRepository:
 
     def ensure_tables(self):
         self.db.conn.execute("""
-            CREATE TABLE IF NOT EXISTS funding_rate_snapshots (
+            CREATE TABLE IF NOT EXISTS funding_model_snapshots (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 entity_key TEXT NOT NULL,
                 current_rate REAL DEFAULT 0,
@@ -26,7 +26,7 @@ class FundingRateModelRepository:
             )
         """)
         self.db.conn.execute("""
-            CREATE TABLE IF NOT EXISTS basis_snapshots (
+            CREATE TABLE IF NOT EXISTS funding_basis_model (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 entity_key TEXT NOT NULL,
                 spot_price REAL DEFAULT 0,
@@ -41,18 +41,18 @@ class FundingRateModelRepository:
             )
         """)
         self.db.conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_funding_snap_entity
-            ON funding_rate_snapshots(entity_key, as_of DESC)
+            CREATE INDEX IF NOT EXISTS idx_funding_model_snap_entity
+            ON funding_model_snapshots(entity_key, as_of DESC)
         """)
         self.db.conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_basis_snap_entity
-            ON basis_snapshots(entity_key, as_of DESC)
+            CREATE INDEX IF NOT EXISTS idx_funding_basis_model_entity
+            ON funding_basis_model(entity_key, as_of DESC)
         """)
         self.db.conn.commit()
 
     def save_funding_snapshot(self, entity_key: str, data: dict, as_of: str):
         self.db.conn.execute("""
-            INSERT OR REPLACE INTO funding_rate_snapshots
+            INSERT OR REPLACE INTO funding_model_snapshots
             (entity_key, current_rate, predicted_next, rate_zscore, rate_percentile,
              cumulative_7d, direction_bias, mean_reversion_signal, as_of)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -63,7 +63,7 @@ class FundingRateModelRepository:
 
     def save_basis_snapshot(self, entity_key: str, data: dict, as_of: str):
         self.db.conn.execute("""
-            INSERT OR REPLACE INTO basis_snapshots
+            INSERT OR REPLACE INTO funding_basis_model
             (entity_key, spot_price, futures_price, basis_pct, basis_zscore,
              annualized_basis, basis_regime, mean_reversion_signal, as_of)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -77,8 +77,8 @@ class FundingRateModelRepository:
             SELECT entity_key, current_rate, predicted_next, rate_zscore,
                    rate_percentile, cumulative_7d, direction_bias,
                    mean_reversion_signal, as_of
-            FROM funding_rate_snapshots
-            WHERE as_of = (SELECT MAX(as_of) FROM funding_rate_snapshots fs WHERE fs.entity_key = funding_rate_snapshots.entity_key)
+            FROM funding_model_snapshots
+            WHERE as_of = (SELECT MAX(as_of) FROM funding_model_snapshots fs WHERE fs.entity_key = funding_model_snapshots.entity_key)
             ORDER BY abs(current_rate) DESC LIMIT ?
         """, (limit,))
         cols = ["entity_key", "current_rate", "predicted_next", "rate_zscore",
@@ -91,8 +91,8 @@ class FundingRateModelRepository:
             SELECT entity_key, spot_price, futures_price, basis_pct,
                    basis_zscore, annualized_basis, basis_regime,
                    mean_reversion_signal, as_of
-            FROM basis_snapshots
-            WHERE as_of = (SELECT MAX(as_of) FROM basis_snapshots bs WHERE bs.entity_key = basis_snapshots.entity_key)
+            FROM funding_basis_model
+            WHERE as_of = (SELECT MAX(as_of) FROM funding_basis_model bs WHERE bs.entity_key = funding_basis_model.entity_key)
             ORDER BY abs(basis_pct) DESC LIMIT ?
         """, (limit,))
         cols = ["entity_key", "spot_price", "futures_price", "basis_pct",

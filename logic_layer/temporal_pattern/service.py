@@ -43,10 +43,10 @@ class TemporalPatternService:
     def _load_klines(
         self, symbol: str, timeframe: str = "1h", limit: int = 720
     ) -> list[dict]:
-        """从 merged_klines 加载 K 线数据。"""
+        """从 klines VIEW 加载 K 线数据。"""
         rows = self.db.fetch_all(
-            """SELECT symbol, open_time, open, close, volume
-               FROM merged_klines
+            """SELECT open_time, open, close, volume
+               FROM klines
                WHERE symbol = ? AND timeframe = ?
                ORDER BY open_time DESC LIMIT ?""",
             (symbol, timeframe, limit),
@@ -60,12 +60,12 @@ class TemporalPatternService:
     def _load_funding_rates(
         self, symbol: str, limit: int = 200
     ) -> list[dict]:
-        """从 funding_rate_snapshots 加载资金费率数据。"""
+        """从 funding_rates VIEW 加载资金费率数据。"""
         rows = self.db.fetch_all(
-            """SELECT symbol, funding_time, funding_rate
-               FROM funding_rate_snapshots
+            """SELECT funding_rate, timestamp AS funding_time
+               FROM funding_rates
                WHERE symbol = ?
-               ORDER BY funding_time DESC LIMIT ?""",
+               ORDER BY timestamp DESC LIMIT ?""",
             (symbol, limit),
         )
         if not rows:

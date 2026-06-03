@@ -30,7 +30,7 @@ class ContagionRiskRepository:
             )
         """)
         self.db.conn.execute("""
-            CREATE TABLE IF NOT EXISTS cascade_risk (
+            CREATE TABLE IF NOT EXISTS contagion_cascade_risk (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ts TEXT NOT NULL,
                 risk_type TEXT NOT NULL,
@@ -83,7 +83,7 @@ class ContagionRiskRepository:
         """批量保存级联风险评估。"""
         for e in entries:
             self.db.conn.execute(
-                """INSERT OR REPLACE INTO cascade_risk
+                """INSERT OR REPLACE INTO contagion_cascade_risk
                    (ts, risk_type, risk_level, affected_assets,
                     trigger_conditions)
                    VALUES (?, ?, ?, ?, ?)""",
@@ -100,8 +100,8 @@ class ContagionRiskRepository:
         rows = self.db.fetch_all(
             """SELECT ts, risk_type, risk_level, affected_assets,
                       trigger_conditions
-               FROM cascade_risk
-               WHERE ts = (SELECT MAX(ts) FROM cascade_risk)
+               FROM contagion_cascade_risk
+               WHERE ts = (SELECT MAX(ts) FROM contagion_cascade_risk)
                ORDER BY risk_type""",
             (),
         )
