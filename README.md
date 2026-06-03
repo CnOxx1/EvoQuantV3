@@ -380,6 +380,7 @@ EvoQuant/
 - Bug 修复：`database/router.py` 添加 `get_market_data_db()` 方法别名，修复 8 个 v3.1 逻辑模块 AttributeError
 - Bug 修复：`data_quality/audit.py` 注册 5 个缺失模块到 service_factories，修复 KeyError 崩溃
 - Bug 修复：修复 13 个逻辑层模块 SQL schema 不匹配问题（错误的表名/列名/数据库域引用），所有 Phase1-3 模块零错误运行
+- Bug 修复：修复 6 个逻辑层模块运行时错误（VIEW 索引冲突、表名冲突、错误 schema 引用）及 search_trend_data 网络超时崩溃——technical_indicators/exchange_comparison 忽略 index-on-VIEW 错误；funding_rate_model 表重命名避免 VIEW 冲突；contagion_risk 表重命名避免 liquidation_cascade 冲突；temporal_pattern 修正 VIEW 名（klines/funding_rates）；narrative_regime 修正输入表名（news_sentiment_labels）并 stub 缺失社交/alternative 表；search_trend_data lazy-load TrendReq 防止网络超时崩溃
 
 ### 2025-06-02
 
