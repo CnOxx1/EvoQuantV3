@@ -1394,6 +1394,31 @@ def get_bundle(entity: str, request: Request):
 }
 ```
 
+### /metrics/prometheus 端点
+
+`GET /metrics/prometheus` 返回 Prometheus text exposition 格式的指标数据，供 Prometheus 服务器抓取。
+
+**导出的 14 个指标：**
+
+| 指标名 | 类型 | 含义 |
+|--------|------|------|
+| `evoquant_http_requests_total` | Counter | HTTP 请求总数 (method/path/status) |
+| `evoquant_http_request_duration_seconds` | Histogram | 请求延迟分布 |
+| `evoquant_http_requests_in_progress` | Gauge | 当前并发请求数 |
+| `evoquant_module_status` | Gauge | 模块运行状态 |
+| `evoquant_module_restart_count` | Gauge | 模块重启次数 |
+| `evoquant_module_uptime_seconds` | Gauge | 模块运行时长 |
+| `evoquant_domain_latency_seconds` | Gauge | 域数据延迟 |
+| `evoquant_domain_freshness_status` | Gauge | 域新鲜度 |
+| `evoquant_wmi_score` | Gauge | 世界模型指数 |
+| `evoquant_health_status` | Gauge | 整体健康状态 |
+| `evoquant_pipeline_phase_duration_seconds` | Histogram | 管道阶段执行时长 |
+| `evoquant_pipeline_total_duration_seconds` | Histogram | 管道总执行时长 |
+| `evoquant_database_size_bytes` | Gauge | 数据库文件大小 |
+| `evoquant_market_alerts_total` | Counter | 市场告警计数 |
+
+配合 Grafana 可视化，详见 [monitoring/README.md](../monitoring/README.md)。
+
 ---
 
 ## 服务层查询缓存

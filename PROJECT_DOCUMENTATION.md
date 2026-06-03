@@ -323,6 +323,7 @@ EvoQuant/
   data_layer/
   database/
   logic_layer/
+  monitoring/
   tests/
   logs/
   .gitignore
@@ -338,6 +339,7 @@ EvoQuant/
 - 配置与业务解耦。
 - 数据获取与逻辑处理解耦。
 - 存储与模块实现解耦。
+- 监控与业务逻辑解耦。
 - 测试与生产代码平行放置。
 
 ## 4.2 分层架构图
@@ -699,6 +701,7 @@ AI 分析系统最大的风险之一，就是“看似有数据，实则数据�
 | `data_layer/` | 所有外部数据采集、标准化与供数模块 |
 | `database/` | SQLite 连接、建表、索引、迁移式补字段 |
 | `logic_layer/` | 计算、聚合、对齐与 AI 上下文构造 |
+| `monitoring/` | Prometheus 指标导出、Grafana 仪表盘、Docker Compose 监控栈 |
 | `tests/` | 模块级测试与入口测试 |
 | `logs/` | 日志文件输出目录 |
 | `main.py` | 模块注册、统一启动与监督 |
