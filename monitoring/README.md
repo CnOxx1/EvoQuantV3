@@ -12,7 +12,7 @@ monitoring/
 ├── collectors/
 │   ├── module_collector.py             # 模块监督状态导出（状态/重启/Uptime）
 │   ├── pipeline_collector.py           # 域新鲜度/延迟/WMI/健康状态导出
-│   └── database_collector.py           # SQLite 数据库文件大小导出
+│   └── database_collector.py           # 数据库大小导出（SQLite 文件 / PostgreSQL 连接池）
 ├── exporters/
 │   └── prometheus_endpoint.py          # /metrics/prometheus 端点
 ├── docker-compose.monitoring.yml       # Prometheus + Grafana 容器编排
@@ -26,18 +26,22 @@ monitoring/
 ## 快速启动
 
 ```bash
-# 1. 安装依赖
-pip install prometheus_client
-
-# 2. 启动 API（确认指标端点可用）
-python -m api.app &
-curl http://localhost:8000/metrics/prometheus
-
-# 3. 启动监控栈
+# 1. 启动 PostgreSQL + 监控栈
 cd monitoring
 docker compose -f docker-compose.monitoring.yml up -d
 
-# 4. 访问 Grafana
+# 2. 验证 PostgreSQL 就绪
+docker exec evoquant-postgres pg_isready -U evoquant
+
+# 3. 启动 API（确认指标端点可用）
+cd /path/to/EvoQuant
+python -m api.app &
+curl http://localhost:8000/metrics/prometheus
+
+# 4. 启动全系统（自动加载 .env）
+python main.py
+
+# 5. 访问 Grafana
 #    http://localhost:3000  (admin / evoquant)
 ```
 

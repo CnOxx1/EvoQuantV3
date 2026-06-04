@@ -389,6 +389,7 @@ cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
 ### P2 — 进行中
 
 - [x] 监控告警：Prometheus 指标导出 + Grafana 可视化仪表盘（3 个预置 Dashboard）
+- [x] PostgreSQL 生产后端：Docker 容器化 + 零崩溃全模块运行
 - [ ] 增量导出：Parquet/Arrow 格式，供 ML pipeline 批量训练
 - [ ] 预测验证框架：AI 预测 → 对比实际 → 统计准确率
 - [ ] 数据保留策略：K 线/资金费率保留 2 年+
@@ -401,6 +402,18 @@ cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
 - [ ] 组合层：多资产权重、再平衡、回撤控制
 
 ## 更新记录
+
+### 2025-06-04
+
+**v3.3.1 — PostgreSQL 生产后端全面兼容（零崩溃）**
+
+- PostgreSQL Docker 容器化集成：Docker Compose 一键部署 PostgreSQL 16 + 三 Schema 自动初始化
+- SQL 方言适配增强：ON CONFLICT 冲突键智能推断（15+ 模式）、INSERT OR IGNORE 支持、保留字自动引用
+- 自动回滚机制：psycopg2 事务失败后自动 ROLLBACK，消除 InFailedSqlTransaction 级联错误
+- Schema 自动补齐：CREATE TABLE IF NOT EXISTS 拦截 + ALTER TABLE ADD COLUMN 自动补齐缺失列
+- 类型兼容修复：布尔→整数类型转换（market_info）、TIMESTAMP 比较修复（news_data）
+- 环境变量自动加载：python-dotenv 集成，子进程自动继承 .env 配置
+- 34 个数据采集模块 + API 服务全部在 PostgreSQL 上零崩溃运行
 
 ### 2025-06-03
 

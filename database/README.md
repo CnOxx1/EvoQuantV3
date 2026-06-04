@@ -99,7 +99,7 @@ python -m database.migrate_split
 
 ## PostgreSQL 后端（生产环境）
 
-v3.2 引入多后端架构，支持在开发环境使用 SQLite、生产环境切换到 PostgreSQL：
+v3.2 引入多后端架构，支持在开发环境使用 SQLite、生产环境切换到 PostgreSQL。v3.3.1 完成全面兼容，34 个数据模块零崩溃运行。
 
 ```text
 DB_BACKEND=sqlite (默认，开发/测试)
@@ -108,14 +108,24 @@ DB_BACKEND=sqlite (默认，开发/测试)
 DB_BACKEND=postgres (生产)
   → PostgresBackend → psycopg2.pool.ThreadedConnectionPool
   → Schema 映射: exchange_data / market_data / analytics
-  → 连接池: min=5, max=20 (可配置)
+  → 连接池: min=1, max=3 (per-process)
   → 查询自动适配: ? → %s, datetime('now') → NOW()
+  → ON CONFLICT 冲突键智能推断（15+ 模式）
+  → 保留字自动引用（timestamp, order, type 等）
+  → 事务失败自动 ROLLBACK（防止级联错误）
+  → CREATE TABLE IF NOT EXISTS 拦截 + 自动补齐缺失列
 ```
 
 ### 启用 PostgreSQL
 
-1. 安装依赖：`pip install psycopg2-binary==2.9.9 alembic==1.13.1`
-2. 配置环境变量（参考 `.env.example`）：
+1. 启动 Docker 容器：
+
+```bash
+cd monitoring
+docker compose -f docker-compose.monitoring.yml up -d postgres
+```
+
+2. 配置环境变量（`.env` 文件，参考 `.env.example`）：
 
 ```bash
 DB_BACKEND=postgres
@@ -123,18 +133,31 @@ PG_HOST=localhost
 PG_PORT=5432
 PG_DATABASE=evoquant
 PG_USER=evoquant
-PG_PASSWORD=your_password
-DB_POOL_MIN=5
-DB_POOL_MAX=20
+PG_PASSWORD=evoquant2024
+DB_POOL_MIN=1
+DB_POOL_MAX=3
 ```
 
-3. 运行 Alembic 迁移：
+3. 启动系统（`.env` 由 python-dotenv 自动加载）：
 
 ```bash
-alembic upgrade head
+python main.py
 ```
 
 4. 验证连接：启动 API 后访问 `/health/db` 查看连接池状态
+
+### PostgreSQL 兼容性机制
+
+| 机制 | 文件 | 说明 |
+|------|------|------|
+| SQL 方言适配 | `backends/query_adapter.py` | `?` → `%s`、`datetime('now')` → `NOW()`、`INSERT OR REPLACE` → `ON CONFLICT DO UPDATE` |
+| ON CONFLICT 推断 | `backends/query_adapter.py` | 根据列名模式推断冲突键（symbol+exchange+timestamp 等 15+ 模式） |
+| INSERT OR IGNORE | `backends/query_adapter.py` | 转为 `ON CONFLICT DO NOTHING` |
+| 保留字引用 | `backends/query_adapter.py` | timestamp/order/type 等 PostgreSQL 保留字自动加双引号 |
+| 自动回滚 | `backends/postgres_backend.py` | execute/executemany 失败后自动 ROLLBACK，防止 InFailedSqlTransaction |
+| Schema 补齐 | `router.py` | 拦截 CREATE TABLE IF NOT EXISTS，对已存在表自动 ALTER TABLE ADD COLUMN |
+| CREATE INDEX 容错 | `router.py` | 索引创建失败（列不存在/已存在）静默跳过，不中断流程 |
+| 环境变量加载 | `config/settings.py` | python-dotenv 自动加载 `.env`，子进程无需手动传递变量 |
 
 ### 兼容性保证
 
