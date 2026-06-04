@@ -351,10 +351,10 @@ cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
 | `evoquant_database_size_bytes` | Gauge | 数据库文件大小 |
 | `evoquant_market_alerts_total` | Counter | 市场告警计数 |
 
-**3 个预置仪表盘：**
-- **System Overview** — 健康状态、WMI 评分、模块表、API 请求率、延迟分位数
-- **Pipeline Health** — 域新鲜度地图、延迟时间线、阶段执行时长、管道趋势
-- **Market Alerts** — 告警总数、类型/严重度分布、速率趋势
+**3 个预置仪表盘（共 40 个面板）：**
+- **System Overview**（16 面板）— 健康状态、WMI 评分/历史、模块状态表、API 请求率、延迟 P50/P95/P99、并发数、路径热度 Top 10、错误率 4xx/5xx、数据库大小、进程内存/CPU
+- **Pipeline Health**（12 面板）— 域新鲜度状态地图、延迟时间线/对比、新鲜度分布饼图、健康历史、管道阶段时长、总时长趋势、执行速率
+- **Market Alerts**（12 面板）— 告警总数/Critical/Warning/Info、类型饼图、严重度条形、速率趋势、累计 24h、类型 Top 5
 
 **优雅降级：** 未安装 `prometheus_client` 时系统正常运行，仅不导出指标。现有 `/metrics` JSON 端点不受影响。
 
