@@ -33,6 +33,19 @@ _PLACEHOLDER_RE = re.compile(
 )
 
 
+# 转义 SQL 中字面量 % 的正则（排除字符串内的）
+# 注意：psycopg2 在接收 params 参数时会对整个 SQL 做 % 格式化，
+# 即使 % 在 SQL 单引号内也会被解释。因此需要转义所有非 %s 的 %。
+
+
+def _escape_percent_literals(sql: str) -> str:
+    """将 SQL 中所有 % 转义为 %%（psycopg2 要求），后续 ? → %s 会生成正确的 %s。
+
+    注意：此函数在 ? → %s 转换之前调用，所以此时 SQL 中不应有 %s 占位符。
+    """
+    return sql.replace("%", "%%")
+
+
 def adapt_query(sql: str) -> str:
     """将 SQLite 风格 SQL 转换为 PostgreSQL 兼容格式。
 
@@ -48,6 +61,9 @@ def adapt_query(sql: str) -> str:
 
     # INSERT OR IGNORE → INSERT ... ON CONFLICT DO NOTHING
     sql = _adapt_insert_or_ignore(sql)
+
+    # 先将 SQL 中已有的 % 转义为 %%（psycopg2 要求），排除字符串内的
+    sql = _escape_percent_literals(sql)
 
     # 占位符转换 ? → %s（排除字符串内的 ?）
     counter = [0]
