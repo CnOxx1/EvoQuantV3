@@ -81,8 +81,11 @@ def main():
             return
 
         if not args.skip_initial_run:
-            result = service.run_market_world_audit(audit_scope=audit_scope)
-            _log_audit_result(result)
+            try:
+                result = service.run_market_world_audit(audit_scope=audit_scope)
+                _log_audit_result(result)
+            except Exception as e:
+                logger.warning("初始审计运行失败（将在调度器中重试）: {}: {}", type(e).__name__, e)
 
         scheduler = service.build_scheduler(
             interval_seconds=DATA_QUALITY_CONFIG["audit_interval_seconds"],

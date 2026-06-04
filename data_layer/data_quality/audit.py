@@ -337,23 +337,48 @@ class DataLayerAuditService:
         self.db.init_analytics_tables()
 
     def _table_exists(self, table_name: str) -> bool:
-        row = self.db.fetch_one(
-            """
-            SELECT COUNT(*) AS count FROM (
-                SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name = ?
-                UNION ALL
-                SELECT name FROM sqlite_temp_master WHERE type = 'view' AND name = ?
+        import os
+        if os.getenv("DB_BACKEND", "sqlite") == "postgres":
+            # PostgreSQL: 查询 information_schema
+            row = self.db.fetch_one(
+                """
+                SELECT COUNT(*) AS count FROM information_schema.tables
+                WHERE table_name = ?
+                """,
+                (table_name,),
             )
-            """,
-            (table_name, table_name),
-        )
+        else:
+            row = self.db.fetch_one(
+                """
+                SELECT COUNT(*) AS count FROM (
+                    SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name = ?
+                    UNION ALL
+                    SELECT name FROM sqlite_temp_master WHERE type = 'view' AND name = ?
+                )
+                """,
+                (table_name, table_name),
+            )
         return bool(row and int(row["count"] or 0) > 0)
 
     def _safe_table_count(self, table_name: str) -> int:
-        if not self._table_exists(table_name):
+        import os
+        if os.getenv("DB_BACKEND", "sqlite") == "postgres":
+            # PostgreSQL: 尝试跨 schema 查询
+            for schema in ("exchange_data", "market_data", "analytics"):
+                try:
+                    row = self.db.fetch_one(
+                        f"SELECT COUNT(*) AS count FROM {schema}.{table_name}"
+                    )
+                    if row:
+                        return int(row["count"] or 0)
+                except Exception:
+                    continue
             return 0
-        row = self.db.fetch_one(f"SELECT COUNT(*) AS count FROM {table_name}")
-        return int(row["count"] or 0) if row else 0
+        else:
+            if not self._table_exists(table_name):
+                return 0
+            row = self.db.fetch_one(f"SELECT COUNT(*) AS count FROM {table_name}")
+            return int(row["count"] or 0) if row else 0
 
     @staticmethod
     def _top_quality_notes(coverage: Mapping[str, object]) -> list[str]:
@@ -387,6 +412,8 @@ class DataLayerAuditService:
             if not callable(loader):
                 return {}
             return loader()
+        except Exception:
+            return {}
         finally:
             close = getattr(service, "close", None)
             if callable(close):
@@ -406,6 +433,8 @@ class DataLayerAuditService:
             payload = service.build_latest_context_bundle(
                 audit_payload=dict(audit_payload or {}),
             )
+        except Exception:
+            payload = {}
         finally:
             close = getattr(service, "close", None)
             if callable(close):

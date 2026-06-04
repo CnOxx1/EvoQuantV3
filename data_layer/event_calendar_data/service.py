@@ -165,10 +165,12 @@ class EventCalendarDataService:
             values.append(text)
 
     @staticmethod
-    def _parse_timestamp(value: str | None) -> datetime | None:
+    def _parse_timestamp(value) -> datetime | None:
         if not value:
             return None
-        return datetime.fromisoformat(value)
+        if isinstance(value, datetime):
+            return value
+        return datetime.fromisoformat(str(value))
 
     @staticmethod
     def _utc_now_naive() -> datetime:

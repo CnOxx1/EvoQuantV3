@@ -89,9 +89,11 @@ class PostgresBackend(DatabaseBackend):
             conn = pool.getconn()
             conn.autocommit = False
             self._local.conn = conn
-            # 设置 search_path
+            # 设置 search_path：包含所有业务 schema 以支持跨域查询
             with conn.cursor() as cur:
-                cur.execute(f"SET search_path TO {self._schema}, public")
+                cur.execute(
+                    f"SET search_path TO {self._schema}, exchange_data, market_data, analytics, public"
+                )
         return conn
 
     def _rows_to_dicts(self, cursor: Any) -> list[_DictRow]:
@@ -137,23 +139,37 @@ class PostgresBackend(DatabaseBackend):
         from database.backends.query_adapter import adapt_query
         adapted_sql = adapt_query(sql)
         conn = self._get_conn()
-        with conn.cursor() as cur:
-            cur.execute(adapted_sql, params)
-            if cur.description is None:
-                return None
-            columns = [desc[0] for desc in cur.description]
-            row = cur.fetchone()
-            if row is None:
-                return None
-            return _DictRow(zip(columns, row))
+        try:
+            with conn.cursor() as cur:
+                cur.execute(adapted_sql, params)
+                if cur.description is None:
+                    return None
+                columns = [desc[0] for desc in cur.description]
+                row = cur.fetchone()
+                if row is None:
+                    return None
+                return _DictRow(zip(columns, row))
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            raise
 
     def fetch_all(self, sql: str, params: Sequence = ()) -> list[_DictRow]:
         from database.backends.query_adapter import adapt_query
         adapted_sql = adapt_query(sql)
         conn = self._get_conn()
-        with conn.cursor() as cur:
-            cur.execute(adapted_sql, params)
-            return self._rows_to_dicts(cur)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(adapted_sql, params)
+                return self._rows_to_dicts(cur)
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            raise
 
     def commit(self) -> None:
         conn = getattr(self._local, "conn", None)

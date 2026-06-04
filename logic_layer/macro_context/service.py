@@ -38,10 +38,12 @@ class MacroContextService:
         return datetime.now(timezone.utc).replace(tzinfo=None)
 
     @staticmethod
-    def _parse_db_timestamp(value: str | None) -> Optional[datetime]:
+    def _parse_db_timestamp(value) -> Optional[datetime]:
         if not value:
             return None
-        return datetime.fromisoformat(value)
+        if isinstance(value, datetime):
+            return value
+        return datetime.fromisoformat(str(value))
 
     @staticmethod
     def _pct_change(latest: float, reference: float | None) -> float | None:

@@ -1016,7 +1016,7 @@ class MacroDataService:
             )
             last_run_finished_at = run_meta.get("finished_at")
             last_run_dt = (
-                datetime.fromisoformat(last_run_finished_at)
+                (last_run_finished_at if isinstance(last_run_finished_at, datetime) else datetime.fromisoformat(last_run_finished_at))
                 if last_run_finished_at
                 else None
             )

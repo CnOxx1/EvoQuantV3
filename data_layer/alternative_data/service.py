@@ -128,10 +128,12 @@ class AlternativeDataService:
         return datetime.now(timezone.utc).replace(tzinfo=None)
 
     @staticmethod
-    def _parse_db_timestamp(value: str | None) -> datetime | None:
+    def _parse_db_timestamp(value) -> datetime | None:
         if not value:
             return None
-        return datetime.fromisoformat(value)
+        if isinstance(value, datetime):
+            return value
+        return datetime.fromisoformat(str(value))
 
     @staticmethod
     def _count_rows_by_source(rows: list[dict]) -> dict[str, int]:

@@ -1301,7 +1301,7 @@ class TokenomicsDataService:
                 source_entity_rows,
             )
             last_run_finished_at = run_meta.get("finished_at")
-            last_run_dt = datetime.fromisoformat(last_run_finished_at) if last_run_finished_at else None
+            last_run_dt = (last_run_finished_at if isinstance(last_run_finished_at, datetime) else datetime.fromisoformat(last_run_finished_at)) if last_run_finished_at else None
             interval_seconds = interval_map.get(source.source_name, 3600)
             is_stale = last_run_dt is None or (now - last_run_dt).total_seconds() > interval_seconds * 3
             configuration_ready = bool(source.endpoint)

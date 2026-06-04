@@ -66,15 +66,15 @@ class AssetReadinessService:
             from database.router import DatabaseRouter
 
             self.db = DatabaseRouter().get_analytics_db()
-        self.exchange_service = exchange_service or ExchangeDataService(db=self.db)
-        self.news_service = news_service or NewsDataService(db=self.db)
+        self.exchange_service = exchange_service or ExchangeDataService()
+        self.news_service = news_service or NewsDataService()
         self.event_calendar_service = (
-            event_calendar_service or EventCalendarDataService(db=self.db)
+            event_calendar_service or EventCalendarDataService()
         )
-        self.onchain_service = onchain_service or OnchainDataService(db=self.db)
-        self.tokenomics_service = tokenomics_service or TokenomicsDataService(db=self.db)
-        self.options_service = options_service or OptionsDataService(db=self.db)
-        self.alternative_service = alternative_service or AlternativeDataService(db=self.db)
+        self.onchain_service = onchain_service or OnchainDataService()
+        self.tokenomics_service = tokenomics_service or TokenomicsDataService()
+        self.options_service = options_service or OptionsDataService()
+        self.alternative_service = alternative_service or AlternativeDataService()
         self.audit_service = audit_service or DataLayerAuditService(db=self.db)
         self.asset_aliases, self.alias_to_asset = self._load_asset_alias_registry()
 
