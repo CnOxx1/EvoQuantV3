@@ -106,17 +106,32 @@ class PostgresBackend(DatabaseBackend):
         from database.backends.query_adapter import adapt_query
         adapted_sql = adapt_query(sql)
         conn = self._get_conn()
-        with conn.cursor() as cur:
-            cur.execute(adapted_sql, params)
-            return cur
+        try:
+            with conn.cursor() as cur:
+                cur.execute(adapted_sql, params)
+                return cur
+        except Exception as exc:
+            # 自动回滚以避免 InFailedSqlTransaction 级联错误
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            raise
 
     def executemany(self, sql: str, params_list: Sequence[Sequence]) -> Any:
         from database.backends.query_adapter import adapt_query
         adapted_sql = adapt_query(sql)
         conn = self._get_conn()
-        with conn.cursor() as cur:
-            cur.executemany(adapted_sql, params_list)
-            return cur
+        try:
+            with conn.cursor() as cur:
+                cur.executemany(adapted_sql, params_list)
+                return cur
+        except Exception as exc:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            raise
 
     def fetch_one(self, sql: str, params: Sequence = ()) -> Optional[_DictRow]:
         from database.backends.query_adapter import adapt_query

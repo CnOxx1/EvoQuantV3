@@ -18,9 +18,8 @@ _SQLITE_TO_PG_REPLACEMENTS = [
      r"NOW() + INTERVAL '\1 hour'"),
     # INSERT OR REPLACE → INSERT ... ON CONFLICT DO UPDATE
     # (complex; handled separately below)
-    # INSERT OR IGNORE → INSERT ... ON CONFLICT DO NOTHING
-    (re.compile(r"\bINSERT\s+OR\s+IGNORE\b", re.IGNORECASE),
-     "INSERT"),
+    # INSERT OR IGNORE → INSERT ... ON CONFLICT DO NOTHING (handled separately below)
+
 ]
 
 # 占位符转换的正则：匹配 ? 但排除字符串内的
@@ -47,6 +46,9 @@ def adapt_query(sql: str) -> str:
     # INSERT OR REPLACE → INSERT ... ON CONFLICT DO UPDATE
     sql = _adapt_insert_or_replace(sql)
 
+    # INSERT OR IGNORE → INSERT ... ON CONFLICT DO NOTHING
+    sql = _adapt_insert_or_ignore(sql)
+
     # 占位符转换 ? → %s（排除字符串内的 ?）
     counter = [0]
 
@@ -66,12 +68,29 @@ _INSERT_OR_REPLACE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# PostgreSQL 保留字列表（需要双引号）
+_PG_RESERVED_WORDS = frozenset([
+    "timestamp", "time", "date", "interval", "order", "group",
+    "user", "table", "column", "index", "type", "select", "from",
+    "where", "limit", "offset", "all", "default", "check",
+])
+
+
+def _quote_if_reserved(col: str) -> str:
+    """如果列名是 PostgreSQL 保留字，加双引号。"""
+    if col.lower() in _PG_RESERVED_WORDS:
+        return f'"{col}"'
+    return col
+
 
 def _adapt_insert_or_replace(sql: str) -> str:
     """将 INSERT OR REPLACE INTO t(cols) VALUES(...) 转为 PostgreSQL UPSERT。
 
-    简化处理：使用 ON CONFLICT DO UPDATE SET 所有列。
-    如果表没有唯一约束，退化为普通 INSERT。
+    策略：移除 OR REPLACE 关键字，追加 ON CONFLICT DO UPDATE。
+    冲突键选择逻辑：
+    1. 跳过 id 列（SERIAL 自增）
+    2. 如果列中包含已知的唯一键模式（symbol+exchange+timestamp 等），使用它们
+    3. 否则退化为 ON CONFLICT DO NOTHING（避免报错）
     """
     match = _INSERT_OR_REPLACE_RE.search(sql)
     if not match:
@@ -84,15 +103,136 @@ def _adapt_insert_or_replace(sql: str) -> str:
     # 移除 "OR REPLACE" 关键字
     new_sql = re.sub(r"\bOR\s+REPLACE\b", "", sql, count=1, flags=re.IGNORECASE)
 
-    # 追加 ON CONFLICT DO UPDATE（使用第一列作为冲突键的合理默认）
-    # 实际使用中表应有明确的 PRIMARY KEY / UNIQUE 约束
-    set_clauses = ", ".join(f"{c} = EXCLUDED.{c}" for c in columns[1:])
-    if set_clauses:
-        conflict_suffix = (
-            f" ON CONFLICT ({columns[0]}) DO UPDATE SET {set_clauses}"
-        )
+    # 跳过 id 列来确定冲突键
+    non_id_cols = [c for c in columns if c.lower() != "id"]
+
+    # 尝试推断冲突键（基于常见的唯一键模式）
+    conflict_cols = _infer_conflict_columns(table, non_id_cols)
+
+    if conflict_cols:
+        # 更新除冲突键和 id 之外的所有列
+        update_cols = [c for c in columns if c not in conflict_cols and c.lower() != "id"]
+        quoted_conflict = ", ".join(_quote_if_reserved(c) for c in conflict_cols)
+        if update_cols:
+            set_clauses = ", ".join(
+                f"{_quote_if_reserved(c)} = EXCLUDED.{_quote_if_reserved(c)}" for c in update_cols
+            )
+            conflict_suffix = (
+                f" ON CONFLICT ({quoted_conflict}) DO UPDATE SET {set_clauses}"
+            )
+        else:
+            conflict_suffix = f" ON CONFLICT ({quoted_conflict}) DO NOTHING"
     else:
-        conflict_suffix = f" ON CONFLICT ({columns[0]}) DO NOTHING"
+        # 无法推断冲突键，使用 DO NOTHING 避免报错
+        conflict_suffix = " ON CONFLICT DO NOTHING"
 
     new_sql = new_sql.rstrip().rstrip(";") + conflict_suffix
     return new_sql
+
+
+# INSERT OR IGNORE 的正则
+_INSERT_OR_IGNORE_RE = re.compile(
+    r"\bINSERT\s+OR\s+IGNORE\s+INTO\b",
+    re.IGNORECASE,
+)
+
+
+def _adapt_insert_or_ignore(sql: str) -> str:
+    """将 INSERT OR IGNORE INTO ... 转为 INSERT INTO ... ON CONFLICT DO NOTHING。"""
+    if not _INSERT_OR_IGNORE_RE.search(sql):
+        return sql
+    new_sql = re.sub(r"\bOR\s+IGNORE\b", "", sql, count=1, flags=re.IGNORECASE)
+    new_sql = new_sql.rstrip().rstrip(";") + " ON CONFLICT DO NOTHING"
+    return new_sql
+
+
+# 常见唯一键模式（表名 → 冲突列）
+_KNOWN_CONFLICT_KEYS: dict[str, list[str]] = {}
+
+
+def _infer_conflict_columns(table: str, columns: list[str]) -> list[str]:
+    """推断表的冲突键列。"""
+    # 如果有已知映射，直接使用
+    if table in _KNOWN_CONFLICT_KEYS:
+        return _KNOWN_CONFLICT_KEYS[table]
+
+    cols_lower = [c.lower() for c in columns]
+
+    # 通用模式：factor_id 类的表
+    if "factor_id" in cols_lower:
+        return ["factor_id"]
+
+    # 通用模式：event_key
+    if "event_key" in cols_lower:
+        return ["event_key"]
+
+    # 通用模式：url_hash
+    if "url_hash" in cols_lower:
+        return ["url_hash"]
+
+    # 通用模式：txid + collected_at
+    if "txid" in cols_lower and "collected_at" in cols_lower:
+        return ["txid", "collected_at"]
+
+    # 通用模式：symbol + exchange + timestamp + side + price_level (orderbook depth)
+    if all(c in cols_lower for c in ["symbol", "exchange", "timestamp", "side", "price_level"]):
+        return ["symbol", "exchange", "timestamp", "side", "price_level"]
+
+    # 通用模式：symbol + exchange + market_type + interval + open_time
+    if all(c in cols_lower for c in ["symbol", "exchange", "market_type", "interval", "open_time"]):
+        return ["symbol", "exchange", "market_type", "interval", "open_time"]
+
+    # 通用模式：symbol + exchange + market_type + interval + timestamp
+    if all(c in cols_lower for c in ["symbol", "exchange", "market_type", "interval", "timestamp"]):
+        return ["symbol", "exchange", "market_type", "interval", "timestamp"]
+
+    # 通用模式：symbol + exchange + market_type + interval
+    if all(c in cols_lower for c in ["symbol", "exchange", "market_type", "interval"]):
+        return ["symbol", "exchange", "market_type", "interval"]
+
+    # 通用模式：symbol + exchange + timeframe + open_time
+    if all(c in cols_lower for c in ["symbol", "exchange", "timeframe", "open_time"]):
+        return ["symbol", "exchange", "timeframe", "open_time"]
+
+    # 通用模式：symbol + exchange + timestamp + side
+    if all(c in cols_lower for c in ["symbol", "exchange", "timestamp", "side"]):
+        return ["symbol", "exchange", "timestamp", "side"]
+
+    # 通用模式：symbol + exchange + timestamp
+    if all(c in cols_lower for c in ["symbol", "exchange", "timestamp"]):
+        return ["symbol", "exchange", "timestamp"]
+
+    # 通用模式：symbol + timeframe + open_time
+    if all(c in cols_lower for c in ["symbol", "timeframe", "open_time"]):
+        return ["symbol", "timeframe", "open_time"]
+
+    # 通用模式：symbol + exchange
+    if "symbol" in cols_lower and "exchange" in cols_lower:
+        return ["symbol", "exchange"]
+
+    # 通用模式：protocol + timestamp + hf_bucket
+    if all(c in cols_lower for c in ["protocol", "timestamp", "hf_bucket"]):
+        return ["protocol", "timestamp", "hf_bucket"]
+
+    # 通用模式：有 asset 列的表
+    if "asset" in cols_lower and "event_type" in cols_lower and "scheduled_at" in cols_lower:
+        return ["asset", "event_type", "scheduled_at"]
+
+    # 通用模式：asset + tx_hash + timestamp
+    if all(c in cols_lower for c in ["asset", "tx_hash", "timestamp"]):
+        return ["asset", "tx_hash", "timestamp"]
+
+    # 通用模式：asset + chain + timestamp
+    if all(c in cols_lower for c in ["asset", "chain", "timestamp"]):
+        return ["asset", "chain", "timestamp"]
+
+    # 通用模式：address + timestamp
+    if "address" in cols_lower and "timestamp" in cols_lower:
+        return ["address", "timestamp"]
+
+    # 通用模式：address + date
+    if "address" in cols_lower and "date" in cols_lower:
+        return ["address", "date"]
+
+    # 无法推断，返回空（将使用 DO NOTHING）
+    return []

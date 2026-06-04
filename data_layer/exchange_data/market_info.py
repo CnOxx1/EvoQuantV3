@@ -150,8 +150,14 @@ class MarketInfoCollector:
         params_list = [
             (
                 m.symbol, m.exchange_symbol, m.base, m.quote, m.exchange, m.market_type,
-                m.status, m.is_spot, m.is_margin, m.is_swap, m.is_future,
-                m.is_contract, m.is_linear, m.is_inverse,
+                m.status,
+                int(m.is_spot) if m.is_spot is not None else None,
+                int(m.is_margin) if m.is_margin is not None else None,
+                int(m.is_swap) if m.is_swap is not None else None,
+                int(m.is_future) if m.is_future is not None else None,
+                int(m.is_contract) if m.is_contract is not None else None,
+                int(m.is_linear) if m.is_linear is not None else None,
+                int(m.is_inverse) if m.is_inverse is not None else None,
                 m.price_precision, m.min_price, m.max_price,
                 m.amount_precision, m.min_amount, m.max_amount,
                 m.min_cost, m.max_cost, m.maker_fee, m.taker_fee,

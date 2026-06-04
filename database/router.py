@@ -38,9 +38,144 @@ class _PostgresManagerAdapter:
         self.total_changes = 0  # SQLite 兼容属性
 
     def execute(self, sql: str, params=()):
+        sql_upper = sql.strip().upper()
+        # 拦截 CREATE TABLE IF NOT EXISTS — 自动补齐缺失列
+        if "CREATE TABLE" in sql_upper and "IF NOT EXISTS" in sql_upper:
+            self._ensure_table_columns(sql)
+            self.total_changes += 1
+            return None
+        # 拦截 CREATE INDEX — 捕获 UndefinedColumn 错误
+        if sql_upper.startswith("CREATE INDEX") or sql_upper.startswith("CREATE UNIQUE INDEX"):
+            from database.backends.query_adapter import adapt_query as _adapt
+            try:
+                result = self._backend.execute(_adapt(sql), params)
+                self._backend.commit()
+                self.total_changes += 1
+                return result
+            except Exception as exc:
+                exc_str = str(exc).lower()
+                if any(k in exc_str for k in ("does not exist", "undefinedcolumn", "already exists")):
+                    try:
+                        self._backend.rollback()
+                    except Exception:
+                        pass
+                    logger.debug("CREATE INDEX 跳过: {}", exc)
+                    return None
+                try:
+                    self._backend.rollback()
+                except Exception:
+                    pass
+                raise
         result = self._backend.execute(sql, params)
         self.total_changes += 1
         return result
+
+    def _ensure_table_columns(self, create_sql: str):
+        """处理 CREATE TABLE IF NOT EXISTS：若表已存在但缺列，自动 ALTER TABLE ADD COLUMN。"""
+        import re
+        from database.backends.query_adapter import adapt_query
+
+        # 提取表名
+        m = re.search(r"CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+(\w+)", create_sql, re.IGNORECASE)
+        if not m:
+            try:
+                self._backend.execute(adapt_query(create_sql), ())
+                self._backend.commit()
+            except Exception:
+                try:
+                    self._backend.rollback()
+                except Exception:
+                    pass
+            return
+
+        table_name = m.group(1)
+
+        # 检查表是否已存在
+        try:
+            row = self._backend.fetch_one(
+                "SELECT 1 FROM information_schema.tables "
+                "WHERE table_name = %s AND table_schema = current_schema()",
+                (table_name,),
+            )
+            table_exists = row is not None
+        except Exception:
+            table_exists = False
+
+        if not table_exists:
+            # 表不存在，直接创建
+            try:
+                adapted = adapt_query(create_sql)
+                self._backend.execute(adapted, ())
+                self._backend.commit()
+            except Exception as exc:
+                try:
+                    self._backend.rollback()
+                except Exception:
+                    pass
+                logger.debug("CREATE TABLE 失败 {}: {}", table_name, exc)
+            return
+
+        # 表已存在 — 解析 DDL 中的列定义并补齐缺失列
+        body_match = re.search(r"\((.+)\)\s*$", create_sql, re.DOTALL)
+        if not body_match:
+            return
+
+        body = body_match.group(1)
+        ddl_columns = {}
+        for line in body.split(","):
+            line = line.strip()
+            if not line:
+                continue
+            upper = line.upper()
+            if upper.startswith(("UNIQUE", "PRIMARY", "CHECK", "FOREIGN", "CONSTRAINT")):
+                continue
+            parts = line.split()
+            if len(parts) >= 2:
+                col_name = parts[0].strip('"').strip("'").strip('`')
+                col_type_raw = parts[1]
+                ddl_columns[col_name.lower()] = (col_name, col_type_raw, line)
+
+        # 查询 PostgreSQL 中该表的实际列
+        try:
+            existing = self._backend.fetch_all(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = %s AND table_schema = current_schema()",
+                (table_name,),
+            )
+            existing_cols = {r["column_name"].lower() for r in existing}
+        except Exception:
+            return
+
+        # 添加缺失列
+        type_map = {
+            "INTEGER": "INTEGER",
+            "REAL": "REAL",
+            "TEXT": "TEXT",
+            "BLOB": "BYTEA",
+            "NUMERIC": "NUMERIC",
+            "BOOLEAN": "BOOLEAN",
+        }
+        for col_lower, (col_name, col_type_raw, full_line) in ddl_columns.items():
+            if col_lower in existing_cols or col_lower == "id":
+                continue
+            pg_type = type_map.get(col_type_raw.upper(), "TEXT")
+            # 提取 DEFAULT 值
+            default_clause = ""
+            dm = re.search(r"DEFAULT\s+(.+?)(?:\s*,|\s*$)", full_line, re.IGNORECASE)
+            if dm:
+                default_clause = f" DEFAULT {dm.group(1).strip()}"
+            alter_sql = f'ALTER TABLE {table_name} ADD COLUMN "{col_name}" {pg_type}{default_clause}'
+            try:
+                self._backend.execute(alter_sql, ())
+                self._backend.commit()
+                logger.debug("补齐列 {}.{} ({})", table_name, col_name, pg_type)
+            except Exception as alter_exc:
+                try:
+                    self._backend.rollback()
+                except Exception:
+                    pass
+                if "already exists" not in str(alter_exc).lower():
+                    logger.debug("ALTER TABLE 失败 {}.{}: {}", table_name, col_name, alter_exc)
 
     def execute_many(self, sql: str, params_list=None):
         if params_list is None:

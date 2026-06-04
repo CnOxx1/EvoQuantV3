@@ -336,7 +336,7 @@ class NewsCollector:
                 OR COALESCE(news_articles.content_text, '') <> COALESCE(excluded.content_text, news_articles.content_text, '')
                 OR COALESCE(news_articles.url, '') <> COALESCE(excluded.url, '')
                 OR COALESCE(news_articles.author, '') <> COALESCE(excluded.author, news_articles.author, '')
-                OR COALESCE(news_articles.published_at, '') <> COALESCE(excluded.published_at, news_articles.published_at, '')
+                OR COALESCE(CAST(news_articles.published_at AS TEXT), '') <> COALESCE(CAST(excluded.published_at AS TEXT), CAST(news_articles.published_at AS TEXT), '')
                 OR COALESCE(news_articles.language, '') <> COALESCE(excluded.language, '')
                 OR COALESCE(news_articles.relevance_symbols, '[]') <> COALESCE(excluded.relevance_symbols, '[]')
                 OR COALESCE(news_articles.tags, '[]') <> COALESCE(excluded.tags, '[]')

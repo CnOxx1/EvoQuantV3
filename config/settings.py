@@ -1,10 +1,16 @@
 import os
 
+from dotenv import load_dotenv
+
+# 加载 .env 文件（项目根目录）
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(_BASE_DIR, ".env"), override=False)
+
 from config.symbols import TARGET_SYMBOLS
 from loguru import logger
 
 # 项目根目录
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = _BASE_DIR
 
 # 数据库配置
 DATABASE_DIR = os.path.join(BASE_DIR, "database")
