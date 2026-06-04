@@ -60,62 +60,65 @@ docker compose -f docker-compose.monitoring.yml up -d
 | `evoquant_database_size_bytes` | Gauge | database | 数据库文件大小 |
 | `evoquant_market_alerts_total` | Counter | type, severity | 市场告警计数 |
 
-## 预置仪表盘（3 个仪表盘，共 40 个面板）
+## 预置仪表盘（3 个仪表盘，共 43 个面板）
 
-### 1. System Overview（16 个面板）
+### 1. System Overview（18 个面板）
 
 | 面板 | 类型 | 监控内容 |
 |------|------|----------|
 | Health Status | Stat | 整体健康状态（Healthy/Degraded/Unhealthy） |
 | WMI Score | Gauge | 世界模型指数 0-100，红/黄/绿三色 |
 | Active Modules | Stat | 当前运行中的模块数 |
-| Stopped Modules | Stat | 已停止的模块数 |
-| Total Restarts | Stat | 所有模块累计重启次数 |
-| Database Total Size | Stat | 3 个 SQLite 数据库总大小 |
-| API Request Rate | Time Series | 按 HTTP 状态码分组的请求速率 + 总速率 |
-| Request Latency (P50/P95/P99) | Time Series | 请求延迟分位数趋势 |
-| Requests In-Progress | Time Series | 当前并发请求数实时曲线 |
-| Request Rate by Path (Top 10) | Time Series | 按路径分组的请求热度堆叠图 |
-| Error Rate (4xx + 5xx) | Time Series | 客户端/服务端错误速率 |
-| Module Status | Table | 模块名、状态、重启次数、运行时长 |
-| Database Sizes | Bar Gauge | 各数据库文件大小对比 |
-| WMI Score History | Time Series | WMI 评分历史趋势 |
-| Process Memory Usage | Time Series | API 进程 RSS / Virtual 内存 |
-| Process CPU & Open FDs | Time Series | CPU 使用率 + 打开文件描述符数 |
+| Stopped | Stat | 已停止的模块数（红色阈值 ≥1） |
+| Restarts | Stat | 所有模块累计重启次数 |
+| Uptime | Stat | 最长模块运行时长 |
+| DB Size | Stat | 3 个 SQLite 数据库总大小 |
+| API Request Rate | Time Series | 按 HTTP 状态码分组的请求速率（多轴、渐变填充） |
+| Request Latency | Time Series | P50/P95/P99 延迟分位数（虚线参考线） |
+| Concurrent Requests | Time Series | 当前并发请求数实时曲线 |
+| Top Paths by Request Rate | Time Series | 按路径的请求速率 Top 10（堆叠柱状图） |
+| Error Ratio (%) | Time Series | 错误率百分比（面积填充，红色阈值） |
+| Module Status | Table | 模块名、状态、重启次数、运行时长（表格含排序） |
+| Database Sizes | Bar Gauge | 各数据库文件大小对比（渐变色条） |
+| WMI Score History | Time Series | WMI 评分历史趋势（面积填充） |
+| Process Memory | Time Series | RSS / Virtual 内存双轴（MB 单位） |
+| CPU Usage | Time Series | CPU 使用率百分比（面积渐变） |
+| File Descriptors & GC | Time Series | 打开 FD 数 + GC 速率双轴 |
 
-### 2. Pipeline Health（12 个面板）
+### 2. Pipeline Health（13 个面板）
 
 | 面板 | 类型 | 监控内容 |
 |------|------|----------|
 | Stale Domains | Stat | 过期域数量（红色阈值 ≥3） |
-| Fresh Domains | Stat | 新鲜域数量 |
-| Pipeline Last Duration | Stat | 管道最近一次执行时长 |
-| Pipeline Phases (Errors) | Stat | 管道阶段错误率 |
-| Domain Freshness Status Map | State Timeline | 12 个域的新鲜度状态时间线（颜色编码） |
-| Domain Latency (seconds) | Time Series | 各域数据延迟趋势（12 条线） |
-| Current Domain Latency | Bar Gauge | 当前各域延迟横向对比 |
-| Domain Freshness Distribution | Pie Chart | Fresh/Acceptable/Stale/Unavailable 占比 |
-| System Health History | State Timeline | 系统健康状态变化历史 |
-| Pipeline Phase Duration (by module) | Time Series | 各模块阶段执行时长堆叠柱状图 |
-| Pipeline Total Duration Trend | Time Series | 管道总时长 P50/P95 趋势 |
-| Pipeline Executions (rate) | Time Series | 管道执行次数 + 成功/失败阶段速率 |
+| Fresh | Stat | 新鲜域数量（绿色） |
+| Acceptable | Stat | 可接受域数量（黄色） |
+| Unavailable | Stat | 不可用域数量（红色） |
+| Pipeline Duration (P50) | Stat | 管道执行时长中位数 |
+| Phase Errors/min | Stat | 管道阶段错误速率 |
+| Domain Freshness Timeline | State Timeline | 12 个域的新鲜度状态时间线（4 色编码） |
+| Domain Latency | Time Series | 各域数据延迟趋势（表格图例含 mean/max） |
+| Freshness Distribution | Pie Chart | Fresh/Acceptable/Stale/Unavailable 环形图 |
+| Health Status History | State Timeline | 系统健康状态变化历史（3 色编码） |
+| Pipeline Phase Duration | Time Series | 各模块阶段执行时长堆叠柱状图 |
+| Pipeline Total Duration | Time Series | 管道总时长 P50/P95 趋势 |
+| Current Domain Latency | Bar Gauge | 当前各域延迟横向对比（渐变色条） |
 
 ### 3. Market Alerts（12 个面板）
 
 | 面板 | 类型 | 监控内容 |
 |------|------|----------|
-| Total Alerts (last 1h) | Stat | 最近 1 小时告警总数 |
-| Critical Alerts (last 1h) | Stat | 最近 1 小时 Critical 级别告警 |
-| Warning Alerts (last 1h) | Stat | 最近 1 小时 Warning 级别告警 |
-| Info Alerts (last 1h) | Stat | 最近 1 小时 Info 级别告警 |
-| Alerts by Type | Pie Chart | 按告警类型分布（环形图） |
-| Alerts by Severity | Bar Gauge | 按严重度分布梯度条 |
-| Alert Rate by Severity | Time Series | 按严重度的告警速率曲线 |
-| Alert Rate Trend (all) | Time Series | 总告警速率 + 按类型分组趋势 |
-| Cumulative Alerts (24h) | Time Series | 24 小时累计告警 + 各严重度 1h 增量 |
-| Alert Rate by Type (Top 5) | Time Series | 按类型的告警速率 Top 5 堆叠柱状图 |
-| Alerts (last 24h) | Stat | 24 小时告警总计 |
-| Critical (last 24h) | Stat | 24 小时 Critical 告警总计 |
+| Alerts (1h) | Stat | 最近 1 小时告警总数 |
+| Critical | Stat | 最近 1 小时 Critical 级别告警（红色） |
+| Warning | Stat | 最近 1 小时 Warning 级别告警（橙色） |
+| Info | Stat | 最近 1 小时 Info 级别告警（蓝色） |
+| Alerts (24h) | Stat | 24 小时告警总计 |
+| Alert Rate (/min) | Stat | 每分钟告警速率 |
+| By Type | Pie Chart | 按告警类型分布（环形图 + 百分比） |
+| By Severity | Bar Gauge | 按严重度分布梯度条（连续色带） |
+| Rate by Severity | Time Series | 按严重度的告警速率曲线（颜色覆盖） |
+| Alert Rate Trend | Time Series | 总告警速率 + 按类型分组趋势 |
+| Cumulative Alerts | Time Series | 24 小时累计告警 + 各严重度 1h 增量 |
+| Alert Rate by Type (Stacked) | Time Series | 按类型的告警速率堆叠柱状图 |
 
 ## 架构设计
 

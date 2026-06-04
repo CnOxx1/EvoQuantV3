@@ -6,7 +6,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "refresh": "15s",
   "time": {
     "from": "now-1h",
@@ -19,7 +19,7 @@
       "title": "Stale Domains",
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 4,
         "x": 0,
         "y": 0
       },
@@ -52,17 +52,22 @@
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "none"
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "Fresh Domains",
+      "title": "Fresh",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 6,
+        "w": 4,
+        "x": 4,
         "y": 0
       },
       "targets": [
@@ -83,16 +88,107 @@
             ]
           }
         }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
       "id": 3,
       "type": "stat",
-      "title": "Pipeline Last Duration",
+      "title": "Acceptable",
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "count(evoquant_domain_freshness_status == 1) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "yellow"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Unavailable",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
         "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "count(evoquant_domain_freshness_status == 3) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Pipeline Duration (P50)",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
         "y": 0
       },
       "targets": [
@@ -122,27 +218,37 @@
             ]
           }
         }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
-      "id": 4,
+      "id": 6,
       "type": "stat",
-      "title": "Pipeline Phases (Errors)",
+      "title": "Phase Errors/min",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 4,
+        "x": 20,
         "y": 0
       },
       "targets": [
         {
-          "expr": "sum(rate(evoquant_pipeline_phase_duration_seconds_count{status=\"error\"}[5m])) OR vector(0)",
+          "expr": "sum(rate(evoquant_pipeline_phase_duration_seconds_count{status=\"error\"}[5m])) * 60 OR vector(0)",
           "refId": "A",
           "instant": true
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "decimals": 1,
           "thresholds": {
             "steps": [
               {
@@ -150,18 +256,31 @@
                 "color": "green"
               },
               {
-                "value": 0.01,
+                "value": 0.1,
+                "color": "yellow"
+              },
+              {
+                "value": 1,
                 "color": "red"
               }
             ]
           }
         }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
-      "id": 5,
+      "id": 7,
       "type": "state-timeline",
-      "title": "Domain Freshness Status Map",
+      "title": "Domain Freshness Timeline",
       "gridPos": {
         "h": 7,
         "w": 24,
@@ -177,6 +296,9 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "mappings": [
             {
               "type": "value",
@@ -191,7 +313,7 @@
               "type": "value",
               "options": {
                 "1": {
-                  "text": "Acceptable",
+                  "text": "OK",
                   "color": "yellow"
                 }
               }
@@ -209,15 +331,12 @@
               "type": "value",
               "options": {
                 "3": {
-                  "text": "Unavailable",
+                  "text": "Down",
                   "color": "red"
                 }
               }
             }
           ],
-          "color": {
-            "mode": "thresholds"
-          },
           "thresholds": {
             "steps": [
               {
@@ -239,15 +358,20 @@
             ]
           }
         }
+      },
+      "options": {
+        "alignValue": "center",
+        "showValue": "auto",
+        "rowHeight": 0.85
       }
     },
     {
-      "id": 6,
+      "id": 8,
       "type": "timeseries",
-      "title": "Domain Latency (seconds)",
+      "title": "Domain Latency",
       "gridPos": {
         "h": 8,
-        "w": 24,
+        "w": 16,
         "x": 0,
         "y": 11
       },
@@ -265,68 +389,36 @@
             "drawStyle": "line",
             "fillOpacity": 5,
             "spanNulls": true,
-            "lineWidth": 2
-          }
-        }
-      }
-    },
-    {
-      "id": 7,
-      "type": "bargauge",
-      "title": "Current Domain Latency",
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 19
-      },
-      "targets": [
-        {
-          "expr": "evoquant_domain_latency_seconds",
-          "legendFormat": "{{domain}}",
-          "refId": "A",
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "thresholds": {
-            "steps": [
-              {
-                "value": null,
-                "color": "green"
-              },
-              {
-                "value": 300,
-                "color": "yellow"
-              },
-              {
-                "value": 3600,
-                "color": "orange"
-              },
-              {
-                "value": 86400,
-                "color": "red"
-              }
-            ]
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never"
           }
         }
       },
       "options": {
-        "orientation": "horizontal",
-        "displayMode": "gradient"
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        }
       }
     },
     {
-      "id": 8,
+      "id": 9,
       "type": "piechart",
-      "title": "Domain Freshness Distribution",
+      "title": "Freshness Distribution",
       "gridPos": {
-        "h": 7,
-        "w": 6,
-        "x": 12,
-        "y": 19
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 11
       },
       "targets": [
         {
@@ -422,29 +514,36 @@
         "pieType": "donut",
         "legend": {
           "displayMode": "table",
-          "placement": "right"
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
         }
       }
     },
     {
-      "id": 9,
+      "id": 10,
       "type": "state-timeline",
-      "title": "System Health History",
+      "title": "Health Status History",
       "gridPos": {
-        "h": 7,
-        "w": 6,
-        "x": 18,
+        "h": 4,
+        "w": 24,
+        "x": 0,
         "y": 19
       },
       "targets": [
         {
           "expr": "evoquant_health_status",
-          "legendFormat": "health",
+          "legendFormat": "system",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "mappings": [
             {
               "type": "value",
@@ -474,9 +573,6 @@
               }
             }
           ],
-          "color": {
-            "mode": "thresholds"
-          },
           "thresholds": {
             "steps": [
               {
@@ -494,22 +590,27 @@
             ]
           }
         }
+      },
+      "options": {
+        "alignValue": "center",
+        "showValue": "always",
+        "rowHeight": 0.9
       }
     },
     {
-      "id": 10,
+      "id": 11,
       "type": "timeseries",
-      "title": "Pipeline Phase Duration (by module)",
+      "title": "Pipeline Phase Duration",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 26
+        "y": 23
       },
       "targets": [
         {
-          "expr": "rate(evoquant_pipeline_phase_duration_seconds_sum[5m])",
-          "legendFormat": "{{module}}",
+          "expr": "rate(evoquant_pipeline_phase_duration_seconds_sum[5m]) > 0",
+          "legendFormat": "{{module}} ({{status}})",
           "refId": "A"
         }
       ],
@@ -521,20 +622,33 @@
             "stacking": {
               "mode": "normal"
             },
-            "fillOpacity": 80
+            "fillOpacity": 85,
+            "lineWidth": 0
           }
+        }
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ]
         }
       }
     },
     {
-      "id": 11,
+      "id": 12,
       "type": "timeseries",
-      "title": "Pipeline Total Duration Trend",
+      "title": "Pipeline Total Duration",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 26
+        "y": 23
       },
       "targets": [
         {
@@ -546,6 +660,11 @@
           "expr": "histogram_quantile(0.95, sum(rate(evoquant_pipeline_total_duration_seconds_bucket[10m])) by (le))",
           "legendFormat": "P95",
           "refId": "B"
+        },
+        {
+          "expr": "sum(rate(evoquant_pipeline_total_duration_seconds_count[5m])) * 300",
+          "legendFormat": "runs/5min (scaled)",
+          "refId": "C"
         }
       ],
       "fieldConfig": {
@@ -556,45 +675,101 @@
             "fillOpacity": 10,
             "lineWidth": 2
           }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "runs/5min (scaled)"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    5,
+                    5
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
         }
       }
     },
     {
-      "id": 12,
-      "type": "timeseries",
-      "title": "Pipeline Executions (rate)",
+      "id": 13,
+      "type": "bargauge",
+      "title": "Current Domain Latency",
       "gridPos": {
-        "h": 8,
+        "h": 6,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 31
       },
       "targets": [
         {
-          "expr": "sum(rate(evoquant_pipeline_total_duration_seconds_count[5m]))",
-          "legendFormat": "Pipeline runs/s",
-          "refId": "A"
-        },
-        {
-          "expr": "sum(rate(evoquant_pipeline_phase_duration_seconds_count{status=\"success\"}[5m]))",
-          "legendFormat": "Successful phases/s",
-          "refId": "B"
-        },
-        {
-          "expr": "sum(rate(evoquant_pipeline_phase_duration_seconds_count{status=\"error\"}[5m]))",
-          "legendFormat": "Failed phases/s",
-          "refId": "C"
+          "expr": "evoquant_domain_latency_seconds",
+          "legendFormat": "{{domain}}",
+          "refId": "A",
+          "instant": true
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "ops",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 2
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 60,
+                "color": "super-light-green"
+              },
+              {
+                "value": 300,
+                "color": "yellow"
+              },
+              {
+                "value": 3600,
+                "color": "orange"
+              },
+              {
+                "value": 86400,
+                "color": "red"
+              }
+            ]
           }
         }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "minVizHeight": 20
       }
     }
   ]

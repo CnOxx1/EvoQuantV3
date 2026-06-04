@@ -6,7 +6,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "refresh": "15s",
   "time": {
     "from": "now-1h",
@@ -18,7 +18,7 @@
       "type": "stat",
       "title": "Health Status",
       "gridPos": {
-        "h": 4,
+        "h": 5,
         "w": 4,
         "x": 0,
         "y": 0
@@ -82,7 +82,12 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value"
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
@@ -90,7 +95,7 @@
       "type": "gauge",
       "title": "WMI Score",
       "gridPos": {
-        "h": 4,
+        "h": 5,
         "w": 4,
         "x": 4,
         "y": 0
@@ -130,8 +135,8 @@
       "type": "stat",
       "title": "Active Modules",
       "gridPos": {
-        "h": 4,
-        "w": 4,
+        "h": 5,
+        "w": 3,
         "x": 8,
         "y": 0
       },
@@ -144,6 +149,9 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "steps": [
               {
@@ -153,16 +161,25 @@
             ]
           }
         }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
       "id": 4,
       "type": "stat",
-      "title": "Stopped Modules",
+      "title": "Stopped",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
+        "h": 5,
+        "w": 3,
+        "x": 11,
         "y": 0
       },
       "targets": [
@@ -174,6 +191,9 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "steps": [
               {
@@ -191,16 +211,25 @@
             ]
           }
         }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
       "id": 5,
       "type": "stat",
-      "title": "Total Restarts",
+      "title": "Restarts",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
+        "h": 5,
+        "w": 3,
+        "x": 14,
         "y": 0
       },
       "targets": [
@@ -212,6 +241,9 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "steps": [
               {
@@ -229,14 +261,59 @@
             ]
           }
         }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
       "id": 6,
       "type": "stat",
-      "title": "Database Total Size",
+      "title": "Uptime",
       "gridPos": {
-        "h": 4,
+        "h": 5,
+        "w": 3,
+        "x": 17,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "time() - process_start_time_seconds{job=\"evoquant\"}",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "DB Size",
+      "gridPos": {
+        "h": 5,
         "w": 4,
         "x": 20,
         "y": 0
@@ -251,37 +328,52 @@
       "fieldConfig": {
         "defaults": {
           "unit": "bytes",
-          "thresholds": {
-            "steps": [
-              {
-                "value": null,
-                "color": "blue"
-              }
-            ]
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
           }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
         }
       }
     },
     {
-      "id": 7,
+      "id": 8,
       "type": "timeseries",
       "title": "API Request Rate",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 4
+        "y": 5
       },
       "targets": [
         {
-          "expr": "sum(rate(evoquant_http_requests_total[1m])) by (status)",
-          "legendFormat": "{{status}}",
+          "expr": "sum(rate(evoquant_http_requests_total[1m]))",
+          "legendFormat": "total",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(evoquant_http_requests_total[1m]))",
-          "legendFormat": "total",
+          "expr": "sum(rate(evoquant_http_requests_total{status=\"200\"}[1m]))",
+          "legendFormat": "2xx",
           "refId": "B"
+        },
+        {
+          "expr": "sum(rate(evoquant_http_requests_total{status=~\"4..\"}[1m]))",
+          "legendFormat": "4xx",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(rate(evoquant_http_requests_total{status=~\"5..\"}[1m]))",
+          "legendFormat": "5xx",
+          "refId": "D"
         }
       ],
       "fieldConfig": {
@@ -289,21 +381,70 @@
           "unit": "reqps",
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 15,
-            "lineWidth": 2
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never"
           }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "4xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
         }
       }
     },
     {
-      "id": 8,
+      "id": 9,
       "type": "timeseries",
-      "title": "Request Latency (P50 / P95 / P99)",
+      "title": "Request Latency",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 4
+        "y": 5
       },
       "targets": [
         {
@@ -312,14 +453,19 @@
           "refId": "A"
         },
         {
+          "expr": "histogram_quantile(0.90, sum(rate(evoquant_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P90",
+          "refId": "B"
+        },
+        {
           "expr": "histogram_quantile(0.95, sum(rate(evoquant_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P95",
-          "refId": "B"
+          "refId": "C"
         },
         {
           "expr": "histogram_quantile(0.99, sum(rate(evoquant_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P99",
-          "refId": "C"
+          "refId": "D"
         }
       ],
       "fieldConfig": {
@@ -328,53 +474,90 @@
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 5,
-            "lineWidth": 2
-          }
-        }
-      }
-    },
-    {
-      "id": 9,
-      "type": "timeseries",
-      "title": "Requests In-Progress",
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 12
-      },
-      "targets": [
-        {
-          "expr": "sum(evoquant_http_requests_in_progress)",
-          "legendFormat": "concurrent",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 25,
             "lineWidth": 2,
             "gradientMode": "scheme"
           }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "P99"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
         }
       }
     },
     {
       "id": 10,
       "type": "timeseries",
-      "title": "Request Rate by Path (Top 10)",
+      "title": "Concurrent Requests",
       "gridPos": {
         "h": 7,
-        "w": 8,
-        "x": 8,
-        "y": 12
+        "w": 6,
+        "x": 0,
+        "y": 13
       },
       "targets": [
         {
-          "expr": "topk(10, sum(rate(evoquant_http_requests_total[5m])) by (path))",
+          "expr": "sum(evoquant_http_requests_in_progress)",
+          "legendFormat": "in-flight",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineWidth": 2,
+            "gradientMode": "scheme"
+          },
+          "color": {
+            "mode": "continuous-blues"
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Top Paths by Request Rate",
+      "gridPos": {
+        "h": 7,
+        "w": 10,
+        "x": 6,
+        "y": 13
+      },
+      "targets": [
+        {
+          "expr": "topk(8, sum(rate(evoquant_http_requests_total[5m])) by (path))",
           "legendFormat": "{{path}}",
           "refId": "A"
         }
@@ -387,56 +570,81 @@
             "fillOpacity": 80,
             "stacking": {
               "mode": "normal"
-            }
+            },
+            "lineWidth": 0
           }
         }
-      }
-    },
-    {
-      "id": 11,
-      "type": "timeseries",
-      "title": "Error Rate (4xx + 5xx)",
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 12
       },
-      "targets": [
-        {
-          "expr": "sum(rate(evoquant_http_requests_total{status=~\"4..\"}[5m]))",
-          "legendFormat": "4xx",
-          "refId": "A"
-        },
-        {
-          "expr": "sum(rate(evoquant_http_requests_total{status=~\"5..\"}[5m]))",
-          "legendFormat": "5xx",
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 30,
-            "lineWidth": 2
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right"
         }
       }
     },
     {
       "id": 12,
+      "type": "timeseries",
+      "title": "Error Ratio (%)",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 13
+      },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(evoquant_http_requests_total{status=~\"[45]..\"}[5m])) / sum(rate(evoquant_http_requests_total[5m]))",
+          "legendFormat": "error %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "thresholdsStyle": {
+              "mode": "area"
+            }
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 5,
+                "color": "yellow"
+              },
+              {
+                "value": 20,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 13,
       "type": "table",
       "title": "Module Status",
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 20
       },
       "targets": [
         {
@@ -476,14 +684,14 @@
       ]
     },
     {
-      "id": 13,
+      "id": 14,
       "type": "bargauge",
       "title": "Database Sizes",
       "gridPos": {
         "h": 9,
         "w": 6,
         "x": 12,
-        "y": 19
+        "y": 20
       },
       "targets": [
         {
@@ -499,7 +707,11 @@
             "steps": [
               {
                 "value": null,
-                "color": "blue"
+                "color": "super-light-blue"
+              },
+              {
+                "value": 52428800,
+                "color": "light-blue"
               },
               {
                 "value": 104857600,
@@ -515,18 +727,19 @@
       },
       "options": {
         "orientation": "horizontal",
-        "displayMode": "gradient"
+        "displayMode": "gradient",
+        "showUnfilled": true
       }
     },
     {
-      "id": 14,
+      "id": 15,
       "type": "timeseries",
       "title": "WMI Score History",
       "gridPos": {
         "h": 9,
         "w": 6,
         "x": 18,
-        "y": 19
+        "y": 20
       },
       "targets": [
         {
@@ -539,12 +752,14 @@
         "defaults": {
           "min": 0,
           "max": 100,
-          "unit": "short",
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "gradientMode": "scheme"
+            "gradientMode": "scheme",
+            "thresholdsStyle": {
+              "mode": "area"
+            }
           },
           "thresholds": {
             "steps": [
@@ -563,22 +778,27 @@
             ]
           }
         }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "hidden"
+        }
       }
     },
     {
-      "id": 15,
+      "id": 16,
       "type": "timeseries",
-      "title": "Process Memory Usage",
+      "title": "Process Memory",
       "gridPos": {
         "h": 7,
-        "w": 12,
+        "w": 8,
         "x": 0,
-        "y": 28
+        "y": 29
       },
       "targets": [
         {
           "expr": "process_resident_memory_bytes{job=\"evoquant\"}",
-          "legendFormat": "RSS",
+          "legendFormat": "RSS (actual)",
           "refId": "A"
         },
         {
@@ -595,43 +815,146 @@
             "fillOpacity": 10,
             "lineWidth": 2
           }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Virtual"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    5
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
         }
       }
     },
     {
-      "id": 16,
+      "id": 17,
       "type": "timeseries",
-      "title": "Process CPU & Open FDs",
+      "title": "CPU Usage",
       "gridPos": {
         "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 28
+        "w": 8,
+        "x": 8,
+        "y": 29
       },
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"evoquant\"}[1m])",
-          "legendFormat": "CPU usage",
+          "expr": "rate(process_cpu_seconds_total{job=\"evoquant\"}[1m]) * 100",
+          "legendFormat": "CPU %",
           "refId": "A"
-        },
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "gradientMode": "scheme"
+          },
+          "color": {
+            "mode": "continuous-GrYlRd"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "hidden"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
+      "title": "File Descriptors & GC",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 29
+      },
+      "targets": [
         {
           "expr": "process_open_fds{job=\"evoquant\"}",
           "legendFormat": "Open FDs",
+          "refId": "A"
+        },
+        {
+          "expr": "process_max_fds{job=\"evoquant\"}",
+          "legendFormat": "Max FDs",
           "refId": "B"
+        },
+        {
+          "expr": "rate(python_gc_collections_total{job=\"evoquant\"}[5m])",
+          "legendFormat": "GC gen{{generation}}/s",
+          "refId": "C"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 2
+            "fillOpacity": 5,
+            "lineWidth": 1
           }
-        }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max FDs"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "tooltip": {
           "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
         }
       }
     }
