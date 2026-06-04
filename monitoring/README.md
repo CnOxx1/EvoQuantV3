@@ -136,11 +136,41 @@ docker compose -f docker-compose.monitoring.yml up -d
 
 ## 配置
 
+### PostgreSQL 数据库（Docker 容器）
+
+Docker Compose 集成了 PostgreSQL 16 作为生产数据库：
+
+```bash
+# 启动 PostgreSQL + 监控栈
+cd monitoring
+docker compose -f docker-compose.monitoring.yml up -d
+
+# 验证 PostgreSQL 就绪
+docker exec evoquant-postgres pg_isready -U evoquant
+
+# 运行 Alembic 迁移建表
+cd /path/to/EvoQuant
+alembic upgrade head
+```
+
+**PostgreSQL 三 Schema 映射：**
+
+| Schema | 原 SQLite 文件 | 内容 |
+|--------|---------------|------|
+| `exchange_data` | exchange_data.db | K线、ticker、资金费率、盘口深度 |
+| `market_data` | market_data.db | 稳定币、DeFi 清算、巨鲸组合 |
+| `analytics` | analytics.db | 技术指标、合并K线 |
+
+**切换后端：** 设置环境变量 `DB_BACKEND=postgres` 即可切换（默认 sqlite）。
+
+### 监控服务
+
 | 环境变量 | 默认值 | 说明 |
 |----------|--------|------|
-| — | — | 无需额外环境变量配置，开箱即用 |
+| — | — | 监控模块无需额外环境变量，开箱即用 |
 
 **Docker Compose 配置：**
+- PostgreSQL: port 5432, evoquant/evoquant2024, 三 schema 自动初始化
 - Prometheus: port 9090, 15s 抓取间隔, 30 天数据保留
 - Grafana: port 3000, admin/evoquant 默认密码
 - 使用 `host.docker.internal` 访问宿主机 8000 端口

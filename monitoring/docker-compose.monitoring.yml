@@ -1,4 +1,23 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: evoquant-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=evoquant
+      - POSTGRES_USER=evoquant
+      - POSTGRES_PASSWORD=evoquant2024
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evoquant"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   prometheus:
     image: prom/prometheus:v2.53.0
     container_name: evoquant-prometheus
@@ -13,6 +32,9 @@ services:
       - "--web.enable-lifecycle"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   grafana:
@@ -33,5 +55,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres_data:
   prometheus_data:
   grafana_data:
