@@ -143,9 +143,11 @@ class PostgresBackend(DatabaseBackend):
             with conn.cursor() as cur:
                 cur.execute(adapted_sql, params)
                 if cur.description is None:
+                    conn.commit()
                     return None
                 columns = [desc[0] for desc in cur.description]
                 row = cur.fetchone()
+                conn.commit()
                 if row is None:
                     return None
                 return _DictRow(zip(columns, row))
@@ -163,7 +165,9 @@ class PostgresBackend(DatabaseBackend):
         try:
             with conn.cursor() as cur:
                 cur.execute(adapted_sql, params)
-                return self._rows_to_dicts(cur)
+                result = self._rows_to_dicts(cur)
+                conn.commit()
+                return result
         except Exception:
             try:
                 conn.rollback()
@@ -206,6 +210,7 @@ class PostgresBackend(DatabaseBackend):
                 cur.execute("SELECT count(*) FROM pg_stat_activity WHERE datname = %s",
                             (self._dsn_params["database"],))
                 active_conns = cur.fetchone()[0]
+            conn.commit()
             return {
                 "backend": "postgres",
                 "status": "healthy",
@@ -230,6 +235,7 @@ class PostgresBackend(DatabaseBackend):
             conn = self._get_conn()
             with conn.cursor() as cur:
                 cur.execute("SELECT 1")
+            conn.commit()
             return True
         except Exception:
             return False

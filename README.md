@@ -405,6 +405,15 @@ cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
 
 ### 2025-06-04
 
+**v3.3.2 — PostgreSQL 连接池稳定性与子进程修复**
+
+- 读操作自动提交：fetch_one/fetch_all 成功后自动 COMMIT，消除 idle-in-transaction 连接泄漏
+- PostgreSQL 调优：max_connections=200 + idle_in_transaction_session_timeout=60s
+- 子进程启动修复：subprocess.Popen 添加 cwd=PROJECT_ROOT，解决 ModuleNotFoundError
+- 服务依赖解耦：AIMarketContextService/AssetReadinessService 不再共享 analytics 连接池给数据层子服务
+- datetime 类型兼容：pipeline_latency 服务正确处理 PostgreSQL 返回的 datetime 对象
+- Pydantic 验证修复：DomainListItem.latest_data_time 确保转为字符串
+
 **v3.3.1 — PostgreSQL 生产后端全面兼容（零崩溃）**
 
 - PostgreSQL Docker 容器化集成：Docker Compose 一键部署 PostgreSQL 16 + 三 Schema 自动初始化

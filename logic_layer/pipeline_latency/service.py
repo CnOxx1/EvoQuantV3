@@ -46,9 +46,13 @@ class PipelineLatencyService:
         return datetime.now(timezone.utc)
 
     @staticmethod
-    def _parse_ts(ts_str: str | None) -> datetime | None:
+    def _parse_ts(ts_str: str | datetime | None) -> datetime | None:
         if not ts_str:
             return None
+        if isinstance(ts_str, datetime):
+            if ts_str.tzinfo is None:
+                return ts_str.replace(tzinfo=timezone.utc)
+            return ts_str
         for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f"):
             try:
                 return datetime.strptime(ts_str, fmt).replace(tzinfo=timezone.utc)
@@ -94,9 +98,14 @@ class PipelineLatencyService:
                 continue
             latency = (now - latest_dt).total_seconds()
             status = self._classify_latency(domain, latency)
+            # 确保 latest_data_time 是字符串（PostgreSQL 返回 datetime 对象）
+            data_time_str = (
+                latest_ts_str.isoformat() if hasattr(latest_ts_str, 'isoformat')
+                else str(latest_ts_str) if latest_ts_str else None
+            )
             domains[domain] = DomainLatency(
                 domain=domain,
-                latest_data_time=latest_ts_str,
+                latest_data_time=data_time_str,
                 measured_at=now_iso,
                 latency_seconds=round(latency, 1),
                 status=status,

@@ -8,6 +8,7 @@ import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from pathlib import Path
 from threading import Event
 from typing import Iterable, Sequence
 
@@ -15,6 +16,8 @@ from loguru import logger
 
 from config.logging import setup_logger
 from config.settings import validate_config
+
+PROJECT_ROOT = str(Path(__file__).resolve().parent)
 
 
 @dataclass(frozen=True)
@@ -497,7 +500,7 @@ def launch_module(
         extra_args=extra_args,
     )
     logger.info(f"启动模块 {spec.name}: {' '.join(command)}")
-    process = subprocess.Popen(command)
+    process = subprocess.Popen(command, cwd=PROJECT_ROOT)
     return ManagedProcess(
         spec=spec,
         process=process,

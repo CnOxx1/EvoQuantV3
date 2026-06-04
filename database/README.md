@@ -99,7 +99,7 @@ python -m database.migrate_split
 
 ## PostgreSQL 后端（生产环境）
 
-v3.2 引入多后端架构，支持在开发环境使用 SQLite、生产环境切换到 PostgreSQL。v3.3.1 完成全面兼容，34 个数据模块零崩溃运行。
+v3.2 引入多后端架构，支持在开发环境使用 SQLite、生产环境切换到 PostgreSQL。v3.3.2 完成全面兼容，34 个数据模块 + 逻辑管道零崩溃运行。
 
 ```text
 DB_BACKEND=sqlite (默认，开发/测试)
@@ -113,7 +113,9 @@ DB_BACKEND=postgres (生产)
   → ON CONFLICT 冲突键智能推断（15+ 模式）
   → 保留字自动引用（timestamp, order, type 等）
   → 事务失败自动 ROLLBACK（防止级联错误）
+  → 读操作自动 COMMIT（防止 idle-in-transaction 连接泄漏）
   → CREATE TABLE IF NOT EXISTS 拦截 + 自动补齐缺失列
+  → search_path 覆盖所有业务 schema（跨域查询透明）
 ```
 
 ### 启用 PostgreSQL
@@ -155,8 +157,10 @@ python main.py
 | INSERT OR IGNORE | `backends/query_adapter.py` | 转为 `ON CONFLICT DO NOTHING` |
 | 保留字引用 | `backends/query_adapter.py` | timestamp/order/type 等 PostgreSQL 保留字自动加双引号 |
 | 自动回滚 | `backends/postgres_backend.py` | execute/executemany 失败后自动 ROLLBACK，防止 InFailedSqlTransaction |
+| 读操作自动提交 | `backends/postgres_backend.py` | fetch_one/fetch_all 成功后自动 COMMIT，防止连接泄漏为 idle-in-transaction |
 | Schema 补齐 | `router.py` | 拦截 CREATE TABLE IF NOT EXISTS，对已存在表自动 ALTER TABLE ADD COLUMN |
 | CREATE INDEX 容错 | `router.py` | 索引创建失败（列不存在/已存在）静默跳过，不中断流程 |
+| 跨域 search_path | `backends/postgres_backend.py` | 每次连接自动 SET search_path 覆盖所有业务 schema |
 | 环境变量加载 | `config/settings.py` | python-dotenv 自动加载 `.env`，子进程无需手动传递变量 |
 
 ### 兼容性保证

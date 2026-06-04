@@ -175,6 +175,8 @@ alembic upgrade head
 
 **Docker Compose 配置：**
 - PostgreSQL: port 5432, evoquant/evoquant2024, 三 schema 自动初始化
+  - `max_connections=200`（支持 30+ 并发模块各自独立连接池）
+  - `idle_in_transaction_session_timeout=60s`（自动清理泄漏的空闲事务）
 - Prometheus: port 9090, 15s 抓取间隔, 30 天数据保留
 - Grafana: port 3000, admin/evoquant 默认密码
 - 使用 `host.docker.internal` 访问宿主机 8000 端口

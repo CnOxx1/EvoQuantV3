@@ -19,8 +19,8 @@ class PipelineLatencyRepository:
     def _safe_query(self, sql: str, params: tuple = ()) -> Any:
         """安全执行查询，表不存在时返回 None。"""
         try:
-            cursor = self.db.conn.execute(sql, params)
-            return cursor.fetchone()
+            row = self.db.fetch_one(sql, params)
+            return row
         except Exception as e:
             logger.debug("查询失败 (表可能不存在): %s", e)
             return None
