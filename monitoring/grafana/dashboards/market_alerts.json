@@ -1,92 +1,443 @@
 {
   "uid": "evoquant-market-alerts",
   "title": "EvoQuant - Market Alerts",
-  "tags": ["evoquant"],
+  "tags": [
+    "evoquant"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "15s",
-  "time": {"from": "now-3h", "to": "now"},
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
   "panels": [
     {
       "id": 1,
       "type": "stat",
       "title": "Total Alerts (last 1h)",
-      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
-      "targets": [{"expr": "sum(increase(evoquant_market_alerts_total[1h])) OR vector(0)", "refId": "A"}],
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(evoquant_market_alerts_total[1h])) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 10, "color": "yellow"}, {"value": 50, "color": "red"}]}
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 10,
+                "color": "yellow"
+              },
+              {
+                "value": 50,
+                "color": "red"
+              }
+            ]
+          }
         }
       },
-      "options": {"colorMode": "background", "graphMode": "area"}
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area"
+      }
     },
     {
       "id": 2,
       "type": "stat",
       "title": "Critical Alerts (last 1h)",
-      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
-      "targets": [{"expr": "sum(increase(evoquant_market_alerts_total{severity=\"critical\"}[1h])) OR vector(0)", "refId": "A"}],
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 1, "color": "red"}]}}},
-      "options": {"colorMode": "background", "graphMode": "none"}
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(evoquant_market_alerts_total{severity=\"critical\"}[1h])) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none"
+      }
     },
     {
       "id": 3,
       "type": "stat",
       "title": "Warning Alerts (last 1h)",
-      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
-      "targets": [{"expr": "sum(increase(evoquant_market_alerts_total{severity=\"warning\"}[1h])) OR vector(0)", "refId": "A"}],
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 5, "color": "yellow"}]}}},
-      "options": {"colorMode": "background", "graphMode": "none"}
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(evoquant_market_alerts_total{severity=\"warning\"}[1h])) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 5,
+                "color": "yellow"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none"
+      }
     },
     {
       "id": 4,
       "type": "stat",
       "title": "Info Alerts (last 1h)",
-      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
-      "targets": [{"expr": "sum(increase(evoquant_market_alerts_total{severity=\"info\"}[1h])) OR vector(0)", "refId": "A"}],
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "blue"}]}}},
-      "options": {"colorMode": "background", "graphMode": "none"}
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(evoquant_market_alerts_total{severity=\"info\"}[1h])) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "blue"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none"
+      }
     },
     {
       "id": 5,
       "type": "piechart",
       "title": "Alerts by Type",
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 4},
-      "targets": [{"expr": "sum by (type) (increase(evoquant_market_alerts_total[3h]))", "legendFormat": "{{type}}", "refId": "A"}],
-      "options": {"legend": {"displayMode": "table", "placement": "right"}, "pieType": "donut"}
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by (type) (increase(evoquant_market_alerts_total[3h]))",
+          "legendFormat": "{{type}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "pieType": "donut"
+      }
     },
     {
       "id": 6,
       "type": "bargauge",
       "title": "Alerts by Severity",
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 4},
-      "targets": [{"expr": "sum by (severity) (increase(evoquant_market_alerts_total[3h]))", "legendFormat": "{{severity}}", "refId": "A"}],
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by (severity) (increase(evoquant_market_alerts_total[3h]))",
+          "legendFormat": "{{severity}}",
+          "refId": "A"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "thresholds": {"steps": [{"value": null, "color": "blue"}, {"value": 10, "color": "yellow"}, {"value": 30, "color": "red"}]}
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "blue"
+              },
+              {
+                "value": 10,
+                "color": "yellow"
+              },
+              {
+                "value": 30,
+                "color": "red"
+              }
+            ]
+          }
         }
       },
-      "options": {"orientation": "horizontal", "displayMode": "gradient"}
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      }
     },
     {
       "id": 7,
       "type": "timeseries",
       "title": "Alert Rate by Severity",
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 4},
-      "targets": [{"expr": "sum by (severity) (rate(evoquant_market_alerts_total[5m]))", "legendFormat": "{{severity}}", "refId": "A"}],
-      "fieldConfig": {"defaults": {"unit": "ops", "custom": {"drawStyle": "line", "fillOpacity": 20}}}
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by (severity) (rate(evoquant_market_alerts_total[5m]))",
+          "legendFormat": "{{severity}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
+        }
+      }
     },
     {
       "id": 8,
       "type": "timeseries",
       "title": "Alert Rate Trend (all)",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
       "targets": [
-        {"expr": "sum(rate(evoquant_market_alerts_total[5m]))", "legendFormat": "Total", "refId": "A"},
-        {"expr": "sum by (type) (rate(evoquant_market_alerts_total[5m]))", "legendFormat": "{{type}}", "refId": "B"}
+        {
+          "expr": "sum(rate(evoquant_market_alerts_total[5m]))",
+          "legendFormat": "Total",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (type) (rate(evoquant_market_alerts_total[5m]))",
+          "legendFormat": "{{type}}",
+          "refId": "B"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "ops", "custom": {"drawStyle": "line", "fillOpacity": 10}}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Cumulative Alerts (24h)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(evoquant_market_alerts_total[24h]))",
+          "legendFormat": "Total (24h)",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (severity) (increase(evoquant_market_alerts_total[1h]))",
+          "legendFormat": "{{severity}} (1h)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Alert Rate by Type (Top 5)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "targets": [
+        {
+          "expr": "topk(5, sum by (type) (rate(evoquant_market_alerts_total[5m])))",
+          "legendFormat": "{{type}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Alerts (last 24h)",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(evoquant_market_alerts_total[24h])) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 100,
+                "color": "yellow"
+              },
+              {
+                "value": 500,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Critical (last 24h)",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(evoquant_market_alerts_total{severity=\"critical\"}[24h])) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 5,
+                "color": "orange"
+              },
+              {
+                "value": 20,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area"
+      }
     }
   ]
 }

@@ -1,94 +1,601 @@
 {
   "uid": "evoquant-pipeline-health",
   "title": "EvoQuant - Pipeline Health",
-  "tags": ["evoquant"],
+  "tags": [
+    "evoquant"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "15s",
-  "time": {"from": "now-1h", "to": "now"},
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
   "panels": [
     {
       "id": 1,
       "type": "stat",
       "title": "Stale Domains",
-      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
-      "targets": [{"expr": "count(evoquant_domain_freshness_status >= 2) OR vector(0)", "refId": "A"}],
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "count(evoquant_domain_freshness_status >= 2) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 1, "color": "yellow"}, {"value": 3, "color": "red"}]}
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "yellow"
+              },
+              {
+                "value": 3,
+                "color": "red"
+              }
+            ]
+          }
         }
       },
-      "options": {"colorMode": "background", "graphMode": "none"}
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none"
+      }
     },
     {
       "id": 2,
       "type": "stat",
       "title": "Fresh Domains",
-      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
-      "targets": [{"expr": "count(evoquant_domain_freshness_status == 0) OR vector(0)", "refId": "A"}],
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "green"}]}}}
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "count(evoquant_domain_freshness_status == 0) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 3,
       "type": "stat",
       "title": "Pipeline Last Duration",
-      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
-      "targets": [{"expr": "histogram_quantile(0.5, rate(evoquant_pipeline_total_duration_seconds_bucket[10m]))", "refId": "A"}],
-      "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 300, "color": "yellow"}, {"value": 600, "color": "red"}]}}}
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(evoquant_pipeline_total_duration_seconds_bucket[10m])) by (le))",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 300,
+                "color": "yellow"
+              },
+              {
+                "value": 600,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 4,
       "type": "stat",
       "title": "Pipeline Phases (Errors)",
-      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
-      "targets": [{"expr": "sum(rate(evoquant_pipeline_phase_duration_seconds_count{status=\"error\"}[5m])) OR vector(0)", "refId": "A"}],
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 0.01, "color": "red"}]}}}
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(evoquant_pipeline_phase_duration_seconds_count{status=\"error\"}[5m])) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 0.01,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 5,
       "type": "state-timeline",
       "title": "Domain Freshness Status Map",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
-      "targets": [{"expr": "evoquant_domain_freshness_status", "legendFormat": "{{domain}}", "refId": "A"}],
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "expr": "evoquant_domain_freshness_status",
+          "legendFormat": "{{domain}}",
+          "refId": "A"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            {"type": "value", "options": {"0": {"text": "Fresh", "color": "green"}}},
-            {"type": "value", "options": {"1": {"text": "Acceptable", "color": "yellow"}}},
-            {"type": "value", "options": {"2": {"text": "Stale", "color": "orange"}}},
-            {"type": "value", "options": {"3": {"text": "Unavailable", "color": "red"}}}
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Fresh",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Acceptable",
+                  "color": "yellow"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "2": {
+                  "text": "Stale",
+                  "color": "orange"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "3": {
+                  "text": "Unavailable",
+                  "color": "red"
+                }
+              }
+            }
           ],
-          "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 1, "color": "yellow"}, {"value": 2, "color": "orange"}, {"value": 3, "color": "red"}]}
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "yellow"
+              },
+              {
+                "value": 2,
+                "color": "orange"
+              },
+              {
+                "value": 3,
+                "color": "red"
+              }
+            ]
+          }
         }
       }
     },
     {
       "id": 6,
       "type": "timeseries",
-      "title": "Domain Latency",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
-      "targets": [{"expr": "evoquant_domain_latency_seconds", "legendFormat": "{{domain}}", "refId": "A"}],
-      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "fillOpacity": 5, "spanNulls": true}}}
+      "title": "Domain Latency (seconds)",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "targets": [
+        {
+          "expr": "evoquant_domain_latency_seconds",
+          "legendFormat": "{{domain}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "spanNulls": true,
+            "lineWidth": 2
+          }
+        }
+      }
     },
     {
       "id": 7,
-      "type": "timeseries",
-      "title": "Pipeline Phase Duration (by module)",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
-      "targets": [{"expr": "rate(evoquant_pipeline_phase_duration_seconds_sum[5m])", "legendFormat": "{{module}}", "refId": "A"}],
-      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "bars", "stacking": {"mode": "normal"}, "fillOpacity": 80}}}
+      "type": "bargauge",
+      "title": "Current Domain Latency",
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "targets": [
+        {
+          "expr": "evoquant_domain_latency_seconds",
+          "legendFormat": "{{domain}}",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 300,
+                "color": "yellow"
+              },
+              {
+                "value": 3600,
+                "color": "orange"
+              },
+              {
+                "value": 86400,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      }
     },
     {
       "id": 8,
+      "type": "piechart",
+      "title": "Domain Freshness Distribution",
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 19
+      },
+      "targets": [
+        {
+          "expr": "count(evoquant_domain_freshness_status == 0) OR vector(0)",
+          "legendFormat": "Fresh",
+          "refId": "A",
+          "instant": true
+        },
+        {
+          "expr": "count(evoquant_domain_freshness_status == 1) OR vector(0)",
+          "legendFormat": "Acceptable",
+          "refId": "B",
+          "instant": true
+        },
+        {
+          "expr": "count(evoquant_domain_freshness_status == 2) OR vector(0)",
+          "legendFormat": "Stale",
+          "refId": "C",
+          "instant": true
+        },
+        {
+          "expr": "count(evoquant_domain_freshness_status == 3) OR vector(0)",
+          "legendFormat": "Unavailable",
+          "refId": "D",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Fresh"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Acceptable"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Stale"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Unavailable"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "state-timeline",
+      "title": "System Health History",
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 19
+      },
+      "targets": [
+        {
+          "expr": "evoquant_health_status",
+          "legendFormat": "health",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Healthy",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Degraded",
+                  "color": "yellow"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "2": {
+                  "text": "Unhealthy",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "yellow"
+              },
+              {
+                "value": 2,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Pipeline Phase Duration (by module)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "targets": [
+        {
+          "expr": "rate(evoquant_pipeline_phase_duration_seconds_sum[5m])",
+          "legendFormat": "{{module}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "bars",
+            "stacking": {
+              "mode": "normal"
+            },
+            "fillOpacity": 80
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
       "type": "timeseries",
       "title": "Pipeline Total Duration Trend",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
       "targets": [
-        {"expr": "histogram_quantile(0.50, sum(rate(evoquant_pipeline_total_duration_seconds_bucket[10m])) by (le))", "legendFormat": "P50", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum(rate(evoquant_pipeline_total_duration_seconds_bucket[10m])) by (le))", "legendFormat": "P95", "refId": "B"}
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(evoquant_pipeline_total_duration_seconds_bucket[10m])) by (le))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(evoquant_pipeline_total_duration_seconds_bucket[10m])) by (le))",
+          "legendFormat": "P95",
+          "refId": "B"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "fillOpacity": 10}}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Pipeline Executions (rate)",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(evoquant_pipeline_total_duration_seconds_count[5m]))",
+          "legendFormat": "Pipeline runs/s",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(evoquant_pipeline_phase_duration_seconds_count{status=\"success\"}[5m]))",
+          "legendFormat": "Successful phases/s",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate(evoquant_pipeline_phase_duration_seconds_count{status=\"error\"}[5m]))",
+          "legendFormat": "Failed phases/s",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        }
+      }
     }
   ]
 }

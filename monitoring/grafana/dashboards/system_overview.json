@@ -1,42 +1,127 @@
 {
   "uid": "evoquant-system-overview",
   "title": "EvoQuant - System Overview",
-  "tags": ["evoquant"],
+  "tags": [
+    "evoquant"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "15s",
-  "time": {"from": "now-1h", "to": "now"},
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
   "panels": [
     {
       "id": 1,
       "type": "stat",
       "title": "Health Status",
-      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
-      "targets": [{"expr": "evoquant_health_status", "refId": "A"}],
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "evoquant_health_status",
+          "refId": "A",
+          "instant": true
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            {"type": "value", "options": {"0": {"text": "Healthy", "color": "green"}}},
-            {"type": "value", "options": {"1": {"text": "Degraded", "color": "yellow"}}},
-            {"type": "value", "options": {"2": {"text": "Unhealthy", "color": "red"}}}
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Healthy",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Degraded",
+                  "color": "yellow"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "2": {
+                  "text": "Unhealthy",
+                  "color": "red"
+                }
+              }
+            }
           ],
-          "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 1, "color": "yellow"}, {"value": 2, "color": "red"}]}
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "yellow"
+              },
+              {
+                "value": 2,
+                "color": "red"
+              }
+            ]
+          }
         }
       },
-      "options": {"colorMode": "background", "graphMode": "none", "textMode": "value"}
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value"
+      }
     },
     {
       "id": 2,
       "type": "gauge",
       "title": "WMI Score",
-      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
-      "targets": [{"expr": "evoquant_wmi_score", "refId": "A"}],
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "evoquant_wmi_score",
+          "refId": "A",
+          "instant": true
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "min": 0,
           "max": 100,
-          "thresholds": {"steps": [{"value": null, "color": "red"}, {"value": 40, "color": "yellow"}, {"value": 70, "color": "green"}]}
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 40,
+                "color": "yellow"
+              },
+              {
+                "value": 70,
+                "color": "green"
+              }
+            ]
+          }
         }
       }
     },
@@ -44,77 +129,511 @@
       "id": 3,
       "type": "stat",
       "title": "Active Modules",
-      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
-      "targets": [{"expr": "count(evoquant_module_status == 1)", "refId": "A"}],
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "green"}]}}}
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "count(evoquant_module_status == 1) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 4,
       "type": "stat",
       "title": "Stopped Modules",
-      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
-      "targets": [{"expr": "count(evoquant_module_status == 0)", "refId": "A"}],
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "orange"}, {"value": 1, "color": "red"}]}}}
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "count(evoquant_module_status == 0) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "orange"
+              },
+              {
+                "value": 3,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 5,
       "type": "stat",
       "title": "Total Restarts",
-      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
-      "targets": [{"expr": "sum(evoquant_module_restart_count)", "refId": "A"}],
-      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 5, "color": "yellow"}, {"value": 10, "color": "red"}]}}}
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(evoquant_module_restart_count) OR vector(0)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 5,
+                "color": "yellow"
+              },
+              {
+                "value": 10,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 6,
       "type": "stat",
       "title": "Database Total Size",
-      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
-      "targets": [{"expr": "sum(evoquant_database_size_bytes)", "refId": "A"}],
-      "fieldConfig": {"defaults": {"unit": "bytes", "thresholds": {"steps": [{"value": null, "color": "blue"}]}}}
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(evoquant_database_size_bytes)",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "blue"
+              }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 7,
       "type": "timeseries",
       "title": "API Request Rate",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
-      "targets": [{"expr": "sum(rate(evoquant_http_requests_total[1m])) by (status)", "legendFormat": "{{status}}", "refId": "A"}],
-      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"drawStyle": "line", "fillOpacity": 10}}}
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(evoquant_http_requests_total[1m])) by (status)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(evoquant_http_requests_total[1m]))",
+          "legendFormat": "total",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        }
+      }
     },
     {
       "id": 8,
       "type": "timeseries",
       "title": "Request Latency (P50 / P95 / P99)",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
       "targets": [
-        {"expr": "histogram_quantile(0.50, sum(rate(evoquant_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P50", "refId": "A"},
-        {"expr": "histogram_quantile(0.95, sum(rate(evoquant_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P95", "refId": "B"},
-        {"expr": "histogram_quantile(0.99, sum(rate(evoquant_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P99", "refId": "C"}
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(evoquant_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(evoquant_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(evoquant_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "fillOpacity": 5}}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "lineWidth": 2
+          }
+        }
+      }
     },
     {
       "id": 9,
-      "type": "table",
-      "title": "Module Status",
-      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 12},
+      "type": "timeseries",
+      "title": "Requests In-Progress",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 12
+      },
       "targets": [
-        {"expr": "evoquant_module_status", "format": "table", "instant": true, "refId": "A"},
-        {"expr": "evoquant_module_restart_count", "format": "table", "instant": true, "refId": "B"},
-        {"expr": "evoquant_module_uptime_seconds", "format": "table", "instant": true, "refId": "C"}
+        {
+          "expr": "sum(evoquant_http_requests_in_progress)",
+          "legendFormat": "concurrent",
+          "refId": "A"
+        }
       ],
-      "transformations": [
-        {"id": "merge"},
-        {"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}}}
-      ]
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "lineWidth": 2,
+            "gradientMode": "scheme"
+          }
+        }
+      }
     },
     {
       "id": 10,
+      "type": "timeseries",
+      "title": "Request Rate by Path (Top 10)",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 12
+      },
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(evoquant_http_requests_total[5m])) by (path))",
+          "legendFormat": "{{path}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Error Rate (4xx + 5xx)",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 12
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(evoquant_http_requests_total{status=~\"4..\"}[5m]))",
+          "legendFormat": "4xx",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(evoquant_http_requests_total{status=~\"5..\"}[5m]))",
+          "legendFormat": "5xx",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineWidth": 2
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Module Status",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "targets": [
+        {
+          "expr": "evoquant_module_status",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "evoquant_module_restart_count",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "evoquant_module_uptime_seconds",
+          "format": "table",
+          "instant": true,
+          "refId": "C"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge"
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 13,
       "type": "bargauge",
       "title": "Database Sizes",
-      "gridPos": {"h": 10, "w": 8, "x": 16, "y": 12},
-      "targets": [{"expr": "evoquant_database_size_bytes", "legendFormat": "{{database}}", "refId": "A"}],
-      "fieldConfig": {"defaults": {"unit": "bytes", "thresholds": {"steps": [{"value": null, "color": "blue"}, {"value": 104857600, "color": "yellow"}, {"value": 524288000, "color": "red"}]}}},
-      "options": {"orientation": "horizontal", "displayMode": "gradient"}
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 12,
+        "y": 19
+      },
+      "targets": [
+        {
+          "expr": "evoquant_database_size_bytes",
+          "legendFormat": "{{database}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "blue"
+              },
+              {
+                "value": 104857600,
+                "color": "yellow"
+              },
+              {
+                "value": 524288000,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "WMI Score History",
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 18,
+        "y": 19
+      },
+      "targets": [
+        {
+          "expr": "evoquant_wmi_score",
+          "legendFormat": "WMI",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 100,
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "gradientMode": "scheme"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 40,
+                "color": "yellow"
+              },
+              {
+                "value": 70,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Process Memory Usage",
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes{job=\"evoquant\"}",
+          "legendFormat": "RSS",
+          "refId": "A"
+        },
+        {
+          "expr": "process_virtual_memory_bytes{job=\"evoquant\"}",
+          "legendFormat": "Virtual",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Process CPU & Open FDs",
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total{job=\"evoquant\"}[1m])",
+          "legendFormat": "CPU usage",
+          "refId": "A"
+        },
+        {
+          "expr": "process_open_fds{job=\"evoquant\"}",
+          "legendFormat": "Open FDs",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        }
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
     }
   ]
 }
