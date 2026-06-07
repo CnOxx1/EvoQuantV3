@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 import pandas as pd
+from loguru import logger
 
 from database.db_manager import DBManager
 from logic_layer.technical_indicators.aggregator import MultiExchangeKlineAggregator
@@ -53,8 +54,25 @@ class TechnicalIndicatorService:
     ):
         targets = self._resolve_targets("klines", symbol, timeframe)
         merged_frames: list[pd.DataFrame] = []
+        skipped = 0
 
         for target_symbol, target_timeframe in targets:
+            # 增量跳过：无新 klines 时直接跳过
+            if not full_refresh and since_days is None:
+                latest_raw = self.repository.fetch_latest_open_time(
+                    "klines", target_symbol, target_timeframe
+                )
+                latest_merged = self.repository.fetch_latest_open_time(
+                    "merged_klines", target_symbol, target_timeframe
+                )
+                if (
+                    latest_raw is not None
+                    and latest_merged is not None
+                    and latest_raw <= latest_merged
+                ):
+                    skipped += 1
+                    continue
+
             since_time = self._resolve_merge_since_time(
                 target_symbol,
                 target_timeframe,
@@ -71,6 +89,10 @@ class TechnicalIndicatorService:
             if not merged.empty:
                 merged_frames.append(merged)
 
+        if skipped > 0:
+            from loguru import logger
+            logger.debug("merge_klines 跳过 {} 个无新数据的 target", skipped)
+
         return self._concat_frames(merged_frames)
 
     def calculate_indicators(
@@ -82,8 +104,25 @@ class TechnicalIndicatorService:
     ):
         targets = self._resolve_targets("merged_klines", symbol, timeframe)
         indicator_frames: list[pd.DataFrame] = []
+        skipped = 0
 
         for target_symbol, target_timeframe in targets:
+            # 增量跳过：merged_klines 无更新时跳过指标计算
+            if not full_refresh and since_days is None:
+                latest_merged = self.repository.fetch_latest_open_time(
+                    "merged_klines", target_symbol, target_timeframe
+                )
+                latest_indicator = self.repository.fetch_latest_open_time(
+                    "technical_indicators", target_symbol, target_timeframe
+                )
+                if (
+                    latest_merged is not None
+                    and latest_indicator is not None
+                    and latest_merged <= latest_indicator
+                ):
+                    skipped += 1
+                    continue
+
             calculation_start = self._resolve_indicator_start_time(
                 target_symbol,
                 target_timeframe,
@@ -111,6 +150,10 @@ class TechnicalIndicatorService:
 
             self.repository.save_technical_indicators(indicators)
             indicator_frames.append(indicators)
+
+        if skipped > 0:
+            from loguru import logger
+            logger.debug("calculate_indicators 跳过 {} 个无新数据的 target", skipped)
 
         return self._concat_frames(indicator_frames)
 

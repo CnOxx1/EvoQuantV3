@@ -15,8 +15,10 @@ router = APIRouter(prefix="/liquidity-regime", tags=["liquidity-regime"])
 def get_current_state() -> dict[str, Any]:
     """当前流动性 regime 状态。"""
     db = get_analytics_db()
+    # v4.4.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM liquidity_regime_states ORDER BY ts DESC LIMIT 1",
+        "SELECT ts, liquidity_score, regime, defi_cefi_spread, transition_prob "
+        "FROM liquidity_regime_states ORDER BY ts DESC LIMIT 1",
         (),
     )
     if not rows:
@@ -30,8 +32,10 @@ def get_state_history(
 ) -> dict[str, Any]:
     """流动性 regime 历史。"""
     db = get_analytics_db()
+    # v4.4.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM liquidity_regime_states ORDER BY ts DESC LIMIT ?",
+        "SELECT ts, liquidity_score, regime, defi_cefi_spread "
+        "FROM liquidity_regime_states ORDER BY ts DESC LIMIT ?",
         (limit,),
     )
     return {"count": len(rows), "history": rows}
@@ -68,9 +72,7 @@ def get_defi_cefi_spread(
 @router.get("/context")
 def get_liquidity_regime_context() -> dict[str, Any]:
     """流动性 regime AI 上下文 bundle。"""
-    from logic_layer.liquidity_regime.service import LiquidityRegimeService
-    service = LiquidityRegimeService()
-    service.init_storage()
-    bundle = service.load_latest_context_bundle()
-    service.close()
-    return bundle
+    # v4.4.0: 使用单例服务替代逐请求实例化
+    from api.dependencies import get_liquidity_regime_service
+    service = get_liquidity_regime_service()
+    return service.load_latest_context_bundle()

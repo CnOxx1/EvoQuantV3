@@ -24,6 +24,14 @@ import json
 from dataclasses import dataclass
 from typing import Any, Optional
 
+try:
+    import orjson as _json_mod
+    _json_dumps = lambda obj: _json_mod.dumps(obj).decode()
+    _json_loads = _json_mod.loads
+except ImportError:
+    _json_dumps = lambda obj: json.dumps(obj, separators=(",", ":"))
+    _json_loads = json.loads
+
 from fastapi import Query
 
 # 绝对上限，防止客户端滥用
@@ -47,8 +55,8 @@ class CursorParams:
             return None
         try:
             payload = base64.urlsafe_b64decode(self.cursor + "==")
-            return json.loads(payload)
-        except (ValueError, json.JSONDecodeError):
+            return _json_loads(payload)
+        except (ValueError, Exception):
             return None
 
 
@@ -70,7 +78,8 @@ class OffsetParams:
 
 def encode_cursor(timestamp: str, row_id: Any) -> str:
     """将 (timestamp, id) 编码为 opaque cursor。"""
-    payload = json.dumps({"ts": timestamp, "id": row_id}, separators=(",", ":"))
+    # v4.5.0: orjson 快速路径替代 json.dumps
+    payload = _json_dumps({"ts": timestamp, "id": row_id})
     encoded = base64.urlsafe_b64encode(payload.encode()).rstrip(b"=")
     return encoded.decode()
 

@@ -99,15 +99,32 @@ def get_volatility_cone(symbol: str) -> dict[str, Any]:
 def get_volatility_ranking() -> dict[str, Any]:
     """全资产波动率排名。"""
     db = get_market_db()
+    # v4.5.0: 单次批量查询所有符号替代 N+1 逐符号查询
+    placeholders = ",".join("?" * len(TARGET_SYMBOLS))
+    all_rows = db.fetch_all(
+        f"SELECT symbol, close FROM merged_klines "
+        f"WHERE symbol IN ({placeholders}) "
+        f"ORDER BY symbol, open_time DESC",
+        tuple(TARGET_SYMBOLS),
+    )
+    # 按 symbol 分组，每个最多取 31 根
+    from collections import defaultdict
+    series: dict[str, list[float]] = defaultdict(list)
+    counts: dict[str, int] = defaultdict(int)
+    for row in all_rows:
+        sym = row["symbol"]
+        if counts[sym] >= 31:
+            continue
+        val = _safe_float(row.get("close"))
+        if val:
+            series[sym].append(val)
+            counts[sym] += 1
+
     results = []
     for sym in TARGET_SYMBOLS:
-        rows = db.fetch_all(
-            "SELECT close FROM merged_klines WHERE symbol = ? ORDER BY open_time DESC LIMIT 31",
-            (sym,),
-        )
-        if len(rows) < 10:
+        closes = list(reversed(series.get(sym, [])))
+        if len(closes) < 10:
             continue
-        closes = [_safe_float(r.get("close")) or 0 for r in reversed(rows)]
         returns = [math.log(closes[i] / closes[i - 1]) for i in range(1, len(closes)) if closes[i - 1] > 0]
         if not returns:
             continue

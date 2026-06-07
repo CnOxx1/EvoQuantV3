@@ -108,14 +108,23 @@ class MarketFeatureEnricher:
         funding_rates = self._prepare_funding_rates(funding_rates)
         orderbooks = self._prepare_orderbooks(orderbooks)
 
+        # v4.5.0: 预分组辅助 DataFrame，避免 groupby 内部逐次 boolean mask 过滤
+        _ticker_groups = dict(iter(tickers.groupby("symbol"))) if not tickers.empty else {}
+        _funding_groups = dict(iter(funding_rates.groupby("symbol"))) if not funding_rates.empty else {}
+        _orderbook_groups = dict(iter(orderbooks.groupby("symbol"))) if not orderbooks.empty else {}
+        _empty_tickers = tickers.iloc[:0]
+        _empty_funding = funding_rates.iloc[:0]
+        _empty_orderbooks = orderbooks.iloc[:0]
+
         enriched_groups: list[pd.DataFrame] = []
-        for symbol, group in frame.groupby("symbol", sort=True):
+        # v4.5.0: sort=False 避免已按 symbol 排序数据的冗余重排
+        for symbol, group in frame.groupby("symbol", sort=False):
             enriched_groups.append(
                 self._enrich_symbol_group(
                     group,
-                    tickers[tickers["symbol"] == symbol] if not tickers.empty else tickers,
-                    funding_rates[funding_rates["symbol"] == symbol] if not funding_rates.empty else funding_rates,
-                    orderbooks[orderbooks["symbol"] == symbol] if not orderbooks.empty else orderbooks,
+                    _ticker_groups.get(symbol, _empty_tickers),
+                    _funding_groups.get(symbol, _empty_funding),
+                    _orderbook_groups.get(symbol, _empty_orderbooks),
                 )
             )
 

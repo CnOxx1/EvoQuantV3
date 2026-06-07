@@ -24,7 +24,9 @@ def get_pressure(
     if normalized not in TARGET_SYMBOLS:
         raise HTTPException(status_code=404, detail=f"Symbol {symbol} not in universe")
     db = get_market_db()
-    sql = ("SELECT * FROM orderflow_agg WHERE symbol = ?"
+    # v4.4.0: SELECT * → column projection
+    sql = ("SELECT ts, symbol, exchange, cvd, buy_volume, sell_volume, "
+           "aggression_ratio, trade_count FROM orderflow_agg WHERE symbol = ?"
            + (" AND exchange = ?" if exchange else "")
            + " ORDER BY ts DESC LIMIT ?")
     params: tuple = (normalized, exchange, limit) if exchange else (normalized, limit)

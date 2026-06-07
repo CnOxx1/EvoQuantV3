@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from datetime import datetime, timezone
 
+import numpy as np
+
 
 class CrossAssetCalculator:
     """纯计算逻辑，不依赖数据库。"""
@@ -14,6 +16,8 @@ class CrossAssetCalculator:
         close_series: dict[str, list[float]],
     ) -> dict[str, dict[str, float]]:
         """从收盘价序列计算 Pearson 相关性矩阵。
+
+        v4.4.0: 使用 numpy 向量化计算替代纯 Python 循环，10-100× 加速。
 
         Parameters
         ----------
@@ -30,43 +34,26 @@ class CrossAssetCalculator:
         if n < 2:
             return {s: {s: 1.0} for s in symbols}
 
-        # 计算均值和标准差
-        stats: dict[str, tuple[float, float]] = {}
-        for sym in symbols:
-            prices = close_series[sym]
-            length = len(prices)
-            if length < 2:
-                stats[sym] = (0.0, 0.0)
-                continue
-            mean = sum(prices) / length
-            variance = sum((p - mean) ** 2 for p in prices) / (length - 1)
-            std = math.sqrt(variance) if variance > 0 else 0.0
-            stats[sym] = (mean, std)
+        # 构建 numpy 矩阵: 每行一个 symbol 的价格序列
+        min_len = min(len(close_series[s]) for s in symbols)
+        if min_len < 2:
+            return {s: {s2: 0.0 for s2 in symbols} for s in symbols}
 
+        price_matrix = np.array(
+            [close_series[s][-min_len:] for s in symbols], dtype=np.float64
+        )
+        # numpy corrcoef 一次计算完整 NxN 矩阵
+        corr_np = np.corrcoef(price_matrix)
+        # 处理 NaN（如某 symbol 价格恒定导致 std=0）
+        corr_np = np.nan_to_num(corr_np, nan=0.0)
+        np.clip(corr_np, -1.0, 1.0, out=corr_np)
+
+        # 转换为 dict 格式
         matrix: dict[str, dict[str, float]] = {}
         for i, sym_a in enumerate(symbols):
             matrix[sym_a] = {}
-            mean_a, std_a = stats[sym_a]
-            prices_a = close_series[sym_a]
             for j, sym_b in enumerate(symbols):
-                if i == j:
-                    matrix[sym_a][sym_b] = 1.0
-                    continue
-                if j < i:
-                    matrix[sym_a][sym_b] = matrix[sym_b][sym_a]
-                    continue
-                mean_b, std_b = stats[sym_b]
-                prices_b = close_series[sym_b]
-                if std_a == 0 or std_b == 0 or len(prices_a) < 2:
-                    matrix[sym_a][sym_b] = 0.0
-                    continue
-                length = min(len(prices_a), len(prices_b))
-                cov = sum(
-                    (prices_a[k] - mean_a) * (prices_b[k] - mean_b)
-                    for k in range(length)
-                ) / (length - 1)
-                corr = cov / (std_a * std_b)
-                matrix[sym_a][sym_b] = round(max(-1.0, min(1.0, corr)), 4)
+                matrix[sym_a][sym_b] = round(float(corr_np[i, j]), 4)
         return matrix
 
     @staticmethod

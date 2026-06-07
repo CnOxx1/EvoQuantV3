@@ -15,8 +15,10 @@ router = APIRouter(prefix="/holder-behavior", tags=["holder-behavior"])
 def get_current_state() -> dict[str, Any]:
     """当前持有者行为状态。"""
     db = get_analytics_db()
+    # v4.4.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM holder_behavior_states ORDER BY ts DESC LIMIT 1",
+        "SELECT ts, market_phase, mvrv_percentile, sopr_state, supply_shock_prob "
+        "FROM holder_behavior_states ORDER BY ts DESC LIMIT 1",
         (),
     )
     if not rows:
@@ -30,8 +32,10 @@ def get_state_history(
 ) -> dict[str, Any]:
     """持有者行为状态历史。"""
     db = get_analytics_db()
+    # v4.4.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM holder_behavior_states ORDER BY ts DESC LIMIT ?",
+        "SELECT ts, market_phase, mvrv_percentile, sopr_state, supply_shock_prob "
+        "FROM holder_behavior_states ORDER BY ts DESC LIMIT ?",
         (limit,),
     )
     return {"count": len(rows), "history": rows}
@@ -68,9 +72,7 @@ def get_behavior_signals(
 @router.get("/context")
 def get_holder_behavior_context() -> dict[str, Any]:
     """持有者行为 AI 上下文 bundle。"""
-    from logic_layer.holder_behavior_analysis.service import HolderBehaviorService
-    service = HolderBehaviorService()
-    service.init_storage()
-    bundle = service.load_latest_context_bundle()
-    service.close()
-    return bundle
+    # v4.4.0: 使用单例服务替代逐请求实例化
+    from api.dependencies import get_holder_behavior_service
+    service = get_holder_behavior_service()
+    return service.load_latest_context_bundle()

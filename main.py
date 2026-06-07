@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import resource
 import signal
 import subprocess
 import sys
@@ -16,6 +17,12 @@ from loguru import logger
 
 from config.logging import setup_logger
 from config.settings import validate_config
+from core.feature_flags import feature_flags
+from core.degradation import degradation_manager
+from core.lazy_starter import lazy_starter
+from core.trace_propagation import trace_propagator
+from core.graceful_shutdown import shutdown_manager
+from core.exceptions import is_retryable
 
 PROJECT_ROOT = str(Path(__file__).resolve().parent)
 
@@ -30,6 +37,7 @@ class ModuleSpec:
     kind: str = "daemon"
     default_args: tuple[str, ...] = ()
     autostart: bool = False
+    priority: str = "normal"  # "critical" | "normal" | "low"
 
     def build_command(
         self,
@@ -64,6 +72,7 @@ MODULE_REGISTRY: tuple[ModuleSpec, ...] = (
         kind="daemon",
         default_args=("--mode", "scheduler"),
         autostart=True,
+        priority="critical",
     ),
     ModuleSpec(
         name="macro_data",
@@ -328,6 +337,7 @@ MODULE_REGISTRY: tuple[ModuleSpec, ...] = (
         kind="daemon",
         default_args=("--mode", "scheduler"),
         autostart=True,
+        priority="critical",
     ),
     ModuleSpec(
         name="technical_indicators",
@@ -422,6 +432,24 @@ DAEMON_RESTART_WINDOW = timedelta(minutes=15)
 DAEMON_RESTART_BASE_DELAY = float(os.environ.get("DAEMON_RESTART_BASE_DELAY", "2.0"))
 DAEMON_RESTART_MAX_DELAY = float(os.environ.get("DAEMON_RESTART_MAX_DELAY", "60.0"))
 
+# 按优先级差异化重启策略
+PRIORITY_RESTART_LIMITS = {
+    "critical": 10,
+    "normal": 3,
+    "low": 1,
+}
+
+# 按优先级差异化退避曲线 (base_delay, max_delay)
+PRIORITY_BACKOFF_CURVES = {
+    "critical": (1.0, 30.0),
+    "normal": (2.0, 60.0),
+    "low": (5.0, 300.0),
+}
+
+# 子进程资源限制
+SUBPROCESS_MEM_LIMIT_MB = int(os.environ.get("SUBPROCESS_MEM_LIMIT_MB", "2048"))
+SUBPROCESS_CPU_LIMIT_SECONDS = int(os.environ.get("SUBPROCESS_CPU_LIMIT_SECONDS", "3600"))
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="后端模块总入口")
@@ -474,6 +502,18 @@ def resolve_modules(selected_names: Sequence[str] | None = None) -> list[ModuleS
             raise ValueError(f"未知模块: {module_name}，可选值: {available}")
         if module_name in seen:
             continue
+        # 特性开关检查：被禁用的模块跳过
+        if not feature_flags.is_enabled(module_name):
+            logger.info("模块 {} 已被特性开关禁用，跳过", module_name)
+            continue
+        # 降级检查：当前降级级别下不应运行的模块跳过
+        if not degradation_manager.should_run(module_name):
+            logger.info("模块 {} 在当前降级级别下不启动", module_name)
+            continue
+        # 懒启动检查：标记为 lazy 的模块延迟启动
+        if lazy_starter.is_lazy(module_name):
+            logger.info("模块 {} 标记为懒启动，等待首次请求激活", module_name)
+            continue
         resolved.append(spec)
         seen.add(module_name)
 
@@ -490,6 +530,15 @@ def format_module_list() -> str:
     return "\n".join(lines)
 
 
+def _make_preexec_fn(mem_limit_mb: int, cpu_limit_seconds: int):
+    """创建子进程资源限制函数（通过 setrlimit 设置内存和 CPU 上限）。"""
+    def _set_limits():
+        mem_bytes = mem_limit_mb * 1024 * 1024
+        resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
+        resource.setrlimit(resource.RLIMIT_CPU, (cpu_limit_seconds, cpu_limit_seconds))
+    return _set_limits
+
+
 def launch_module(
     spec: ModuleSpec,
     python_executable: str | None = None,
@@ -500,7 +549,12 @@ def launch_module(
         extra_args=extra_args,
     )
     logger.info(f"启动模块 {spec.name}: {' '.join(command)}")
-    process = subprocess.Popen(command, cwd=PROJECT_ROOT)
+    preexec = None
+    if SUBPROCESS_MEM_LIMIT_MB > 0 or SUBPROCESS_CPU_LIMIT_SECONDS > 0:
+        preexec = _make_preexec_fn(SUBPROCESS_MEM_LIMIT_MB, SUBPROCESS_CPU_LIMIT_SECONDS)
+    # 跨进程追踪上下文传播
+    env = trace_propagator.inject_env()
+    process = subprocess.Popen(command, cwd=PROJECT_ROOT, preexec_fn=preexec, env=env)
     return ManagedProcess(
         spec=spec,
         process=process,
@@ -521,24 +575,39 @@ def _restart_child(
     )
     next_restart_count = child.restart_count + 1 if within_restart_window else 1
 
-    if next_restart_count > DAEMON_RESTART_LIMIT:
+    # OOM / 资源限制检测：returncode -9 (SIGKILL) 通常表示内存超限
+    returncode = getattr(child.process, "returncode", None)
+    if returncode is not None and returncode == -9:
         logger.error(
-            "模块 {} 在 {} 分钟内已连续退出 {} 次，停止自动重启并保留其他模块继续运行",
+            "模块 {} 被 SIGKILL 终止 (returncode=-9)，可能触发内存限制 "
+            "(SUBPROCESS_MEM_LIMIT_MB={})，请检查模块内存用量",
             child.spec.name,
+            SUBPROCESS_MEM_LIMIT_MB,
+        )
+
+    if next_restart_count > PRIORITY_RESTART_LIMITS.get(child.spec.priority, DAEMON_RESTART_LIMIT):
+        logger.error(
+            "模块 {} [优先级={}] 在 {} 分钟内已连续退出 {} 次，停止自动重启并保留其他模块继续运行",
+            child.spec.name,
+            child.spec.priority,
             int(DAEMON_RESTART_WINDOW.total_seconds() // 60),
-            DAEMON_RESTART_LIMIT,
+            next_restart_count - 1,
         )
         child.disabled_after_failure = True
         return None
 
-    # 指数退避延迟：base * 2^(count-1)，上限 max_delay
+    # 按优先级差异化退避延迟
+    base_delay, max_delay = PRIORITY_BACKOFF_CURVES.get(
+        child.spec.priority, (DAEMON_RESTART_BASE_DELAY, DAEMON_RESTART_MAX_DELAY)
+    )
     delay = min(
-        DAEMON_RESTART_BASE_DELAY * (2 ** (next_restart_count - 1)),
-        DAEMON_RESTART_MAX_DELAY,
+        base_delay * (2 ** (next_restart_count - 1)),
+        max_delay,
     )
     logger.warning(
-        "模块 {} 意外退出，{:.1f}s 后进行第 {} 次自动重启",
+        "模块 {} [优先级={}] 意外退出，{:.1f}s 后进行第 {} 次自动重启",
         child.spec.name,
+        child.spec.priority,
         delay,
         next_restart_count,
     )
@@ -632,10 +701,22 @@ def supervise_modules(
 ) -> int:
     shutdown_requested = Event()
     exit_code = 0
-    children = [
-        launch_module(spec, python_executable=python_executable)
-        for spec in module_specs
-    ]
+
+    # v4.6.0: 单次遍历按优先级分组，替代 3 次线性扫描
+    _by_priority: dict[str, list] = {"critical": [], "normal": [], "low": []}
+    for s in module_specs:
+        _by_priority.get(s.priority, _by_priority["normal"]).append(s)
+    critical_specs = _by_priority["critical"]
+    normal_specs = _by_priority["normal"]
+    low_specs = _by_priority["low"]
+
+    children: list[ManagedProcess] = []
+    # Critical 模块优先启动
+    for spec in critical_specs:
+        children.append(launch_module(spec, python_executable=python_executable))
+    # Normal + Low 模块并行启动（不等待 critical 就绪）
+    for spec in normal_specs + low_specs:
+        children.append(launch_module(spec, python_executable=python_executable))
 
     # 启动 Prometheus 模块状态导出线程（优雅降级）
     _start_metrics_exporter(children)
@@ -653,6 +734,10 @@ def supervise_modules(
 
     try:
         while True:
+            # v4.3.0: 优先检查 shutdown 信号，避免无效的子进程轮询
+            if shutdown_requested.is_set():
+                break
+
             active_count = 0
 
             for index, child in enumerate(children):

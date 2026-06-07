@@ -24,6 +24,9 @@ from config.symbols import (
     TARGET_SYMBOLS,
 )
 
+# 优化 #8: 预索引 SYMBOL_UNIVERSE，O(1) 查找替代线性扫描
+_SYMBOL_INDEX: dict[str, dict] = {e["symbol"]: e for e in SYMBOL_UNIVERSE}
+
 router = APIRouter(prefix="/aggregate", tags=["aggregate"])
 
 
@@ -36,42 +39,35 @@ def asset_profile(symbol: str) -> dict[str, Any]:
 
     exchange_db = get_exchange_db()
 
-    # Price data
-    ticker = exchange_db.fetch_one(
-        "SELECT * FROM latest_tickers WHERE symbol = ? AND exchange = 'binance'",
+    # 合并 ticker + funding + OI 为单次 JOIN 查询（从 5 次降为 2 次）
+    combined = exchange_db.fetch_one(
+        """SELECT t.last_price, t.change_24h, t.quote_volume_24h,
+                  f.funding_rate, f.mark_price,
+                  o.open_interest_contracts, o.open_interest_usd, o.open_interest_change_24h
+           FROM latest_tickers t
+           LEFT JOIN latest_funding_rates f ON t.symbol = f.symbol AND t.exchange = f.exchange
+           LEFT JOIN latest_open_interest_snapshots o ON t.symbol = o.symbol AND t.exchange = o.exchange
+           WHERE t.symbol = ? AND t.exchange = 'binance'""",
         (normalized,),
     )
-    price_info = {}
-    if ticker:
-        price_info = {
-            "price": _safe_float(ticker["last_price"]),
-            "change_24h": _safe_float(ticker["change_24h"]),
-            "volume_24h": _safe_float(ticker["quote_volume_24h"]),
-        }
 
-    # Derivatives data
-    funding = exchange_db.fetch_one(
-        "SELECT * FROM latest_funding_rates WHERE symbol = ? AND exchange = 'binance'",
-        (normalized,),
-    )
+    price_info = {}
     derivatives_info = {}
-    if funding:
-        rate = _safe_float(funding["funding_rate"])
+    if combined:
+        price_info = {
+            "price": _safe_float(combined["last_price"]),
+            "change_24h": _safe_float(combined["change_24h"]),
+            "volume_24h": _safe_float(combined["quote_volume_24h"]),
+        }
+        rate = _safe_float(combined["funding_rate"])
         derivatives_info = {
             "funding_rate": rate,
             "annualized_funding": round(rate * 3 * 365, 4) if rate else None,
-            "mark_price": _safe_float(funding["mark_price"]),
+            "mark_price": _safe_float(combined["mark_price"]),
+            "open_interest_contracts": _safe_float(combined["open_interest_contracts"]),
+            "open_interest_usd": _safe_float(combined["open_interest_usd"]),
+            "open_interest_change_24h": _safe_float(combined["open_interest_change_24h"]),
         }
-
-    # OI data
-    oi_row = exchange_db.fetch_one(
-        "SELECT open_interest_contracts, open_interest_usd, open_interest_change_24h FROM latest_open_interest_snapshots WHERE symbol = ? AND exchange = 'binance'",
-        (normalized,),
-    )
-    if oi_row:
-        derivatives_info["open_interest_contracts"] = _safe_float(oi_row["open_interest_contracts"])
-        derivatives_info["open_interest_usd"] = _safe_float(oi_row["open_interest_usd"])
-        derivatives_info["open_interest_change_24h"] = _safe_float(oi_row["open_interest_change_24h"])
 
     # Volatility / Risk
     klines = exchange_db.fetch_all(
@@ -83,14 +79,10 @@ def asset_profile(symbol: str) -> dict[str, Any]:
     daily_vol, annual_vol = _compute_volatility(prices) if prices else (0.0, 0.0)
     risk_score, risk_label = _risk_level(annual_vol)
 
-    # Sector info
-    sector = None
-    tier = None
-    for entry in SYMBOL_UNIVERSE:
-        if entry["symbol"] == normalized:
-            sector = entry["sector"]
-            tier = entry["tier"]
-            break
+    # Sector info — O(1) 预索引查找
+    entry = _SYMBOL_INDEX.get(normalized)
+    sector = entry["sector"] if entry else None
+    tier = entry["tier"] if entry else None
 
     return {
         "symbol": normalized,
@@ -118,10 +110,10 @@ def multi_asset_compare(
 
     exchange_db = get_exchange_db()
 
-    # Batch query: tickers
+    # Batch query: tickers (column projection — 避免 SELECT *)
     placeholders = ",".join("?" for _ in sym_list)
     ticker_rows = exchange_db.fetch_all(
-        f"SELECT * FROM latest_tickers WHERE symbol IN ({placeholders}) AND exchange = 'binance'",
+        f"SELECT symbol, last_price, change_24h, quote_volume_24h FROM latest_tickers WHERE symbol IN ({placeholders}) AND exchange = 'binance'",
         tuple(sym_list),
     )
     ticker_map = {row["symbol"]: row for row in ticker_rows}
@@ -315,25 +307,41 @@ def market_regime() -> dict[str, Any]:
 
 @router.get("/correlation-context/{symbol}")
 def correlation_context(symbol: str) -> dict[str, Any]:
-    """单资产相关性上下文（Beta、最相关/最不相关）。"""
+    """单资产相关性上下文（Beta、最相关/最不相关）。
+
+    v4.3.0: 单次批量查询所有符号价格替代 N+1 逐符号查询。
+    """
     normalized = _normalize_symbol(symbol)
     if normalized not in TARGET_SYMBOLS:
         raise HTTPException(status_code=404, detail=f"Symbol '{normalized}' not in universe.")
 
     analytics_db = get_exchange_db()
 
-    # Get target prices
-    target_rows = analytics_db.fetch_all(
-        "SELECT close FROM klines WHERE symbol = ? AND exchange = 'binance' AND timeframe = '1h' ORDER BY open_time DESC LIMIT 168",
-        (normalized,),
+    # v4.3.0: 单次查询所有符号的 1h klines（替代 N+1）
+    all_rows = analytics_db.fetch_all(
+        "SELECT symbol, close FROM klines "
+        "WHERE exchange = 'binance' AND timeframe = '1h' "
+        "ORDER BY symbol, open_time DESC",
+        (),
     )
-    target_prices = [_safe_float(r["close"]) for r in target_rows if _safe_float(r["close"])]
-    target_prices.reverse()
+    # 按 symbol 分组，每个最多取 168 根
+    series: dict[str, list[float]] = {}
+    counts: dict[str, int] = {}
+    for row in all_rows:
+        sym = row["symbol"]
+        if counts.get(sym, 0) >= 168:
+            continue
+        val = _safe_float(row["close"])
+        if val:
+            series.setdefault(sym, []).append(val)
+            counts[sym] = counts.get(sym, 0) + 1
+    for sym in series:
+        series[sym].reverse()
 
+    target_prices = series.get(normalized, [])
     if len(target_prices) < 10:
         return {"symbol": normalized, "correlations": [], "note": "Insufficient data"}
 
-    # Calculate returns for target
     target_rets = [
         (target_prices[i] - target_prices[i - 1]) / target_prices[i - 1]
         for i in range(1, len(target_prices))
@@ -344,12 +352,7 @@ def correlation_context(symbol: str) -> dict[str, Any]:
     for sym in TARGET_SYMBOLS:
         if sym == normalized:
             continue
-        rows = analytics_db.fetch_all(
-            "SELECT close FROM klines WHERE symbol = ? AND exchange = 'binance' AND timeframe = '1h' ORDER BY open_time DESC LIMIT 168",
-            (sym,),
-        )
-        prices = [_safe_float(r["close"]) for r in rows if _safe_float(r["close"])]
-        prices.reverse()
+        prices = series.get(sym, [])
         if len(prices) < 10:
             continue
         rets = [
@@ -357,13 +360,11 @@ def correlation_context(symbol: str) -> dict[str, Any]:
             for i in range(1, len(prices))
             if prices[i - 1] != 0
         ]
-        # Align lengths
         n = min(len(target_rets), len(rets))
         if n < 5:
             continue
         tr = target_rets[:n]
         sr = rets[:n]
-        # Pearson correlation
         mean_t = sum(tr) / n
         mean_s = sum(sr) / n
         cov = sum((tr[i] - mean_t) * (sr[i] - mean_s) for i in range(n)) / n
@@ -376,13 +377,8 @@ def correlation_context(symbol: str) -> dict[str, Any]:
     most_correlated = correlations[:3] if correlations else []
     least_correlated = correlations[-3:] if correlations else []
 
-    # Beta vs BTC
-    btc_rows = analytics_db.fetch_all(
-        "SELECT close FROM klines WHERE symbol = 'BTC/USDT' AND exchange = 'binance' AND timeframe = '1h' ORDER BY open_time DESC LIMIT 168",
-        (),
-    )
-    btc_prices = [_safe_float(r["close"]) for r in btc_rows if _safe_float(r["close"])]
-    btc_prices.reverse()
+    # Beta vs BTC — 直接从已加载 series 取
+    btc_prices = series.get("BTC/USDT", [])
     beta = None
     if len(btc_prices) >= 10 and normalized != "BTC/USDT":
         btc_rets = [
@@ -393,8 +389,8 @@ def correlation_context(symbol: str) -> dict[str, Any]:
         n = min(len(target_rets), len(btc_rets))
         if n >= 5:
             mean_b = sum(btc_rets[:n]) / n
-            mean_t = sum(target_rets[:n]) / n
-            cov = sum((target_rets[i] - mean_t) * (btc_rets[i] - mean_b) for i in range(n)) / n
+            mean_t2 = sum(target_rets[:n]) / n
+            cov = sum((target_rets[i] - mean_t2) * (btc_rets[i] - mean_b) for i in range(n)) / n
             var_b = sum((btc_rets[i] - mean_b) ** 2 for i in range(n)) / n
             beta = round(cov / var_b, 4) if var_b > 0 else None
 
@@ -411,20 +407,32 @@ def correlation_context(symbol: str) -> dict[str, Any]:
 def watchlist(
     symbols: str = Query(..., description="逗号分隔的符号列表"),
 ) -> dict[str, Any]:
-    """自定义观察列表批量查询。"""
+    """自定义观察列表批量查询（单次批量 IN 查询替代 N+1）。"""
     sym_list = [_normalize_symbol(s.strip()) for s in symbols.split(",")]
     exchange_db = get_exchange_db()
 
+    placeholders = ",".join("?" * len(sym_list))
+    params = tuple(sym_list)
+
+    # 批量查询 ticker 和 funding（2 次查询替代 2N 次）
+    tickers = exchange_db.fetch_all(
+        f"SELECT symbol, last_price, change_24h, quote_volume_24h "
+        f"FROM latest_tickers WHERE symbol IN ({placeholders}) AND exchange = 'binance'",
+        params,
+    )
+    fundings = exchange_db.fetch_all(
+        f"SELECT symbol, funding_rate "
+        f"FROM latest_funding_rates WHERE symbol IN ({placeholders}) AND exchange = 'binance'",
+        params,
+    )
+
+    ticker_map = {r["symbol"]: r for r in tickers}
+    funding_map = {r["symbol"]: r for r in fundings}
+
     items = []
     for sym in sym_list:
-        ticker = exchange_db.fetch_one(
-            "SELECT last_price, change_24h, quote_volume_24h FROM latest_tickers WHERE symbol = ? AND exchange = 'binance'",
-            (sym,),
-        )
-        funding = exchange_db.fetch_one(
-            "SELECT funding_rate FROM latest_funding_rates WHERE symbol = ? AND exchange = 'binance'",
-            (sym,),
-        )
+        ticker = ticker_map.get(sym)
+        funding = funding_map.get(sym)
         items.append({
             "symbol": sym,
             "price": _safe_float(ticker["last_price"]) if ticker else None,

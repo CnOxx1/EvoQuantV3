@@ -97,8 +97,7 @@ def get_vpin_ranking() -> dict[str, Any]:
 @router.get("/context")
 def get_flow_decomposition_context() -> dict[str, Any]:
     """资金流分解 AI 上下文 bundle。"""
-    from logic_layer.flow_decomposition.service import FlowDecompositionService
-    service = FlowDecompositionService()
-    bundle = service.load_latest_context_bundle()
-    service.close()
-    return bundle
+    # v4.4.0: 使用单例服务替代逐请求实例化
+    from api.dependencies import get_flow_decomposition_service
+    service = get_flow_decomposition_service()
+    return service.load_latest_context_bundle()

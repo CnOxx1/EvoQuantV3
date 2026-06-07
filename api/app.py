@@ -7,10 +7,11 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import os
 import sys
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from uuid import uuid4
 
@@ -22,97 +23,11 @@ from loguru import logger
 from api.cache import cache
 from api.query_cache import query_cache
 from api.models import SymbolInfo, SymbolsResponse
-from api.routers.bundle import router as bundle_router
-from api.routers.cross_asset import router as cross_asset_router
-from api.routers.domains import router as domains_router
-from api.routers.exchange import router as exchange_router
-from api.routers.health import router as health_router
-from api.routers.macro import router as macro_router
-from api.routers.onchain import router as onchain_router
-from api.routers.risk import router as risk_router
-from api.routers.sentiment import router as sentiment_router
-from api.routers.signals import router as signals_router
-from api.routers.technical import router as technical_router
-from api.routers.time_slice import router as time_slice_router
-from api.routers.data_quality import router as data_quality_router
-from api.routers.features import router as features_router
-from api.routers.alternative import router as alternative_router
-from api.routers.market_info import router as market_info_router
-from api.routers.catalogs import router as catalogs_router
-from api.routers.aggregate import router as aggregate_router
-from api.routers.strategy import router as strategy_router
-from api.routers.monitor import router as monitor_router
-from api.routers.orderflow import router as orderflow_router
-from api.routers.derivatives import router as derivatives_router
-from api.routers.news_intel import router as news_intel_router
-from api.routers.ai_context import router as ai_context_router
-from api.routers.technical_deep import router as technical_deep_router
-from api.routers.portfolio_analytics import router as portfolio_analytics_router
-from api.routers.microstructure import router as microstructure_router
-from api.routers.cross_asset_history import router as cross_asset_history_router
-from api.routers.factor_explorer import router as factor_explorer_router
-from api.routers.social_sentiment import router as social_sentiment_router
-from api.routers.whale_tracker import router as whale_tracker_router
-from api.routers.orderflow_micro import router as orderflow_micro_router
-from api.routers.defi import router as defi_router
-from api.routers.bridge_flow import router as bridge_flow_router
-from api.routers.regulatory import router as regulatory_router
-from api.routers.regime import router as regime_router
-from api.routers.anomaly import router as anomaly_router
-from api.routers.liquidity import router as liquidity_router
-from api.routers.volatility import router as volatility_router
-from api.routers.etf_flow import router as etf_flow_router
-from api.routers.basis_curve import router as basis_curve_router
-from api.routers.mev import router as mev_router
-from api.routers.cefi_lending import router as cefi_lending_router
-from api.routers.temporal_pattern import router as temporal_pattern_router
-from api.routers.flow_decomposition import router as flow_decomposition_router
-from api.routers.contagion_risk import router as contagion_risk_router
-from api.routers.alpha_decay import router as alpha_decay_router
-from api.routers.narrative_regime import router as narrative_regime_router
-from api.routers.perpetual_dex import router as perpetual_dex_router
-from api.routers.onchain_address import router as onchain_address_router
-from api.routers.dex_liquidity import router as dex_liquidity_router
-from api.routers.gas_network import router as gas_network_router
-from api.routers.governance import router as governance_router
-from api.routers.liquidation_cascade import router as liquidation_cascade_router
-from api.routers.cross_venue_arb import router as cross_venue_arb_router
-from api.routers.onchain_lead_lag import router as onchain_lead_lag_router
-from api.routers.prediction_market import router as prediction_market_router
-from api.routers.onchain_holder import router as onchain_holder_router
-from api.routers.liquid_staking import router as liquid_staking_router
-from api.routers.mempool import router as mempool_router
-from api.routers.funding_round import router as funding_round_router
-from api.routers.exchange_reserve import router as exchange_reserve_router
-from api.routers.miner import router as miner_router
-from api.routers.derivatives_sentiment import router as derivatives_sentiment_router
-from api.routers.holder_behavior import router as holder_behavior_router
-from api.routers.liquidity_regime import router as liquidity_regime_router
-from api.routers.event_probability import router as event_probability_router
-from api.routers.miner_pressure import router as miner_pressure_router
-from api.routers.sentiment_composite import router as sentiment_composite_router
-from api.routers.stablecoin_flow import router as stablecoin_flow_router
-from api.routers.token_unlock import router as token_unlock_router
-from api.routers.orderbook_depth import router as orderbook_depth_router
-from api.routers.whale_pnl import router as whale_pnl_router
-from api.routers.nft_market import router as nft_market_router
-from api.routers.defi_liquidation import router as defi_liquidation_router
-from api.routers.dex_trade_flow import router as dex_trade_flow_router
-from api.routers.cross_chain_msg import router as cross_chain_msg_router
-from api.routers.lending_utilization import router as lending_utilization_router
-from api.routers.search_trend import router as search_trend_router
-from api.routers.exchange_announcement import router as exchange_announcement_router
-from api.routers.stablecoin_pulse import router as stablecoin_pulse_router
-from api.routers.unlock_impact import router as unlock_impact_router
-from api.routers.depth_regime import router as depth_regime_router
-from api.routers.smart_money_conviction import router as smart_money_conviction_router
-from api.routers.defi_stress import router as defi_stress_router
-from api.routers.retail_fomo import router as retail_fomo_router
-from api.routers.overview import router as overview_router
-from api.routers.analytics_ts import router as analytics_ts_router
-from api.routers.screener import router as screener_router
+from api.router_registry import discover_routers
 from api.errors import register_error_handlers
+from api.versioning import CURRENT_API_VERSION, SUPPORTED_VERSIONS
 from config.symbols import SYMBOL_UNIVERSE
+from core.structured_logging import set_correlation_id, get_correlation_id
 
 # Prometheus 监控（优雅降级：未安装 prometheus_client 时跳过）
 try:
@@ -143,28 +58,57 @@ _RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("API_RATE_LIMIT_WINDOW_SECONDS",
 # ---------------------------------------------------------------------------
 
 class _RateLimiter:
-    """滑动窗口限流器 — 按 IP 限制请求频率。"""
+    """滑动窗口限流器 — 按 IP 限制请求频率。
+
+    优化 #7: 使用 deque 替代 list，O(1) 弹出过期时间戳。
+    优化 #8: LRU 淘汰超过 MAX_TRACKED_IPS 的旧条目。
+    """
+
+    MAX_TRACKED_IPS = int(os.environ.get("RATE_LIMIT_MAX_IPS", "10000"))
 
     def __init__(self, max_requests: int, window_seconds: int):
         self.max_requests = max_requests
         self.window_seconds = window_seconds
-        self._requests: dict[str, list[float]] = defaultdict(list)
+        self._requests: dict[str, deque] = {}
+        self._access_order: deque = deque()  # LRU 追踪
 
-    def is_allowed(self, client_ip: str) -> bool:
+    def _evict_if_needed(self) -> None:
+        """当 IP 追踪数超上限时，淘汰最旧的条目。"""
+        while len(self._requests) > self.MAX_TRACKED_IPS:
+            old_ip = self._access_order.popleft()
+            self._requests.pop(old_ip, None)
+
+    def is_allowed(self, client_ip: str, weight: int = 1) -> bool:
         now = time.monotonic()
         window_start = now - self.window_seconds
-        # 清理过期记录
+
+        if client_ip not in self._requests:
+            self._requests[client_ip] = deque()
+            self._access_order.append(client_ip)
+            self._evict_if_needed()
+
         timestamps = self._requests[client_ip]
-        self._requests[client_ip] = [t for t in timestamps if t > window_start]
-        if len(self._requests[client_ip]) >= self.max_requests:
+        # O(1) 弹出过期时间戳（deque 头部是最旧的）
+        while timestamps and timestamps[0] <= window_start:
+            timestamps.popleft()
+
+        if len(timestamps) + weight > self.max_requests:
             return False
-        self._requests[client_ip].append(now)
+        for _ in range(weight):
+            timestamps.append(now)
         return True
 
     def remaining(self, client_ip: str) -> int:
+        """O(1) 剩余配额计算 — 直接用 deque 长度减去已弹出的过期项。"""
         now = time.monotonic()
         window_start = now - self.window_seconds
-        timestamps = [t for t in self._requests.get(client_ip, []) if t > window_start]
+        timestamps = self._requests.get(client_ip)
+        if not timestamps:
+            return self.max_requests
+        # 先弹出过期项（维护 deque 干净）
+        while timestamps and timestamps[0] <= window_start:
+            timestamps.popleft()
+        # O(1): deque 当前长度即为有效请求数
         return max(0, self.max_requests - len(timestamps))
 
 
@@ -178,9 +122,25 @@ _rate_limiter = _RateLimiter(_RATE_LIMIT_MAX_REQUESTS, _RATE_LIMIT_WINDOW_SECOND
 @asynccontextmanager
 async def _lifespan(application: FastAPI):
     """管理 API 生命周期：启动缓存清理线程，关闭时停止。"""
+    # 优化 #14: GC 阈值调优 — 减少 full GC 频率，降低尾延迟
+    gc.set_threshold(50000, 20, 10)
+    # 结构化日志初始化
+    from core.structured_logging import configure_structured_logging
+    configure_structured_logging()
+    # 事件总线启动
+    from core.event_bus import event_bus
+    event_bus.start()
+    # 查询预取器启动
+    from api.prefetch import query_prefetcher
+    query_prefetcher.start()
     cache.start()
     query_cache.start()
+    # 热数据预加载：将高频查询表缓存到 QueryCache 消除冷启动延迟
+    from api.preloader import preload_hot_data
+    await preload_hot_data()
     yield
+    query_prefetcher.stop()
+    event_bus.stop()
     query_cache.stop()
     cache.stop()
 
@@ -196,15 +156,36 @@ app = FastAPI(
     lifespan=_lifespan,
 )
 
+# 使用 orjson 加速 JSON 序列化（减少 20-30% 序列化开销）
+try:
+    from fastapi.responses import ORJSONResponse
+    app.router.default_response_class = ORJSONResponse
+except ImportError:
+    pass
+
+# OpenTelemetry 分布式追踪（可选启用，通过 OTEL_ENABLED=true 开启）
+from core.tracing import init_tracing
+init_tracing(app=app)
+
 
 # ---------------------------------------------------------------------------
 # 中间件（注册顺序：后注册的先执行）
 # ---------------------------------------------------------------------------
 
-# Gzip 压缩 — 响应体超过 1KB 时自动压缩（减少 60-80% 传输体积）
-from starlette.middleware.gzip import GZipMiddleware
+# 压缩中间件 — 优化 #9: 优先 Brotli（比 Gzip 高 15-25% 压缩率），降级 Gzip
+try:
+    from starlette_compress import CompressMiddleware
+    app.add_middleware(CompressMiddleware, minimum_size=1000)
+    _COMPRESSION_TYPE = "brotli+gzip"
+except ImportError:
+    from starlette.middleware.gzip import GZipMiddleware
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    _COMPRESSION_TYPE = "gzip"
 
-app.add_middleware(GZipMiddleware, minimum_size=1000)
+# ETag 条件请求 — 减少未变更响应的带宽消耗
+from api.etag_middleware import ETagMiddleware
+
+app.add_middleware(ETagMiddleware)
 
 # Prometheus HTTP 指标中间件
 if _MONITORING_AVAILABLE:
@@ -224,24 +205,39 @@ async def request_id_middleware(request: Request, call_next):
     """注入 X-Request-ID，用于分布式追踪和日志关联。"""
     request_id = request.headers.get("X-Request-ID") or str(uuid4())
     request.state.request_id = request_id
+    # 设置结构化日志关联 ID
+    set_correlation_id(request_id)
     response: Response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
+    response.headers["X-API-Version"] = CURRENT_API_VERSION
     return response
 
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    """按 IP 限流 — 超限返回 429。"""
+    """按 IP + 端点权重限流 — 昂贵端点消耗更多配额，超限返回 429。"""
     client_ip = request.client.host if request.client else "unknown"
-    if not _rate_limiter.is_allowed(client_ip):
-        logger.warning("rate limit exceeded for {}: {}", client_ip, request.url.path)
+    # 差异化权重：昂贵端点消耗更多配额
+    path = request.url.path
+    weight = 1
+    if path.startswith("/aggregate/"):
+        weight = 5
+    elif path.startswith("/health/external"):
+        weight = 3
+    elif path.startswith("/ai-context/"):
+        weight = 3
+
+    if not _rate_limiter.is_allowed(client_ip, weight=weight):
+        logger.warning("rate limit exceeded for {}: {}", client_ip, path)
         return JSONResponse(
             status_code=429,
             content={"detail": "Too many requests. Please slow down."},
             headers={"Retry-After": str(_RATE_LIMIT_WINDOW_SECONDS)},
         )
     response: Response = await call_next(request)
-    response.headers["X-RateLimit-Remaining"] = str(_rate_limiter.remaining(client_ip))
+    remaining = _rate_limiter.remaining(client_ip)
+    response.headers["X-RateLimit-Limit"] = str(_RATE_LIMIT_MAX_REQUESTS)
+    response.headers["X-RateLimit-Remaining"] = str(remaining)
     return response
 
 
@@ -253,98 +249,11 @@ register_error_handlers(app)
 
 
 # ---------------------------------------------------------------------------
-# 路由注册
+# 路由注册 — 自动发现
 # ---------------------------------------------------------------------------
 
-app.include_router(bundle_router)
-app.include_router(domains_router)
-app.include_router(health_router)
-app.include_router(time_slice_router)
-app.include_router(signals_router)
-app.include_router(technical_router)
-app.include_router(risk_router)
-app.include_router(exchange_router)
-app.include_router(macro_router)
-app.include_router(cross_asset_router)
-app.include_router(onchain_router)
-app.include_router(sentiment_router)
-app.include_router(data_quality_router)
-app.include_router(features_router)
-app.include_router(alternative_router)
-app.include_router(market_info_router)
-app.include_router(catalogs_router)
-app.include_router(aggregate_router)
-app.include_router(strategy_router)
-app.include_router(monitor_router)
-app.include_router(orderflow_router)
-app.include_router(derivatives_router)
-app.include_router(news_intel_router)
-app.include_router(ai_context_router)
-app.include_router(technical_deep_router)
-app.include_router(portfolio_analytics_router)
-app.include_router(microstructure_router)
-app.include_router(cross_asset_history_router)
-app.include_router(factor_explorer_router)
-app.include_router(social_sentiment_router)
-app.include_router(whale_tracker_router)
-app.include_router(orderflow_micro_router)
-app.include_router(defi_router)
-app.include_router(bridge_flow_router)
-app.include_router(regulatory_router)
-app.include_router(regime_router)
-app.include_router(anomaly_router)
-app.include_router(liquidity_router)
-app.include_router(volatility_router)
-app.include_router(etf_flow_router)
-app.include_router(basis_curve_router)
-app.include_router(mev_router)
-app.include_router(cefi_lending_router)
-app.include_router(temporal_pattern_router)
-app.include_router(flow_decomposition_router)
-app.include_router(contagion_risk_router)
-app.include_router(alpha_decay_router)
-app.include_router(narrative_regime_router)
-app.include_router(perpetual_dex_router)
-app.include_router(onchain_address_router)
-app.include_router(dex_liquidity_router)
-app.include_router(gas_network_router)
-app.include_router(governance_router)
-app.include_router(liquidation_cascade_router)
-app.include_router(cross_venue_arb_router)
-app.include_router(onchain_lead_lag_router)
-app.include_router(prediction_market_router)
-app.include_router(onchain_holder_router)
-app.include_router(liquid_staking_router)
-app.include_router(mempool_router)
-app.include_router(funding_round_router)
-app.include_router(exchange_reserve_router)
-app.include_router(miner_router)
-app.include_router(derivatives_sentiment_router)
-app.include_router(holder_behavior_router)
-app.include_router(liquidity_regime_router)
-app.include_router(event_probability_router)
-app.include_router(miner_pressure_router)
-app.include_router(sentiment_composite_router)
-app.include_router(stablecoin_flow_router)
-app.include_router(token_unlock_router)
-app.include_router(orderbook_depth_router)
-app.include_router(whale_pnl_router)
-app.include_router(nft_market_router)
-app.include_router(defi_liquidation_router)
-app.include_router(dex_trade_flow_router)
-app.include_router(cross_chain_msg_router)
-app.include_router(lending_utilization_router)
-app.include_router(search_trend_router)
-app.include_router(exchange_announcement_router)
-app.include_router(stablecoin_pulse_router)
-app.include_router(unlock_impact_router)
-app.include_router(depth_regime_router)
-app.include_router(smart_money_conviction_router)
-app.include_router(defi_stress_router)
-app.include_router(retail_fomo_router)
-app.include_router(overview_router)
-app.include_router(analytics_ts_router)
-app.include_router(screener_router)
+for _router in discover_routers():
+    app.include_router(_router)
 
 # Prometheus 指标端点
 if _MONITORING_AVAILABLE:

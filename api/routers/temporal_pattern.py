@@ -103,8 +103,7 @@ def get_funding_cycle(
 @router.get("/context")
 def get_temporal_context() -> dict[str, Any]:
     """时间模式 AI 上下文 bundle。"""
-    from logic_layer.temporal_pattern.service import TemporalPatternService
-    service = TemporalPatternService()
-    bundle = service.load_latest_context_bundle()
-    service.close()
-    return bundle
+    # v4.4.0: 使用单例服务替代逐请求实例化
+    from api.dependencies import get_temporal_pattern_service
+    service = get_temporal_pattern_service()
+    return service.load_latest_context_bundle()

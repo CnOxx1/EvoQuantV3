@@ -19,6 +19,10 @@ _BEARISH_KEYWORDS = (
     "利空", "暴跌", "黑客", "攻击", "禁止", "诉讼", "破产", "清算",
 )
 
+# v4.5.0: 预编译正则，单次扫描替代 O(n) 逐词 `in` 检索
+_BULLISH_RE = re.compile("|".join(re.escape(kw) for kw in _BULLISH_KEYWORDS))
+_BEARISH_RE = re.compile("|".join(re.escape(kw) for kw in _BEARISH_KEYWORDS))
+
 _EVENT_TYPE_PATTERNS: list[tuple[str, re.Pattern]] = [
     ("regulatory", re.compile(r"sec|regulat|compliance|ban|legal|lawsuit|sanction|cftc|crackdown|监管|合规|禁令", re.I)),
     ("hack", re.compile(r"hack|exploit|breach|vulnerability|attack|stolen|drain|黑客|攻击|漏洞|盗", re.I)),
@@ -57,8 +61,9 @@ class NewsSentimentClassifier:
         )
 
     def _classify_sentiment(self, text: str) -> tuple[str, float]:
-        bullish_hits = sum(1 for kw in _BULLISH_KEYWORDS if kw in text)
-        bearish_hits = sum(1 for kw in _BEARISH_KEYWORDS if kw in text)
+        # v4.5.0: 预编译正则 findall 替代逐词 `in` 搜索 (O(m) vs O(n*m))
+        bullish_hits = len(_BULLISH_RE.findall(text))
+        bearish_hits = len(_BEARISH_RE.findall(text))
         total = bullish_hits + bearish_hits
         if total == 0:
             return "neutral", 0.5

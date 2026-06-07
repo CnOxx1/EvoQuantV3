@@ -19,7 +19,9 @@ def get_active_markets(
 ) -> dict[str, Any]:
     """当前活跃的预测市场。"""
     db = get_market_db()
-    sql = "SELECT * FROM prediction_markets WHERE 1=1"
+    # v4.3.0: SELECT * → column projection
+    sql = ("SELECT market_id, title, category, probability, volume_24h, "
+           "liquidity, last_trade_time FROM prediction_markets WHERE 1=1")
     params: list[Any] = []
     if category:
         sql += " AND category = ?"
@@ -36,8 +38,10 @@ def get_crypto_markets(
 ) -> dict[str, Any]:
     """与加密货币相关的预测市场。"""
     db = get_market_db()
+    # v4.3.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM prediction_markets WHERE category = 'crypto' "
+        "SELECT market_id, title, probability, volume_24h, liquidity, last_trade_time "
+        "FROM prediction_markets WHERE category = 'crypto' "
         "ORDER BY volume_24h DESC LIMIT ?",
         (limit,),
     )
@@ -51,8 +55,10 @@ def get_market_history(
 ) -> dict[str, Any]:
     """单个市场的概率历史。"""
     db = get_market_db()
+    # v4.3.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM prediction_market_history WHERE market_id = ? "
+        "SELECT market_id, probability, volume, collected_at "
+        "FROM prediction_market_history WHERE market_id = ? "
         "ORDER BY collected_at DESC LIMIT ?",
         (market_id, limit),
     )
@@ -66,8 +72,10 @@ def get_probability_movers(
 ) -> dict[str, Any]:
     """概率变化最大的市场。"""
     db = get_market_db()
+    # v4.4.0: SELECT m.* → column projection
     rows = db.fetch_all(
-        """SELECT m.*, h.outcome_yes_price as prev_yes_price
+        """SELECT m.market_id, m.title, m.category, m.probability, m.volume_24h,
+                  h.outcome_yes_price as prev_yes_price
            FROM prediction_markets m
            LEFT JOIN prediction_market_history h ON m.market_id = h.market_id
            ORDER BY m.volume_24h DESC LIMIT ?""",

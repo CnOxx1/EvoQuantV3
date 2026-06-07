@@ -20,7 +20,10 @@ def get_liquidation_clusters(
 ) -> dict[str, Any]:
     """清算价格聚集区域。"""
     db = get_analytics_db()
-    sql = "SELECT * FROM liquidation_clusters WHERE 1=1"
+    # v4.3.0: SELECT * → column projection
+    sql = ("SELECT symbol, direction, price_level, total_size_usd, "
+           "cluster_count, leverage_avg, distance_pct "
+           "FROM liquidation_clusters WHERE 1=1")
     params: list[Any] = []
     if symbol:
         sql += " AND symbol = ?"
@@ -41,7 +44,10 @@ def get_cascade_risk(
 ) -> dict[str, Any]:
     """级联清算风险评估。"""
     db = get_analytics_db()
-    sql = "SELECT * FROM cascade_risk WHERE cascade_probability >= ?"
+    # v4.3.0: SELECT * → column projection
+    sql = ("SELECT symbol, direction, cascade_probability, severity, "
+           "estimated_liquidation_usd, trigger_price "
+           "FROM cascade_risk WHERE cascade_probability >= ?")
     params: list[Any] = [min_probability]
     if symbol:
         sql += " AND symbol = ?"
@@ -58,8 +64,10 @@ def get_liquidation_heatmap(
 ) -> dict[str, Any]:
     """清算热力图（价格区间清算密度）。"""
     db = get_analytics_db()
+    # v4.3.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM liquidation_heatmap WHERE symbol = ? "
+        "SELECT symbol, price_from, price_to, density, long_size_usd, short_size_usd "
+        "FROM liquidation_heatmap WHERE symbol = ? "
         "ORDER BY price_from",
         (symbol.upper(),),
     )
@@ -74,8 +82,11 @@ def get_critical_levels(
 ) -> dict[str, Any]:
     """高危清算触发价位。"""
     db = get_analytics_db()
+    # v4.3.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM cascade_risk WHERE severity = ? "
+        "SELECT symbol, direction, severity, trigger_price, "
+        "estimated_liquidation_usd, cascade_probability "
+        "FROM cascade_risk WHERE severity = ? "
         "ORDER BY estimated_liquidation_usd DESC",
         (severity.lower(),),
     )
@@ -106,8 +117,10 @@ def get_proximity_alerts(
 ) -> dict[str, Any]:
     """距当前价格最近的清算集群（预警）。"""
     db = get_analytics_db()
+    # v4.3.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM liquidation_clusters WHERE distance_pct <= ? "
+        "SELECT symbol, direction, price_level, total_size_usd, distance_pct, leverage_avg "
+        "FROM liquidation_clusters WHERE distance_pct <= ? "
         "ORDER BY distance_pct ASC",
         (max_distance_pct,),
     )
@@ -120,8 +133,11 @@ def get_estimated_cascade(
 ) -> dict[str, Any]:
     """预估级联清算总量。"""
     db = get_analytics_db()
+    # v4.3.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM cascade_risk WHERE symbol = ? "
+        "SELECT symbol, direction, cascade_probability, estimated_liquidation_usd, "
+        "trigger_price, severity "
+        "FROM cascade_risk WHERE symbol = ? "
         "ORDER BY cascade_probability DESC",
         (symbol.upper(),),
     )
@@ -137,8 +153,7 @@ def get_estimated_cascade(
 @router.get("/context")
 def get_liquidation_cascade_context() -> dict[str, Any]:
     """清算级联预测 AI 上下文 bundle。"""
-    from logic_layer.liquidation_cascade.service import LiquidationCascadeService
-    service = LiquidationCascadeService()
-    bundle = service.load_latest_context_bundle()
-    service.close()
-    return bundle
+    # v4.4.0: 使用单例服务替代逐请求实例化
+    from api.dependencies import get_liquidation_cascade_service
+    service = get_liquidation_cascade_service()
+    return service.load_latest_context_bundle()

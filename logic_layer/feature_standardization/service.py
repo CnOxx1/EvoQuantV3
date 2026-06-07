@@ -9,6 +9,12 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
+try:
+    import orjson as _orjson
+    _json_dumps_str = lambda obj: _orjson.dumps(obj).decode()
+except ImportError:
+    _json_dumps_str = lambda obj: json.dumps(obj, ensure_ascii=False)
+
 from config.symbols import SECTOR_DEFINITIONS, get_symbol_sector, get_symbol_tier
 from database.db_manager import DBManager
 from logic_layer.feature_standardization.calculator import FeatureStandardizationCalculator
@@ -43,7 +49,10 @@ class FeatureStandardizationService:
         return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
     def run_standardization(self, timeframe: str = "1h", save: bool = True) -> dict:
-        """主编排：加载 → 计算 → 持久化 → 返回摘要。"""
+        """主编排：加载 → 计算 → 持久化 → 返回摘要。
+
+        v4.2.0: groupby 一次分组 + 批量计算，替代 O(n²) 逐 symbol 过滤。
+        """
         snapshot_time = self._utc_now_iso()
 
         # 1. 加载数据
@@ -54,7 +63,9 @@ class FeatureStandardizationService:
         symbols = sorted(df["symbol"].unique())
         n_symbols = len(symbols)
 
-        # 2. 逐特征逐资产计算滚动标准化
+        # 2. v4.2.0: groupby 一次分组，避免逐 symbol O(n) 过滤
+        grouped = df.sort_values("open_time").groupby("symbol", sort=False)
+
         detail_rows: list[dict] = []
         latest_zscores: dict[str, dict[str, float | None]] = {}
         latest_pcts: dict[str, dict[str, float | None]] = {}
@@ -69,8 +80,7 @@ class FeatureStandardizationService:
                     latest_pcts[spec.name][symbol] = None
                 continue
 
-            for symbol in symbols:
-                asset_df = df[df["symbol"] == symbol].sort_values("open_time")
+            for symbol, asset_df in grouped:
                 series = pd.to_numeric(asset_df[spec.source_column], errors="coerce")
                 available = int(series.notna().sum())
 
@@ -83,16 +93,17 @@ class FeatureStandardizationService:
                 z30 = self.calculator.rolling_zscore(series, MIN_BARS_30D)
                 pct30 = self.calculator.rolling_percentile_rank(series, MIN_BARS_30D)
 
-                raw_val = series.iloc[-1] if len(series) > 0 else None
-                z7_val = z7.iloc[-1] if len(z7) > 0 else None
-                z30_val = z30.iloc[-1] if len(z30) > 0 else None
-                pct_val = pct30.iloc[-1] if len(pct30) > 0 else None
+                # v4.2.0: .values[-1] 替代 .iloc[-1]，避免 pandas 索引开销
+                raw_val = series.values[-1] if len(series) > 0 else None
+                z7_val = z7.values[-1] if len(z7) > 0 else None
+                z30_val = z30.values[-1] if len(z30) > 0 else None
+                pct_val = pct30.values[-1] if len(pct30) > 0 else None
 
-                # NaN → None
-                raw_val = None if pd.isna(raw_val) else float(raw_val)
-                z7_val = None if pd.isna(z7_val) else float(z7_val)
-                z30_val = None if pd.isna(z30_val) else float(z30_val)
-                pct_val = None if pd.isna(pct_val) else float(pct_val)
+                # NaN → None（numpy scalar 检查）
+                raw_val = None if (raw_val is None or raw_val != raw_val) else float(raw_val)
+                z7_val = None if (z7_val is None or z7_val != z7_val) else float(z7_val)
+                z30_val = None if (z30_val is None or z30_val != z30_val) else float(z30_val)
+                pct_val = None if (pct_val is None or pct_val != pct_val) else float(pct_val)
 
                 latest_zscores[spec.name][symbol] = z30_val
                 latest_pcts[spec.name][symbol] = pct_val
@@ -114,16 +125,19 @@ class FeatureStandardizationService:
                     "confidence": confidence,
                 })
 
-        # 3. 跨资产排名
+        # 3. 跨资产排名 — v4.6.0: 预建索引 O(n) 替代 O(n²) 嵌套循环
+        _detail_by_feature: dict[str, list[dict]] = {}
+        for row in detail_rows:
+            _detail_by_feature.setdefault(row["feature_name"], []).append(row)
+
         for spec in FEATURE_REGISTRY:
             if "cross_rank" not in spec.methods:
                 continue
             ranks = self.calculator.cross_asset_rank(
                 latest_zscores.get(spec.name, {}), ascending=spec.invert
             )
-            for row in detail_rows:
-                if row["feature_name"] == spec.name:
-                    row["cross_asset_rank"] = ranks.get(row["symbol"])
+            for row in _detail_by_feature.get(spec.name, []):
+                row["cross_asset_rank"] = ranks.get(row["symbol"])
 
         # 4. 复合信号
         composite_rows = self._compute_composites(
@@ -141,7 +155,7 @@ class FeatureStandardizationService:
             self.repository.save_composites(composite_rows)
             self.repository.save_snapshot_bundle(
                 snapshot_time, n_symbols, len(FEATURE_REGISTRY),
-                len(COMPOSITE_DEFINITIONS), json.dumps(bundle, ensure_ascii=False),
+                len(COMPOSITE_DEFINITIONS), _json_dumps_str(bundle),
             )
 
         return {
@@ -278,11 +292,9 @@ class FeatureStandardizationService:
 
         assets.sort(key=lambda a: a["overall_extremity_score"], reverse=True)
 
-        # Regime 分布统计
-        regime_dist: dict[str, int] = {}
-        for r in detail_rows:
-            label = r["regime_label"]
-            regime_dist[label] = regime_dist.get(label, 0) + 1
+        # Regime 分布统计 — v4.6.0: Counter 替代手动 .get() 累加
+        from collections import Counter as _Counter
+        regime_dist = dict(_Counter(r["regime_label"] for r in detail_rows))
 
         # 最极端复合维度
         all_composites = [r for r in composite_rows if r["composite_zscore"] is not None]

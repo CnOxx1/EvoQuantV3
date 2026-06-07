@@ -97,10 +97,12 @@ class TimeSliceService:
                 domain, ts_str, symbols, timeframe, requested_dt
             )
 
-        # 覆盖摘要
-        ready_count = sum(1 for d in domain_slices.values() if d.status == "ready")
-        stale_count = sum(1 for d in domain_slices.values() if d.status == "stale")
-        missing_count = sum(1 for d in domain_slices.values() if d.status == "missing")
+        # 覆盖摘要 — v4.4.0: 单次遍历 Counter 替代 3 次 sum()
+        from collections import Counter
+        _status_counts = Counter(d.status for d in domain_slices.values())
+        ready_count = _status_counts["ready"]
+        stale_count = _status_counts["stale"]
+        missing_count = _status_counts["missing"]
 
         overall = "ready" if missing_count == 0 and stale_count == 0 else (
             "partial" if ready_count > 0 else "unavailable"

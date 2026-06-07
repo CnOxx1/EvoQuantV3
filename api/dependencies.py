@@ -112,3 +112,48 @@ def get_exchange_comparison_service():
     """单例交易所对比服务。"""
     from logic_layer.exchange_comparison.service import ExchangeComparisonService
     return ExchangeComparisonService()
+
+
+# v4.4.0: context 端点服务单例化 — 消除逐请求 Service() 实例化开销
+@lru_cache(maxsize=1)
+def get_liquidity_regime_service():
+    """单例流动性 regime 服务。"""
+    from logic_layer.liquidity_regime.service import LiquidityRegimeService
+    svc = LiquidityRegimeService()
+    svc.init_storage()
+    return svc
+
+
+@lru_cache(maxsize=1)
+def get_liquidation_cascade_service():
+    """单例清算级联服务。"""
+    from logic_layer.liquidation_cascade.service import LiquidationCascadeService
+    return LiquidationCascadeService()
+
+
+@lru_cache(maxsize=1)
+def get_holder_behavior_service():
+    """单例持有者行为服务。"""
+    from logic_layer.holder_behavior_analysis.service import HolderBehaviorService
+    return HolderBehaviorService()
+
+
+@lru_cache(maxsize=1)
+def get_miner_pressure_service():
+    """单例矿工压力服务。"""
+    from logic_layer.miner_pressure.service import MinerPressureService
+    return MinerPressureService()
+
+
+@lru_cache(maxsize=1)
+def get_flow_decomposition_service():
+    """单例资金流分解服务。"""
+    from logic_layer.flow_decomposition.service import FlowDecompositionService
+    return FlowDecompositionService()
+
+
+@lru_cache(maxsize=1)
+def get_temporal_pattern_service():
+    """单例时间模式服务。"""
+    from logic_layer.temporal_pattern.service import TemporalPatternService
+    return TemporalPatternService()

@@ -51,6 +51,9 @@ SYMBOL_UNIVERSE: list[SymbolConfig] = [
 # 向后兼容：扁平符号列表（现有代码无需修改）
 TARGET_SYMBOLS: list[str] = [e["symbol"] for e in SYMBOL_UNIVERSE]
 
+# 预建索引：O(1) 查找 symbol → config（替代线性扫描）
+_SYMBOL_INDEX: dict[str, dict] = {e["symbol"]: e for e in SYMBOL_UNIVERSE}
+
 
 def symbols_by_tier(tier: SymbolTier) -> list[str]:
     """返回指定层级的符号列表。"""
@@ -64,17 +67,15 @@ def symbols_by_sector(sector: str) -> list[str]:
 
 def get_symbol_sector(symbol: str) -> str | None:
     """获取符号所属板块。"""
-    for e in SYMBOL_UNIVERSE:
-        if e["symbol"] == symbol:
-            return e["sector"]
-    return None
+    entry = _SYMBOL_INDEX.get(symbol)
+    return entry["sector"] if entry else None
 
 
 def get_symbol_tier(symbol: str) -> SymbolTier | None:
     """获取符号所属层级。"""
-    for e in SYMBOL_UNIVERSE:
-        if e["symbol"] == symbol:
-            return SymbolTier(e["tier"])
+    entry = _SYMBOL_INDEX.get(symbol)
+    if entry:
+        return SymbolTier(entry["tier"])
     return None
 
 
@@ -82,6 +83,11 @@ def get_symbol_tier(symbol: str) -> SymbolTier | None:
 SECTOR_DEFINITIONS: dict[str, list[str]] = {}
 for _entry in SYMBOL_UNIVERSE:
     SECTOR_DEFINITIONS.setdefault(_entry["sector"], []).append(_entry["symbol"])
+
+# v4.3.0: 预计算所有板块符号的扁平集合（供 sector_snapshot 等端点 O(1) 判定）
+ALL_SECTOR_SYMBOLS: frozenset[str] = frozenset(
+    sym for syms in SECTOR_DEFINITIONS.values() for sym in syms
+)
 
 
 # 目标交易所（与 settings.EXCHANGE_CONFIG 中的 key 对应）

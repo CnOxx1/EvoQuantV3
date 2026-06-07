@@ -260,11 +260,38 @@ class CrossAssetAnalysisService:
         snapshot_time = self._utc_now_iso()
         entries: list[dict] = []
 
-        # 全市场汇总
-        total_net_1h = sum(e.get("net_taker_1h", 0) for e in flow_map.values())
-        total_net_24h = sum(e.get("net_taker_24h", 0) for e in flow_map.values())
-        total_buy_24h = sum(e.get("buy_24h", 0) for e in flow_map.values())
-        total_sell_24h = sum(e.get("sell_24h", 0) for e in flow_map.values())
+        # v4.6.0: 单次遍历预聚合替代多次 sum(flow_map.get(s,{}).get(...))
+        # 预计算每个 symbol 的 4 个指标到本地变量
+        from config.symbols import SymbolTier, symbols_by_tier
+        _tier_agg: dict[str, list[float]] = {t.value: [0.0, 0.0, 0.0, 0.0] for t in SymbolTier}
+        _sector_agg: dict[str, list[float]] = {s: [0.0, 0.0, 0.0, 0.0] for s in SECTOR_DEFINITIONS}
+        total_net_1h = 0.0
+        total_net_24h = 0.0
+        total_buy_24h = 0.0
+        total_sell_24h = 0.0
+
+        # 单次遍历 flow_map 构建所有聚合
+        from config.symbols import _SYMBOL_INDEX
+        for sym, entry in flow_map.items():
+            n1h = entry.get("net_taker_1h", 0)
+            n24h = entry.get("net_taker_24h", 0)
+            b24h = entry.get("buy_24h", 0)
+            s24h = entry.get("sell_24h", 0)
+            total_net_1h += n1h
+            total_net_24h += n24h
+            total_buy_24h += b24h
+            total_sell_24h += s24h
+            cfg = _SYMBOL_INDEX.get(sym)
+            if cfg:
+                tier_key = cfg["tier"]
+                if tier_key in _tier_agg:
+                    agg = _tier_agg[tier_key]
+                    agg[0] += n1h; agg[1] += n24h; agg[2] += b24h; agg[3] += s24h
+                sector_key = cfg["sector"]
+                if sector_key in _sector_agg:
+                    agg = _sector_agg[sector_key]
+                    agg[0] += n1h; agg[1] += n24h; agg[2] += b24h; agg[3] += s24h
+
         total_volume = total_buy_24h + total_sell_24h
         entries.append({
             "snapshot_time": snapshot_time,
@@ -278,43 +305,35 @@ class CrossAssetAnalysisService:
             ),
         })
 
-        # 按 tier 聚合
-        from config.symbols import SymbolTier, symbols_by_tier
+        # 按 tier 聚合（直接从预计算取值）
         for tier in SymbolTier:
-            tier_syms = symbols_by_tier(tier)
-            net_1h = sum(flow_map.get(s, {}).get("net_taker_1h", 0) for s in tier_syms)
-            net_24h = sum(flow_map.get(s, {}).get("net_taker_24h", 0) for s in tier_syms)
-            buy_24h = sum(flow_map.get(s, {}).get("buy_24h", 0) for s in tier_syms)
-            sell_24h = sum(flow_map.get(s, {}).get("sell_24h", 0) for s in tier_syms)
-            vol = buy_24h + sell_24h
+            agg = _tier_agg[tier.value]
+            vol = agg[2] + agg[3]
             entries.append({
                 "snapshot_time": snapshot_time,
                 "scope": f"tier:{tier.value}",
-                "net_taker_flow_1h": round(net_1h, 2),
-                "net_taker_flow_24h": round(net_24h, 2),
+                "net_taker_flow_1h": round(agg[0], 2),
+                "net_taker_flow_24h": round(agg[1], 2),
                 "oi_change_1h": None,
                 "oi_change_24h": None,
                 "aggressive_buy_share": (
-                    round(buy_24h / vol, 4) if vol > 0 else None
+                    round(agg[2] / vol, 4) if vol > 0 else None
                 ),
             })
 
-        # 按 sector 聚合
-        for sector, syms in SECTOR_DEFINITIONS.items():
-            net_1h = sum(flow_map.get(s, {}).get("net_taker_1h", 0) for s in syms)
-            net_24h = sum(flow_map.get(s, {}).get("net_taker_24h", 0) for s in syms)
-            buy_24h = sum(flow_map.get(s, {}).get("buy_24h", 0) for s in syms)
-            sell_24h = sum(flow_map.get(s, {}).get("sell_24h", 0) for s in syms)
-            vol = buy_24h + sell_24h
+        # 按 sector 聚合（直接从预计算取值）
+        for sector in SECTOR_DEFINITIONS:
+            agg = _sector_agg.get(sector, [0.0, 0.0, 0.0, 0.0])
+            vol = agg[2] + agg[3]
             entries.append({
                 "snapshot_time": snapshot_time,
                 "scope": f"sector:{sector}",
-                "net_taker_flow_1h": round(net_1h, 2),
-                "net_taker_flow_24h": round(net_24h, 2),
+                "net_taker_flow_1h": round(agg[0], 2),
+                "net_taker_flow_24h": round(agg[1], 2),
                 "oi_change_1h": None,
                 "oi_change_24h": None,
                 "aggressive_buy_share": (
-                    round(buy_24h / vol, 4) if vol > 0 else None
+                    round(agg[2] / vol, 4) if vol > 0 else None
                 ),
             })
 
@@ -326,13 +345,134 @@ class CrossAssetAnalysisService:
     # ------------------------------------------------------------------
 
     def run_all(self) -> dict:
-        """执行全部跨资产分析计算并落库。"""
+        """执行全部跨资产分析计算并落库。
+
+        v4.3.0: 预加载共享数据，避免 _load_close_series / _load_returns 重复调用。
+        """
+        # 预加载共享中间结果
+        series_1h_168 = self._load_close_series(timeframe="1h", window_hours=168)
+        returns = self._compute_returns_from_series(series_1h_168)
+        fund_data = self._load_fund_flow_data()
+
         results: dict = {}
-        results["correlation"] = self.compute_correlation(window_hours=168)
-        results["relative_strength"] = self.compute_relative_strength()
-        results["sector_rotation"] = self.compute_sector_rotation()
-        results["fund_flow"] = self.compute_fund_flow()
+        results["correlation"] = self._compute_correlation_with_series(series_1h_168, window_hours=168)
+        results["relative_strength"] = self._compute_relative_strength_with_returns(returns)
+        results["sector_rotation"] = self._compute_sector_rotation_with_data(returns, series_1h_168, fund_data)
+        results["fund_flow"] = self._compute_fund_flow_with_data(fund_data)
         return results
+
+    # ------------------------------------------------------------------
+    # v4.3.0: run_all() 内部复用方法（避免重复 DB 查询）
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _compute_returns_from_series(series: dict[str, list[float]]) -> dict[str, dict[str, float | None]]:
+        """从已加载的 close series 计算收益率（无额外 DB 调用）。"""
+        returns: dict[str, dict[str, float | None]] = {}
+        for sym, prices in series.items():
+            n = len(prices)
+            r1d = ((prices[-1] / prices[-24]) - 1) if n >= 24 else None
+            r3d = ((prices[-1] / prices[-72]) - 1) if n >= 72 else None
+            r7d = ((prices[-1] / prices[0]) - 1) if n >= 2 else None
+            returns[sym] = {"1d": r1d, "3d": r3d, "7d": r7d}
+        return returns
+
+    def _compute_correlation_with_series(self, series: dict[str, list[float]], window_hours: int) -> dict | None:
+        """使用预加载 series 计算相关性。"""
+        valid = {s: p for s, p in series.items() if len(p) >= 24}
+        if len(valid) < 2:
+            return None
+        min_len = min(len(p) for p in valid.values())
+        aligned = {s: p[-min_len:] for s, p in valid.items()}
+        matrix = self.calculator.compute_correlation_matrix(aligned)
+        symbols = sorted(aligned.keys())
+        corr_values = []
+        for i, sa in enumerate(symbols):
+            for j, sb in enumerate(symbols):
+                if j > i:
+                    corr_values.append(matrix[sa][sb])
+        avg_corr = sum(corr_values) / len(corr_values) if corr_values else 0.0
+        max_corr = max(corr_values) if corr_values else 0.0
+        min_corr = min(corr_values) if corr_values else 0.0
+        snapshot_time = self._utc_now_iso()
+        self.repository.save_correlation_snapshot(
+            snapshot_time=snapshot_time, window_hours=window_hours,
+            matrix=matrix, symbols=symbols,
+            avg_correlation=round(avg_corr, 4),
+            max_correlation=round(max_corr, 4),
+            min_correlation=round(min_corr, 4),
+        )
+        return {
+            "snapshot_time": snapshot_time, "window_hours": window_hours,
+            "symbol_count": len(symbols), "avg_correlation": round(avg_corr, 4),
+            "max_correlation": round(max_corr, 4), "min_correlation": round(min_corr, 4),
+        }
+
+    def _compute_relative_strength_with_returns(self, returns: dict) -> list[dict] | None:
+        """使用预加载 returns 计算相对强弱。"""
+        if not returns:
+            return None
+        entries = self.calculator.compute_relative_strength(returns)
+        snapshot_time = self._utc_now_iso()
+        for entry in entries:
+            sym = entry["symbol"]
+            entry["snapshot_time"] = snapshot_time
+            entry["asset"] = sym.replace("/USDT", "")
+            entry["sector"] = get_symbol_sector(sym)
+            tier = get_symbol_tier(sym)
+            entry["tier"] = tier.value if tier else None
+            entry["volume_change_7d_pct"] = None
+        self.repository.save_relative_strength(entries)
+        return entries
+
+    def _compute_sector_rotation_with_data(
+        self, returns: dict, series: dict[str, list[float]], fund_data: dict
+    ) -> list[dict] | None:
+        """使用预加载数据计算板块轮动。"""
+        if not returns:
+            return None
+        sector_data: dict[str, dict] = {}
+        for sector, symbols in SECTOR_DEFINITIONS.items():
+            sector_returns = []
+            sector_vols = []
+            sector_flow = 0.0
+            for sym in symbols:
+                r7d = (returns.get(sym) or {}).get("7d")
+                if r7d is not None:
+                    sector_returns.append(r7d)
+                prices = series.get(sym, [])
+                if len(prices) >= 2:
+                    log_rets = [
+                        math.log(prices[i] / prices[i - 1])
+                        for i in range(1, len(prices))
+                        if prices[i - 1] > 0
+                    ]
+                    if log_rets:
+                        mean_r = sum(log_rets) / len(log_rets)
+                        var = sum((r - mean_r) ** 2 for r in log_rets) / len(log_rets)
+                        sector_vols.append(math.sqrt(var))
+                flow_entry = fund_data["flow"].get(sym, {})
+                sector_flow += flow_entry.get("net_taker_24h", 0)
+            avg_ret = sum(sector_returns) / len(sector_returns) if sector_returns else 0
+            avg_vol = sum(sector_vols) / len(sector_vols) if sector_vols else 0
+            sector_data[sector] = {
+                "return_7d": avg_ret, "volatility_7d": avg_vol,
+                "net_flow_24h": sector_flow, "oi_change_24h": None,
+                "constituent_count": len(symbols),
+            }
+        entries = self.calculator.compute_sector_rotation(sector_data)
+        snapshot_time = self._utc_now_iso()
+        for entry in entries:
+            entry["snapshot_time"] = snapshot_time
+        self.repository.save_sector_rotation(entries)
+        return entries
+
+    def _compute_fund_flow_with_data(self, fund_data: dict) -> list[dict] | None:
+        """使用预加载 fund_data 计算资金流向。"""
+        flow_map = fund_data["flow"]
+        if not flow_map:
+            return None
+        return self.compute_fund_flow()
 
     def load_latest_context_bundle(self) -> dict:
         """加载最新跨资产分析结果，供 AI 上下文消费。"""

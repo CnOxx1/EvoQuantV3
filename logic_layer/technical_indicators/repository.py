@@ -193,7 +193,7 @@ class TechnicalIndicatorRepository:
         symbol: str,
         timeframe: str,
     ) -> Optional[pd.Timestamp]:
-        if table_name not in {"merged_klines", "technical_indicators"}:
+        if table_name not in {"klines", "merged_klines", "technical_indicators"}:
             raise ValueError(f"不支持的表名: {table_name}")
 
         row = self.db.fetch_one(
@@ -265,11 +265,13 @@ class TechnicalIndicatorRepository:
                 merge_method = excluded.merge_method
         """
 
+        # v4.3.0: 预转换 open_time 列为 ISO 字符串，避免循环内逐行 pd.Timestamp()
+        open_time_iso = pd.to_datetime(frame["open_time"]).strftime("%Y-%m-%dT%H:%M:%S")
         params_list = [
             (
                 row.symbol,
                 row.timeframe,
-                pd.Timestamp(row.open_time).isoformat(),
+                open_time_iso.iloc[i],
                 self._to_scalar(row.open),
                 self._to_scalar(row.high),
                 self._to_scalar(row.low),
@@ -279,7 +281,7 @@ class TechnicalIndicatorRepository:
                 row.source_exchanges,
                 row.merge_method,
             )
-            for row in frame.itertuples(index=False)
+            for i, row in enumerate(frame.itertuples(index=False))
         ]
         self.db.execute_many(sql, params_list)
         self.db.commit()

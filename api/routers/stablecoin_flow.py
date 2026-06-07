@@ -18,8 +18,10 @@ def get_latest_mint_burns(
 ) -> dict[str, Any]:
     """最新稳定币铸造/销毁事件。"""
     db = get_market_db()
+    # v4.4.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM stablecoin_mint_burns ORDER BY timestamp DESC LIMIT ?",
+        "SELECT timestamp, stablecoin, action, amount, chain, tx_hash "
+        "FROM stablecoin_mint_burns ORDER BY timestamp DESC LIMIT ?",
         (limit,),
     )
     return {"count": len(rows), "events": rows}
@@ -31,8 +33,10 @@ def get_history(
 ) -> dict[str, Any]:
     """历史铸造/销毁记录。"""
     db = get_market_db()
+    # v4.4.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM stablecoin_mint_burns ORDER BY timestamp DESC LIMIT ?",
+        "SELECT timestamp, stablecoin, action, amount, chain, tx_hash "
+        "FROM stablecoin_mint_burns ORDER BY timestamp DESC LIMIT ?",
         (limit,),
     )
     return {"count": len(rows), "history": rows}
@@ -44,8 +48,10 @@ def get_chain_flows(
 ) -> dict[str, Any]:
     """最新链上资金流动分布。"""
     db = get_market_db()
+    # v4.4.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM stablecoin_chain_flows ORDER BY timestamp DESC LIMIT ?",
+        "SELECT timestamp, chain, net_flow, inflow, outflow "
+        "FROM stablecoin_chain_flows ORDER BY timestamp DESC LIMIT ?",
         (limit,),
     )
     return {"count": len(rows), "chain_flows": rows}

@@ -15,8 +15,10 @@ router = APIRouter(prefix="/miner-pressure", tags=["miner-pressure"])
 def get_current_state() -> dict[str, Any]:
     """当前矿工压力状态。"""
     db = get_analytics_db()
+    # v4.4.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM miner_pressure_states ORDER BY ts DESC LIMIT 1",
+        "SELECT ts, pressure_score, capitulation_index, puell_zone, hash_ribbon "
+        "FROM miner_pressure_states ORDER BY ts DESC LIMIT 1",
         (),
     )
     if not rows:
@@ -30,8 +32,10 @@ def get_state_history(
 ) -> dict[str, Any]:
     """矿工压力状态历史。"""
     db = get_analytics_db()
+    # v4.4.0: SELECT * → column projection
     rows = db.fetch_all(
-        "SELECT * FROM miner_pressure_states ORDER BY ts DESC LIMIT ?",
+        "SELECT ts, pressure_score, capitulation_index, puell_zone, hash_ribbon "
+        "FROM miner_pressure_states ORDER BY ts DESC LIMIT ?",
         (limit,),
     )
     return {"count": len(rows), "history": rows}
@@ -68,9 +72,7 @@ def get_halving_phase() -> dict[str, Any]:
 @router.get("/context")
 def get_miner_pressure_context() -> dict[str, Any]:
     """矿工压力 AI 上下文 bundle。"""
-    from logic_layer.miner_pressure.service import MinerPressureService
-    service = MinerPressureService()
-    service.init_storage()
-    bundle = service.load_latest_context_bundle()
-    service.close()
-    return bundle
+    # v4.4.0: 使用单例服务替代逐请求实例化
+    from api.dependencies import get_miner_pressure_service
+    service = get_miner_pressure_service()
+    return service.load_latest_context_bundle()

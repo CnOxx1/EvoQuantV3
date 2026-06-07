@@ -156,7 +156,7 @@ def get_factor_correlation(
     # Align by time
     times_a = {t: v for t, v in series_a}
     times_b = {t: v for t, v in series_b}
-    common_times = sorted(set(times_a.keys()) & set(times_b.keys()))
+    common_times = sorted(times_a.keys() & times_b.keys())
 
     if len(common_times) < 5:
         raise HTTPException(status_code=404, detail="Insufficient overlapping data points.")
@@ -164,14 +164,13 @@ def get_factor_correlation(
     vals_a = [times_a[t] for t in common_times]
     vals_b = [times_b[t] for t in common_times]
 
-    # Pearson correlation
+    # v4.5.0: numpy vectorized Pearson correlation
+    import numpy as np
+    arr_a = np.array(vals_a, dtype=np.float64)
+    arr_b = np.array(vals_b, dtype=np.float64)
+    corr_matrix = np.corrcoef(arr_a, arr_b)
+    correlation = float(np.nan_to_num(corr_matrix[0, 1], nan=0.0))
     n = len(vals_a)
-    mean_a = sum(vals_a) / n
-    mean_b = sum(vals_b) / n
-    cov = sum((vals_a[i] - mean_a) * (vals_b[i] - mean_b) for i in range(n)) / n
-    std_a = (sum((v - mean_a) ** 2 for v in vals_a) / n) ** 0.5
-    std_b = (sum((v - mean_b) ** 2 for v in vals_b) / n) ** 0.5
-    correlation = cov / (std_a * std_b) if std_a > 0 and std_b > 0 else 0
 
     return {
         "factor_a": {"domain": domain_a, "factor_id": factor_a},

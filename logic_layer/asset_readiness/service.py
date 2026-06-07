@@ -755,20 +755,21 @@ class AssetReadinessService:
         options_index, options_tracked_assets = self._index_options(options_bundle)
         alternative_index = self._index_alternative(alternative_bundle)
 
-        asset_universe = sorted(
-            set(exchange_index)
-            | set(exchange_tracked_assets)
-            | set(news_index)
-            | set(news_tracked_assets)
-            | set(event_index)
-            | set(onchain_index)
-            | set(onchain_tracked_assets)
-            | set(tokenomics_index)
-            | set(tokenomics_tracked_assets)
-            | set(options_index)
-            | set(options_tracked_assets)
-            | set(alternative_index)
-        )
+        # v4.6.0: 单次累加器替代多次 set() | set() 中间对象分配
+        _universe_set: set = set()
+        _universe_set.update(exchange_index)
+        _universe_set.update(exchange_tracked_assets)
+        _universe_set.update(news_index)
+        _universe_set.update(news_tracked_assets)
+        _universe_set.update(event_index)
+        _universe_set.update(onchain_index)
+        _universe_set.update(onchain_tracked_assets)
+        _universe_set.update(tokenomics_index)
+        _universe_set.update(tokenomics_tracked_assets)
+        _universe_set.update(options_index)
+        _universe_set.update(options_tracked_assets)
+        _universe_set.update(alternative_index)
+        asset_universe = sorted(_universe_set)
         if normalized_asset_keys:
             asset_universe = [
                 asset

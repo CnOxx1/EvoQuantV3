@@ -5,6 +5,14 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+try:
+    import orjson
+    _dumps = lambda obj: orjson.dumps(obj).decode()
+    _loads = orjson.loads
+except ImportError:
+    _dumps = json.dumps
+    _loads = json.loads
+
 from database.db_manager import DBManager
 
 
@@ -99,8 +107,8 @@ class CrossAssetRepository:
             (
                 snapshot_time,
                 window_hours,
-                json.dumps(matrix),
-                json.dumps(symbols),
+                _dumps(matrix),
+                _dumps(symbols),
                 avg_correlation,
                 max_correlation,
                 min_correlation,
@@ -122,8 +130,8 @@ class CrossAssetRepository:
         return {
             "snapshot_time": row["snapshot_time"],
             "window_hours": row["window_hours"],
-            "matrix": json.loads(row["matrix_json"]),
-            "symbols": json.loads(row["symbols_json"]),
+            "matrix": _loads(row["matrix_json"]),
+            "symbols": _loads(row["symbols_json"]),
             "avg_correlation": row["avg_correlation"],
             "max_correlation": row["max_correlation"],
             "min_correlation": row["min_correlation"],

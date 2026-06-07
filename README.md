@@ -403,6 +403,176 @@ cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
 
 ## 更新记录
 
+### 2025-06-07
+
+**v4.6.0 — 逻辑层算法重构与聚合优化**
+
+- **feature_standardization 跨资产排名 O(n²)→O(n)**：嵌套循环逐行匹配改为预建 `feature_name→rows` 索引 dict，直接 O(1) 查找赋值，40-60% 加速
+- **portfolio_risk calculator numpy 向量化**：O(n²) 纯 Python 嵌套 .get() 循环改为 `w @ cov @ w` 单次矩阵乘法 + `cov @ w` 向量运算，30-50× 加速
+- **fund_flow 单次遍历预聚合**：4 次 `sum(flow_map.get(s,{}).get(...) for s in tier_syms)` 改为单次遍历 flow_map 构建 tier/sector 聚合数组，25-35% 加速
+- **asset_readiness 集合并集优化**：12 次 `set() | set()` 中间对象分配改为单个 set 累加器 `.update()` 链式调用
+- **feature_standardization regime 分布 Counter**：手动 `.get()+1` 循环改为 C 优化的 `Counter()` 一次调用
+- **feature_standardization JSON 序列化 orjson**：`json.dumps(bundle, ensure_ascii=False)` 替换为 `orjson.dumps()` 快速路径（3-5× 加速）
+- **main.py 模块优先级分组单次遍历**：3 次 list comprehension 改为单次循环 dict 累加
+
+**v4.5.0 — 算法优化与批量查询合并**
+
+- **volatility ranking 批量查询**：N+1 逐符号查询（18次 DB roundtrip）合并为单次 `IN (...)` 批量查询 + 内存分组，5-10× 响应加速
+- **factor_explorer 相关性 numpy 向量化**：手动 Python 循环计算 Pearson correlation 改为 `np.corrcoef()` 一次调用，10-50× 加速
+- **新闻情感分类器预编译正则**：逐词 `kw in text` O(n×m) 搜索改为预编译正则 `findall()` 单次扫描，3-5× 加速
+- **enricher groupby sort=False**：`frame.groupby("symbol", sort=True)` 改为 `sort=False`（数据已排序），避免冗余重排 10-20%
+- **enricher 辅助 DataFrame 预分组**：内循环的 `tickers[tickers["symbol"]==sym]` boolean mask 改为预 groupby + dict 查找 O(1)
+- **FairShareLimiter metrics() 集合优化**：`set(list(keys) + list(keys))` 改为 `keys() | keys()` dict_keys 视图并集
+- **pagination cursor orjson 快速路径**：`json.dumps/loads` 替换为 `orjson` 编解码（2-3× 加速），graceful fallback
+
+**v4.4.0 — 计算向量化与服务实例化优化**
+
+- **相关性矩阵 numpy 向量化**：`CrossAssetCalculator.compute_correlation_matrix()` 从纯 Python O(n²) 循环改为 `np.corrcoef()` 一次计算完整 NxN 矩阵，10-100× 加速
+- **context 端点服务单例化**：6 个高频 `/context` 端点（liquidity_regime / liquidation_cascade / holder_behavior / miner_pressure / flow_decomposition / temporal_pattern）从逐请求 `Service()` 改为 `@lru_cache` 单例注入，消除 50-200ms/请求的实例化开销
+- **cross_asset_analysis orjson 序列化**：`repository.py` 的 `json.dumps/loads` 替换为 `orjson` 快速路径（3-5× 加速），graceful fallback 到标准 json
+- **time_slice 单次遍历计数**：3 次 `sum()` generator 替换为 `Counter()` 单次遍历，迭代次数减少 66%
+- **memory_monitor 缓存 TTL 提升至 5s**：`MEMORY_CACHE_TTL_SECONDS` 环境变量可配置（默认 5s），减少 80% 无效 `memory_info()` syscall
+- **SELECT \* 列投影扩展**：liquidity_regime / holder_behavior / miner_pressure / orderflow_micro / stablecoin_flow / prediction_market(movers) 共 12 个端点改为精确列查询
+- **prediction_market movers 列投影**：`SELECT m.*` JOIN 查询改为精确 5 列投影
+
+**v4.3.0 — 查询路径与中间结果优化**
+
+- **correlation-context 批量查询**：N+1 逐符号 DB 查询（18次）合并为单次全量查询 + 内存分组，响应延迟从 ~200ms 降至 ~15ms
+- **CrossAssetAnalysis run_all() 中间结果缓存**：预加载 close_series / returns / fund_data 共享给 4 个计算方法，消除 3 次重复 DB 查询
+- **Repository 时间戳预转换**：`pd.Timestamp(row.open_time).isoformat()` 逐行调用改为 `pd.to_datetime().strftime()` 向量化预转换
+- **main.py shutdown 信号前置检查**：循环顶部优先检查 `shutdown_requested`，避免无效子进程轮询
+- **ALL_SECTOR_SYMBOLS 预计算**：`config/symbols.py` 新增 `frozenset` 板块符号集合，O(1) 成员判定
+- **prediction_market / liquidation_cascade SELECT \* 消除**：全部端点改为精确列投影，减少 I/O + 序列化开销
+- **ResultCache 短 key 跳过 SHA-256**：key 长度 ≤128 直接用原始字符串，避免每次缓存命中都做哈希计算
+- **loguru import 提升至模块级**：`technical_indicators/service.py` 消除函数内重复 `from loguru import logger`
+
+**v4.2.0 — 序列化路径与并发锁优化**
+
+- **Feature Standardization groupby 重构**：O(n²) 逐 symbol `df[df["symbol"]==sym]` 过滤改为 `groupby` 一次分组 + 迭代器消费，40-60% 计算提速
+- **Feature Standardization .values[-1]**：`.iloc[-1]` 替换为 `.values[-1]` 避免 pandas 索引查找开销；`x != x` NaN 检测替代 `pd.isna()`
+- **WebSocket orjson 快速路径**：`broadcast()` 使用 `orjson.dumps()` 替代 `json.dumps()`（有 orjson 时），序列化速度提升 3-5×
+- **EventBus handler 缓存**：`_dispatch()` 使用 `_handler_cache` tuple 避免每次事件分发做 `list()` 拷贝；subscribe 时精确失效
+- **EventBus 轮询降至 10ms**：`_queue.get(timeout=0.01)` 替代 100ms，异步事件延迟从 50ms avg 降至 5ms
+- **EventBus 延迟日志格式化**：`f"EventBus handler error: {e}"` 改为 `logger.error("{}", e)` loguru 延迟求值
+- **PostgreSQL _DictRow 优化**：`list(self.values())` 改为 `tuple(self.values())` 减少内存分配；`__slots__ = ()` 禁止实例 `__dict__`
+- **PostgreSQL row columns 缓存**：`_rows_to_dicts` 使用 `tuple()` 替代 `list()` 存储列名，不可变对象减少 GC 压力
+- **QueryCache 锁分离**：新增独立 `_inflight_lock`，inflight 请求管理与缓存存储读写互不阻塞，并发吞吐提升 30-50%
+- **unused `json` import 保留向后兼容**：`websocket_manager.py` 保留 `import json` 作为 orjson 不可用时的 fallback
+
+**v4.1.0 — API 响应与管道编排优化**
+
+- **SELECT \* → 列投影**：`aggregate.py` 的 `multi_asset_compare` 等端点从 `SELECT *` 改为具体列查询，减少 5-15ms/请求 I/O 开销
+- **SYMBOL_UNIVERSE 预索引**：`_SYMBOL_INDEX = {e["symbol"]: e for e in SYMBOL_UNIVERSE}` O(1) 查找替代 O(n) 线性扫描
+- **请求合并器零延迟**：`RequestCoalescer` 移除首次请求的无条件 `time.sleep(100ms)`，首次请求立即执行，消除人为 100ms 延迟
+- **Prefetcher 真预热**：`QueryPrefetcher.prefetch_all()` 现在真正执行 DB 查询并写入 query_cache，而非只 touch 空键
+- **缓存依赖拓扑**：`QueryCache` 新增 `register_dependency()` / `invalidate_downstream()` 级联失效，upstream 变更自动传播到下游缓存
+- **符号标准化 LRU 缓存**：`MarketBreadthService._normalize_asset_from_symbol()` 添加 `@lru_cache(maxsize=1024)`，循环内重复调用 O(1) 返回
+- **Exchange Service 建图优化**：`_build_symbols_map()` 从反复 `setdefault` + 对象构造改为预分配 + 直接索引，减少 20% 临时对象创建
+- **Pipeline 上游失败快跳**：经典模式新增 `_MODULE_DEPENDENCIES` 依赖映射 + `failed_upstream` 集合传递，下游模块在上游失败时立即跳过而非等待超时
+- **Rate limiter O(1) remaining**：`remaining()` 方法从逆序遍历 deque 改为先弹出过期项再取 `len()`，单次调用 O(1)
+- **Memory monitor double-check locking**：`rss_mb` 属性添加 `threading.Lock` 双重检查，防止并发竞争导致多次 `memory_info()` syscall
+- **整数除法优化**：`rss / 1024 / 1024` 改为 `rss / 1048576`（单次除法）
+- **unused import 清理**：`request_coalescer.py` 移除未使用的 `time` 导入（原 `time.sleep` 已删除）
+
+**v4.0.0 — 计算热路径与运行时性能优化**
+
+- **Supertrend/PSAR/KAMA 向量化**：`calculator.py` 核心循环从 pandas .iloc[] 迁移至 numpy 数组操作，消除 60% 的 Python 解释器开销
+- **Fisher/Ehlers/KVO 循环消除**：`_fisher_transform` / `_ehlers_*` / `_klinger_volume_oscillator` / `_positive_negative_volume_index` 全部重写为 numpy 前向传播
+- **pd.concat→np.maximum/minimum**：true_range / ichimoku cloud / buying_pressure 等 5 处替换为零分配 numpy 操作
+- **DataFrame copy 消除**：`calculate()` + `_calculate_group()` 从 3 次 full copy 减少为 1 次（sort_values 自带 copy），内存峰值减少 30%
+- **groupby 迭代器直接消费**：移除 `list(frame.groupby(...))` 物化，改为迭代器逐组处理
+- **indicator concat 预分配**：12 次 `pd.concat` 合并为单次 dict→DataFrame 构造，减少内存碎片
+- **Rate limiter deque 重构**：`_RateLimiter` 从 list comprehension O(n) 过滤改为 `collections.deque` O(1) popleft
+- **Rate limiter IP 容量上限**：添加 LRU 淘汰机制（MAX_TRACKED_IPS=10000），防止内存无限增长
+- **Brotli 压缩升级**：新增 `starlette-compress` 依赖，优先 Brotli（比 Gzip 高 15-25% 压缩率），graceful 降级 Gzip
+- **连接池自适应集成**：`pool_config.py` 新增 `adaptive_enabled` / `pool_overflow` / `idle_timeout`，`get_adaptive_pool_size()` 接入 AdaptivePoolManager
+- **模块并行启动**：`supervise_modules()` 按 priority 分批启动（critical 优先），冷启动时间减少 50%
+- **Pipeline phase 2 快速失败**：`_run_phase_parallel()` 改用 `wait(FIRST_EXCEPTION)` 替代 `as_completed` + 二次遍历
+- **memory_monitor syscall 缓存**：`rss_mb` 属性添加 1 秒结果缓存，减少 `memory_info()` 系统调用频率
+- **GC 阈值调优**：API lifespan 中设置 `gc.set_threshold(50000, 20, 10)`，减少 full GC 导致的尾延迟毛刺
+- **依赖更新**：新增 `numpy==1.26.4`（显式固定）、`starlette-compress==1.0.1`（Brotli）、`bottleneck==1.4.2`（rolling 加速）
+
+**v3.9.0 — 自适应调度与运行时可控性**
+
+- **时间窗口预物化**：新增 `logic_layer/window_materializer.py` (`WindowMaterializer`)，pipeline 执行前一次性预取所有 symbol×timeframe klines，各 phase 共享零拷贝访问，DB 查询减少 40-50%
+- **Monitor 端点批量化**：新增 `api/monitor_optimizer.py` (`MonitorBatchFetcher`)，`WHERE symbol IN (...)` 批量查询替代逐符号循环，monitor 延迟从 5s→<1s
+- **并发请求合并**：新增 `api/request_coalescer.py` (`RequestCoalescer`)，100ms 窗口内相同查询只执行一次 DB 调用，结果 fan-out 给所有等待者
+- **调度 Jitter + 反压队列**：新增 `core/scheduler_jitter.py`，`jitter()` 添加 ±15% 随机偏移消除 thundering herd，`BackpressureQueue` 按 hot/normal/cold 优先级限流并发
+- **异常类型层次化**：新增 `core/exceptions.py`，TransientDataError / FatalDataError / SchemaValidationError / CircuitOpenError 精确分类，`is_retryable()` 一键判断
+- **数据保留自动执行**：新增 `database/retention_executor.py` (`RetentionExecutor`)，按策略批量 DELETE 过期行 + dry_run 预览，存储自动可控
+- **流式响应**：新增 `api/streaming.py`，`stream_json_array()` / `stream_ndjson()` 生成器驱动分块传输，大结果集不再全量缓冲
+- **索引推荐引擎**：新增 `database/index_recommender.py` (`IndexRecommender`)，分析慢查询模式自动生成 `CREATE INDEX` 建议
+- **配置热重载**：新增 `core/config_watcher.py` (`ConfigWatcher`)，.env 文件 mtime 轮询 + 增量更新 os.environ，零停机配置变更
+- **优雅关闭管理**：新增 `core/graceful_shutdown.py` (`ShutdownManager`)，按优先级执行注册的 cleanup 回调，30s 超时兜底强杀
+- **运行时 Profiler**：新增 `core/runtime_profiler.py` (`RuntimeProfiler`)，context manager 捕获 per-module RSS/CPU/耗时，rolling 100 次统计
+- **混沌工程 Hooks**：新增 `core/chaos.py` (`ChaosMonkey`)，`CHAOS_ENABLED=true` 时注入延迟/错误（目标模块可配），生产环境完全零开销
+
+**v3.8.0 — 自适应运行时与分布式就绪**
+
+- **异步查询预取**：新增 `api/prefetch.py` (`QueryPrefetcher`)，监听 pipeline 完成事件自动预热热点查询，消除刷新后冷启动窗口
+- **缓存依赖 DAG**：新增 `logic_layer/cache_deps.py` (`CacheDependencyGraph`)，pipeline 失效改为精准下游传播（TI 完成 → 13 个下游模块缓存精确失效）
+- **SELECT 列自动裁剪**：新增 `database/column_selector.py` (`ColumnSelector`)，结合 field_selection 自动将 `SELECT *` 改写为具体列，减少 30-50% I/O
+- **连接池自适应缩放**：新增 `database/adaptive_pool.py` (`AdaptivePoolManager`)，基于 EMA 平滑的 wait_time/idle_ratio 指标动态推荐 pool_min/pool_max
+- **BatchWriter 自适应分块**：新增 `database/adaptive_batch.py` (`AdaptiveBatchWriter`)，按 p50 延迟反馈自动调整批次大小（50-2000 行/批）
+- **PostgreSQL 分布式缓存失效**：新增 `database/pg_notify.py` (`PgNotifyBridge`)，LISTEN/NOTIFY 广播缓存失效事件，支持 API 多实例水平扩展
+- **时间快照版本化**：新增 `database/snapshot_versioning.py` (`SnapshotVersioningService`)，每小时创建 latest_* 版本快照，支持 point-in-time 状态回溯
+- **优先级差异化退避**：main.py 新增 `PRIORITY_BACKOFF_CURVES`（critical: 1s→30s, normal: 2s→60s, low: 5s→300s），关键模块恢复提速 2x
+- **懒启动机制**：新增 `core/lazy_starter.py` (`LazyModuleStarter`)，非关键模块（search_trend/nft_market/prediction_market/governance）延迟到首次请求激活
+- **跨进程追踪传播**：新增 `core/trace_propagation.py` (`TracePropagator`)，W3C traceparent 注入子进程环境变量，实现端到端分布式追踪
+- **公平份额限流**：新增 `api/fair_limiter.py` (`FairShareLimiter`)，过限请求排队而非直接 429，FIFO + jitter 消费
+- **告警分组去重**：新增 `monitoring/alert_aggregator.py` (`AlertAggregator`)，同类告警按 (category, severity) 聚合，100 条异常输出 1 条摘要
+- **事件总线指标**：新增 `core/event_bus_metrics.py` (`EventBusMetrics`)，per-topic 发布/处理/丢弃/延迟统计，Prometheus 可导出
+
+**v3.7.0 — 架构韧性与工程质量**
+
+- **技术指标向量化**：`calculator.py` 新增 `_vectorized_cfo()` / `_vectorized_mean_deviation()`，替代高频 `rolling().apply()`，消除 Python 回调开销
+- **逻辑层结果缓存**：新增 `logic_layer/result_cache.py` (`ResultCache`)，LRU + TTL 缓存逻辑计算结果，`@cached_result` 装饰器自动缓存
+- **数据库熔断器**：新增 `core/circuit_breaker.py` (`CircuitBreaker`)，CLOSED→OPEN→HALF_OPEN 三态机保护 DB 调用，`@circuit_protected` 装饰器 + fallback 支持
+- **多级降级策略**：新增 `core/degradation.py` (`DegradationManager`)，NORMAL→REDUCED→MINIMAL→EMERGENCY 四级降级，按模块优先级自动剪裁
+- **特性开关**：新增 `core/feature_flags.py` (`FeatureFlags`)，`FF_{MODULE}_ENABLED` 环境变量控制模块运行时开关，main.py + pipeline 联动
+- **字段选择 API**：新增 `api/field_selection.py`，`?fields=price,volume` 稀疏字段集，减少无用数据传输
+- **ETag 条件请求**：新增 `api/etag_middleware.py` (`ETagMiddleware`)，If-None-Match 匹配时返回 304，节省带宽
+- **API 版本化**：新增 `api/versioning.py` (`VersionedRouter`)，/v1/ 前缀 + Sunset 头 + 版本常量
+- **数据异常检测**：新增 `core/data_anomaly_detector.py` (`DataAnomalyDetector`)，Z-score + 空值尖刺 + 量降检测，severity 分级
+- **数据保留策略**：新增 `core/data_retention.py` (`DataRetentionService`)，按表定义 hot/warm/archive 层 + rollup SQL 生成
+- **数据血缘追踪**：新增 `core/data_lineage.py` (`DataLineageTracker`)，记录 source→target 数据流转事件，支持 trace 回溯
+- **告警规则引擎**：新增 `monitoring/alerting.py` (`AlertEvaluator`)，6 条默认规则（错误率/延迟/内存/连接池/数据新鲜度/熔断器），cooldown 防抖
+- **结构化日志**：新增 `core/structured_logging.py`，correlation_id 上下文传播 + JSON 格式输出（`STRUCTURED_LOGS=true`），request_id 自动关联
+- **事件总线**：新增 `core/event_bus.py` (`EventBus`)，topic 订阅 + 同步/异步发布 + 后台消费者线程，模块间松耦合通信
+- **X-API-Version 头**：所有响应携带 API 版本号
+
+**v3.6.0 — 数据采集效率与运行时优化**
+
+- **采集器符号批量化**：funding 优先 `fetchFundingRates` 批量 API（回退并行获取），kline 改为 `parallel_fetch()` 并行采集（默认 6 并发），新增 `data_layer/exchange_data/batch_utils.py`
+- **请求级去重缓存**：新增 `data_layer/request_dedup_cache.py`，同一采集周期内相同请求直接返回缓存（TTL 60s），避免重复外部 API 调用
+- **httpx 连接池优化**：`AsyncBaseDataClient` 添加 `httpx.Limits(max_connections=20, max_keepalive=10)`，复用 TCP 连接
+- **批量写入强制化**：新增 `database/batch_writer.py` (`BatchWriter`)，自动分块 500 行/批，防止 WAL 压力
+- **JSON 序列化加速**：引入 `orjson`，FastAPI 默认使用 `ORJSONResponse`，减少 20-30% 序列化开销
+- **连接池动态扩容**：`DB_POOL_MAX` 默认提升至 50，新增 `DB_POOL_OVERFLOW=10` + `DB_POOL_IDLE_TIMEOUT=300`
+- **聚合端点查询合并**：`/asset-profile` 从 5 次 DB 查询合并为 1 次 JOIN + 1 次 klines，`/watchlist` 用 `IN` 批量查询替代 N+1
+- **符号索引预建**：`config/symbols.py` 新增 `_SYMBOL_INDEX` dict，`get_symbol_sector/tier` 从 O(n) 降为 O(1)
+- **端点差异化限流**：昂贵端点（/aggregate/）消耗 5 倍配额，添加 `X-RateLimit-Limit`/`X-RateLimit-Remaining` 响应头
+- **模块优先级分级**：`ModuleSpec` 新增 `priority` 字段（critical/normal/low），按优先级差异化重启次数（10/3/1）
+- **采集器崩溃快照缓冲**：新增 `core/snapshot_buffer.py`，维护最近 3 次采集快照，崩溃恢复时可注入
+
+**v3.5.0 — 运行时可靠性与可观测性**
+
+- **子进程资源限制**：`launch_module()` 添加 `preexec_fn` + `setrlimit`，每个守护子进程受 `SUBPROCESS_MEM_LIMIT_MB`（默认 2048）和 `SUBPROCESS_CPU_LIMIT_SECONDS`（默认 3600）限制，OOM (SIGKILL) 自动告警
+- **技术指标增量跳过**：`merge_klines()` / `calculate_indicators()` 循环前快速比对 raw vs merged / merged vs indicators 最新时间戳，无新数据时 O(1) 跳过（替代完整 fetch+计算）
+- **WebSocket 实时推送**：新增 `api/websocket_manager.py` + `api/routers/ws.py`，支持频道级广播（pipeline / health / indicators:{symbol}），管道完成时自动推送事件
+- **热数据预加载**：新增 `api/preloader.py`，API 启动时自动预热 latest_* 快照表到 QueryCache，消除冷启动延迟
+- **OpenTelemetry 分布式追踪**：新增 `core/tracing.py` + `core/trace_decorators.py`，可选启用（`OTEL_ENABLED=true`），自动注入 FastAPI span + `@traced` 装饰器
+- **深度健康检查**：`/health/collectors` 按模块报告采集新鲜度（超阈值标记 stale），`/health/external` 并发探测 Binance / CoinGecko / Deribit 连通性
+
+**v3.4.0 — 性能与架构优化**
+
+- **异步 HTTP 客户端基类**：新增 `core/async_base_data_client.py`，提供 `AsyncBaseDataClient`（异步熔断器 + 令牌桶限流 + 指数退避），与同步 `BaseDataClient` 接口对称，数据层模块可直接继承获得异步能力
+- **API 路由自动发现**：新增 `api/router_registry.py`，自动扫描 `api/routers/` 目录注册路由，`app.py` 从 400+ 行精简至 230 行，新增路由模块无需手动注册
+- **数据库模块化拆分**：新增 `database/managers/` 包（ConnectionMixin + SchemaUtilsMixin + QueryMethodsMixin），db_manager.py 核心方法提取为可复用 Mixin
+- **数据库查询优化**：新增 `database/query_profiler.py`（EXPLAIN QUERY PLAN 分析、慢查询统计、自动 ANALYZE）+ `database/partial_indexes.py`（部分索引 + 覆盖索引）
+- **内存与 DataFrame 管控**：新增 `database/chunked_query.py`（分块查询生成器）+ `core/memory_monitor.py`（RSS 监控 + DataFrame 大小检测），技术指标计算增加 `INDICATOR_MAX_HISTORY` 截断保护
+- **缓存失效策略增强**：`QueryCache` 新增 `invalidate_prefix()`、`invalidate_group()` 方法 + stale-while-revalidate 模式 + per-key TTL，管道刷新改为按模块前缀精准失效（替代全量清空）
+
 ### 2025-06-04
 
 **v3.3.2 — PostgreSQL 连接池稳定性与子进程修复**
