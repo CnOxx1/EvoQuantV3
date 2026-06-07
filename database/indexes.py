@@ -107,14 +107,24 @@ def ensure_indexes(
 
 
 def ensure_all_indexes() -> dict[str, int]:
-    """自动从 database.router 获取所有域连接并执行索引优化。"""
+    """自动从 database.router 获取所有域连接并执行索引优化（含部分索引和覆盖索引）。"""
     try:
         from database.router import get_exchange_db, get_market_db, get_analytics_db
-        return ensure_indexes(
+        results = ensure_indexes(
             exchange_conn=get_exchange_db().conn,
             market_conn=get_market_db().conn,
             analytics_conn=get_analytics_db().conn,
         )
+        # 高级索引：部分索引 + 覆盖索引
+        try:
+            from database.partial_indexes import ensure_all_advanced_indexes
+            for db_getter in (get_exchange_db, get_market_db, get_analytics_db):
+                adv = ensure_all_advanced_indexes(db_getter().conn)
+                results["partial"] = results.get("partial", 0) + adv.get("partial", 0)
+                results["covering"] = results.get("covering", 0) + adv.get("covering", 0)
+        except Exception as exc:
+            logger.debug("高级索引创建跳过: {}", exc)
+        return results
     except Exception as exc:
         logger.warning("自动索引优化失败: {}", exc)
         return {}

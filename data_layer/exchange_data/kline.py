@@ -5,6 +5,7 @@ from loguru import logger
 
 from config.symbols import TARGET_SYMBOLS, TARGET_EXCHANGES, KLINE_TIMEFRAMES, KLINE_BACKFILL_DAYS
 from database.db_manager import DBManager
+from data_layer.exchange_data.batch_utils import parallel_fetch
 from data_layer.exchange_data.client import ExchangeClientManager, retry_on_failure
 from data_layer.exchange_data.models import Kline
 
@@ -272,19 +273,21 @@ class KlineCollector:
         return all_klines
 
     def incremental_update(self, timeframe: str | None = None):
-        """增量更新：获取所有目标币种的最新K线。"""
+        """增量更新：并行获取所有目标币种的最新K线。"""
         target_timeframes = [timeframe] if timeframe else KLINE_TIMEFRAMES
         all_klines: list[Kline] = []
         for exchange_name in TARGET_EXCHANGES:
-            for symbol in TARGET_SYMBOLS:
-                for current_timeframe in target_timeframes:
-                    klines = self.fetch_incremental_klines(
-                        exchange_name,
-                        symbol,
-                        current_timeframe,
-                    )
-                    if klines:
-                        all_klines.extend(klines)
+            tasks = [
+                (exchange_name, symbol, tf)
+                for symbol in TARGET_SYMBOLS
+                for tf in target_timeframes
+            ]
+            results = parallel_fetch(
+                self.fetch_incremental_klines,
+                tasks,
+                task_label=f"kline_{exchange_name}",
+            )
+            all_klines.extend(results)
         if all_klines:
             self.save_to_db(all_klines)
             logger.info(f"K线增量批次已写入，共 {len(all_klines)} 条")

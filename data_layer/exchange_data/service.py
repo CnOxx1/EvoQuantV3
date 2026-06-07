@@ -160,26 +160,29 @@ class ExchangeDataService:
         positions: list[dict],
         basis_rows: list[dict],
     ) -> dict[str, dict[str, object]]:
+        # v4.1.0: 预分配所有 symbol 条目，用直接索引替代 setdefault
         symbols_map = {
             symbol: cls._empty_symbol_entry(symbol)
             for symbol in candidate_symbols
         }
         for row in tickers:
-            symbol_entry = symbols_map.setdefault(
-                str(row["symbol"]),
-                cls._empty_symbol_entry(str(row["symbol"])),
-            )
-            symbol_entry["spot"].append(row)
+            sym = str(row["symbol"])
+            entry = symbols_map.get(sym)
+            if entry is None:
+                entry = cls._empty_symbol_entry(sym)
+                symbols_map[sym] = entry
+            entry["spot"].append(row)
         for row in trades:
-            symbol_entry = symbols_map.setdefault(
-                str(row["symbol"]),
-                cls._empty_symbol_entry(str(row["symbol"])),
-            )
+            sym = str(row["symbol"])
+            entry = symbols_map.get(sym)
+            if entry is None:
+                entry = cls._empty_symbol_entry(sym)
+                symbols_map[sym] = entry
             market_type = str(row.get("market_type") or "").strip().lower()
             if market_type == "spot":
-                symbol_entry["trade_flow_spot"].append(row)
+                entry["trade_flow_spot"].append(row)
             else:
-                symbol_entry["trade_flow_derivatives"].append(row)
+                entry["trade_flow_derivatives"].append(row)
         for collection_name, rows in (
             ("orderbook", orderbooks),
             ("funding", fundings),
@@ -189,11 +192,12 @@ class ExchangeDataService:
             ("basis", basis_rows),
         ):
             for row in rows:
-                symbol_entry = symbols_map.setdefault(
-                    str(row["symbol"]),
-                    cls._empty_symbol_entry(str(row["symbol"])),
-                )
-                symbol_entry[collection_name].append(row)
+                sym = str(row["symbol"])
+                entry = symbols_map.get(sym)
+                if entry is None:
+                    entry = cls._empty_symbol_entry(sym)
+                    symbols_map[sym] = entry
+                entry[collection_name].append(row)
         return symbols_map
 
     @staticmethod

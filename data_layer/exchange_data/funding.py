@@ -6,6 +6,7 @@ from loguru import logger
 
 from config.symbols import TARGET_SYMBOLS, TARGET_EXCHANGES
 from database.db_manager import DBManager
+from data_layer.exchange_data.batch_utils import parallel_fetch
 from data_layer.exchange_data.client import ExchangeClientManager, retry_on_failure
 from data_layer.exchange_data.models import FundingRate
 
@@ -211,15 +212,78 @@ class FundingRateCollector:
         return results
 
     def fetch_all_funding_rates(self) -> list[FundingRate]:
-        """批量获取所有目标交易对的当前资金费率"""
+        """批量获取所有目标交易对的当前资金费率（优先批量 API，回退并行获取）。"""
         results = []
         for exchange_name in TARGET_EXCHANGES:
-            for symbol in TARGET_SYMBOLS:
-                rate = self.fetch_funding_rate(exchange_name, symbol)
-                if rate:
-                    results.append(rate)
+            client = self.client_manager.get_client(exchange_name, market_type="swap")
+            if not client.markets:
+                client.load_markets()
+            supports_batch = bool(getattr(client, "has", {}).get("fetchFundingRates"))
+
+            if supports_batch and len(TARGET_SYMBOLS) > 1:
+                try:
+                    swap_symbols = [self._to_swap_symbol(s) for s in TARGET_SYMBOLS]
+                    raw_map = client.fetch_funding_rates(swap_symbols)
+                    for symbol in TARGET_SYMBOLS:
+                        swap = self._to_swap_symbol(symbol)
+                        raw = raw_map.get(swap)
+                        if raw:
+                            rate = self._parse_funding_raw(exchange_name, symbol, raw)
+                            if rate:
+                                results.append(rate)
+                    logger.debug(f"批量获取资金费率成功: [{exchange_name}] {len(results)} 条")
+                    continue
+                except Exception as e:
+                    logger.warning(f"批量资金费率失败，回退并行获取 [{exchange_name}]: {e}")
+
+            # 回退：并行获取
+            tasks = [(exchange_name, symbol) for symbol in TARGET_SYMBOLS]
+            batch_results = parallel_fetch(
+                self.fetch_funding_rate,
+                tasks,
+                task_label=f"funding_{exchange_name}",
+            )
+            results.extend(batch_results)
+
         logger.info(f"共获取 {len(results)} 条资金费率")
         return results
+
+    def _parse_funding_raw(
+        self, exchange_name: str, symbol: str, raw: dict
+    ) -> FundingRate | None:
+        """从 ccxt raw dict 解析 FundingRate 对象。"""
+        try:
+            next_time = None
+            if raw.get("fundingDatetime"):
+                try:
+                    next_time = self._ensure_naive_utc(
+                        datetime.fromisoformat(
+                            raw["fundingDatetime"].replace("Z", "+00:00")
+                        )
+                    )
+                except (ValueError, TypeError):
+                    pass
+            elif raw.get("fundingTimestamp"):
+                next_time = self._ensure_naive_utc(
+                    datetime.fromtimestamp(
+                        raw["fundingTimestamp"] / 1000, tz=timezone.utc
+                    )
+                )
+            event_time = self._timestamp_to_datetime(raw.get("timestamp"))
+            if event_time is None:
+                event_time = datetime.now(timezone.utc).replace(tzinfo=None)
+            return FundingRate(
+                symbol=symbol,
+                exchange=exchange_name,
+                funding_rate=raw.get("fundingRate"),
+                mark_price=raw.get("markPrice"),
+                index_price=raw.get("indexPrice"),
+                next_funding_time=next_time,
+                timestamp=event_time,
+            )
+        except Exception as e:
+            logger.debug(f"解析资金费率失败 [{exchange_name}] {symbol}: {e}")
+            return None
 
     def backfill_all_history(self, days: int = 30) -> list[FundingRate]:
         """批量回填所有目标币种的历史资金费率。"""

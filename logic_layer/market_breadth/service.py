@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 
 from database.db_manager import DBManager
 from data_layer.exchange_data.service import ExchangeDataService
@@ -57,6 +58,7 @@ class MarketBreadthService:
         return normalized
 
     @staticmethod
+    @lru_cache(maxsize=1024)
     def _normalize_asset_from_symbol(symbol: str | None) -> str | None:
         raw_symbol = str(symbol or "").strip().upper()
         if not raw_symbol:

@@ -108,7 +108,8 @@ DB_BACKEND=sqlite (默认，开发/测试)
 DB_BACKEND=postgres (生产)
   → PostgresBackend → psycopg2.pool.ThreadedConnectionPool
   → Schema 映射: exchange_data / market_data / analytics
-  → 连接池: min=1, max=3 (per-process)
+  → 连接池: min=10, max=50, overflow=10, idle_timeout=300s
+  → 自适应池: DB_POOL_ADAPTIVE=1 时根据负载动态调整池大小
   → 查询自动适配: ? → %s, datetime('now') → NOW()
   → ON CONFLICT 冲突键智能推断（15+ 模式）
   → 保留字自动引用（timestamp, order, type 等）
@@ -136,8 +137,11 @@ PG_PORT=5432
 PG_DATABASE=evoquant
 PG_USER=evoquant
 PG_PASSWORD=evoquant2024
-DB_POOL_MIN=1
-DB_POOL_MAX=3
+DB_POOL_MIN=10
+DB_POOL_MAX=50
+DB_POOL_OVERFLOW=10
+DB_POOL_IDLE_TIMEOUT=300
+DB_POOL_ADAPTIVE=1
 ```
 
 3. 启动系统（`.env` 由 python-dotenv 自动加载）：

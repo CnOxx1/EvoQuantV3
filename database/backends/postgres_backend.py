@@ -12,11 +12,16 @@ from database.backends.base import DatabaseBackend
 
 
 class _DictRow(dict):
-    """兼容 sqlite3.Row 的字典行，支持 row["col"] 访问。"""
+    """兼容 sqlite3.Row 的字典行，支持 row["col"] 访问。
+
+    v4.2.0: __slots__ 节省内存，int 索引使用 tuple 缓存。
+    """
+
+    __slots__ = ()
 
     def __getitem__(self, key: Any) -> Any:
         if isinstance(key, int):
-            return list(self.values())[key]
+            return tuple(self.values())[key]
         return super().__getitem__(key)
 
     def keys(self):
@@ -97,10 +102,13 @@ class PostgresBackend(DatabaseBackend):
         return conn
 
     def _rows_to_dicts(self, cursor: Any) -> list[_DictRow]:
-        """将 psycopg2 cursor 结果转为 _DictRow 列表。"""
+        """将 psycopg2 cursor 结果转为 _DictRow 列表。
+
+        v4.2.0: 使用 tuple 缓存 columns，减少中间对象分配。
+        """
         if cursor.description is None:
             return []
-        columns = [desc[0] for desc in cursor.description]
+        columns = tuple(desc[0] for desc in cursor.description)
         rows = cursor.fetchall()
         return [_DictRow(zip(columns, row)) for row in rows]
 

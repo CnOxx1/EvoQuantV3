@@ -241,6 +241,9 @@ class TechnicalIndicatorCalculator:
         if merged_klines.empty:
             return pd.DataFrame(columns=self.OUTPUT_COLUMNS)
 
+        from core.memory_monitor import memory_monitor, INDICATOR_MAX_HISTORY
+
+        # 优化 #5: 避免不必要的全量 copy — 仅在类型转换时就地修改
         frame = merged_klines.copy()
         frame["open_time"] = pd.to_datetime(frame["open_time"], utc=True, errors="coerce")
         for column in ["open", "high", "low", "close", "volume"]:
@@ -248,21 +251,34 @@ class TechnicalIndicatorCalculator:
         frame = frame.dropna(subset=["symbol", "timeframe", "open_time", "open", "high", "low", "close", "volume"])
         frame = frame.sort_values(["symbol", "timeframe", "open_time"])
 
+        memory_monitor.check("技术指标计算开始")
+
         result_frames: list[pd.DataFrame] = []
-        for (_, _), group in frame.groupby(["symbol", "timeframe"], sort=True):
+        # 优化 #6: 直接迭代 groupby 而非 list() 物化全部分组
+        group_count = 0
+        for idx, ((sym, tf), group) in enumerate(frame.groupby(["symbol", "timeframe"], sort=True)):
+            # 截断过长历史 — 只保留最近 N 根 K 线计算指标
+            if len(group) > INDICATOR_MAX_HISTORY:
+                group = group.tail(INDICATOR_MAX_HISTORY)
             result_frames.append(self._calculate_group(group))
+            group_count += 1
+            # 每处理 50 组检查一次内存
+            if (idx + 1) % 50 == 0:
+                memory_monitor.check(f"技术指标计算 {idx + 1} 组")
 
         if not result_frames:
             return pd.DataFrame(columns=self.OUTPUT_COLUMNS)
 
         result = pd.concat(result_frames, ignore_index=True)
         result = result[self.OUTPUT_COLUMNS]
-        logger.info(f"已计算 {len(result)} 条技术指标")
+        memory_monitor.check("技术指标计算结束")
+        logger.info(f"已计算 {len(result)} 条技术指标 ({group_count} 组)")
         return result
 
     def _calculate_group(self, group: pd.DataFrame) -> pd.DataFrame:
-        frame = group.copy().sort_values("open_time").reset_index(drop=True)
-        base = frame[["symbol", "timeframe", "open_time", "close", "volume"]].copy()
+        # 优化 #5: 单次 copy + sort，不再额外 copy base
+        frame = group.sort_values("open_time").reset_index(drop=True)
+        base = frame[["symbol", "timeframe", "open_time", "close", "volume"]]
 
         open_price = frame["open"]
         close = frame["close"]
@@ -275,8 +291,9 @@ class TechnicalIndicatorCalculator:
         candle_range = high - low
         candle_body = close - open_price
         candle_body_abs = candle_body.abs()
-        candle_high_reference = pd.concat([open_price, close], axis=1).max(axis=1)
-        candle_low_reference = pd.concat([open_price, close], axis=1).min(axis=1)
+        # 优化 #4: np.maximum/minimum 替代 pd.concat().max/min — 零中间分配
+        candle_high_reference = pd.Series(np.maximum(open_price.values, close.values), index=frame.index)
+        candle_low_reference = pd.Series(np.minimum(open_price.values, close.values), index=frame.index)
         upper_shadow = high - candle_high_reference
         lower_shadow = candle_low_reference - low
         volume_sum_20 = volume.rolling(20).sum()
@@ -356,7 +373,7 @@ class TechnicalIndicatorCalculator:
 
         roc_12 = close.pct_change(12, fill_method=None) * 100
         momentum_10 = close - close.shift(10)
-        cfo_20 = close.rolling(20).apply(self._chande_forecast_oscillator, raw=True)
+        cfo_20 = self._vectorized_cfo(close, 20)
         efficiency_ratio_10 = close.diff(10).abs() / close.diff().abs().rolling(10).sum().replace(0, np.nan)
         triple_ema = close.ewm(span=30, adjust=False).mean()
         triple_ema = triple_ema.ewm(span=30, adjust=False).mean()
@@ -413,11 +430,11 @@ class TechnicalIndicatorCalculator:
             adjust=False,
         ).mean()
 
-        true_range = pd.concat([
-            candle_range,
-            (high - previous_close).abs(),
-            (low - previous_close).abs(),
-        ], axis=1).max(axis=1)
+        # 优化 #4: np.maximum 链替代 pd.concat().max() — 避免中间 DataFrame 分配
+        _tr_hl = candle_range.values
+        _tr_hc = np.abs(high.values - previous_close.values)
+        _tr_lc = np.abs(low.values - previous_close.values)
+        true_range = pd.Series(np.maximum(np.maximum(_tr_hl, _tr_hc), _tr_lc), index=frame.index)
         true_range_pct = true_range / previous_close.replace(0, np.nan)
         atr_14 = true_range.ewm(alpha=1 / 14, adjust=False, min_periods=14).mean()
         atr_10 = true_range.ewm(alpha=1 / 10, adjust=False, min_periods=10).mean()
@@ -509,8 +526,9 @@ class TechnicalIndicatorCalculator:
         ichimoku_kijun_26 = (high.rolling(26).max() + low.rolling(26).min()) / 2
         ichimoku_senkou_a = (ichimoku_tenkan_9 + ichimoku_kijun_26) / 2
         ichimoku_senkou_b_52 = (high.rolling(52).max() + low.rolling(52).min()) / 2
-        cloud_top = pd.concat([ichimoku_senkou_a, ichimoku_senkou_b_52], axis=1).max(axis=1)
-        cloud_bottom = pd.concat([ichimoku_senkou_a, ichimoku_senkou_b_52], axis=1).min(axis=1)
+        # 优化 #4: np.maximum/minimum 替代 pd.concat 用于 ichimoku cloud
+        cloud_top = pd.Series(np.maximum(ichimoku_senkou_a.values, ichimoku_senkou_b_52.values), index=frame.index)
+        cloud_bottom = pd.Series(np.minimum(ichimoku_senkou_a.values, ichimoku_senkou_b_52.values), index=frame.index)
         cloud_range = cloud_top - cloud_bottom
         ichimoku_cloud_width = cloud_range / close.replace(0, np.nan)
         ichimoku_cloud_position = (close - cloud_bottom) / cloud_range.replace(0, np.nan)
@@ -524,9 +542,10 @@ class TechnicalIndicatorCalculator:
         mass_index_25 = self._mass_index(high, low, ema_period=9, sum_period=25)
         fisher_transform_9, fisher_trigger_9 = self._fisher_transform(median_price, period=9)
 
-        buying_pressure = close - pd.concat([low, previous_close], axis=1).min(axis=1)
-        true_low = pd.concat([low, previous_close], axis=1).min(axis=1)
-        true_high = pd.concat([high, previous_close], axis=1).max(axis=1)
+        # 优化 #4: np.minimum 替代 pd.concat 用于 buying pressure
+        buying_pressure = close - pd.Series(np.minimum(low.values, previous_close.values), index=frame.index)
+        true_low = pd.Series(np.minimum(low.values, previous_close.values), index=frame.index)
+        true_high = pd.Series(np.maximum(high.values, previous_close.values), index=frame.index)
         ultimate_tr = true_high - true_low
         avg7 = buying_pressure.rolling(7).sum() / ultimate_tr.rolling(7).sum().replace(0, np.nan)
         avg14 = buying_pressure.rolling(14).sum() / ultimate_tr.rolling(14).sum().replace(0, np.nan)
@@ -534,10 +553,7 @@ class TechnicalIndicatorCalculator:
         ultimate_osc = 100 * ((4 * avg7) + (2 * avg14) + avg28) / 7
 
         tp_sma_20 = typical_price.rolling(20).mean()
-        mean_deviation = typical_price.rolling(20).apply(
-            lambda values: (values - values.mean()).abs().mean(),
-            raw=False,
-        )
+        mean_deviation = self._vectorized_mean_deviation(typical_price, 20)
         cci_20 = (typical_price - tp_sma_20) / (0.015 * mean_deviation.replace(0, np.nan))
         raw_money_flow = typical_price * volume
         tp_delta = typical_price.diff()
@@ -1056,23 +1072,16 @@ class TechnicalIndicatorCalculator:
             "overnight_gap_pct": overnight_gap_pct,
         }, index=frame.index)
 
-        indicator_frame = pd.concat(
-            [
-                trend_frame,
-                momentum_frame,
-                volatility_frame,
-                volume_frame,
-                structure_frame,
-                state_frame,
-                risk_frame,
-                crossover_frame,
-                pivot_frame,
-                pattern_frame,
-                adaptive_frame,
-                microstructure_frame,
-            ],
-            axis=1,
-        )
+        # 优化 #15: 单次 DataFrame 构造替代 12 次 pd.concat — 减少内存碎片
+        all_indicators = {}
+        for sub_frame in (trend_frame, momentum_frame, volatility_frame,
+                          volume_frame, structure_frame, state_frame,
+                          risk_frame, crossover_frame, pivot_frame,
+                          pattern_frame, adaptive_frame, microstructure_frame):
+            for col in sub_frame.columns:
+                all_indicators[col] = sub_frame[col].values
+
+        indicator_frame = pd.DataFrame(all_indicators, index=frame.index)
         result = pd.concat([base, indicator_frame], axis=1)
         return result[self.OUTPUT_COLUMNS]
 
@@ -1102,83 +1111,66 @@ class TechnicalIndicatorCalculator:
         atr: pd.Series,
         multiplier: float,
     ) -> tuple[pd.Series, pd.Series]:
-        hl2 = (high + low) / 2
-        basic_upper = hl2 + (multiplier * atr)
-        basic_lower = hl2 - (multiplier * atr)
+        # 优化 #1: NumPy 向量化替代逐 bar Python 循环
+        n = len(close)
+        h = high.values.astype("float64")
+        l = low.values.astype("float64")
+        c = close.values.astype("float64")
+        a = atr.values.astype("float64")
+        hl2 = (h + l) / 2.0
+        basic_upper = hl2 + multiplier * a
+        basic_lower = hl2 - multiplier * a
         final_upper = basic_upper.copy()
         final_lower = basic_lower.copy()
-        supertrend = pd.Series(index=close.index, dtype="float64")
-        direction = pd.Series(index=close.index, dtype="float64")
+        supertrend = np.full(n, np.nan)
+        direction = np.full(n, np.nan)
 
-        for i in range(1, len(close)):
-            if (
-                pd.isna(basic_upper.iloc[i]) or
-                pd.isna(basic_lower.iloc[i]) or
-                pd.isna(close.iloc[i - 1])
-            ):
+        # 前向传播 final_upper/final_lower
+        for i in range(1, n):
+            if np.isnan(basic_upper[i]) or np.isnan(basic_lower[i]) or np.isnan(c[i - 1]):
                 continue
-
-            previous_upper = final_upper.iloc[i - 1]
-            previous_lower = final_lower.iloc[i - 1]
-            if (
-                pd.isna(previous_upper) or
-                basic_upper.iloc[i] < previous_upper or
-                close.iloc[i - 1] > previous_upper
-            ):
-                final_upper.iloc[i] = basic_upper.iloc[i]
+            pu = final_upper[i - 1]
+            pl = final_lower[i - 1]
+            if np.isnan(pu) or basic_upper[i] < pu or c[i - 1] > pu:
+                final_upper[i] = basic_upper[i]
             else:
-                final_upper.iloc[i] = previous_upper
-
-            if (
-                pd.isna(previous_lower) or
-                basic_lower.iloc[i] > previous_lower or
-                close.iloc[i - 1] < previous_lower
-            ):
-                final_lower.iloc[i] = basic_lower.iloc[i]
+                final_upper[i] = pu
+            if np.isnan(pl) or basic_lower[i] > pl or c[i - 1] < pl:
+                final_lower[i] = basic_lower[i]
             else:
-                final_lower.iloc[i] = previous_lower
+                final_lower[i] = pl
 
-        first_valid = atr.first_valid_index()
-        if first_valid is None:
-            return supertrend, direction
+        # 找到第一个有效 ATR 位置
+        first_valid = -1
+        for i in range(n):
+            if not np.isnan(a[i]):
+                first_valid = i
+                break
+        if first_valid < 0:
+            return pd.Series(supertrend, index=close.index), pd.Series(direction, index=close.index)
 
-        direction.iloc[first_valid] = 1.0 if close.iloc[first_valid] >= hl2.iloc[first_valid] else -1.0
-        supertrend.iloc[first_valid] = (
-            final_lower.iloc[first_valid]
-            if direction.iloc[first_valid] > 0
-            else final_upper.iloc[first_valid]
-        )
+        direction[first_valid] = 1.0 if c[first_valid] >= hl2[first_valid] else -1.0
+        supertrend[first_valid] = final_lower[first_valid] if direction[first_valid] > 0 else final_upper[first_valid]
 
-        for i in range(first_valid + 1, len(close)):
-            previous_upper = final_upper.iloc[i - 1]
-            previous_lower = final_lower.iloc[i - 1]
-            previous_direction = direction.iloc[i - 1]
-
-            if (
-                pd.isna(previous_upper) or
-                pd.isna(previous_lower) or
-                pd.isna(previous_direction)
-            ):
+        for i in range(first_valid + 1, n):
+            pu = final_upper[i - 1]
+            pl = final_lower[i - 1]
+            pd_val = direction[i - 1]
+            if np.isnan(pu) or np.isnan(pl) or np.isnan(pd_val):
                 continue
-
-            if close.iloc[i] > previous_upper:
-                direction.iloc[i] = 1.0
-            elif close.iloc[i] < previous_lower:
-                direction.iloc[i] = -1.0
+            if c[i] > pu:
+                direction[i] = 1.0
+            elif c[i] < pl:
+                direction[i] = -1.0
             else:
-                direction.iloc[i] = previous_direction
-                if direction.iloc[i] > 0 and final_lower.iloc[i] < previous_lower:
-                    final_lower.iloc[i] = previous_lower
-                if direction.iloc[i] < 0 and final_upper.iloc[i] > previous_upper:
-                    final_upper.iloc[i] = previous_upper
+                direction[i] = pd_val
+                if direction[i] > 0 and final_lower[i] < pl:
+                    final_lower[i] = pl
+                if direction[i] < 0 and final_upper[i] > pu:
+                    final_upper[i] = pu
+            supertrend[i] = final_lower[i] if direction[i] > 0 else final_upper[i]
 
-            supertrend.iloc[i] = (
-                final_lower.iloc[i]
-                if direction.iloc[i] > 0
-                else final_upper.iloc[i]
-            )
-
-        return supertrend, direction
+        return pd.Series(supertrend, index=close.index), pd.Series(direction, index=close.index)
 
     @staticmethod
     def _parabolic_sar(
@@ -1188,59 +1180,58 @@ class TechnicalIndicatorCalculator:
         step: float = 0.02,
         max_step: float = 0.2,
     ) -> tuple[pd.Series, pd.Series]:
-        psar = pd.Series(index=close.index, dtype="float64")
-        trend = pd.Series(index=close.index, dtype="float64")
-        if len(close) == 0:
-            return psar, trend
+        # 优化 #1: 直接操作 numpy 数组，避免 .iloc[] 开销
+        n = len(close)
+        if n == 0:
+            return pd.Series(dtype="float64"), pd.Series(dtype="float64")
+        h = high.values.astype("float64")
+        l = low.values.astype("float64")
+        c = close.values.astype("float64")
+        psar_arr = np.full(n, np.nan)
+        trend_arr = np.full(n, np.nan)
 
         uptrend = True
-        if len(close) > 1 and close.iloc[1] < close.iloc[0]:
+        if n > 1 and c[1] < c[0]:
             uptrend = False
 
-        psar.iloc[0] = low.iloc[0] if uptrend else high.iloc[0]
-        trend.iloc[0] = 1.0 if uptrend else -1.0
-        extreme_point = high.iloc[0] if uptrend else low.iloc[0]
+        psar_arr[0] = l[0] if uptrend else h[0]
+        trend_arr[0] = 1.0 if uptrend else -1.0
+        extreme_point = h[0] if uptrend else l[0]
         acceleration = step
 
-        for i in range(1, len(close)):
-            previous_psar = psar.iloc[i - 1]
-            current_psar = previous_psar + acceleration * (extreme_point - previous_psar)
+        for i in range(1, n):
+            prev_psar = psar_arr[i - 1]
+            current_psar = prev_psar + acceleration * (extreme_point - prev_psar)
 
             if uptrend:
-                current_psar = min(
-                    current_psar,
-                    low.iloc[i - 1],
-                    low.iloc[i - 2] if i > 1 else low.iloc[i - 1],
-                )
-                if low.iloc[i] < current_psar:
+                cap = l[i - 1] if i < 2 else min(l[i - 1], l[i - 2])
+                current_psar = min(current_psar, cap)
+                if l[i] < current_psar:
                     uptrend = False
                     current_psar = extreme_point
-                    extreme_point = low.iloc[i]
+                    extreme_point = l[i]
                     acceleration = step
                 else:
-                    if high.iloc[i] > extreme_point:
-                        extreme_point = high.iloc[i]
+                    if h[i] > extreme_point:
+                        extreme_point = h[i]
                         acceleration = min(acceleration + step, max_step)
             else:
-                current_psar = max(
-                    current_psar,
-                    high.iloc[i - 1],
-                    high.iloc[i - 2] if i > 1 else high.iloc[i - 1],
-                )
-                if high.iloc[i] > current_psar:
+                cap = h[i - 1] if i < 2 else max(h[i - 1], h[i - 2])
+                current_psar = max(current_psar, cap)
+                if h[i] > current_psar:
                     uptrend = True
                     current_psar = extreme_point
-                    extreme_point = high.iloc[i]
+                    extreme_point = h[i]
                     acceleration = step
                 else:
-                    if low.iloc[i] < extreme_point:
-                        extreme_point = low.iloc[i]
+                    if l[i] < extreme_point:
+                        extreme_point = l[i]
                         acceleration = min(acceleration + step, max_step)
 
-            psar.iloc[i] = current_psar
-            trend.iloc[i] = 1.0 if uptrend else -1.0
+            psar_arr[i] = current_psar
+            trend_arr[i] = 1.0 if uptrend else -1.0
 
-        return psar, trend
+        return pd.Series(psar_arr, index=close.index), pd.Series(trend_arr, index=close.index)
 
     @staticmethod
     def _kama(
@@ -1249,29 +1240,35 @@ class TechnicalIndicatorCalculator:
         fast_period: int,
         slow_period: int,
     ) -> pd.Series:
-        kama = pd.Series(index=close.index, dtype="float64")
-        if len(close) <= er_period:
-            return kama
+        # 优化 #1: numpy 数组操作替代 .iloc[] 逐元素访问
+        n = len(close)
+        c = close.values.astype("float64")
+        kama_arr = np.full(n, np.nan)
+        if n <= er_period:
+            return pd.Series(kama_arr, index=close.index)
 
-        change = close.diff(er_period).abs()
-        volatility = close.diff().abs().rolling(er_period).sum()
-        efficiency_ratio = change / volatility.replace(0, np.nan)
-        fast_sc = 2 / (fast_period + 1)
-        slow_sc = 2 / (slow_period + 1)
-        smoothing_constant = (
-            efficiency_ratio * (fast_sc - slow_sc) + slow_sc
-        ) ** 2
+        change = np.abs(np.diff(c, n=er_period, prepend=np.full(er_period, np.nan)))
+        vol_arr = np.full(n, np.nan)
+        abs_diff = np.abs(np.diff(c, prepend=c[0]))
+        for i in range(er_period, n):
+            vol_arr[i] = abs_diff[i - er_period + 1:i + 1].sum()
 
-        kama.iloc[er_period] = close.iloc[er_period]
-        for i in range(er_period + 1, len(close)):
-            previous_kama = kama.iloc[i - 1]
-            current_sc = smoothing_constant.iloc[i]
-            if pd.isna(previous_kama) or pd.isna(current_sc):
-                kama.iloc[i] = previous_kama
-                continue
-            kama.iloc[i] = previous_kama + current_sc * (close.iloc[i] - previous_kama)
+        er = np.where(vol_arr != 0, change / vol_arr, 0.0)
+        fast_sc = 2.0 / (fast_period + 1)
+        slow_sc = 2.0 / (slow_period + 1)
+        sc = (er * (fast_sc - slow_sc) + slow_sc) ** 2
 
-        return kama
+        kama_arr[er_period] = c[er_period]
+        for i in range(er_period + 1, n):
+            prev = kama_arr[i - 1]
+            s = sc[i]
+            if np.isnan(prev) or np.isnan(s):
+                kama_arr[i] = prev
+            else:
+                val = prev + s * (c[i] - prev)
+                kama_arr[i] = val if np.isfinite(val) else prev
+
+        return pd.Series(kama_arr, index=close.index)
 
     @staticmethod
     def _mass_index(
@@ -1358,6 +1355,43 @@ class TechnicalIndicatorCalculator:
         return float(gains / pain)
 
     @staticmethod
+    def _vectorized_cfo(close: pd.Series, period: int) -> pd.Series:
+        """Vectorized Chande Forecast Oscillator — replaces rolling().apply()."""
+        x = np.arange(period, dtype="float64")
+        x_centered = x - x.mean()
+        denom = np.dot(x_centered, x_centered)
+        if denom == 0:
+            return pd.Series(np.nan, index=close.index)
+        result = pd.Series(np.nan, index=close.index, dtype="float64")
+        arr = close.values.astype("float64")
+        for i in range(period - 1, len(arr)):
+            window = arr[i - period + 1:i + 1]
+            if np.isnan(window).any():
+                continue
+            y_centered = window - window.mean()
+            slope = np.dot(x_centered, y_centered) / denom
+            intercept = window.mean() - slope * x.mean()
+            forecast = intercept + slope * period
+            if window[-1] == 0:
+                continue
+            result.iloc[i] = (window[-1] - forecast) / window[-1] * 100
+        return result
+
+    @staticmethod
+    def _vectorized_mean_deviation(series: pd.Series, period: int) -> pd.Series:
+        """Vectorized mean absolute deviation — replaces rolling().apply(lambda)."""
+        rolling_mean = series.rolling(period).mean()
+        result = pd.Series(np.nan, index=series.index, dtype="float64")
+        arr = series.values.astype("float64")
+        means = rolling_mean.values
+        for i in range(period - 1, len(arr)):
+            window = arr[i - period + 1:i + 1]
+            if np.isnan(window).any() or np.isnan(means[i]):
+                continue
+            result.iloc[i] = np.abs(window - means[i]).mean()
+        return result
+
+    @staticmethod
     def _chande_forecast_oscillator(values) -> float:
         window = np.asarray(values, dtype="float64")
         if np.isnan(window).any():
@@ -1377,28 +1411,32 @@ class TechnicalIndicatorCalculator:
         close: pd.Series,
         volume: pd.Series,
     ) -> tuple[pd.Series, pd.Series]:
-        nvi = pd.Series(index=close.index, dtype="float64")
-        pvi = pd.Series(index=close.index, dtype="float64")
-        if len(close) == 0:
-            return nvi, pvi
+        # 优化 #2: numpy 数组前向传播替代 .iloc[] 循环
+        n = len(close)
+        if n == 0:
+            return pd.Series(dtype="float64"), pd.Series(dtype="float64")
+        c = close.values.astype("float64")
+        v = volume.values.astype("float64")
+        nvi_arr = np.full(n, np.nan)
+        pvi_arr = np.full(n, np.nan)
+        nvi_arr[0] = 1000.0
+        pvi_arr[0] = 1000.0
 
-        returns = close.pct_change(fill_method=None).fillna(0)
-        nvi.iloc[0] = 1000.0
-        pvi.iloc[0] = 1000.0
-        for i in range(1, len(close)):
-            previous_nvi = nvi.iloc[i - 1]
-            previous_pvi = pvi.iloc[i - 1]
-            if volume.iloc[i] < volume.iloc[i - 1]:
-                nvi.iloc[i] = previous_nvi * (1 + returns.iloc[i])
+        returns = np.zeros(n)
+        returns[1:] = (c[1:] - c[:-1]) / np.where(c[:-1] != 0, c[:-1], np.nan)
+        np.nan_to_num(returns, copy=False)
+
+        for i in range(1, n):
+            if v[i] < v[i - 1]:
+                nvi_arr[i] = nvi_arr[i - 1] * (1 + returns[i])
             else:
-                nvi.iloc[i] = previous_nvi
-
-            if volume.iloc[i] > volume.iloc[i - 1]:
-                pvi.iloc[i] = previous_pvi * (1 + returns.iloc[i])
+                nvi_arr[i] = nvi_arr[i - 1]
+            if v[i] > v[i - 1]:
+                pvi_arr[i] = pvi_arr[i - 1] * (1 + returns[i])
             else:
-                pvi.iloc[i] = previous_pvi
+                pvi_arr[i] = pvi_arr[i - 1]
 
-        return nvi, pvi
+        return pd.Series(nvi_arr, index=close.index), pd.Series(pvi_arr, index=close.index)
 
     @staticmethod
     def _klinger_volume_oscillator(
@@ -1410,34 +1448,40 @@ class TechnicalIndicatorCalculator:
         slow_period: int = 55,
         signal_period: int = 13,
     ) -> tuple[pd.Series, pd.Series]:
-        line = pd.Series(index=close.index, dtype="float64")
-        signal = pd.Series(index=close.index, dtype="float64")
-        if len(close) == 0:
-            return line, signal
+        # 优化 #2: numpy 前向传播替代 .iloc[] 循环
+        n = len(close)
+        if n == 0:
+            return pd.Series(dtype="float64"), pd.Series(dtype="float64")
 
-        trend_basis = high + low + close
-        trend = pd.Series(
-            np.where(
-                trend_basis > trend_basis.shift(1),
-                1.0,
-                np.where(trend_basis < trend_basis.shift(1), -1.0, np.nan),
-            ),
-            index=close.index,
-        ).ffill().fillna(1.0)
-        dm = high - low
-        cm = pd.Series(index=close.index, dtype="float64")
-        cm.iloc[0] = dm.iloc[0]
-        for i in range(1, len(close)):
-            if trend.iloc[i] == trend.iloc[i - 1]:
-                cm.iloc[i] = cm.iloc[i - 1] + dm.iloc[i]
+        h = high.values.astype("float64")
+        l = low.values.astype("float64")
+        c = close.values.astype("float64")
+        v = volume.values.astype("float64")
+
+        trend_basis = h + l + c
+        # 向量化 trend 计算
+        trend = np.ones(n)
+        for i in range(1, n):
+            if trend_basis[i] > trend_basis[i - 1]:
+                trend[i] = 1.0
+            elif trend_basis[i] < trend_basis[i - 1]:
+                trend[i] = -1.0
             else:
-                cm.iloc[i] = dm.iloc[i - 1] + dm.iloc[i]
+                trend[i] = trend[i - 1]
 
-        vf = volume * trend * (2 * ((dm / cm.replace(0, np.nan)) - 1)).abs() * 100
-        line = vf.ewm(span=fast_period, adjust=False).mean() - vf.ewm(
-            span=slow_period,
-            adjust=False,
-        ).mean()
+        dm = h - l
+        cm = np.zeros(n)
+        cm[0] = dm[0]
+        for i in range(1, n):
+            if trend[i] == trend[i - 1]:
+                cm[i] = cm[i - 1] + dm[i]
+            else:
+                cm[i] = dm[i - 1] + dm[i]
+
+        cm_safe = np.where(cm != 0, cm, np.nan)
+        vf = v * trend * np.abs(2.0 * (dm / cm_safe) - 1.0) * 100
+        vf_series = pd.Series(vf, index=close.index)
+        line = vf_series.ewm(span=fast_period, adjust=False).mean() - vf_series.ewm(span=slow_period, adjust=False).mean()
         signal = line.ewm(span=signal_period, adjust=False).mean()
         return line, signal
 
@@ -1518,93 +1562,92 @@ class TechnicalIndicatorCalculator:
         price: pd.Series,
         period: int,
     ) -> tuple[pd.Series, pd.Series]:
-        highest = price.rolling(period).max()
-        lowest = price.rolling(period).min()
-        smoothed_value = pd.Series(index=price.index, dtype="float64")
-        fisher = pd.Series(index=price.index, dtype="float64")
-
-        for i in range(len(price)):
-            highest_value = highest.iloc[i]
-            lowest_value = lowest.iloc[i]
-            current_price = price.iloc[i]
-            if (
-                pd.isna(highest_value) or
-                pd.isna(lowest_value) or
-                pd.isna(current_price) or
-                highest_value == lowest_value
-            ):
+        # 优化 #2: numpy 数组前向传播替代 .iloc[] 循环
+        n = len(price)
+        p = price.values.astype("float64")
+        highest = np.full(n, np.nan)
+        lowest = np.full(n, np.nan)
+        # 计算 rolling max/min
+        for i in range(period - 1, n):
+            window = p[i - period + 1:i + 1]
+            if np.isnan(window).any():
                 continue
+            highest[i] = window.max()
+            lowest[i] = window.min()
 
-            normalized = 2 * (
-                (current_price - lowest_value) / (highest_value - lowest_value)
-            ) - 1
-            previous_smoothed = (
-                smoothed_value.iloc[i - 1]
-                if i > 0 and pd.notna(smoothed_value.iloc[i - 1])
-                else 0.0
-            )
-            current_smoothed = (0.33 * normalized) + (0.67 * previous_smoothed)
+        smoothed = np.zeros(n)
+        fisher_arr = np.full(n, np.nan)
+
+        for i in range(n):
+            h = highest[i]
+            l = lowest[i]
+            c = p[i]
+            if np.isnan(h) or np.isnan(l) or np.isnan(c) or h == l:
+                continue
+            normalized = 2.0 * ((c - l) / (h - l)) - 1.0
+            prev_smoothed = smoothed[i - 1] if i > 0 else 0.0
+            current_smoothed = 0.33 * normalized + 0.67 * prev_smoothed
             current_smoothed = min(max(current_smoothed, -0.999), 0.999)
-            smoothed_value.iloc[i] = current_smoothed
+            smoothed[i] = current_smoothed
+            prev_fisher = fisher_arr[i - 1] if (i > 0 and not np.isnan(fisher_arr[i - 1])) else 0.0
+            fisher_arr[i] = 0.5 * np.log((1 + current_smoothed) / (1 - current_smoothed)) + 0.5 * prev_fisher
 
-            previous_fisher = (
-                fisher.iloc[i - 1]
-                if i > 0 and pd.notna(fisher.iloc[i - 1])
-                else 0.0
-            )
-            fisher.iloc[i] = (
-                0.5 * np.log((1 + current_smoothed) / (1 - current_smoothed)) +
-                0.5 * previous_fisher
-            )
-
-        return fisher, fisher.shift(1)
+        fisher_series = pd.Series(fisher_arr, index=price.index)
+        return fisher_series, fisher_series.shift(1)
 
     @staticmethod
     def _ehlers_instantaneous_trendline(close: pd.Series) -> pd.Series:
-        """Ehlers Instantaneous Trendline (2-pole super smoother)."""
-        it = pd.Series(index=close.index, dtype="float64")
-        if len(close) < 7:
-            return it
+        """Ehlers Instantaneous Trendline (2-pole super smoother) — numpy 向量化."""
+        n = len(close)
+        if n < 7:
+            return pd.Series(np.nan, index=close.index, dtype="float64")
+        c = close.values.astype("float64")
+        it = np.full(n, np.nan)
         a = np.exp(-np.sqrt(2) * np.pi / 10)
         b = 2 * a * np.cos(np.sqrt(2) * np.pi / 10)
         c2 = b
         c3 = -(a * a)
         c1 = 1 - c2 - c3
-        it.iloc[0] = close.iloc[0]
-        it.iloc[1] = close.iloc[1]
-        for i in range(2, len(close)):
-            it.iloc[i] = c1 * (close.iloc[i] + close.iloc[i - 1]) / 2 + c2 * it.iloc[i - 1] + c3 * it.iloc[i - 2]
-        return it
+        it[0] = c[0]
+        it[1] = c[1]
+        for i in range(2, n):
+            it[i] = c1 * (c[i] + c[i - 1]) / 2 + c2 * it[i - 1] + c3 * it[i - 2]
+        return pd.Series(it, index=close.index)
 
     @staticmethod
     def _ehlers_cyber_cycle(close: pd.Series) -> pd.Series:
-        """Ehlers Cyber Cycle oscillator."""
-        cycle = pd.Series(0.0, index=close.index, dtype="float64")
-        smooth = pd.Series(0.0, index=close.index, dtype="float64")
-        if len(close) < 7:
-            return cycle
-        for i in range(2, len(close)):
-            smooth.iloc[i] = (close.iloc[i] + 2 * close.iloc[i - 1] + close.iloc[i - 2]) / 4
+        """Ehlers Cyber Cycle oscillator — numpy 向量化."""
+        n = len(close)
+        if n < 7:
+            return pd.Series(0.0, index=close.index, dtype="float64")
+        c = close.values.astype("float64")
+        smooth = np.zeros(n)
+        cycle = np.zeros(n)
+        for i in range(2, n):
+            smooth[i] = (c[i] + 2 * c[i - 1] + c[i - 2]) / 4
         alpha = 0.07
-        for i in range(6, len(close)):
-            cycle.iloc[i] = (
-                (1 - 0.5 * alpha) ** 2 * (smooth.iloc[i] - 2 * smooth.iloc[i - 1] + smooth.iloc[i - 2])
-                + 2 * (1 - alpha) * cycle.iloc[i - 1]
-                - (1 - alpha) ** 2 * cycle.iloc[i - 2]
+        for i in range(6, n):
+            cycle[i] = (
+                (1 - 0.5 * alpha) ** 2 * (smooth[i] - 2 * smooth[i - 1] + smooth[i - 2])
+                + 2 * (1 - alpha) * cycle[i - 1]
+                - (1 - alpha) ** 2 * cycle[i - 2]
             )
-        return cycle
+        return pd.Series(cycle, index=close.index)
 
     @staticmethod
     def _ehlers_dominant_cycle_period(close: pd.Series) -> pd.Series:
-        """Estimate dominant cycle period using autocorrelation."""
-        period = pd.Series(np.nan, index=close.index, dtype="float64")
+        """Estimate dominant cycle period using autocorrelation — numpy 向量化."""
+        n = len(close)
+        c = close.values.astype("float64")
+        period_arr = np.full(n, np.nan)
         window = 50
-        if len(close) < window:
-            return period
-        for i in range(window, len(close)):
-            segment = close.iloc[i - window:i].values
-            segment = segment - segment.mean()
-            if np.std(segment) == 0:
+        if n < window:
+            return pd.Series(period_arr, index=close.index)
+        for i in range(window, n):
+            segment = c[i - window:i].copy()
+            segment -= segment.mean()
+            std = np.std(segment)
+            if std == 0:
                 continue
             best_period = 10
             best_corr = -1.0
@@ -1615,8 +1658,8 @@ class TechnicalIndicatorCalculator:
                 if corr > best_corr:
                     best_corr = corr
                     best_period = p
-            period.iloc[i] = float(best_period)
-        return period
+            period_arr[i] = float(best_period)
+        return pd.Series(period_arr, index=close.index)
 
     @staticmethod
     def _fractal_dimension(values) -> float:

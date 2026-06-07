@@ -74,3 +74,30 @@ def run_async_collection(coro) -> Any:
     except RuntimeError:
         # 没有运行中的事件循环，直接 run
         return asyncio.run(coro)
+
+
+def create_async_client(
+    base_url: str,
+    timeout: float = 20.0,
+    max_retries: int = 3,
+    rate_limit: float = 10.0,
+    rate_burst: int = 20,
+    **kwargs,
+):
+    """工厂函数 — 创建 AsyncBaseDataClient 实例（延迟导入避免循环依赖）。
+
+    用于数据层模块快速创建异步客户端：
+        client = create_async_client("https://api.example.com", rate_limit=5.0)
+        async with client:
+            data = await client.get("/v1/data")
+    """
+    from core.async_base_data_client import AsyncBaseDataClient
+
+    return AsyncBaseDataClient(
+        base_url=base_url,
+        timeout=timeout,
+        max_retries=max_retries,
+        rate_limit=rate_limit,
+        rate_burst=rate_burst,
+        **kwargs,
+    )

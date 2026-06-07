@@ -91,14 +91,14 @@ logic_layer/
 
 ## 计算实现说明
 
-当前 `calculator.py` 已改成“分块构造 DataFrame”的形式，而不是连续对同一个 `DataFrame` 做大量 `frame["col"] = ...` 赋值。
+当前 `calculator.py` 已改成"分块构造 DataFrame"的形式，而不是连续对同一个 `DataFrame` 做大量 `frame["col"] = ...` 赋值。
 
 当前实现流程：
 
 - 先保留基础列：`symbol / timeframe / open_time / close / volume`
 - 再统一预计算共享中间序列，例如 `delta / true_range / typical_price / rolling_std`
 - 按类别分别构造小块特征表：`trend / momentum / volatility / volume / structure / state / risk / crossover / pivot / pattern / adaptive / microstructure`
-- 最后用一次 `concat` 合并成结果表
+- 最后用单次 `dict → DataFrame` 构造合并成结果表（v4.0.0 起不再使用 12× `pd.concat`）
 
 这样做的好处：
 
@@ -106,6 +106,33 @@ logic_layer/
 - 新增指标时更容易按类别扩展
 - 共享中间变量更清晰，减少重复计算和重复赋值
 - 后续如果继续拆成子计算器，也更容易演进
+
+### v4.0.0 性能优化：NumPy 向量化
+
+v4.0.0 对 `calculator.py` 的计算热路径做了全面 NumPy 向量化重写，核心变更：
+
+**递推类指标全面改用 numpy 数组操作**：
+- `_supertrend()` — numpy 前向传播替代 pandas `.iloc[]` 逐行循环
+- `_parabolic_sar()` — numpy 数组维护 EP/AF 状态
+- `_kama()` — numpy 递推 + `np.isfinite()` 溢出保护
+- `_fisher_transform()` — numpy 归一化 + 前向平滑
+- `_ehlers_instantaneous_trendline()` — numpy IIR 滤波器
+- `_ehlers_cyber_cycle()` — numpy 带通滤波
+- `_ehlers_dominant_cycle_period()` — numpy 零交叉检测
+- `_positive_negative_volume_index()` — numpy 前向累积
+- `_klinger_volume_oscillator()` — numpy + pandas ewm 混合
+
+**中间序列零拷贝**：
+- `np.maximum / np.minimum` 替代 `pd.concat([...]).max(axis=1)`，消除中间 DataFrame 分配
+- group 子集不再额外 `.copy()`，直接消费 groupby 产生的视图
+- `true_range`、`buying_pressure`、ichimoku cloud 等共享序列均改为 numpy 计算
+
+**最终合并优化**：
+- 原 12× `pd.concat` 改为单次 `dict → pd.DataFrame` 构造
+- 减少 ~30% 峰值内存占用
+
+**groupby 迭代优化**：
+- `list(frame.groupby(...))` 改为直接迭代器消费，避免全量物化
 
 这次在分块结构上又继续扩了一批特征，重点补到这几类：
 

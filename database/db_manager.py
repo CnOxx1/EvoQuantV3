@@ -1,3 +1,14 @@
+"""SQLite 数据库连接与表管理。
+
+架构说明（v3.4.0）：
+    核心方法已提取到 database/managers/ 包中（Mixin 模式）：
+    - database/managers/connection.py — 连接管理
+    - database/managers/schema_utils.py — Schema 工具
+    - database/managers/query_methods.py — 通用查询方法
+
+    本文件保留完整实现以确保向后兼容。新代码建议直接使用 managers 包中的 Mixin。
+"""
+
 import os
 import sqlite3
 import threading

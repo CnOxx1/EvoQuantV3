@@ -31,8 +31,10 @@ PG_PORT = int(os.getenv("PG_PORT", "5432"))
 PG_DATABASE = os.getenv("PG_DATABASE", "evoquant")
 PG_USER = os.getenv("PG_USER", "evoquant")
 PG_PASSWORD = os.getenv("PG_PASSWORD", "")
-DB_POOL_MIN = int(os.getenv("DB_POOL_MIN", "5"))
-DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", "20"))
+DB_POOL_MIN = int(os.getenv("DB_POOL_MIN", "10"))
+DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", "50"))
+DB_POOL_OVERFLOW = int(os.getenv("DB_POOL_OVERFLOW", "10"))
+DB_POOL_IDLE_TIMEOUT = int(os.getenv("DB_POOL_IDLE_TIMEOUT", "300"))
 
 # PostgreSQL Schema 映射
 PG_SCHEMA_EXCHANGE = os.getenv("PG_SCHEMA_EXCHANGE", "exchange_data")

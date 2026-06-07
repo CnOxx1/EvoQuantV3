@@ -19,11 +19,14 @@ from __future__ import annotations
 
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_EXCEPTION, as_completed
 from datetime import datetime, timezone
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from loguru import logger
+
+from core.feature_flags import feature_flags
+from logic_layer.result_cache import logic_cache
 
 
 # 默认每 5 分钟执行一次全链路
@@ -40,6 +43,22 @@ PHASE2_TASK_TIMEOUT = int(os.environ.get("LOGIC_PIPELINE_PHASE2_TIMEOUT", "300")
 # 是否启用 DAG 模式
 USE_DAG = os.environ.get("LOGIC_PIPELINE_USE_DAG", "0") == "1"
 
+# v4.1.0: 模块依赖映射（用于上游失败快跳）
+_MODULE_DEPENDENCIES: dict[str, set[str]] = {
+    "feature_standardization": {"technical_indicators"},
+    "cross_asset_analysis": {"technical_indicators"},
+    "portfolio_risk": {"cross_asset_analysis"},
+    "asset_readiness": {"feature_standardization", "cross_asset_analysis"},
+    "ai_market_context": {"portfolio_risk", "market_breadth", "asset_readiness"},
+    "pipeline_latency": {"ai_market_context"},
+}
+
+
+def _has_failed_dependency(module_name: str, failed_modules: set[str]) -> bool:
+    """检查模块的上游依赖是否包含失败模块。"""
+    deps = _MODULE_DEPENDENCIES.get(module_name, set())
+    return bool(deps & failed_modules)
+
 # Prometheus 管道阶段计时（优雅降级）
 try:
     from monitoring.metrics import PIPELINE_PHASE_DURATION, PIPELINE_TOTAL_DURATION
@@ -52,10 +71,23 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-def _run_phase(phase_name: str, tasks: list[tuple[str, callable]]) -> dict[str, str]:
-    """执行一个阶段内的所有任务（串行），返回 {module_name: status}。"""
+def _run_phase(phase_name: str, tasks: list[tuple[str, callable]], failed_upstream: set[str] | None = None) -> dict[str, str]:
+    """执行一个阶段内的所有任务（串行），返回 {module_name: status}。
+
+    v4.1.0: 支持 failed_upstream 跳过依赖已失败的模块。
+    """
     results = {}
     for module_name, task_fn in tasks:
+        # 特性开关检查
+        if not feature_flags.is_enabled(module_name):
+            logger.debug("逻辑管道 [{}] {} 已被特性开关禁用，跳过", phase_name, module_name)
+            results[module_name] = "skipped:disabled"
+            continue
+        # v4.1.0: 上游失败快跳
+        if failed_upstream and _has_failed_dependency(module_name, failed_upstream):
+            logger.info("逻辑管道 [{}] {} 跳过（上游依赖失败）", phase_name, module_name)
+            results[module_name] = "skipped:upstream_failure"
+            continue
         started = time.monotonic()
         try:
             task_fn()
@@ -87,7 +119,8 @@ def _run_phase_parallel(
 ) -> dict[str, str]:
     """并行执行一个阶段内的所有任务，返回 {module_name: status}。
 
-    单个模块失败或超时不影响其他模块。
+    优化 #12: 使用 wait(FIRST_EXCEPTION) 快速失败检测，
+    避免 as_completed + 二次遍历的开销。
     """
     results = {}
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -95,20 +128,33 @@ def _run_phase_parallel(
         for module_name, task_fn in tasks:
             future = executor.submit(_execute_task, phase_name, module_name, task_fn)
             future_to_name[future] = module_name
-        try:
-            for future in as_completed(future_to_name, timeout=timeout):
-                module_name = future_to_name[future]
+
+        done, not_done = wait(future_to_name.keys(), timeout=timeout, return_when=FIRST_EXCEPTION)
+
+        for future in done:
+            module_name = future_to_name[future]
+            try:
                 results[module_name] = future.result()
-        except TimeoutError:
-            pass
-    # 标记未完成的 future（整体超时场景）
-    for future, module_name in future_to_name.items():
-        if module_name not in results:
-            results[module_name] = "error: TimeoutError"
-            logger.error(
-                "逻辑管道 [{}] {} 超时 (>{}s)",
-                phase_name, module_name, timeout,
-            )
+            except Exception as exc:
+                results[module_name] = f"error: {type(exc).__name__}"
+
+        # 等待剩余任务（带剩余超时）
+        if not_done:
+            remaining_done, still_pending = wait(not_done, timeout=max(1, timeout // 2))
+            for future in remaining_done:
+                module_name = future_to_name[future]
+                try:
+                    results[module_name] = future.result()
+                except Exception as exc:
+                    results[module_name] = f"error: {type(exc).__name__}"
+            for future in still_pending:
+                module_name = future_to_name[future]
+                results[module_name] = "error: TimeoutError"
+                logger.error(
+                    "逻辑管道 [{}] {} 超时 (>{}s)",
+                    phase_name, module_name, timeout,
+                )
+
     return results
 
 
@@ -164,6 +210,9 @@ def run_full_pipeline() -> dict[str, object]:
     _invalidate_api_cache_by_modules(
         [k for k, v in all_results.items() if v == "success"]
     )
+
+    # WebSocket 广播管道完成事件
+    _broadcast_pipeline_complete(total_elapsed, success_count, total_count)
 
     return {
         "started_at": pipeline_start.isoformat(),
@@ -224,14 +273,19 @@ def _run_dag_pipeline() -> dict[str, str]:
 
 
 def _run_classic_pipeline() -> dict[str, str]:
-    """经典模式：固定 5 阶段串行/并行混合。"""
+    """经典模式：固定 5 阶段串行/并行混合。
+
+    v4.1.0: 跟踪失败模块集合，下游阶段自动跳过依赖失败的模块。
+    """
     all_results: dict[str, str] = {}
+    failed_modules: set[str] = set()
 
     # === Phase 1: 技术指标 ===
     results = _run_phase("Phase1", [
         ("technical_indicators", _make_technical_indicators()),
     ])
     all_results.update(results)
+    failed_modules.update(k for k, v in results.items() if "error" in v)
 
     # === Phase 2: 独立模块（互不依赖） ===
     results = _run_phase_parallel("Phase2", [
@@ -257,25 +311,28 @@ def _run_classic_pipeline() -> dict[str, str]:
         ("retail_fomo_index", _make_retail_fomo_index()),
     ])
     all_results.update(results)
+    failed_modules.update(k for k, v in results.items() if "error" in v)
 
     # === Phase 3: 依赖 Phase 2 的模块 ===
     results = _run_phase("Phase3", [
         ("portfolio_risk", _make_portfolio_risk()),
         ("market_breadth", _make_market_breadth()),
         ("asset_readiness", _make_asset_readiness()),
-    ])
+    ], failed_upstream=failed_modules)
     all_results.update(results)
+    failed_modules.update(k for k, v in results.items() if "error" in v)
 
     # === Phase 4: 最终 AI 上下文聚合 ===
     results = _run_phase("Phase4", [
         ("ai_market_context", _make_ai_market_context()),
-    ])
+    ], failed_upstream=failed_modules)
     all_results.update(results)
+    failed_modules.update(k for k, v in results.items() if "error" in v)
 
     # === Phase 5: 管道延迟监控 ===
     results = _run_phase("Phase5", [
         ("pipeline_latency", _make_pipeline_latency()),
-    ])
+    ], failed_upstream=failed_modules)
     all_results.update(results)
 
     return all_results
@@ -600,9 +657,12 @@ def _make_retail_fomo_index() -> callable:
 def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
     """按模块粒度清空相关 API 缓存（事件驱动失效）。
 
-    每个模块映射到一组缓存前缀，只清空受影响的缓存条目，
-    而非全量清空。如果超过 50% 模块完成，则全量清空。
+    使用 cache_deps DAG 精准计算需失效的下游模块缓存，
+    每个模块映射到一组缓存前缀，只清空受影响的缓存条目。
+    如果超过 50% 模块完成，则全量清空。
     """
+    from logic_layer.cache_deps import cache_deps
+
     # 模块 → 缓存前缀映射
     MODULE_CACHE_PREFIXES: dict[str, list[str]] = {
         "technical_indicators": ["tech:", "tech_deep:"],
@@ -652,9 +712,11 @@ def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
             for prefix in prefixes:
                 total_cleared += cache.invalidate_prefix(prefix)
 
-        # query_cache 不支持前缀清空，全量清空
-        if completed_modules:
-            query_cache.invalidate_all()
+        # query_cache 同样按前缀清空（v3.4.0 已支持 invalidate_prefix）
+        for module in completed_modules:
+            prefixes = MODULE_CACHE_PREFIXES.get(module, [])
+            for prefix in prefixes:
+                query_cache.invalidate_prefix(prefix)
 
         if total_cleared:
             logger.info(
@@ -663,6 +725,24 @@ def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
             )
     except Exception as exc:
         logger.debug("API 缓存清空跳过（API 未启动或导入失败）: {}", exc)
+
+
+def _broadcast_pipeline_complete(
+    elapsed: float, success_count: int, total_count: int
+) -> None:
+    """通过 WebSocket 广播管道完成事件。"""
+    try:
+        from api.websocket_manager import ws_manager
+
+        ws_manager.broadcast_sync("pipeline", {
+            "event": "pipeline_complete",
+            "duration_seconds": round(elapsed, 2),
+            "modules_succeeded": success_count,
+            "modules_total": total_count,
+            "timestamp": _utc_now().isoformat(),
+        })
+    except Exception as exc:
+        logger.debug("WebSocket 广播跳过（API 未启动或导入失败）: {}", exc)
 
 
 def build_scheduler(interval_seconds: int | None = None) -> BlockingScheduler:
