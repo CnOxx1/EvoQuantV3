@@ -118,8 +118,8 @@ def get_macro_catalog(
     """返回所有宏观因子定义。"""
     db = get_market_db()
     rows = db.fetch_all(
-        """SELECT factor_id, name, category, factor_type, entity_scope,
-                  entity_type, description, unit, source_name, enabled
+        """SELECT factor_id, name, category, factor_type,
+                  description, unit, source_name, enabled
            FROM macro_factor_catalog
            ORDER BY factor_id
            LIMIT ?""",
