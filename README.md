@@ -117,7 +117,7 @@ EvoQuant 不只是采集数据，还对每条数据做质量审计：
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        AI Consumer Layer                         │
-│              REST API (477 endpoints) / Bundle Query            │
+│         REST API (8 统一域入口, ~52 端点) / Bundle Query         │
 ├─────────────────────────────────────────────────────────────────┤
 │                         Logic Layer (39 modules)                 │
 │  technical_indicators → feature_standardization → cross_asset   │
@@ -213,7 +213,7 @@ EvoQuant/
 ├── data_layer/      外部数据采集、标准化、落库（43 个数据模块）
 ├── database/        数据库管理（SQLite/PostgreSQL 双后端、Alembic 迁移）
 ├── logic_layer/     AI-ready 特征、上下文和治理结果（39 个逻辑模块）
-├── api/             对外 REST API 服务（477 端点，支持游标分页）
+├── api/             对外 REST API 服务（8 统一域入口, ~52 端点，支持路由开关）
 ├── alembic/         PostgreSQL Schema 迁移脚本
 ├── tests/           单元测试与模块测试
 ├── monitoring/      Prometheus 指标导出 + Grafana 仪表盘（Docker Compose 部署）
@@ -266,52 +266,20 @@ EvoQuant/
 
 ## API
 
-477 REST 端点，覆盖：
+8 个统一域入口，~52 个核心端点（v5.1.0 精简后）：
 
-- 技术指标深度分析（极值、背离、多周期）
-- 组合风险分析（VaR、风险贡献、集中度）
-- 微观结构（流动性、价格影响、订单流）
-- 跨资产历史序列（相关性、相对强弱）
-- 因子探索（标准化特征、Regime 分类）
-- 宏观上下文、新闻情报、衍生品、链上数据
-- 永续 DEX（跨 DEX funding 对比、OI 分布、CEX-DEX 套利价差）
-- 链上地址画像（巨鲸动向、地址标签、交易所净流）
-- DEX 流动性（池 TVL、tick 集中度、大额流动性事件）
-- Gas/网络（Gas 价格、拥堵度、尖刺检测、区块利用率）
-- 治理投票（提案状态、参与率、巨鲸投票、法定人数风险）
-- 清算级联（集群分布、级联概率、热力图、杠杆分布）
-- 跨交易所套利（价差检测、套利持续性、市场效率评分）
-- 链上领先/滞后（信号预测力、Granger 因果、最优滞后期）
-- 预测市场（活跃市场、概率变动、加密事件筛选）
-- 链上持有者（MVRV/SOPR/NUPL、持有者分布、结构变化）
-- 流动性质押（质押 TVL、验证者队列、再质押、APR 对比）
-- 内存池（压力指数、Fee 趋势、大额待确认交易）
-- VC 融资（近期轮次、赛道分布、顶级投资方）
-- 交易所储备（余额、净流入/流出、储备变化）
-- 矿工数据（指标历史、算力、Puell Multiple）
-- 衍生品情绪（恐惧贪婪、多空比、OI、杠杆率）
-- 持有者行为分析（市场阶段、行为信号、历史分位）
-- 流动性 Regime（状态、评分、DeFi-CeFi 利差）
-- 事件概率（高影响事件、概率跳变、资产映射）
-- 矿工压力（投降指数、减半周期、压力评分）
-- 综合情绪（评分、极端标记、背离、反转概率）
-- 稳定币事件流（实时 mint/burn、链净流、24h 脉冲）
-- 代币解锁（未来解锁排序、高冲击解锁、历史反应）
-- 盘口深度（全量深度、买卖墙、滑点曲线、深度 regime）
-- 巨鲸 PnL（Smart Money 组合、Top 表现者、信念方向）
-- NFT 市场（收藏品统计、市场概览、wash-adjusted 数据）
-- DeFi 清算（真实清算事件、健康因子分布、协议对比）
-- DEX 交易流（大单流、路由器统计、MEV 受害率）
-- 跨链消息（协议统计、消息量、链活跃排名）
-- 借贷利用率（池状态、高利用率预警、利率趋势）
-- 搜索趋势（热度、动量、Top 关键词）
-- 交易所公告（最近公告、上币事件、按交易所筛选）
-- 稳定币脉冲（expansion/contraction 信号、链流方向）
-- 解锁冲击（高冲击解锁 Top5、价格影响估算）
-- 深度 Regime（regime 状态、墙位预警、滑点估算）
-- Smart Money 信念（信念指数、方向、散户背离）
-- DeFi 压力（压力评分、级联概率、高风险协议）
-- 散户 FOMO（FOMO/FUD 指数、逆向信号、反转概率）
+| 域 | 前缀 | 核心端点 | 覆盖内容 |
+|---|---|---|---|
+| Market | `/market` | 8 | 报价、K线、资金费率、持仓量、深度、公告 |
+| Technical | `/technical` | 6 | 技术指标、合并K线、历史序列、极值、多周期 |
+| Risk | `/risk` | 7 | 组合风险、相关性、相对强弱、板块轮动、流动性状态 |
+| Sentiment | `/sentiment` | 7 | 新闻、综合情绪、FOMO指数、预测市场、市场广度 |
+| Onchain | `/onchain` | 7 | 链上指标、稳定币流、跨链消息、内存池 |
+| DeFi | `/defi` | 7 | 清算、健康因子、压力指数、治理、Smart Money |
+| Factors | `/factors` | 4 | 因子目录、宏观快照、宏观时序、因子探索 |
+| System | `/system` | 6 | 健康检查、域可用性、数据质量、市场结构、就绪度 |
+
+91 个旧路由通过 Feature Flag 禁用（`FF_{MODULE}_ENABLED=0`），可随时恢复。
 
 启动后访问 `/docs`（Swagger）或 `/redoc`（ReDoc）查看完整接口文档。
 
@@ -404,6 +372,29 @@ cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
 ## 更新记录
 
 ### 2025-06-07
+
+**v5.1.0 — API 深度精简：8 统一域入口**
+
+- **91 个旧路由全部禁用**：通过 `FF_{MODULE}_ENABLED=0` Feature Flag 统一管控，包括付费 API 依赖的、空表的、被统一入口替代的
+- **8 个 v3 统一域路由**：`v3_market.py` / `v3_technical.py` / `v3_risk.py` / `v3_sentiment.py` / `v3_onchain.py` / `v3_defi.py` / `v3_factors.py` / `v3_system.py`
+- **端点从 ~395 精简到 ~52**：每个域只保留有数据支撑的核心查询
+- **删除 3 个过渡路由**：`technical_unified.py` / `sentiment_unified.py` / `defi_unified.py`（被 v3 替代）
+- **列名修复**：`listing_events`、`sentiment_index`、`technical_indicators`、`asset_readiness_snapshots` 全部对齐 PostgreSQL 实际 schema
+- **零 5xx 错误**：所有 52 个端点返回 200（有数据）或 404（表空），无服务端错误
+- **可恢复性**：旧路由文件保留在文件系统，改 `.env` 一行即可重新启用
+
+**v5.0.0 — API 瘦身与路由治理**
+
+- **Feature Flag 路由控制**：`router_registry.py` 集成 `feature_flags`，支持通过环境变量 `FF_{MODULE}_ENABLED=0` 禁用任意路由模块，无需改代码/重命名文件
+- **禁用 9 个死路由**：whale_tracker / whale_pnl / social_sentiment / nft_market / dex_trade_flow / regulatory / onchain_address / derivatives_sentiment / onchain_holder（依赖付费 API 或数据源不可用，表永远为空）
+- **新增 `/status` 端点**：API 数据域可用性总览，返回每个域的状态（active/empty/disabled/error），用户和 AI 提前知道哪些域有数据
+- **新增 `/status/disabled` 端点**：列出所有被禁用的路由及原因，附恢复提示
+- **技术分析统一入口 `/v2/technical`**：合并 /technical + /technical-deep + /analytics 为 3 个子命名空间（basic/deep/timeseries），17 个端点
+- **情绪分析统一入口 `/v2/sentiment`**：合并 /sentiment + /sentiment-composite + /retail-fomo 为 3 个子命名空间（news/composite/retail-fomo），18 个端点
+- **DeFi 统一入口 `/v2/defi`**：合并 /defi + /defi-liquidation + /defi-stress + /dex-liquidity 为 4 个子命名空间（protocols/liquidation/stress/liquidity），23 个端点
+- **向后兼容**：所有旧 URL 路径保持不变，统一入口为额外访问方式
+- **活跃端点从 450+ 瘦身至 ~395**：消除 55 个永远返回空的无效端点
+- **可恢复性**：任何被禁用的路由改 `.env` 一行即可重新启用
 
 **v4.6.0 — 逻辑层算法重构与聚合优化**
 

@@ -59,16 +59,16 @@ def get_summary() -> dict[str, Any]:
     rows = db.fetch_all(
         "SELECT "
         "COUNT(*) AS total_count, "
-        "SUM(liquidation_amount_usd) AS total_volume_usd, "
-        "AVG(liquidation_amount_usd) AS avg_amount_usd, "
-        "MAX(liquidation_amount_usd) AS max_amount_usd "
+        "SUM(debt_repaid_usd) AS total_volume_usd, "
+        "AVG(debt_repaid_usd) AS avg_amount_usd, "
+        "MAX(debt_repaid_usd) AS max_amount_usd "
         "FROM defi_liquidations "
-        "WHERE timestamp >= datetime('now', '-1 day')",
+        "WHERE timestamp >= CAST(datetime('now', '-1 day') AS TEXT)",
         (),
     )
     if not rows:
         return {"status": "no_data"}
-    return {"summary": rows[0]}
+    return {"summary": dict(rows[0])}
 
 
 @router.get("/context")
