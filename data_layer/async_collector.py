@@ -16,7 +16,7 @@ from loguru import logger
 T = TypeVar("T")
 
 # 全局线程池，用于包装同步 ccxt 调用
-_EXECUTOR = ThreadPoolExecutor(max_workers=12, thread_name_prefix="async-collector")
+_EXECUTOR = ThreadPoolExecutor(max_workers=16, thread_name_prefix="async-collector")
 
 
 async def gather_with_concurrency(

@@ -3947,6 +3947,7 @@ class ExchangeDataService:
             coalesce=True,
             max_instances=1,
             misfire_grace_time=max(60, market_info_interval),
+            jitter=max(1, market_info_interval // 10),
         )
         for timeframe in KLINE_TIMEFRAMES:
             interval_seconds = self.kline_collector.TIMEFRAME_INTERVAL_SECONDS.get(
@@ -3969,6 +3970,7 @@ class ExchangeDataService:
                 coalesce=True,
                 max_instances=1,
                 misfire_grace_time=max(60, interval_seconds),
+                jitter=max(1, interval_seconds // 10),
             )
         scheduler.add_job(
             lambda: self._run_collection_job(
@@ -3984,6 +3986,7 @@ class ExchangeDataService:
             coalesce=True,
             max_instances=1,
             misfire_grace_time=max(15, ticker_interval * 3),
+            jitter=max(1, ticker_interval // 5),
         )
         scheduler.add_job(
             lambda: self._run_collection_job(
@@ -3999,6 +4002,7 @@ class ExchangeDataService:
             coalesce=True,
             max_instances=1,
             misfire_grace_time=max(60, funding_interval),
+            jitter=max(1, funding_interval // 10),
         )
         # 分层深度采集：按 tier 不同频率
         from config.symbols import SymbolTier, symbols_by_tier
@@ -4021,6 +4025,7 @@ class ExchangeDataService:
                 coalesce=True,
                 max_instances=1,
                 misfire_grace_time=max(15, tier_interval * 3),
+                jitter=max(1, tier_interval // 5),
             )
         scheduler.add_job(
             lambda: self._run_collection_job(
@@ -4036,6 +4041,7 @@ class ExchangeDataService:
             coalesce=True,
             max_instances=1,
             misfire_grace_time=max(30, trade_flow_interval * 3),
+            jitter=max(1, trade_flow_interval // 10),
         )
         scheduler.add_job(
             lambda: self._run_collection_job(
@@ -4051,6 +4057,7 @@ class ExchangeDataService:
             coalesce=True,
             max_instances=1,
             misfire_grace_time=max(60, open_interest_interval * 3),
+            jitter=max(1, open_interest_interval // 10),
         )
         scheduler.add_job(
             lambda: self._run_collection_job(
@@ -4066,6 +4073,7 @@ class ExchangeDataService:
             coalesce=True,
             max_instances=1,
             misfire_grace_time=max(60, liquidation_interval * 3),
+            jitter=max(1, liquidation_interval // 10),
         )
         scheduler.add_job(
             lambda: self._run_collection_job(
@@ -4081,6 +4089,7 @@ class ExchangeDataService:
             coalesce=True,
             max_instances=1,
             misfire_grace_time=max(60, positioning_interval * 3),
+            jitter=max(1, positioning_interval // 10),
         )
         scheduler.add_job(
             lambda: self._run_collection_job(
@@ -4096,6 +4105,7 @@ class ExchangeDataService:
             coalesce=True,
             max_instances=1,
             misfire_grace_time=max(60, basis_interval * 3),
+            jitter=max(1, basis_interval // 10),
         )
         scheduler.add_job(
             self.cleanup_historical_data,

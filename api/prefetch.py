@@ -83,6 +83,39 @@ class QueryPrefetcher:
                 )
             return _fetch
 
+        if key.startswith("technical_indicators:"):
+            parts = key.split(":", 2)
+            symbol = parts[1] if len(parts) > 1 else "BTC/USDT"
+            timeframe = parts[2] if len(parts) > 2 else "1h"
+            def _fetch():
+                from api.dependencies import get_analytics_db
+                db = get_analytics_db()
+                return db.fetch_all(
+                    "SELECT * FROM technical_indicators "
+                    "WHERE symbol = ? AND timeframe = ? "
+                    "ORDER BY open_time DESC LIMIT 1",
+                    (symbol, timeframe),
+                )
+            return _fetch
+
+        if key.startswith("macro_timeseries:"):
+            indicator = key.split(":", 1)[1] if ":" in key else ""
+            def _fetch():
+                from api.dependencies import get_market_db
+                db = get_market_db()
+                if indicator:
+                    return db.fetch_all(
+                        "SELECT indicator, value, timestamp FROM macro_timeseries "
+                        "WHERE indicator = ? ORDER BY timestamp DESC LIMIT 10",
+                        (indicator,),
+                    )
+                return db.fetch_all(
+                    "SELECT indicator, value, timestamp FROM macro_timeseries "
+                    "ORDER BY timestamp DESC LIMIT 50",
+                    (),
+                )
+            return _fetch
+
         # 未知 key 模式 — 无法构建 fetcher
         return None
 

@@ -294,4 +294,4 @@ class QueryCache:
 
 
 # 全局单例 — 由 app.py 的 lifespan 管理启停
-query_cache = QueryCache(max_size=500, cleanup_interval=30.0)
+query_cache = QueryCache(max_size=1000, cleanup_interval=30.0)

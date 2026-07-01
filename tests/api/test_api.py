@@ -1,170 +1,192 @@
-"""API 端点单元测试。"""
+"""API v3 端点单元测试。
+
+Mock 数据库层（路由模块中引用的 DB getter），验证路由逻辑。
+"""
 
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
-# 确保项目根目录在 sys.path 最前面
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 
 @pytest.fixture
-def client():
+def mock_dbs():
+    """Patch DB getters at the router module level where they are imported."""
+    exchange_db = MagicMock(name="exchange_db")
+    market_db = MagicMock(name="market_db")
+    analytics_db = MagicMock(name="analytics_db")
+
+    patches = [
+        # v3_system imports all three
+        patch("api.routers.v3_system.get_exchange_db", return_value=exchange_db),
+        patch("api.routers.v3_system.get_market_db", return_value=market_db),
+        patch("api.routers.v3_system.get_analytics_db", return_value=analytics_db),
+        # v3_market imports exchange + market + analytics
+        patch("api.routers.v3_market.get_exchange_db", return_value=exchange_db),
+        patch("api.routers.v3_market.get_market_db", return_value=market_db),
+        patch("api.routers.v3_market.get_analytics_db", return_value=analytics_db),
+        # v3_technical imports analytics only
+        patch("api.routers.v3_technical.get_analytics_db", return_value=analytics_db),
+    ]
+
+    for p in patches:
+        p.start()
+    yield {
+        "exchange": exchange_db,
+        "market": market_db,
+        "analytics": analytics_db,
+    }
+    for p in patches:
+        p.stop()
+
+
+@pytest.fixture
+def client(mock_dbs):
     from api.app import app
     return TestClient(app)
 
 
-class TestSymbolsEndpoint:
-    def test_get_symbols(self, client):
-        resp = client.get("/symbols")
+class TestSystemHealth:
+    """GET /system/health — DB 连通性检查。"""
+
+    def test_health_all_ok(self, client, mock_dbs):
+        for db in mock_dbs.values():
+            db.fetch_one.return_value = (1,)
+
+        resp = client.get("/system/health")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["count"] == 18
-        assert len(data["symbols"]) == 18
-        first = data["symbols"][0]
-        assert first["symbol"] == "BTC/USDT"
-        assert first["tier"] == "core"
-        assert first["sector"] == "store_of_value"
+        assert data["status"] == "ok"
+        assert all(v == "ok" for v in data["databases"].values())
 
+    def test_health_degraded(self, client, mock_dbs):
+        mock_dbs["exchange"].fetch_one.return_value = (1,)
+        mock_dbs["market"].fetch_one.side_effect = Exception("connection refused")
+        mock_dbs["analytics"].fetch_one.return_value = (1,)
 
-class TestBundleEndpoint:
-    @patch("api.routers.bundle.get_ai_market_context_service")
-    def test_get_bundle_success(self, mock_get_svc, client):
-        mock_svc = MagicMock()
-        mock_svc.build_bundle_for_entity.return_value = {
-            "entity": "BTC/USDT",
-            "data_quality_flag": "ok",
-            "coverage_score": 0.85,
-            "world_model_index": {"wmi": 0.7},
-        }
-        mock_get_svc.return_value = mock_svc
-
-        resp = client.get("/bundle/BTC-USDT")
+        resp = client.get("/system/health")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["entity"] == "BTC/USDT"
+        assert data["status"] == "degraded"
+        assert "error" in data["databases"]["market"]
 
-    def test_get_bundle_not_found(self, client):
-        resp = client.get("/bundle/FAKE-USDT")
+
+class TestSystemStatus:
+    """GET /system/status — 域可用性扫描。"""
+
+    def test_status_with_data(self, client, mock_dbs):
+        for db in mock_dbs.values():
+            db.fetch_one.return_value = (1,)
+
+        resp = client.get("/system/status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["summary"]["active"] > 0
+        assert data["summary"]["total"] == data["summary"]["active"] + data["summary"]["empty"]
+        assert "klines" in data["domains"]
+
+    def test_status_empty_tables(self, client, mock_dbs):
+        for db in mock_dbs.values():
+            db.fetch_one.return_value = None
+
+        resp = client.get("/system/status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["summary"]["active"] == 0
+        assert all(v == "empty" for v in data["domains"].values())
+
+
+class TestTechnicalIndicators:
+    """GET /technical/indicators/{symbol} — 符号校验 + 查询。"""
+
+    def test_valid_symbol(self, client, mock_dbs):
+        mock_dbs["analytics"].fetch_all.return_value = [
+            {"open_time": "2025-05-20T12:00:00", "rsi_14": 55.2, "macd": 0.003}
+        ]
+
+        resp = client.get("/technical/indicators/BTC")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["symbol"] == "BTC/USDT"
+        assert data["timeframe"] == "1h"
+
+    def test_symbol_with_dash(self, client, mock_dbs):
+        mock_dbs["analytics"].fetch_all.return_value = [
+            {"open_time": "2025-05-20T12:00:00", "rsi_14": 40.0}
+        ]
+
+        resp = client.get("/technical/indicators/ETH-USDT")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["symbol"] == "ETH/USDT"
+
+    def test_invalid_symbol_404(self, client, mock_dbs):
+        resp = client.get("/technical/indicators/FAKECOIN123")
         assert resp.status_code == 404
+        assert "not in universe" in resp.json()["detail"]
 
-    @patch("api.routers.bundle.get_ai_market_context_service")
-    def test_get_bundle_summary(self, mock_get_svc, client):
-        mock_svc = MagicMock()
-        mock_svc.build_bundle_for_entity.return_value = {
-            "data_quality_flag": "ok",
-            "coverage_score": 0.9,
-            "world_model_index": {"wmi": 0.75},
-        }
-        mock_get_svc.return_value = mock_svc
-
-        resp = client.get("/bundle/")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["count"] == 18
-        assert "BTC/USDT" in data["symbols"]
-
-
-class TestDomainsEndpoint:
-    @patch("api.routers.domains.get_pipeline_latency_service")
-    def test_list_domains(self, mock_get_svc, client):
-        @dataclass
-        class FakeDL:
-            status: str = "fresh"
-            latest_data_time: str = "2025-05-20T12:00:00"
-            latency_seconds: float = 60.0
-
-        @dataclass
-        class FakeReport:
-            measured_at: str = "2025-05-20T12:05:00"
-            domains: dict = field(default_factory=lambda: {"klines": FakeDL()})
-            summary: dict = field(default_factory=dict)
-
-        mock_svc = MagicMock()
-        mock_svc.measure_all.return_value = FakeReport()
-        mock_get_svc.return_value = mock_svc
-
-        resp = client.get("/domains/")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert len(data["domains"]) > 0
-        names = [d["name"] for d in data["domains"]]
-        assert "klines" in names
-
-
-class TestHealthEndpoint:
-    @patch("api.routers.health.get_ai_market_context_service")
-    @patch("api.routers.health.get_pipeline_latency_service")
-    def test_health(self, mock_latency, mock_ai, client):
-        @dataclass
-        class FakeReport:
-            measured_at: str = "2025-05-20T12:05:00"
-            domains: dict = field(default_factory=dict)
-            summary: dict = field(
-                default_factory=lambda: {"health": "healthy"}
-            )
-
-        mock_latency_svc = MagicMock()
-        mock_latency_svc.measure_all.return_value = FakeReport()
-        mock_latency.return_value = mock_latency_svc
-
-        mock_ai_svc = MagicMock()
-        mock_ai_svc.build_bundle_for_entity.return_value = {
-            "world_model_index": {
-                "wmi": 0.8,
-                "interpretation": "sufficient",
-                "should_ai_abstain": False,
-            }
-        }
-        mock_ai.return_value = mock_ai_svc
-
-        resp = client.get("/health/")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "healthy"
-
-
-class TestTimeSliceEndpoint:
-    @patch("api.routers.time_slice.get_time_slice_service")
-    def test_time_slice(self, mock_get_svc, client):
-        @dataclass
-        class FakeSlice:
-            requested_at: str = "2025-05-20T12:00:00"
-            domains: dict = field(default_factory=dict)
-            coverage_summary: dict = field(default_factory=dict)
-
-        mock_svc = MagicMock()
-        mock_svc.get_slice_at.return_value = FakeSlice()
-        mock_get_svc.return_value = mock_svc
-
-        resp = client.get("/time-slice/?timestamp=2025-05-20T12:00:00")
-        assert resp.status_code == 200
-
-    def test_time_slice_invalid_timestamp(self, client):
-        resp = client.get("/time-slice/?timestamp=not-a-date")
+    def test_invalid_timeframe_400(self, client, mock_dbs):
+        resp = client.get("/technical/indicators/BTC?timeframe=2h")
         assert resp.status_code == 400
+        assert "timeframe" in resp.json()["detail"].lower()
 
-    @patch("api.routers.time_slice.get_time_slice_service")
-    def test_feature_history(self, mock_get_svc, client):
-        @dataclass
-        class FakeHistory:
-            symbol: str = "BTC/USDT"
-            rows: list = field(default_factory=list)
-            row_count: int = 0
 
-        mock_svc = MagicMock()
-        mock_svc.get_feature_history.return_value = FakeHistory()
-        mock_get_svc.return_value = mock_svc
+class TestMarketTickers:
+    """GET /market/tickers — 基本行情查询。"""
 
-        resp = client.get(
-            "/time-slice/feature-history"
-            "?symbol=BTC/USDT&start=2025-05-19T00:00:00"
-            "&end=2025-05-20T00:00:00&features=rsi_14"
-        )
+    def test_tickers_all(self, client, mock_dbs):
+        mock_dbs["exchange"].fetch_all.return_value = [
+            {"symbol": "BTC/USDT", "exchange": "binance", "price": 67000.0,
+             "volume_24h": 1e9, "change_pct_24h": 2.1, "timestamp": "2025-05-20T12:00:00"},
+        ]
+
+        resp = client.get("/market/tickers")
         assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 1
+        assert data["tickers"][0]["symbol"] == "BTC/USDT"
+
+    def test_tickers_by_symbol(self, client, mock_dbs):
+        mock_dbs["exchange"].fetch_all.return_value = [
+            {"symbol": "ETH/USDT", "exchange": "okx", "price": 3400.0,
+             "volume_24h": 5e8, "change_pct_24h": -0.5, "timestamp": "2025-05-20T12:00:00"},
+        ]
+
+        resp = client.get("/market/tickers?symbol=ETH")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 1
+
+    def test_tickers_empty_404(self, client, mock_dbs):
+        mock_dbs["exchange"].fetch_all.return_value = []
+
+        resp = client.get("/market/tickers")
+        assert resp.status_code == 404
+        assert "No ticker data" in resp.json()["detail"]
+
+
+class TestNotFoundScenarios:
+    """404 场景 — 无效符号、空数据表。"""
+
+    def test_data_quality_empty(self, client, mock_dbs):
+        mock_dbs["analytics"].fetch_one.return_value = None
+
+        resp = client.get("/system/data-quality")
+        assert resp.status_code == 404
+        assert "No data quality" in resp.json()["detail"]
+
+    def test_market_structure_empty(self, client, mock_dbs):
+        mock_dbs["analytics"].fetch_one.return_value = None
+
+        resp = client.get("/system/market-structure")
+        assert resp.status_code == 200 or resp.status_code == 404
+
+    def test_unknown_route(self, client, mock_dbs):
+        resp = client.get("/nonexistent/path")
+        assert resp.status_code == 404

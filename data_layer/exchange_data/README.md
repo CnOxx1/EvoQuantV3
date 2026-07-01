@@ -832,3 +832,9 @@ python -m data_layer.exchange_data.runner --print-coverage
   - 通过 `ExchangeClientManager` 调用 `fetch_long_short_ratio_history()`
   - 1h 粒度，48h 回溯窗口
   - 不再依赖 `NormalizedDerivativesClient` 和外部 URL 配置
+
+### v1.13.0 (2026-07-01) — 性能优化
+
+- **HTTP 连接复用**：`client.py` 为每个 ccxt 实例绑定 `requests.Session()`，启用 TCP keep-alive，减少高频采集的 TLS 握手开销
+- **Worker pool 扩容**：`batch_utils.py` 默认并行 worker 从 6 → 16；`async_collector.py` 从 12 → 16
+- **调度 jitter**：所有 APScheduler interval 任务添加 ±10% jitter，平滑流量尖峰，避免多任务同时触发造成瞬时资源争抢

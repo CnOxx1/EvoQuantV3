@@ -2,6 +2,7 @@ import time
 import threading
 
 import ccxt
+import requests as _requests
 from loguru import logger
 
 from config.settings import EXCHANGE_CONFIG, API_KEYS, REQUEST_TIMEOUT, MAX_RETRIES, RETRY_DELAY, PROXY_URL
@@ -67,6 +68,10 @@ class ExchangeClientManager:
             init_params.update(api_key_config)
 
         client = exchange_class(init_params)
+
+        # HTTP keep-alive: reuse TCP connections across requests to reduce
+        # handshake overhead on high-frequency collection cycles.
+        client.session = _requests.Session()
 
         # 配置代理
         if PROXY_URL:
