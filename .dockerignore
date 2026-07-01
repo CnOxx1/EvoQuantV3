@@ -1,0 +1,8 @@
+.git
+__pycache__
+*.pyc
+.env
+*.db
+.venv
+logs/
+monitoring/

@@ -309,7 +309,7 @@ def get_bundle(entity: str, request: Request):
     "total_requests": 580,
     "hit_rate_pct": 86.2,
     "size": 35,
-    "max_size": 500
+    "max_size": 1000
   },
   "rate_limiter": {
     "max_requests": 200,
@@ -358,7 +358,7 @@ API 层内置两级缓存：
 ### 查询缓存特点
 
 - **请求合并** — 同一 key 并发请求只执行一次 DB 查询，其他请求等待结果
-- **容量上限** — 默认 max_size=500，满时淘汰最早过期的条目
+- **容量上限** — 默认 max_size=1000，满时淘汰最早过期的条目
 - **TTL 过期** — 每个查询结果可指定独立 TTL
 - **管道刷新清空** — 逻辑管道执行完毕后同时清空 L1 和 L2 缓存
 

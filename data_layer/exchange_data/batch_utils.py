@@ -9,7 +9,7 @@ from typing import Any, Callable, Sequence
 from loguru import logger
 
 
-MAX_COLLECTION_WORKERS = int(os.environ.get("MAX_COLLECTION_WORKERS", "6"))
+MAX_COLLECTION_WORKERS = int(os.environ.get("MAX_COLLECTION_WORKERS", "16"))
 
 
 def parallel_fetch(

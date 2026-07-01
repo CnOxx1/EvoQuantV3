@@ -129,6 +129,8 @@ def get_disabled() -> dict[str, Any]:
 def get_data_quality() -> dict[str, Any]:
     """数据质量审计快照。"""
     db = get_analytics_db()
+    # SELECT * intentional: columns vary across migrations and *_json fields are
+    # dynamically parsed below — enumerating columns would break on schema changes.
     row = db.fetch_one(
         "SELECT * FROM data_quality_audit_snapshots ORDER BY snapshot_time DESC LIMIT 1", ()
     )
@@ -149,6 +151,8 @@ def get_data_quality() -> dict[str, Any]:
 def get_market_structure() -> dict[str, Any]:
     """市场结构快照。"""
     db = get_analytics_db()
+    # SELECT * intentional: same rationale as data-quality — dynamic *_json parsing
+    # requires all columns regardless of schema evolution.
     row = db.fetch_one(
         "SELECT * FROM market_structure_snapshots ORDER BY snapshot_time DESC LIMIT 1", ()
     )
