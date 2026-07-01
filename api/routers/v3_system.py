@@ -108,10 +108,14 @@ def get_disabled() -> dict[str, Any]:
     import api.routers as routers_pkg
 
     package_dir = Path(routers_pkg.__file__).parent
-    all_modules = [
-        m.name for m in pkgutil.iter_modules([str(package_dir)])
-        if not m.name.startswith("_")
-    ]
+    scan_dirs = [str(package_dir), str(package_dir / "_legacy")]
+    all_modules = []
+    for d in scan_dirs:
+        if Path(d).is_dir():
+            all_modules.extend(
+                m.name for m in pkgutil.iter_modules([d])
+                if not m.name.startswith("_")
+            )
 
     disabled = [m for m in all_modules if not feature_flags.is_enabled(m)]
     return {
