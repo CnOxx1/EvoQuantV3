@@ -2,20 +2,29 @@
 
 ## 模块定位
 
-`api/routers` 包含所有 FastAPI 路由定义。v5.1.0 后采用 **8 个统一域入口**，每个文件对应一个功能域。旧路由文件保留在目录中但通过 Feature Flag 全部禁用。
+`api/routers` 包含所有 FastAPI 路由定义。v5.1.0 后采用 **8 个统一域入口**，每个文件对应一个功能域。88 个旧路由文件已移至 `_legacy/` 子目录，通过 Feature Flag 全部禁用。
 
-## 活跃路由（v3 统一入口）
+## 目录结构
 
 ```text
 api/routers/
-  v3_market.py       # /market — 行情与交易所（报价/K线/资金费率/持仓量/深度/公告）
-  v3_technical.py    # /technical — 技术分析（指标/K线/历史/极值/多周期）
-  v3_risk.py         # /risk — 风险与组合（组合风险/相关性/相对强弱/板块轮动）
-  v3_sentiment.py    # /sentiment — 情绪与新闻（新闻/综合情绪/FOMO/预测市场/广度）
-  v3_onchain.py      # /onchain — 链上数据（指标/稳定币流/跨链消息/内存池）
-  v3_defi.py         # /defi — DeFi 协议（清算/健康因子/压力/治理/Smart Money）
-  v3_factors.py      # /factors — 因子目录与宏观（目录查询/宏观快照/时序/探索）
-  v3_system.py       # /system — 系统状态（健康/域可用性/数据质量/市场结构/就绪度）
+├── __init__.py
+├── _helpers.py          # 共享工具函数（normalize/safe_float/zscore/percentile）
+├── _legacy/             # 88 个旧路由文件（全部 FF 禁用，改 .env 可恢复）
+│   ├── __init__.py
+│   ├── aggregate.py
+│   ├── ...
+│   └── ws.py
+├── README.md
+├── status.py            # 向后兼容的 /status 端点
+├── v3_market.py         # /market — 行情与交易所
+├── v3_technical.py      # /technical — 技术分析
+├── v3_risk.py           # /risk — 风险与组合
+├── v3_sentiment.py      # /sentiment — 情绪与新闻
+├── v3_onchain.py        # /onchain — 链上数据
+├── v3_defi.py           # /defi — DeFi 协议
+├── v3_factors.py        # /factors — 因子目录与宏观
+└── v3_system.py         # /system — 系统状态
 ```
 
 ## 端点总览
@@ -35,7 +44,12 @@ api/routers/
 
 ## 路由注册
 
-`api/router_registry.py` 自动发现 `v3_*.py` 文件并注册路由。91 个旧路由文件通过 `core/feature_flags.py` 检查 `FF_{MODULE}_ENABLED` 环境变量，值为 `0` 时跳过加载。
+`api/router_registry.py` 自动发现路由模块并注册。扫描两个位置：
+
+1. `api/routers/` 顶层 — v3_* 活跃路由
+2. `api/routers/_legacy/` — 旧路由（默认禁用）
+
+88 个旧路由文件通过 `core/feature_flags.py` 检查 `FF_{MODULE}_ENABLED` 环境变量，值为 `0` 时跳过加载。
 
 ## Feature Flag 控制
 
@@ -59,12 +73,12 @@ FF_WHALE_TRACKER_ENABLED=1
 - 所有端点返回 JSON，字段命名使用 snake_case
 - 无数据时返回 404 + 明确的 detail 消息，不返回空数组
 
-## 禁用的旧路由（91 个）
+## 禁用的旧路由（88 个）
 
-旧路由文件保留在目录中，按以下原因分类禁用：
+旧路由文件位于 `_legacy/` 子目录，按以下原因分类禁用：
 
 - **付费 API 依赖**（9 个）：whale_tracker、whale_pnl、social_sentiment、nft_market、dex_trade_flow、regulatory、onchain_address、derivatives_sentiment、onchain_holder
 - **数据表为空**（32 个）：alpha_decay、anomaly、basis_curve、bridge_flow、cefi_lending 等
-- **被 v3 统一入口替代**（50 个）：aggregate、ai_context、alternative、analytics_ts、bundle、catalogs、cross_asset 等
+- **被 v3 统一入口替代**（47 个）：aggregate、ai_context、alternative、analytics_ts、bundle、catalogs、cross_asset 等
 
-如需恢复任意旧路由，在 `.env` 中设置对应的 `FF_{MODULE}_ENABLED=1` 即可。
+如需恢复任意旧路由，在 `.env` 中设置对应的 `FF_{MODULE}_ENABLED=1` 即可。`router_registry.py` 会自动扫描 `_legacy/` 目录并加载已启用的模块。

@@ -183,6 +183,8 @@ api/
 ├── models.py                # Pydantic response schemas
 └── routers/
     ├── __init__.py
+    ├── _helpers.py          # 共享工具函数
+    ├── _legacy/             # 88 个旧路由文件（全部 FF 禁用）
     ├── v3_market.py         # /market — 行情与交易所（活跃）
     ├── v3_technical.py      # /technical — 技术分析（活跃）
     ├── v3_risk.py           # /risk — 风险与组合（活跃）
@@ -190,8 +192,7 @@ api/
     ├── v3_onchain.py        # /onchain — 链上数据（活跃）
     ├── v3_defi.py           # /defi — DeFi 协议（活跃）
     ├── v3_factors.py        # /factors — 因子与目录（活跃）
-    ├── v3_system.py         # /system — 系统状态（活跃）
-    └── ... (91 个旧路由文件，全部 FF 禁用)
+    └── v3_system.py         # /system — 系统状态（活跃）
 ```
 
 

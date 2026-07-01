@@ -279,7 +279,7 @@ EvoQuant/
 | Factors | `/factors` | 4 | 因子目录、宏观快照、宏观时序、因子探索 |
 | System | `/system` | 6 | 健康检查、域可用性、数据质量、市场结构、就绪度 |
 
-91 个旧路由通过 Feature Flag 禁用（`FF_{MODULE}_ENABLED=0`），可随时恢复。
+88 个旧路由已移至 `api/routers/_legacy/`，通过 Feature Flag 禁用（`FF_{MODULE}_ENABLED=0`），可随时恢复。
 
 启动后访问 `/docs`（Swagger）或 `/redoc`（ReDoc）查看完整接口文档。
 
@@ -375,7 +375,7 @@ cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
 
 **v5.1.0 — API 深度精简：8 统一域入口**
 
-- **91 个旧路由全部禁用**：通过 `FF_{MODULE}_ENABLED=0` Feature Flag 统一管控，包括付费 API 依赖的、空表的、被统一入口替代的
+- **88 个旧路由移至 `_legacy/`**：通过 `FF_{MODULE}_ENABLED=0` Feature Flag 统一管控，包括付费 API 依赖的、空表的、被统一入口替代的
 - **8 个 v3 统一域路由**：`v3_market.py` / `v3_technical.py` / `v3_risk.py` / `v3_sentiment.py` / `v3_onchain.py` / `v3_defi.py` / `v3_factors.py` / `v3_system.py`
 - **端点从 ~395 精简到 ~52**：每个域只保留有数据支撑的核心查询
 - **删除 3 个过渡路由**：`technical_unified.py` / `sentiment_unified.py` / `defi_unified.py`（被 v3 替代）
