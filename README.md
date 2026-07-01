@@ -371,6 +371,14 @@ cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
 
 ## 更新记录
 
+### 2026-07-01
+
+**v5.1.2 — PostgreSQL 兼容性修复**
+
+- **datetime() TEXT 列类型不匹配修复**：`query_adapter.py` 将 SQLite `datetime('now', '-N day/hour')` 适配为 `to_char(NOW() + INTERVAL, 'YYYY-MM-DD"T"HH24:MI:SS')` 输出 ISO 文本，兼容 TEXT 列的字符串比较（修复 `operator does not exist: text >= timestamp with time zone` 错误）
+- **正则支持复数形式**：适配器新增 `days` / `hours` 复数匹配（原仅支持 `day` / `hour`），覆盖全部 20+ 处 `datetime('now', ...)` 调用
+- **cross_chain_messaging 参数化**：`_collect_metrics()` 和 `load_latest_context_bundle()` 改为 Python 侧计算时间阈值并通过参数传入，双重保障
+
 ### 2025-06-07
 
 **v5.1.1 — 工程优化：性能、容器化、测试**
