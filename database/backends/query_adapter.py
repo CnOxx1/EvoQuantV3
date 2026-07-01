@@ -10,12 +10,13 @@ _SQLITE_TO_PG_REPLACEMENTS = [
     # AUTOINCREMENT → SERIAL (handled at DDL level, not here)
     (re.compile(r"\bINTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT\b", re.IGNORECASE),
      "SERIAL PRIMARY KEY"),
-    # datetime('now', ...) → NOW() + interval
-    (re.compile(r"datetime\('now'\)", re.IGNORECASE), "NOW()"),
-    (re.compile(r"datetime\('now',\s*'(-?\d+)\s+day'\)", re.IGNORECASE),
-     r"NOW() + INTERVAL '\1 day'"),
-    (re.compile(r"datetime\('now',\s*'(-?\d+)\s+hour'\)", re.IGNORECASE),
-     r"NOW() + INTERVAL '\1 hour'"),
+    # datetime('now', ...) → to_char(...) 输出 ISO 文本，兼容 TEXT 和 TIMESTAMP 列比较
+    (re.compile(r"datetime\('now'\)", re.IGNORECASE),
+     "to_char(NOW(), 'YYYY-MM-DD\"T\"HH24:MI:SS')"),
+    (re.compile(r"datetime\('now',\s*'(-?\d+)\s+days?'\)", re.IGNORECASE),
+     r"to_char(NOW() + INTERVAL '\1 day', 'YYYY-MM-DD\"T\"HH24:MI:SS')"),
+    (re.compile(r"datetime\('now',\s*'(-?\d+)\s+hours?'\)", re.IGNORECASE),
+     r"to_char(NOW() + INTERVAL '\1 hour', 'YYYY-MM-DD\"T\"HH24:MI:SS')"),
     # INSERT OR REPLACE → INSERT ... ON CONFLICT DO UPDATE
     # (complex; handled separately below)
     # INSERT OR IGNORE → INSERT ... ON CONFLICT DO NOTHING (handled separately below)

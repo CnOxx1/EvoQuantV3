@@ -1,6 +1,6 @@
 """cross_chain_messaging 服务层。"""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from loguru import logger
 
@@ -133,6 +133,7 @@ class CrossChainMessagingService:
     def _collect_metrics(self):
         """汇总各协议整体指标。"""
         now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+        since_iso = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S")
 
         for protocol in ("layerzero", "wormhole"):
             cursor = self.db.conn.execute("""
@@ -140,8 +141,8 @@ class CrossChainMessagingService:
                        COUNT(DISTINCT src_chain) + COUNT(DISTINCT dst_chain),
                        AVG(avg_latency_seconds)
                 FROM cross_chain_messages
-                WHERE protocol = ? AND timestamp >= datetime('now', '-1 day')
-            """, (protocol,))
+                WHERE protocol = ? AND timestamp >= ?
+            """, (protocol, since_iso))
             row = cursor.fetchone()
             if not row or row[0] is None:
                 continue
@@ -158,6 +159,7 @@ class CrossChainMessagingService:
     def load_latest_context_bundle(self) -> dict:
         """输出 AI 可读的跨链消息上下文 bundle。"""
         now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+        since_iso = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S")
 
         # 协议指标
         cursor = self.db.conn.execute("""
@@ -173,9 +175,9 @@ class CrossChainMessagingService:
             SELECT protocol, src_chain, dst_chain, message_count,
                    value_transferred_usd, avg_latency_seconds
             FROM cross_chain_messages
-            WHERE timestamp >= datetime('now', '-1 day')
+            WHERE timestamp >= ?
             ORDER BY message_count DESC LIMIT 15
-        """)
+        """, (since_iso,))
         msg_rows = cursor.fetchall()
 
         if not metrics_rows and not msg_rows:
