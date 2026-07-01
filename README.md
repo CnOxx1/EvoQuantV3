@@ -373,6 +373,18 @@ cd monitoring && docker compose -f docker-compose.monitoring.yml up -d
 
 ### 2025-06-07
 
+**v5.1.1 — 工程优化：性能、容器化、测试**
+
+- **Worker pool 扩容**：数据采集并发 6→16（`batch_utils.py`）、异步执行器 12→16（`async_collector.py`）
+- **QueryCache 扩容**：max_size 500→1000，覆盖更多热点查询
+- **Prefetch 扩展**：新增 `technical_indicators:` 和 `macro_timeseries:` 预热模式
+- **WindowMaterializer LRU**：新增 `WINDOW_MATERIALIZER_MAX_CACHE`（默认 200）环境变量，超限自动淘汰最久未访问的窗口，内存有界
+- **HTTP 连接复用**：ccxt 客户端挂载 `requests.Session()`，TCP keep-alive 减少握手开销
+- **调度抖动**：APScheduler 所有 interval job 添加 jitter（interval/10），消除 thundering herd
+- **Docker 容器化**：新增 `Dockerfile` + `docker-compose.yml` + `.dockerignore`，一键部署 API + PostgreSQL
+- **测试重写**：`tests/api/test_api.py` 14 个测试覆盖 v3 端点（health/status/technical/market），旧 legacy mock 全部移除
+- **DB 连接池**：`DB_POOL_MIN=5` / `DB_POOL_MAX=20`（原 1/3），适应 API 并发场景
+
 **v5.1.0 — API 深度精简：8 统一域入口**
 
 - **88 个旧路由移至 `_legacy/`**：通过 `FF_{MODULE}_ENABLED=0` Feature Flag 统一管控，包括付费 API 依赖的、空表的、被统一入口替代的
