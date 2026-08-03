@@ -12,11 +12,15 @@ import csv
 import json
 from pathlib import Path
 
+import re
+
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     Image,
     KeepTogether,
@@ -29,6 +33,55 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+
+CONTENT_WIDTH = 6.5 * inch
+_CJK_RE = re.compile(r"[\u4e00-\u9fff]")
+_CN_FONT = None
+
+
+def _register_cjk_font() -> str | None:
+    global _CN_FONT
+    if _CN_FONT is not None:
+        return _CN_FONT or None
+    for path, kwargs in (
+        ("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf", {}),
+        ("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", {"subfontIndex": 0}),
+    ):
+        if not Path(path).exists():
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont("PaperCJK", path, **kwargs))
+            _CN_FONT = "PaperCJK"
+            return _CN_FONT
+        except Exception:
+            continue
+    _CN_FONT = ""
+    return None
+
+
+def _has_cjk(text: str) -> bool:
+    return bool(_CJK_RE.search(text or ""))
+
+
+def _fmt_cell(val: str) -> str:
+    s = str(val).strip()
+    try:
+        if re.fullmatch(r"-?\d+\.\d+", s):
+            # Only compress long floats; keep short literals like 0.3 / 0.05
+            if len(s) > 8:
+                x = float(s)
+                if abs(x) >= 1:
+                    return f"{x:.3f}"
+                return f"{x:.4f}"
+            return s
+    except ValueError:
+        pass
+    # Escape XML specials for Paragraph
+    return (
+        s.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 SCI = Path(__file__).resolve().parent
@@ -70,24 +123,98 @@ def read_csv(name):
         return list(csv.reader(f))
 
 
-def make_table(data, col_widths=None):
-    t = Table(data, colWidths=col_widths, hAlign="CENTER")
+def _cell_style(header: bool = False, cjk: bool = False) -> ParagraphStyle:
+    cjk_font = _register_cjk_font()
+    if cjk and cjk_font:
+        font = cjk_font
+    else:
+        font = "Times-Bold" if header else "Times-Roman"
+    return ParagraphStyle(
+        f"cell_{'h' if header else 'b'}_{'cjk' if cjk else 'en'}",
+        fontName=font,
+        fontSize=7.5 if not header else 8,
+        leading=9.5,
+        alignment=TA_LEFT,
+        wordWrap="CJK",
+    )
+
+
+def make_table(data, col_widths=None, font_size: float = 8):
+    """Build a page-fitting table with wrapping Paragraph cells (CJK-safe)."""
+    if not data:
+        return Spacer(1, 1)
+    n_cols = max(len(r) for r in data)
+    # Normalize ragged rows
+    norm = [list(r) + [""] * (n_cols - len(r)) for r in data]
+
+    if col_widths is None:
+        col_widths = [CONTENT_WIDTH / n_cols] * n_cols
+    elif abs(sum(col_widths) - CONTENT_WIDTH) > 0.05 * inch:
+        # Scale to content width so wide tables do not overflow the page
+        scale = CONTENT_WIDTH / float(sum(col_widths))
+        col_widths = [w * scale for w in col_widths]
+
+    styled = []
+    for i, row in enumerate(norm):
+        out_row = []
+        for cell in row:
+            text = _fmt_cell(cell)
+            cjk = _has_cjk(str(cell))
+            # If no CJK font, drop CJK glyphs rather than showing tofu boxes
+            if cjk and not _register_cjk_font():
+                text = _CJK_RE.sub("", str(cell)).strip() or "[zh]"
+                text = _fmt_cell(text)
+                cjk = False
+            style = _cell_style(header=(i == 0), cjk=cjk)
+            style.fontSize = font_size if i else font_size
+            style.leading = font_size + 1.5
+            out_row.append(Paragraph(text, style))
+        styled.append(out_row)
+
+    t = Table(styled, colWidths=col_widths, hAlign="CENTER", repeatRows=1)
     t.setStyle(
         TableStyle(
             [
-                ("FONTNAME", (0, 0), (-1, 0), "Times-Bold"),
-                ("FONTNAME", (0, 1), (-1, -1), "Times-Roman"),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F0F0F0")),
-                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#666666")),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (1, 0), (-1, -1), "CENTER"),
-                ("TOPPADDING", (0, 0), (-1, -1), 3),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#666666")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 3),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
             ]
         )
     )
     return t
+
+
+def modules_as_grid(names: list[str], n_cols: int = 3) -> list[list[str]]:
+    """Turn a 1-column module list into an n-column grid table."""
+    body = [n for n in names if n and n != "logic_module"]
+    header = [f"Module ({i+1})" for i in range(n_cols)]
+    rows = [header]
+    for i in range(0, len(body), n_cols):
+        chunk = body[i : i + n_cols]
+        rows.append(chunk + [""] * (n_cols - len(chunk)))
+    return rows
+
+
+# English role blurbs used when we want a clean Latin-1 appendix table
+BAND_ROLE_EN = {
+    "exchange": "Microstructure, prices, book, funding, basis",
+    "macro": "Macro vintages / rates / liquidity proxies",
+    "news": "News and narrative evidence",
+    "event_calendar": "ETF / unlock / event calendar",
+    "onchain": "On-chain activity / TVL proxies",
+    "tokenomics": "Unlocks / supply-side tokenomics",
+    "options": "Options surface / gamma walls",
+    "alternative": "Alt data (stablecoins, GitHub, trends)",
+    "perpetual_dex": "Perp DEX funding / OI",
+    "onchain_address": "Address-level on-chain labels",
+    "dex_liquidity": "DEX TVL / tick liquidity",
+    "gas_network": "Gas / network congestion",
+    "governance": "DAO governance events",
+}
 
 
 def fig(name, width=6.3 * inch, ratio=0.45):
@@ -464,23 +591,46 @@ def build():
         S["body"],
     ))
     try:
-        bands = read_csv("table1_evidence_bands.csv")
-        story.append(make_table(bands[:14], [1.3 * inch, 2.0 * inch, 1.2 * inch, 1.5 * inch]))
+        bands_raw = read_csv("table1_evidence_bands.csv")
+        # Keep 5 columns but use English roles so Latin PDF never shows tofu boxes;
+        # CJK font path still works if Role retains Chinese.
+        bands = [bands_raw[0]]
+        for row in bands_raw[1:14]:
+            band = row[0] if row else ""
+            role = BAND_ROLE_EN.get(band) or (row[4] if len(row) > 4 else "")
+            bands.append([row[0], row[1], row[2], row[3], role])
+        story.append(
+            make_table(
+                bands,
+                [0.95 * inch, 1.35 * inch, 0.7 * inch, 0.75 * inch, 2.75 * inch],
+                font_size=7.5,
+            )
+        )
         story.append(P("Table B1. Evidence bands (excerpt).", S["caption"]))
-    except Exception:
-        pass
+    except Exception as e:
+        story.append(P(f"[Table B1 unavailable: {e}]", S["note"]))
     try:
         mods = read_csv("table_a2_logic_modules.csv")
-        story.append(make_table(mods[:16], [2.4 * inch, 3.8 * inch]))
-        story.append(P("Table B2. Logic modules (excerpt).", S["caption"]))
-    except Exception:
-        pass
+        names = [r[0] for r in mods if r]
+        grid = modules_as_grid(names[:30], n_cols=3)
+        story.append(make_table(grid, [2.166 * inch] * 3, font_size=8))
+        story.append(P("Table B2. Logic modules (excerpt, 3-column grid).", S["caption"]))
+    except Exception as e:
+        story.append(P(f"[Table B2 unavailable: {e}]", S["note"]))
     try:
         tmap = read_csv("table5_theory_implementation_map.csv")
-        story.append(make_table(tmap, [2.2 * inch, 2.2 * inch, 2.0 * inch]))
-        story.append(P("Table B3. Theory-to-implementation map.", S["caption"]))
-    except Exception:
-        pass
+        # Keep whole B3 together — previous split dropped leading rows across the page break.
+        story.append(PageBreak())
+        story.append(
+            KeepTogether(
+                [
+                    make_table(tmap, [1.7 * inch, 2.7 * inch, 2.1 * inch], font_size=7.5),
+                    P("Table B3. Theory-to-implementation map.", S["caption"]),
+                ]
+            )
+        )
+    except Exception as e:
+        story.append(P(f"[Table B3 unavailable: {e}]", S["note"]))
 
     story.append(PageBreak())
     story.append(P("Appendix C. Additional empirics", S["h1"]))
@@ -491,22 +641,71 @@ def build():
     ))
     try:
         stab = read_csv("table_is_oos_stability.csv")
-        story.append(make_table(stab, [1.8 * inch] + [0.85 * inch] * (len(stab[0]) - 1)))
-        story.append(P("Table C1. IS/OOS stability.", S["caption"]))
-    except Exception:
-        pass
+        story.append(
+            KeepTogether(
+                [
+                    make_table(stab, [1.2 * inch, 1.5 * inch, 1.9 * inch, 1.9 * inch], font_size=8),
+                    P("Table C1. IS/OOS stability.", S["caption"]),
+                ]
+            )
+        )
+    except Exception as e:
+        story.append(P(f"[Table C1 unavailable: {e}]", S["note"]))
     try:
         cic = read_csv("table_conditional_ic.csv")
-        story.append(make_table(cic, [1.8 * inch] + [0.9 * inch] * (len(cic[0]) - 1)))
-        story.append(P("Table C2. Conditional IC.", S["caption"]))
-    except Exception:
-        pass
+        story.append(
+            KeepTogether(
+                [
+                    make_table(
+                        cic,
+                        [0.7 * inch, 0.9 * inch, 0.55 * inch, 0.85 * inch, 0.8 * inch, 0.7 * inch, 1.0 * inch, 0.9 * inch],
+                        font_size=7,
+                    ),
+                    P("Table C2. Conditional IC.", S["caption"]),
+                ]
+            )
+        )
+    except Exception as e:
+        story.append(P(f"[Table C2 unavailable: {e}]", S["note"]))
     try:
         ts = read_csv("table_timeslice_grid.csv")
-        story.append(make_table(ts[:16], [1.2 * inch] + [0.85 * inch] * (len(ts[0]) - 1)))
-        story.append(P("Table C3. time_slice monthly grid (excerpt).", S["caption"]))
-    except Exception:
-        pass
+        # Slim 16-col grid + short headers (long names were wrapping mid-word).
+        keep = [
+            "timestamp",
+            "domains_ready",
+            "domains_stale",
+            "domains_missing",
+            "overall_freshness",
+            "dom_klines",
+            "dom_asset_readiness",
+            "dom_ai_market_context",
+        ]
+        short_h = ["date", "ready", "stale", "missing", "freshness", "klines", "readiness", "ai_ctx"]
+        header = ts[0]
+        idx = [header.index(k) for k in keep if k in header]
+        slim = [short_h[: len(idx)]]
+        for row in ts[1:13]:
+            slim.append([row[i] if i < len(row) else "" for i in idx])
+        for r in slim[1:]:
+            if r and "T" in r[0]:
+                r[0] = r[0].split("T", 1)[0]
+        story.append(
+            KeepTogether(
+                [
+                    make_table(
+                        slim,
+                        [0.9 * inch, 0.65 * inch, 0.65 * inch, 0.75 * inch, 0.95 * inch, 0.75 * inch, 0.95 * inch, 0.9 * inch],
+                        font_size=7.5,
+                    ),
+                    P(
+                        "Table C3. time_slice monthly grid (summary; analytics snapshots remain sparse historically).",
+                        S["caption"],
+                    ),
+                ]
+            )
+        )
+    except Exception as e:
+        story.append(P(f"[Table C3 unavailable: {e}]", S["note"]))
 
     story.append(P("Appendix D. Reproducibility", S["h1"]))
     story.append(P(
