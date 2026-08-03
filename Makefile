@@ -1,4 +1,4 @@
-.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-bootstrap test-paper
+.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-cn paper-bootstrap test-paper
 
 PYTHON ?= python
 export PYTHONPATH := $(CURDIR)
@@ -51,6 +51,9 @@ paper-pit: ## 从 SQLite 历史重建 PIT 面板
 
 paper-pdf: ## 编译 SCI/JF 稿 PDF
 	$(PYTHON) pdf/sci/paper_lab.py pdf
+
+paper-cn: ## 编译中文论文 PDF（pdf/cn/）
+	$(PYTHON) pdf/cn/generate_cn_pdf.py
 
 paper-lab: ## 一键：PIT → JF 实证 → PDF（加 WITH_BOOTSTRAP=1 先采集）
 	@if [ "$(WITH_BOOTSTRAP)" = "1" ]; then \
