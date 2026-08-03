@@ -1,0 +1,669 @@
+# 从三维乘积指数到条件化自适应世界模型
+
+## ——面向 AI 市场分析的第二代加密货币数据世界模型理论
+
+李国聪[^1]
+
+（理论优化稿，日期：2026 年 8 月 3 日）
+
+英文题名： Beyond Breadth–Stability–Honesty: Regime-Conditional Adaptive World Models for AI-Based Cryptocurrency Market Analysis
+
+中图分类号： F830.9；TP18  
+文献标识码： A  
+JEL 分类号： G10，G17，C55，C82，O33
+
+---
+
+## 摘要
+
+既有研究已将面向 AI 的加密市场数据基础设施形式化为“世界模型生成器”，并以宽度（B_t）、稳定性（U_t）与诚实性（H_t）三者之积定义世界模型质量指数 \mathrm{WMI}_t=B_t\times U_t\times H_t。该框架成功把工程叙事提升为可识别对象，但其乘积结构、离散诚实性、任务无关编译与静态证据权重，难以刻画当代系统中已出现的资产级证据矩阵、机制层解释引擎、点时（point-in-time）回溯、降级运行与跨证据一致性等新能力。本文在前序理论之上提出条件化自适应世界模型（Regime-Conditional Adaptive World Model, RCA-WM）框架：将证据组织为“43 数据域 → 审计证据带 → 资产就绪度 → 市场世界对象”的层级合成；把诚实性改写为基于剔除率与污染率的连续度量；引入信号完整性 S_t 与跨证据一致性 C_t；定义体制条件化编译算子 \Pi_t^{(r)} 与时间索引质量路径 \mathrm{ACWMI}(t)；并在资源约束下给出自适应降级编译规则。研究表明，第二代理论的核心不再是“把世界做厚”，而是“在体制、任务与资源约束下，把正确的世界以可审计方式编译给 AI”。本文的边际贡献在于：把第一代 \mathrm{WMI} 从静态标量升级为可条件化、可分解、可回溯、可降级的动态质量对象。
+
+关键词： AI 市场世界模型；条件化自适应质量指数；点时正确性；机制层解释引擎；质量门控；降级编译
+
+Abstract: Prior work formalizes cryptocurrency data infrastructure for AI as a world-model generator and defines a World Model Index as the product of breadth, stability, and honesty. While this elevates an engineering narrative into an identifiable object, the multiplicative structure, discrete honesty, task-agnostic compilation, and static evidence weights cannot accommodate asset-level evidence matrices, mechanistic interpretive engines, point-in-time reconstruction, degraded-mode operation, or cross-evidence consistency. Building on that foundation, this paper proposes a Regime-Conditional Adaptive World Model (RCA-WM) framework. It organizes evidence as a hierarchy from forty-three data domains through audit bands and asset readiness to market world objects; replaces discrete honesty with continuous exclusion- and contamination-based measures; introduces signal integrity and cross-evidence consistency; defines a regime-conditional compilation operator and a time-indexed quality path; and specifies adaptive degraded compilation under resource constraints. The second-generation theory shifts the research focus from merely “thickening” the world to compiling the *right* world for AI under regime, task, and resource constraints in an auditable manner.
+
+Key words: AI market world model; adaptive conditional quality index; point-in-time correctness; mechanistic interpretive engines; quality gating; degraded compilation
+
+---
+
+## 1 引言
+
+### 1.1 研究动机：第一代理论已经不够用
+
+前序论文《从“模型优先”到“世界模型优先”》确立了一个关键命题：AI 市场分析系统的能力边界，首先受制于其所面对的市场世界是否足够宽、足够稳、足够诚实，而非首先受制于模型复杂度。该文据此提出世界模型生成函数
+
+
+W_t=G\big(\{X_{j,\tau}\}_{j\le J,\tau\le t},Q_t,R_t,A_t\big),
+
+
+并以
+
+
+\mathrm{WMI}_t=B_t\times U_t\times H_t
+
+
+刻画世界模型质量。这一框架的历史贡献是清晰的：它把 latest_* 快照、质量门控、主视图与诊断视图分离、八证据带 bundle 聚合，从工程实现提升为学术对象。
+
+然而，当同一项目演进到更大规模的实现形态后，第一代理论暴露出五个结构性局限。
+
+第一，乘积结构过于苛刻且不可分解。任一维度接近零都会使 \mathrm{WMI} 坍塌，但实践中“宽度不足但诚实性极高”与“宽度充足但已陈旧”对 AI 的风险含义完全不同；乘积标量抹平了这种差异。
+
+第二，诚实性被实现为粗粒度离散档位。现有系统虽已计算 \mathrm{WMI}，但诚实性常退化为 ok / thin / blocked 三档，未能充分利用 ai_excluded_sources、质量污染计数与门控惩罚等连续信息。
+
+第三，编译算子 \Pi_t 被定义为任务无关与体制无关。第一代理论中 \Pi_t=B_t\circ M_t\circ A_t 对所有市场状态与所有分析任务共用同一套证据权重；但危机体制下清算级联与传染风险的信息价值，显著高于平静体制下的动量叙事。
+
+第四，证据带仍停留在“八带聚合”语义，而未吸收层级化扩张。当代实现已覆盖约 43 个数据域与大量机制层逻辑引擎（体制识别、清算级联、链上领先滞后、叙事体制、Alpha 衰减等），但第一代 \mathrm{WMI} 的宽度项仍大体坍缩为八带就绪分数。
+
+第五，缺少时间索引与降级运行理论。点时切片、快照版本化与 NORMAL→EMERGENCY 降级路径已经存在于系统中，但第一代理论没有把“历史时刻的世界质量”和“资源约束下的次优世界”形式化。
+
+### 1.2 研究对象与论文定位
+
+本文不另起炉灶否定前序框架，而是对其进行理论优化与第二代扩展。研究对象仍是面向 AI 的加密市场数据世界模型基础设施，而非已经闭环的自动交易代理。本文要回答的问题是：
+
+1. 第一代 \mathrm{WMI}=B\times U\times H 在哪些形式假设上限制了进一步识别与工程落地？
+2. 如何把资产级证据矩阵、机制层引擎、点时回溯与降级运行吸收进统一理论？
+3. 世界模型质量能否从静态标量升级为体制条件化、任务条件化、时间索引化的动态对象？
+4. 在新框架下，AI 的拒绝判断、解释归因与审计边界应如何被重新定义？
+
+### 1.3 研究贡献
+
+本文贡献可概括为六点。
+
+1. 诊断贡献：系统指出第一代三维乘积指数的五个形式局限。
+2. 层级化贡献：提出“数据域—证据带—资产就绪—市场世界”四级证据合成，替代扁平八带假设。
+3. 度量贡献：将诚实性连续化，并引入信号完整性 S_t 与跨证据一致性 C_t。
+4. 条件化贡献：定义体制—任务条件化编译算子 \Pi_t^{(r,m)} 与自适应条件世界模型指数 \mathrm{ACWMI}。
+5. 时间与韧性贡献：形式化点时质量路径 \mathrm{ACWMI}(t) 与资源约束下的降级编译规则。
+6. 评估贡献：提出比单一 \mathrm{WMI} 回归更可识别的分解、事件研究与 Pareto 评价协议。
+
+### 1.4 文章结构
+
+第二部分回顾前序理论并定位优化空间；第三部分给出第一代框架的形式诊断；第四部分建立 RCA-WM 理论；第五部分将其映射到当代项目架构；第六部分讨论识别与评估；第七部分讨论局限；第八部分结论。
+
+---
+
+## 2 前序理论回顾与优化定位
+
+### 2.1 第一代核心结果（简要）
+
+前序理论的关键对象包括：
+
+- 潜在市场状态 S_t 与观测 X_{j,t}=h_j(S_t)+\nu_{j,t}；
+- 世界编译算子 \Pi_t=B_t\circ M_t\circ A_t；
+- AI 主视图 W_t^{\mathrm{AI}} 与诊断视图 D_t；
+- 宽度、稳定性、诚实性三维质量及乘积指数 \mathrm{WMI}；
+- 解释空间 \Phi_t、证据归因率（EAR）、无支撑断言率（UCR）、解释波动率（EV）与置信校准惩罚（ECP）；
+- 拒绝判断动作集合 \{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}。
+
+这些对象仍然是本文的基础。本文不是替换它们，而是修正其合成规则与条件依赖。
+
+### 2.2 优化定位：从“厚世界”到“正确世界”
+
+第一代理论的主叙事是：薄世界模型导致伪解释自由度过大，因此要把世界做厚。第二代理论承认“厚”仍必要，但进一步主张：
+
+> 对 AI 而言，危险的不只是世界太薄，更是在错误体制下看到错误厚度、在错误任务下看到错误证据、在降级状态下仍假装完整。
+
+因此，优化目标从最大化宽度转向最小化条件化世界模型误差：
+
+
+\mathcal{L}^{\mathrm{WM}}
+=
+\mathbb{E}\big[
+\| \tilde{S}_t^{(r,m)} - S_t \|
+\;\big|\;
+r_t, m
+\big]
++
+\lambda\cdot \mathrm{AuditGap}_t,
+
+
+其中 r_t 为市场体制，m 为分析任务，\mathrm{AuditGap}_t 为不可审计信息占比。
+
+---
+
+## 3 第一代框架的形式诊断
+
+### 3.1 乘积坍塌与不可辨识风险
+
+设 B_t,U_t,H_t\in[0,1]。乘积指数满足：
+
+
+\frac{\partial \mathrm{WMI}_t}{\partial B_t}=U_t H_t.
+
+
+当 U_t 或 H_t 接近 0 时，宽度改善对 \mathrm{WMI} 几乎无贡献；反之亦然。这对工程告警有用，却对计量识别有害：研究者无法区分“因陈旧而低”还是“因门控诚实标记而低”。更严重的是，系统若把“诚实标记出问题”和“世界本身很差”记成同一低分，会惩罚诚实行为。
+
+### 3.2 离散诚实性无法表达门控强度
+
+记被错误注入主视图的来源指示为 m_{j,t}。第一代诚实性
+
+
+H_t=1-\frac{1}{J}\sum_{j=1}^{J}m_{j,t}
+
+
+在实现中常被进一步离散化为三档。这忽略两类关键连续量：
+
+- 剔除率 \rho_t^{\mathrm{ex}}：本应剔除且已被剔除的比例；
+- 污染率 \rho_t^{\mathrm{cont}}：不应进入主视图却仍进入的比例。
+
+真正需要被奖励的是高剔除、低污染，而不是“没有任何质量标记”。
+
+### 3.3 静态证据权重忽视边际信息异质性
+
+前序理论已提出边际信息增益
+
+
+\mathrm{MIG}_{k,t}^{(m)}=I\big(R_t^{(m)};E_{k,t}\,|\,I_t^{(-k)}\big),
+
+
+但未把它反馈进编译权重。于是 \mathrm{WMI} 把所有证据带的“在场”近似等价，无法表达“链上领先滞后在趋势任务中更有价值、清算级联在危机任务中更有价值”。
+
+### 3.4 缺少点时对象与降级对象
+
+若只定义当前时刻的 W_t，则无法讨论：
+
+1. 回测时 AI 是否看到了当时不该看到的未来信息；
+2. 降级模式下 AI 是否仍输出过高置信。
+
+这两个问题分别对应点时正确性与韧性诚实性，都超出了第一代三维乘积的表达能力。
+
+---
+
+## 4 条件化自适应世界模型（RCA-WM）
+
+### 4.1 层级化证据合成
+
+定义四级对象：
+
+1. 数据域 D_{d,t}，d=1,\dots,D（当代实现约 D=43）；
+2. 审计证据带 E_{k,t}=\psi_k(\{D_{d,t}\}_{d\in\mathcal{G}_k})，k=1,\dots,K；
+3. 资产就绪对象 A_{i,t}=\sum_{k}w_{i,k}\,s_{i,k,t}，其中 s_{i,k,t} 为资产 i 在证据带 k 的就绪分数；
+4. 市场世界对象 W_t=\Gamma(\{A_{i,t}\}_i,\{E_{k,t}\}_k,M_t^{\mathrm{mech}})，其中 M_t^{\mathrm{mech}} 为机制层引擎输出。
+
+定义 4.1（层级宽度）.  
+
+B_t^{\mathrm{hier}}
+=
+\alpha_1 B_t^{\mathrm{domain}}
++
+\alpha_2 B_t^{\mathrm{band}}
++
+\alpha_3 B_t^{\mathrm{asset}},
+\quad
+\alpha_1+\alpha_2+\alpha_3=1,
+
+其中
+
+
+B_t^{\mathrm{domain}}=\frac{1}{D}\sum_d \mathbf{1}\{D_{d,t}\ \mathrm{AI\text{-}ready}\},\quad
+B_t^{\mathrm{band}}=\frac{1}{K}\sum_k a_{k,t},\quad
+B_t^{\mathrm{asset}}=\frac{1}{N}\sum_i A_{i,t}.
+
+
+与第一代扁平宽度相比，B_t^{\mathrm{hier}} 区分“域很多但关键带缺失”和“关键带齐全但资产覆盖窄”。
+
+### 4.2 连续诚实性
+
+定义 4.2（连续诚实性）.  
+
+H_t^{\mathrm{cont}}
+=
+\exp\!\big(-\beta_1\rho_t^{\mathrm{cont}}\big)
+\cdot
+\big(1-\beta_2(1-\rho_t^{\mathrm{ex}})\big)_+,
+
+其中 \rho_t^{\mathrm{cont}} 为主视图污染率，\rho_t^{\mathrm{ex}} 为不合格来源成功剔除率，(x)_+=\max\{x,0\}。
+
+该定义奖励“敢剔除”，惩罚“装完整”。它直接对应主视图/诊断视图分离：被移入诊断视图的对象提高 \rho_t^{\mathrm{ex}}，错误留在主视图的对象提高 \rho_t^{\mathrm{cont}}。
+
+### 4.3 信号完整性与跨证据一致性
+
+定义 4.3（信号完整性）. 设机制层引擎给出信号半衰期 h_{s,t}、拥挤度 c_{s,t} 与意外度 u_{s,t}，则
+
+
+S_t
+=
+\frac{1}{|\mathcal{S}|}
+\sum_{s\in\mathcal{S}}
+g\big(h_{s,t}\big)\,
+(1-c_{s,t})\,
+\tilde{u}_{s,t},
+
+
+其中 g(\cdot) 为半衰期的单调变换，\tilde{u}_{s,t} 为标准化意外度。S_t 吸收 Alpha 衰减、叙事峰值风险与信号拥挤，避免把“仍在线但已失效的信号”计入高质量世界。
+
+定义 4.4（跨证据一致性）. 设证据带两两方向一致度为 \kappa_{kk',t}\in[-1,1]，则
+
+
+C_t
+=
+\frac{2}{K(K-1)}
+\sum_{k<k'}
+\max\{\kappa_{kk',t},0\}
+\cdot
+\mathbf{1}\{a_{k,t}=a_{k',t}=1\}.
+
+
+当价格叙事看多而清算/储备/资金费率显著冲突时，C_t 下降。这把“竞争性解释存在”从定性描述提升为可测对象。
+
+### 4.4 体制条件化编译算子
+
+设体制变量 r_t\in\{\mathrm{trend},\mathrm{range},\mathrm{crisis},\dots\}，任务 m\in\mathcal{M}。定义条件化编译算子
+
+
+\Pi_t^{(r,m)}
+=
+B_t^{(r,m)}
+\circ
+M_t^{(r,m)}
+\circ
+A_t
+\circ
+\Psi_t^{\mathrm{mech}},
+
+
+其中：
+
+- A_t：时序对齐与点时快照同步；
+- M_t^{(r,m)}：体制—任务条件化质量门控；
+- B_t^{(r,m)}：条件化 bundle 聚合，证据权重 w_k^{(r,m)}\propto \widehat{\mathrm{MIG}}_{k}^{(m)}(r)；
+- \Psi_t^{\mathrm{mech}}：机制层引擎融合（体制、级联、领先滞后、叙事、衰减等）。
+
+于是
+
+
+W_t^{\mathrm{AI},(r,m)}
+=
+\Pi_t^{(r,m)}(F_t^{\mathrm{raw}}).
+
+
+命题 4.1（条件化误差占优）.  
+在相同原始信息滤子 F_t^{\mathrm{raw}} 下，若权重 w_k^{(r,m)} 与真实边际信息增益同序，则存在常数 c>0 使得
+
+
+\mathbb{E}\big[\| \tilde{S}_t^{(r,m)}-S_t \|\,\big|\,r_t=r\big]
+\le
+\mathbb{E}\big[\| \tilde{S}_t^{\mathrm{static}}-S_t \|\,\big|\,r_t=r\big]
+-c\cdot \Delta_t^{(r,m)},
+
+
+其中 \Delta_t^{(r,m)} 为条件权重与静态权重的加权总变差。直觉含义是：把危机中的权重从叙事热度转向清算与传染，可降低体制条件重建误差。
+
+### 4.5 自适应条件世界模型指数（ACWMI）
+
+定义 4.5（ACWMI）.  
+
+\mathrm{ACWMI}_t^{(r,m)}
+=
+\big(B_t^{\mathrm{hier}}\big)^{\gamma_B(r)}
+\cdot
+\big(U_t\big)^{\gamma_U(r)}
+\cdot
+\big(H_t^{\mathrm{cont}}\big)^{\gamma_H(r)}
+\cdot
+\big(S_t\big)^{\gamma_S(r)}
+\cdot
+\big(C_t\big)^{\gamma_C(r)},
+
+
+其中指数向量 \gamma(r)=(\gamma_B,\gamma_U,\gamma_H,\gamma_S,\gamma_C)(r) 满足 \gamma_\bullet(r)>0，并在危机体制提高 \gamma_H,\gamma_C，在趋势体制提高 \gamma_S。
+
+与第一代 \mathrm{WMI} 相比，ACWMI 有三点本质扩展：
+
+1. 可分解：任一因子可单独进入回归与事件研究；
+2. 可条件化：同一原始世界在不同体制下得到不同质量评分；
+3. 可审计：每个因子对应明确可观测构造（就绪矩阵、时延摘要、剔除/污染、半衰期/拥挤、证据冲突）。
+
+推论 4.1（诚实不再被惩罚）.  
+若系统通过门控提高 \rho_t^{\mathrm{ex}} 并降低 \rho_t^{\mathrm{cont}}，则即便 B_t^{\mathrm{hier}} 因剔除而下降，H_t^{\mathrm{cont}} 上升可使 \mathrm{ACWMI} 不必单调下降。这修正了第一代乘积指数“越诚实越容易低分”的激励扭曲。
+
+### 4.6 点时质量路径
+
+定义 4.6（点时世界与点时质量）.  
+对历史时点 \tau\le t，令
+
+
+W_{\tau|t}^{\mathrm{PIT}}
+=
+\Pi_{\tau}^{(r_\tau,m)}
+\big(
+F_{\tau}^{\mathrm{raw}}
+\;\big|\;
+\mathcal{I}_{\tau|t}
+\big),
+
+
+其中 \mathcal{I}_{\tau|t} 仅包含在 \tau 时刻真实已到达、且按当时规则可进入主视图的信息。对应
+
+
+\mathrm{ACWMI}_{\tau|t}^{\mathrm{PIT}}
+=
+\mathrm{ACWMI}\big(W_{\tau|t}^{\mathrm{PIT}}\big).
+
+
+定义点时泄漏率
+
+
+\mathrm{Leak}_{\tau|t}
+=
+\frac{
+\#\{\text{在 }W_{\tau|t}^{\mathrm{PIT}\text{-violating}}\text{ 中使用的未来或后改规则对象}\}
+}{
+\#\{\text{主视图对象}\}
+}.
+
+
+一个满足诚实性契约的系统应使 \mathrm{Leak}_{\tau|t}\to 0。点时切片与快照版本化，正是该定义的工程对应物。
+
+### 4.7 资源约束下的降级编译
+
+设运行层级 \ell_t\in\{\mathrm{NORMAL},\mathrm{REDUCED},\mathrm{MINIMAL},\mathrm{EMERGENCY}\}。定义可行证据集合 \mathcal{E}(\ell_t)\subseteq\{1,\dots,K\}，则降级编译为
+
+
+W_t^{\mathrm{AI},(r,m,\ell)}
+=
+\Pi_t^{(r,m)}
+\big(
+F_t^{\mathrm{raw}}
+;\,
+\mathcal{E}(\ell_t)
+\big).
+
+
+定义 4.7（韧性诚实性）.  
+
+H_t^{\mathrm{res}}
+=
+H_t^{\mathrm{cont}}
+\cdot
+\big(
+1-\mathbf{1}\{\ell_t\neq\mathrm{NORMAL}\}
+\cdot
+\mathbf{1}\{\mathrm{conf}_t>\bar{c}(\ell_t)\}
+\big).
+
+
+即：一旦进入降级，若 AI 置信度未随世界变薄而下降，则韧性诚实性记为失败。这把降级管理从运维细节提升为认识论约束。
+
+### 4.8 条件化拒绝判断规则
+
+将第一代拒绝规则强化为：
+
+
+a_t^\star
+=
+\arg\min_{a\in\mathcal{A}}
+\mathbb{E}\big[\ell(a,R_t)\,|\,W_t^{\mathrm{AI},(r,m,\ell)}\big],
+
+
+并令拒绝阈值依赖状态：
+
+
+c_{\mathrm{abs},t}
+=
+c_0
+\cdot
+\big(
+1+\eta_1(1-\mathrm{ACWMI}_t^{(r,m)})
++\eta_2(1-C_t)
++\eta_3\mathbf{1}\{\ell_t\neq\mathrm{NORMAL}\}
+\big).
+
+
+于是，危机冲突、低质量与降级运行会自动提高“不判断”的价值。这比固定阈值 \mathrm{WMI}<0.2 更符合真实风控语义。
+
+### 4.9 机制层解释空间
+
+第一代理论指出厚世界扩大解释空间 \Phi_t。第二代进一步把解释空间分层：
+
+
+\Phi_t
+=
+\Phi_t^{\mathrm{surface}}
+\cup
+\Phi_t^{\mathrm{mechanism}}
+\cup
+\Phi_t^{\mathrm{systemic}},
+
+
+分别对应表面价格叙事、机制层引擎（资金流分解、领先滞后、叙事生命周期、Alpha 衰减）与系统层风险（传染、清算级联、流动性体制）。评价解释质量时，不仅看 EAR/UCR，还看机制层覆盖率：
+
+
+\mathrm{MER}_t
+=
+\frac{
+\#\{\text{绑定到 }\Phi_t^{\mathrm{mechanism}}\cup\Phi_t^{\mathrm{systemic}}\text{ 的判断}\}
+}{
+\#\{\text{总判断}\}
+}.
+
+
+---
+
+## 5 理论对象与当代项目架构的映射
+
+### 5.1 从八证据带到四级合成
+
+| 理论对象 | 当代系统对应 | 相对第一代的增量 |
+| --- | --- | --- |
+| 数据域 D_{d,t} | 约 43 个 data_layer 域 | 由 8 带扩展为高维域集合 |
+| 审计证据带 E_{k,t} | data_quality 审计带（必需/可选） | 显式区分关键带与可选带 |
+| 资产就绪 A_{i,t} | asset_readiness 证据矩阵 | 从市场就绪到资产级就绪 |
+| 市场宽度 | market_breadth | 避免窄宇宙上的过度自信 |
+| 机制层 M_t^{\mathrm{mech}} | regime / cascade / lead-lag / narrative / alpha_decay 等 | 第一代几乎未形式化 |
+| 点时对象 | time_slice + snapshot_versioning | 新增 PIT 路径 |
+| 降级层级 \ell_t | DegradationManager | 新增韧性诚实性 |
+
+### 5.2 稳定性与时延
+
+第一代稳定性 U_t=\exp(-\sum\omega_j d_{j,t}) 仍可用；当代实现更直接地用管线时延摘要构造
+
+
+U_t
+=
+\frac{\#\mathrm{fresh}+0.7\cdot\#\mathrm{acceptable}}{\#\mathrm{domains}}.
+
+
+RCA-WM 保留该构造，但要求其进入 \mathrm{ACWMI} 时可被单独识别，而不是只作为乘积中的隐因子。
+
+### 5.3 编译算子的可实现分解
+
+把 \Pi_t^{(r,m)} 映射为管线相位：
+
+1. 对齐相位 A_t：latest_*、窗口预物化、点时切片；
+2. 门控相位 M_t：quality_flag、is_ready_for_ai、主/诊断分离；
+3. 机制相位 \Psi_t：regime、cascade、lead-lag、flow、narrative、decay；
+4. 聚合相位 B_t：ai_market_context bundle 与条件权重。
+
+该分解保持前序 \Pi=B\circ M\circ A 的精神，但插入机制相位，并允许 B,M 依赖 (r,m)。
+
+### 5.4 对 AI 的直接含义
+
+在 RCA-WM 下，AI 消费的不再只是“更厚的 JSON”，而是一个带条件标签的世界对象：
+
+
+O_t^{\mathrm{AI}}
+=
+\big(
+W_t^{\mathrm{AI},(r,m,\ell)},
+\mathrm{ACWMI}_t^{(r,m)},
+B_t^{\mathrm{hier}},U_t,H_t^{\mathrm{cont}},S_t,C_t,
+r_t,\ell_t,
+D_t
+\big).
+
+
+因此，下游模型可以把“我看到了什么”和“我在何种体制、何种降级、何种冲突程度下看到”同时纳入决策。
+
+---
+
+## 6 识别、评估与研究协议
+
+### 6.1 分解回归，而非单一 WMI 回归
+
+第一代建议估计
+
+
+Q_{i,t+h}=\alpha_i+\lambda_t+\beta_1\mathrm{WMI}_{i,t}+\cdots+\varepsilon_{i,t+h}.
+
+
+第二代改为因子分解式：
+
+
+\begin{aligned}
+Q_{i,t+h}
+&=
+\alpha_i+\lambda_t
++\beta_B B_{i,t}^{\mathrm{hier}}
++\beta_U U_{i,t}
++\beta_H H_{i,t}^{\mathrm{cont}}
++\beta_S S_{i,t}
++\beta_C C_{i,t}\\
+&\quad
++\theta_r\cdot \mathrm{ACWMI}_{i,t}^{(r)}
++\Gamma^\top Z_{i,t}
++\varepsilon_{i,t+h}.
+\end{aligned}
+
+
+重点不是证明“ACWMI 越大越好”，而是识别：在危机子样本中 \beta_H,\beta_C 是否更大，在趋势子样本中 \beta_S 是否更大。
+
+### 6.2 体制切换与模块中断的双重事件研究
+
+除来源降级事件外，增加体制切换事件 T_0^{\mathrm{regime}}。比较静态编译与条件化编译在切换窗口内的 EV、UCR、MER 与拒绝率差异：
+
+
+\Delta \mathrm{EV}_{\tau}
+=
+\mathrm{EV}_{\tau}^{\mathrm{static}}
+-
+\mathrm{EV}_{\tau}^{\mathrm{RCA}}.
+
+
+若条件化编译显著降低解释波动率，则支持命题 4.1 的经验对应。
+
+### 6.3 点时回放实验
+
+冻结规则版本 v，对历史时刻 \tau 重放 W_{\tau|t}^{\mathrm{PIT}}，报告：
+
+1. \mathrm{Leak}_{\tau|t}；
+2. PIT-ACWMI 与当时在线 ACWMI 的偏差；
+3. 基于 PIT 世界的后验分析质量相对“未来泄漏世界”的衰减。
+
+这是把“可回溯优先于实时”从设计口号变为可发表检验。
+
+### 6.4 降级压力测试
+
+在仿真或混沌注入下强制 \ell_t 迁移，检验：
+
+1. H_t^{\mathrm{res}} 是否随降级正确恶化；
+2. 拒绝率是否上升；
+3. 主视图是否错误地继续暴露已停服域。
+
+### 6.5 多目标 Pareto 评价（继承并扩展）
+
+保留预测、解释、校准、审计四维，并新增：
+
+- 机制覆盖（MER）；
+- 点时无泄漏（1-\mathrm{Leak}）；
+- 降级校准（降级状态下的 ECP）。
+
+第二代优势应体现为 Pareto 前沿外移，而不是单一预测损失最优。
+
+---
+
+## 7 局限性
+
+第一，ACWMI 的体制指数 \gamma(r) 与任务权重 w_k^{(r,m)} 需要估计或专家标定，存在被数据挖掘污染的风险。第二，机制层引擎本身可能误分类体制，从而把编译算子导向错误世界；因此需要“体制识别不确定性”的二阶门控。第三，本文仍是理论与架构优化论文，完整的发表级样本外实证有待基于冻结快照与版本化 bundle 规则展开。第四，加密市场的证据带结构不可无摩擦迁移到股票或债券市场。
+
+---
+
+## 8 结论
+
+第一代世界模型理论的贡献，是让研究者承认：AI 金融系统的第一性约束往往在观测世界，而非模型函数。第二代理论的贡献，则是进一步承认：
+
+> 只把世界做厚仍然不够；必须在体制、任务、时间与资源约束下，把正确的世界诚实地编译出来。
+
+本文通过层级宽度、连续诚实性、信号完整性、跨证据一致性、条件化编译算子、点时质量路径与降级韧性诚实性，把 \mathrm{WMI}=B\times U\times H 优化为可分解、可条件化、可回溯的 \mathrm{ACWMI}。对 EvoQuant 这类系统而言，这意味着学术对象与工程对象第一次在机制层、资产层和运行层同时对齐。
+
+若用一句话概括本文对前序论文的优化，那就是：
+
+从“宽—稳—诚”的静态乘积，走向“条件化、可分解、点时可审计”的自适应世界模型。
+
+---
+
+## 附录 A 符号表（相对第一代的新增/修订）
+
+| 符号 | 含义 |
+| --- | --- |
+| D_{d,t} | 第 d 个数据域对象 |
+| B_t^{\mathrm{hier}} | 层级化宽度 |
+| H_t^{\mathrm{cont}} | 连续诚实性 |
+| \rho_t^{\mathrm{ex}},\rho_t^{\mathrm{cont}} | 剔除率与污染率 |
+| S_t | 信号完整性 |
+| C_t | 跨证据一致性 |
+| r_t,\ell_t | 市场体制与运行降级层级 |
+| \Pi_t^{(r,m)} | 体制—任务条件化编译算子 |
+| \Psi_t^{\mathrm{mech}} | 机制层融合算子 |
+| \mathrm{ACWMI}_t^{(r,m)} | 自适应条件世界模型指数 |
+| W_{\tau\|t}^{\mathrm{PIT}} | 点时世界对象 |
+| \mathrm{Leak}_{\tau\|t} | 点时泄漏率 |
+| H_t^{\mathrm{res}} | 韧性诚实性 |
+| \mathrm{MER}_t | 机制层解释覆盖率 |
+
+## 附录 B 与第一代指标的兼容映射
+
+| 第一代对象 | 第二代对象 | 关系 |
+| --- | --- | --- |
+| B_t | B_t^{\mathrm{hier}} | 扩展为域/带/资产加权 |
+| U_t | U_t | 保留，强调可单独识别 |
+| H_t | H_t^{\mathrm{cont}},H_t^{\mathrm{res}} | 连续化并加入降级约束 |
+| \mathrm{WMI}_t | \mathrm{ACWMI}_t^{(r,m)} | 条件化五因子推广 |
+| \Pi_t | \Pi_t^{(r,m)} | 加入机制相与条件权重 |
+| EAR/UCR/EV/ECP | 同左 + MER/Leak/韧性 ECP | 评估集扩展 |
+
+## 附录 C 最小实施协议
+
+1. 用资产就绪矩阵与域新鲜度重算 B^{\mathrm{hier}},U；
+2. 用主视图剔除/污染日志重算 H^{\mathrm{cont}}；
+3. 用 alpha_decay / narrative 输出构造 S；
+4. 用 funding—价格—链上—清算方向冲突构造 C；
+5. 用 regime_detection 输出切换 \gamma(r)；
+6. 用 time_slice 做 PIT 回放；
+7. 用 degradation 层级做韧性诚实性测试。
+
+---
+
+## 参考文献
+
+[1] 李国聪. 从“模型优先”到“世界模型优先”：面向 AI 市场分析的加密货币数据世界模型基础设施研究[Z]. 2026.
+
+[2] Cochrane J H. Asset Pricing[M]. Revised Edition. Princeton: Princeton University Press, 2005.
+
+[3] Fama E F, French K R. Common Risk Factors in the Returns on Stocks and Bonds[J]. Journal of Financial Economics, 1993, 33(1): 3–56.
+
+[4] Gu S, Kelly B, Xiu D. Empirical Asset Pricing via Machine Learning[J]. Review of Financial Studies, 2020, 33(5): 2223–2273.
+
+[5] Harvey C R, Liu Y, Zhu H. …and the Cross-Section of Expected Returns[J]. Review of Financial Studies, 2016, 29(1): 5–68.
+
+[6] Hansen L P, Sargent T J. Robustness[M]. Princeton: Princeton University Press, 2008.
+
+[7] Carroll R J, Ruppert D, Stefanski L A, Crainiceanu C M. Measurement Error in Nonlinear Models: A Modern Perspective[M]. 2nd ed. Boca Raton: Chapman and Hall/CRC, 2006.
+
+[8] Fuller W A. Measurement Error Models[M]. New York: Wiley, 1987.
+
+[9] Liu Y, Tsyvinski A, Wu X. Common Risk Factors in Cryptocurrency[J]. Journal of Finance, 2022, 77(2): 1133–1177.
+
+[10] Makarov I, Schoar A. Trading and Arbitrage in Cryptocurrency Markets[J]. Journal of Financial Economics, 2020, 135(2): 293–319.
+
+[11] Nagel S. Machine Learning in Asset Pricing[M]. Princeton: Princeton University Press, 2021.
+
+[12] Shmueli G. To Explain or to Predict?[J]. Statistical Science, 2010, 25(3): 289–310.
+
+[13] Kelly B T, Pruitt S, Su Y. Characteristics Are Covariances: A Unified Model of Risk and Return[J]. Journal of Financial Economics, 2019, 134(3): 501–524.
+
+[14] Haavelmo T. The Probability Approach in Econometrics[J]. Econometrica, 1944, 12: iii–vi+1–115.
+
+[15] Pearl J. Causality: Models, Reasoning, and Inference[M]. 2nd ed. Cambridge: Cambridge University Press, 2009.
+
+[^1]: 作者邮箱：lmu151638@gmail.com。本文是对既有“世界模型优先”理论框架的优化扩展，研究对象为数据世界模型基础设施，而非已完成闭环的自动交易系统。
