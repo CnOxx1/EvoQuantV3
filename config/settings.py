@@ -41,6 +41,13 @@ PG_SCHEMA_EXCHANGE = os.getenv("PG_SCHEMA_EXCHANGE", "exchange_data")
 PG_SCHEMA_MARKET = os.getenv("PG_SCHEMA_MARKET", "market_data")
 PG_SCHEMA_ANALYTICS = os.getenv("PG_SCHEMA_ANALYTICS", "analytics")
 
+# World-model quality / selective prediction (paper-aligned, API-safe defaults)
+# Production baseline WMI abstains below this threshold.
+WMI_ABSTAIN_THRESHOLD = float(os.getenv("WMI_ABSTAIN_THRESHOLD", "0.2"))
+# Optional ACWMI path: "wmi" (default product) or "acwmi" (geometric mean with S/C).
+WORLD_MODEL_INDEX_MODE = os.getenv("WORLD_MODEL_INDEX_MODE", "wmi").strip().lower()
+ACWMI_ABSTAIN_THRESHOLD = float(os.getenv("ACWMI_ABSTAIN_THRESHOLD", "0.35"))
+
 
 def _default_tracked_asset_entity_keys() -> str:
     assets: list[str] = []

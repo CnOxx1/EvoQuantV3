@@ -7,8 +7,24 @@ market/derivatives/on-chain/macro data, a logic-layer DAG computes features/indi
 FastAPI service (`api/app.py`) serves quality-tagged market context to AI consumers. Storage
 defaults to embedded SQLite, so no external database is required for local dev.
 
-Standard commands live in the `Makefile` (`make test|lint|typecheck|api|dev|modules`), `api/README.md`,
+Standard commands live in the `Makefile` (`make test|lint|typecheck|api|dev|modules|paper-lab`), `api/README.md`,
 and `README.md`. The notes below are only the non-obvious caveats.
+
+### Paper lab (manuscript empirics)
+
+The project exposes production APIs used by the JF/SCI manuscript under `pdf/sci/`:
+
+| Task | Command |
+| --- | --- |
+| API smoke (BandPIT / ACWMI / \(O_t\)) | `make paper-smoke` |
+| Rebuild PIT panel from SQLite history | `make paper-pit` |
+| PIT → JF experiments → PDF | `make paper-lab` |
+| Bootstrap archive then lab | `make paper-lab WITH_BOOTSTRAP=1` |
+| Paper-related unit tests | `make test-paper` |
+
+Key modules: `logic_layer/time_slice/band_pit.py`, `data_layer/data_quality/availability.py`,
+`WORLD_MODEL_INDEX_MODE` / `WMI_ABSTAIN_THRESHOLD` / `ACWMI_ABSTAIN_THRESHOLD` in `config/settings.py`.
+Do **not** commit temporary OKX-only exchange config changes used during bootstrap.
 
 ### Architecture & data flow
 
@@ -104,4 +120,4 @@ CI is red on `main` and feature branches; these are code/test issues, not setup 
 | Lint | `ruff check .` reports hundreds of errors | Pre-existing unused imports (`F401`), `E402`, etc. |
 | Typecheck | `mypy` reports many errors | Pre-existing type issues across `api/` etc. |
 | Tests | ~3 of ~330 tests fail | Test/code drift (e.g. expected table `funding_rate_snapshots` vs actual `funding_model_snapshots`) |
-| Pipeline | `/technical/indicators/*` returns "No indicator data" | Bug in `logic_layer/technical_indicators/repository.py` — `save_merged_klines` calls `.strftime()` on a pandas `Series` instead of `.dt.strftime()` |
+| Pipeline | `/technical/indicators/*` may still be empty if collectors never ran | Historical bug in `save_merged_klines` (Series `.strftime`) is fixed; empty responses now usually mean no merged klines yet |

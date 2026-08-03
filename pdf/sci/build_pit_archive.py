@@ -27,6 +27,7 @@ sys.path.insert(0, str(ROOT))
 
 from logic_layer.ai_market_context.service import AIMarketContextService
 from logic_layer.asset_readiness.service import AssetReadinessService
+from logic_layer.time_slice.band_pit import BAND_FRESH_SECONDS, BandPITService
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 DATA.mkdir(parents=True, exist_ok=True)
@@ -45,17 +46,8 @@ ASSET_TO_SYMBOL = {
     "NEAR": "NEAR/USDT",
 }
 
-# age thresholds (days) for freshness at daily frequency
-FRESH_DAYS = {
-    "exchange": 2,
-    "macro": 5,
-    "news": 3,
-    "onchain": 3,
-    "options": 3,
-    "tokenomics": 7,
-    "alternative": 7,
-    "event_calendar": 14,
-}
+# age thresholds (days) — keep aligned with production BandPITService seconds
+FRESH_DAYS = {k: max(1, int(v / 86400)) for k, v in BAND_FRESH_SECONDS.items()}
 
 REGIME_GAMMA = {
     "trend": (1.0, 1.0, 1.0, 1.3, 0.8),
@@ -92,9 +84,27 @@ def latest_ts(conn, sql: str, params: tuple) -> pd.Timestamp | None:
     return pd.to_datetime(row[0], utc=False, errors="coerce")
 
 
-def band_observation_time(conns, band: str, symbol: str, asof: pd.Timestamp) -> pd.Timestamp | None:
-    """Return latest observation time <= asof for a band."""
-    asof_s = asof.strftime("%Y-%m-%d %H:%M:%S")
+def band_observation_time(
+    conns,
+    band: str,
+    symbol: str,
+    asof: pd.Timestamp,
+    pit: BandPITService | None = None,
+) -> pd.Timestamp | None:
+    """Return latest observation time <= asof for a band.
+
+    Prefers production ``BandPITService`` so paper panels and live time-slice
+    share one reconstruction path.
+    """
+    asof_s = asof.strftime("%Y-%m-%dT%H:%M:%S")
+    if pit is not None:
+        raw = pit.latest_band_time(band, asof_s, symbol=symbol)
+        if raw:
+            ts = pd.to_datetime(raw, utc=False, errors="coerce")
+            if ts is not None and not pd.isna(ts):
+                return ts
+
+    # Fallback SQL (kept for offline/tests without full router wiring)
     ex, mk, an = conns["exchange"], conns["market"], conns["analytics"]
 
     if band == "exchange":
@@ -198,12 +208,15 @@ def build_panel() -> pd.DataFrame:
     returns = returns.dropna(subset=["ret"])
     returns = returns[returns["asset"].isin(PAPER_ASSETS)].copy()
     conns = connect_dbs()
+    pit = BandPITService()
 
     # date range: intersection of returns and any exchange history
     dates = sorted(returns["date"].unique())
     # trim to period with some exchange coverage if available
     sample_symbol = "BTC/USDT"
-    first_ex = band_observation_time(conns, "exchange", sample_symbol, pd.Timestamp(dates[-1]))
+    first_ex = band_observation_time(
+        conns, "exchange", sample_symbol, pd.Timestamp(dates[-1]), pit=pit
+    )
     # find earliest exchange bar
     an = conns["analytics"]
     ex = conns["exchange"]
@@ -241,14 +254,14 @@ def build_panel() -> pd.DataFrame:
         for b in bands:
             if b == "exchange":
                 continue
-            ts = band_observation_time(conns, b, sample_symbol, asof)
+            ts = band_observation_time(conns, b, sample_symbol, asof, pit=pit)
             age = (asof - ts).total_seconds() / 86400.0 if ts is not None and not pd.isna(ts) else None
             st = status_from_age(age, FRESH_DAYS.get(b, 3))
             market_status[b] = st
             market_age[b] = age
 
         # BTC exchange status anchors market-level exchange availability shock
-        ts_btc = band_observation_time(conns, "exchange", "BTC/USDT", asof)
+        ts_btc = band_observation_time(conns, "exchange", "BTC/USDT", asof, pit=pit)
         age_btc = (asof - ts_btc).total_seconds() / 86400.0 if ts_btc is not None and not pd.isna(ts_btc) else None
         st_btc = status_from_age(age_btc, FRESH_DAYS["exchange"])
         market_status["exchange"] = st_btc
@@ -269,7 +282,7 @@ def build_panel() -> pd.DataFrame:
             if not symbol:
                 continue
             # exchange status asset-specific
-            ts_ex = band_observation_time(conns, "exchange", symbol, asof)
+            ts_ex = band_observation_time(conns, "exchange", symbol, asof, pit=pit)
             age_ex = (asof - ts_ex).total_seconds() / 86400.0 if ts_ex is not None and not pd.isna(ts_ex) else None
             st_ex = status_from_age(age_ex, FRESH_DAYS["exchange"])
             statuses = dict(market_status)
@@ -295,18 +308,23 @@ def build_panel() -> pd.DataFrame:
             flag = "ok" if B_hier >= 0.55 and cont < 0.15 else ("thin" if B_hier >= 0.35 else "blocked")
             fresh = ready_n
             acceptable = limited_n
-            wmi = AIMarketContextService._compute_world_model_index(
+            # S/C placeholders for world-only panel; engines refine on returns later.
+            # Use production ACWMI path so index_mode / thresholds stay paper-aligned.
+            S = 0.5
+            C = 0.5
+            wmi_payload = AIMarketContextService._compute_world_model_index(
                 coverage_score=float(B_hier),
                 pipeline_latency_context={"summary": {"total_domains": total, "fresh": fresh, "acceptable": acceptable}},
                 data_quality_flag=flag,
                 data_quality_flags=[],
-            )["wmi"]
-
-            # placeholder mechanism factors; filled later by experiment runner engines on returns
-            S = 0.5
-            C = 0.5
+                signal_integrity=S,
+                cross_evidence=C,
+                gamma=REGIME_GAMMA["range"],
+                index_mode="acwmi",
+            )
+            wmi = wmi_payload["wmi"]
             gamma = REGIME_GAMMA["range"]
-            ac = acwmi(B_hier, U, H, S, C, gamma)
+            ac = float(wmi_payload.get("acwmi") or acwmi(B_hier, U, H, S, C, gamma))
 
             # Asset-level availability shock: exchange not ready, or market band transition.
             asset_shock = int(st_ex in {"missing", "limited"} or market_outage == 1)
