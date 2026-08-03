@@ -2,12 +2,17 @@
 
 **Theory first, project second.**
 
-- Theory (displayed equations): `main_acwmi_sci.tex` §Theory — restored from `pdf/original/`
-- Chinese theory package: `pdf/cn/main_cn_theory.md`
+## Complete JF/RFS working paper (canonical)
+
+| Artifact | Path |
+| --- | --- |
+| English TeX (full) | `pdf/sci/main_jf_rfs.tex` |
+| English PDF | `pdf/sci/main_jf_rfs.pdf` (`make paper-full`) |
+| Chinese full draft | `pdf/cn/main_cn_jf.md` / `.pdf` |
+| Original theory source | `pdf/original/main_cn_pm.txt` |
+
 - Proof system: EvoQuant (multi-band collectors, readiness, WMI/ACWMI, time-slice PIT)
-- Source epistemology: `pdf/original/main_cn_pm.txt`
 - EvoQuant is **not** the source of the theory — it is the empirical instrument
-- **Length note:** a ~5-page empirics sketch is **not** a JF/RFS submission; keep expanding theory + identification
 
 ## Project APIs that serve the paper
 
