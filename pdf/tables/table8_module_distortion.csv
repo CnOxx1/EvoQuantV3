@@ -1,0 +1,9 @@
+module_band,distortion_corrected,ai_meaning
+exchange_data,Price without execution friction,Distinguish print vs tradable state
+macro_data,Crypto-only narrative reading,External liquidity / risk regime
+news+events,Ex-post price without catalysts,Shock ordering and event windows
+onchain_data,Venue price without capital migration,"Flows, TVL, reserve pressure"
+tokenomics_data,Demand-side reading only,Unlock / supply shocks
+options_data,Spot path without convexity,"IV walls, gamma, expiry constraints"
+alternative_data,Ignoring slow attention variables,Narrative heat / infra activity
+aggregation layer,Ungated dispersed observations,AI-ready world object

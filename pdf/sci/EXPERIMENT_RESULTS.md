@@ -1,6 +1,6 @@
 # Experiment outputs (project-grounded)
 
-- Python files: **784**, LOC ≈ **133886**
+- Python files: **784**, LOC ≈ **134039**
 - Data domains: **43**, logic modules: **39**, audit bands: **13**
 - Panel: **180** days × **10** assets
 
@@ -30,3 +30,12 @@
 | range    |        1 |  20 | 0.166  |  0.3334 |      0.2038 |                0 |       1      |           0 |            0 |
 | trend    |        0 | 350 | 0.7104 |  0.4294 |      0.3738 |                0 |       0.2286 |           0 |            0 |
 | trend    |        1 |  20 | 0.166  |  0.3555 |      0.2338 |                0 |       1      |           0 |            0 |
+
+## Explanation-quality suite (EAR/UCR/EV/ECP)
+
+| policy            |    N |   EAR |   UCR |    EV |   ECP_rate |
+|:------------------|-----:|------:|------:|------:|-----------:|
+| baseline / all    | 1800 | 0.677 | 0.323 | 0.032 |      0.101 |
+| baseline / crisis | 1000 | 0.962 | 0.038 | 0.027 |      0.181 |
+| AC-gated / all    | 1800 | 0.742 | 0.258 | 0.032 |      0.001 |
+| AC-gated / crisis | 1000 | 1     | 0     | 0.027 |      0.002 |

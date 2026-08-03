@@ -408,6 +408,24 @@ def simulate_panel() -> pd.DataFrame:
             risky_action = (not abstain_ac) and (true_crisis or outage)
             unsafe_wmi = (not abstain_wmi) and (true_crisis or outage)
 
+            # Explicit confidence proxy from mechanism engines (for ECP).
+            conf = float(
+                np.clip(
+                    0.45 * eng["detect_conf"]
+                    + 0.35 * eng["cascade_p"]
+                    + 0.20 * min(eng["systemic"] / 100.0, 1.0),
+                    0.0,
+                    1.0,
+                )
+            )
+            # Evidence-bound judgment proxy: gated, consistent, non-degraded worlds.
+            evidence_bound = int(
+                (not outage)
+                and eng["C"] >= 0.45
+                and deg in {"NORMAL", "REDUCED"}
+                and B_hier >= 0.40
+            )
+
             rows.append(
                 {
                     "day": t,
@@ -428,6 +446,9 @@ def simulate_panel() -> pd.DataFrame:
                     "vpin": eng["vpin"],
                     "vol_pct": eng["vol_pct"],
                     "half_life": eng["half_life"],
+                    "detect_conf": eng["detect_conf"],
+                    "conf": conf,
+                    "evidence_bound": evidence_bound,
                     "true_crisis": true_crisis,
                     "true_cascade": true_cascade,
                     "detect_crisis": detect_crisis,
@@ -440,6 +461,69 @@ def simulate_panel() -> pd.DataFrame:
                 }
             )
     return pd.DataFrame(rows)
+
+
+def explanation_quality_table(df: pd.DataFrame) -> pd.DataFrame:
+    """EAR / UCR / EV / ECP proxies from World-Model-First evaluation suite."""
+    d = df.sort_values(["asset", "day"]).copy()
+    regime_code = d["detected_regime"].map({"trend": 0, "range": 1, "crisis": 2}).fillna(1).astype(float)
+    d["phi"] = regime_code + 0.5 * (d["cascade_p"] >= 0.55).astype(float) + 0.25 * (d["systemic"] >= 55).astype(float)
+    d["W_state"] = d["ACWMI"]
+    d["d_phi"] = d.groupby("asset")["phi"].diff().abs().fillna(0.0)
+    d["d_W"] = d.groupby("asset")["W_state"].diff().abs().fillna(0.0)
+    d["EV"] = d["d_phi"] / (1.0 + d["d_W"])
+
+    # Actionable judgments only (non-abstain) for EAR/UCR; abstain counts as attributed refusal.
+    def _slice_metrics(sub: pd.DataFrame, policy: str) -> dict:
+        if policy == "baseline":
+            act = sub["abstain_wmi"] == 0
+            ecp = ((sub["conf"] > 0.65) & (sub["WMI"] < 0.35)).astype(float)
+            # baseline "bound" only when evidence_bound even if acting
+            ear_num = ((act & (sub["evidence_bound"] == 1)) | (sub["abstain_wmi"] == 1)).sum()
+        else:
+            act = sub["abstain_ac"] == 0
+            ecp = ((sub["conf"] > 0.65) & (sub["ACWMI"] < 0.35)).astype(float)
+            ear_num = ((act & (sub["evidence_bound"] == 1)) | (sub["abstain_ac"] == 1)).sum()
+        n = max(len(sub), 1)
+        ear = ear_num / n
+        return {
+            "policy": policy,
+            "N": int(len(sub)),
+            "EAR": round(float(ear), 3),
+            "UCR": round(float(1.0 - ear), 3),
+            "EV": round(float(sub["EV"].mean()), 3),
+            "ECP_rate": round(float(ecp.mean()), 3),
+        }
+
+    rows = []
+    for label, key, sub in [
+        ("baseline / all", "baseline", d),
+        ("baseline / crisis", "baseline", d[d["true_regime"] == "crisis"]),
+        ("AC-gated / all", "ac", d),
+        ("AC-gated / crisis", "ac", d[d["true_regime"] == "crisis"]),
+    ]:
+        row = _slice_metrics(sub, key)
+        row["policy"] = label
+        rows.append(row)
+    out = pd.DataFrame(rows)[["policy", "N", "EAR", "UCR", "EV", "ECP_rate"]]
+    out.to_csv(TAB_DIR / "table7_explanation_quality.csv", index=False)
+    return out
+
+
+def distortion_correction_table() -> pd.DataFrame:
+    rows = [
+        ("exchange_data", "Price without execution friction", "Distinguish print vs tradable state"),
+        ("macro_data", "Crypto-only narrative reading", "External liquidity / risk regime"),
+        ("news+events", "Ex-post price without catalysts", "Shock ordering and event windows"),
+        ("onchain_data", "Venue price without capital migration", "Flows, TVL, reserve pressure"),
+        ("tokenomics_data", "Demand-side reading only", "Unlock / supply shocks"),
+        ("options_data", "Spot path without convexity", "IV walls, gamma, expiry constraints"),
+        ("alternative_data", "Ignoring slow attention variables", "Narrative heat / infra activity"),
+        ("aggregation layer", "Ungated dispersed observations", "AI-ready world object"),
+    ]
+    out = pd.DataFrame(rows, columns=["module_band", "distortion_corrected", "ai_meaning"])
+    out.to_csv(TAB_DIR / "table8_module_distortion.csv", index=False)
+    return out
 
 
 def degradation_table() -> pd.DataFrame:
@@ -802,7 +886,7 @@ def fig8_honesty(df: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-def write_summary(inv, regime_df, det_df, out_df):
+def write_summary(inv, regime_df, det_df, out_df, expl_df):
     lines = [
         "# Experiment outputs (project-grounded)",
         "",
@@ -821,6 +905,10 @@ def write_summary(inv, regime_df, det_df, out_df):
         "## Outage contrasts",
         "",
         out_df.to_markdown(index=False),
+        "",
+        "## Explanation-quality suite (EAR/UCR/EV/ECP)",
+        "",
+        expl_df.to_markdown(index=False),
     ]
     (OUT_DIR / "EXPERIMENT_RESULTS.md").write_text("\n".join(lines), encoding="utf-8")
     payload = {
@@ -828,6 +916,7 @@ def write_summary(inv, regime_df, det_df, out_df):
         "regime_summary": regime_df.to_dict(orient="records"),
         "detection": det_df.to_dict(orient="records"),
         "outage": out_df.to_dict(orient="records"),
+        "explanation_quality": expl_df.to_dict(orient="records"),
     }
     (OUT_DIR / "experiment_summary.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
@@ -836,6 +925,7 @@ def main() -> None:
     print("Inventory...")
     inv = project_inventory()
     theory_map_table(inv)
+    distortion_correction_table()
     print("Degradation matrix...")
     degradation_table()
     print("Panel with real calculators...")
@@ -844,6 +934,7 @@ def main() -> None:
     regime_df = abstention_table(df)
     det_df = classification_metrics(df)
     out_df = outage_table(df)
+    expl_df = explanation_quality_table(df)
     print("Figures...")
     fig1_architecture(inv)
     fig2_inventory(inv)
@@ -853,9 +944,10 @@ def main() -> None:
     fig6_event_study(df)
     fig7_pareto(df)
     fig8_honesty(df)
-    write_summary(inv, regime_df, det_df, out_df)
+    write_summary(inv, regime_df, det_df, out_df, expl_df)
     print(regime_df)
     print(det_df)
+    print(expl_df)
     print("Done.")
 
 

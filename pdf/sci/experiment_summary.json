@@ -4,7 +4,7 @@
     "n_logic_modules": 39,
     "n_audit_bands": 13,
     "n_py_files": 784,
-    "n_loc": 133886,
+    "n_loc": 134039,
     "n_test_files": 56
   },
   "regime_summary": [
@@ -146,6 +146,40 @@
       "abstain_ac": 1.0,
       "unsafe_ac": 0.0,
       "unsafe_wmi": 0.0
+    }
+  ],
+  "explanation_quality": [
+    {
+      "policy": "baseline / all",
+      "N": 1800,
+      "EAR": 0.677,
+      "UCR": 0.323,
+      "EV": 0.032,
+      "ECP_rate": 0.101
+    },
+    {
+      "policy": "baseline / crisis",
+      "N": 1000,
+      "EAR": 0.962,
+      "UCR": 0.038,
+      "EV": 0.027,
+      "ECP_rate": 0.181
+    },
+    {
+      "policy": "AC-gated / all",
+      "N": 1800,
+      "EAR": 0.742,
+      "UCR": 0.258,
+      "EV": 0.032,
+      "ECP_rate": 0.001
+    },
+    {
+      "policy": "AC-gated / crisis",
+      "N": 1000,
+      "EAR": 1.0,
+      "UCR": 0.0,
+      "EV": 0.027,
+      "ECP_rate": 0.002
     }
   ]
 }
