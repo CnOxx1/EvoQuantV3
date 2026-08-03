@@ -1,0 +1,181 @@
+{
+  "n_data_domains": 43,
+  "data_domains": [
+    "alternative_data",
+    "bridge_flow_data",
+    "cefi_lending_rate",
+    "cex_orderbook_depth",
+    "cross_chain_messaging",
+    "data_quality",
+    "defi_liquidation_data",
+    "defi_protocol_data",
+    "derivatives_sentiment_data",
+    "dex_liquidity_data",
+    "dex_trade_flow",
+    "etf_flow_data",
+    "event_calendar_data",
+    "exchange_announcement",
+    "exchange_data",
+    "exchange_reserve_data",
+    "funding_round_data",
+    "gas_network_data",
+    "governance_data",
+    "lending_utilization",
+    "liquid_staking_data",
+    "macro_data",
+    "mempool_data",
+    "mev_data",
+    "miner_data",
+    "news_data",
+    "nft_market_data",
+    "onchain_address_data",
+    "onchain_data",
+    "onchain_holder_data",
+    "options_data",
+    "orderflow_data",
+    "perpetual_basis_curve",
+    "perpetual_dex_data",
+    "prediction_market_data",
+    "regulatory_data",
+    "search_trend_data",
+    "social_sentiment_data",
+    "stablecoin_flow_data",
+    "token_unlock_realtime",
+    "tokenomics_data",
+    "whale_tracker_data",
+    "whale_wallet_pnl"
+  ],
+  "n_logic_modules": 39,
+  "logic_modules": [
+    "ai_market_context",
+    "alpha_decay",
+    "anomaly_detection",
+    "asset_readiness",
+    "contagion_risk",
+    "cross_asset_analysis",
+    "cross_venue_arbitrage",
+    "defi_stress",
+    "depth_regime",
+    "event_probability",
+    "exchange_comparison",
+    "feature_standardization",
+    "flow_decomposition",
+    "funding_rate_model",
+    "holder_behavior_analysis",
+    "liquidation_cascade",
+    "liquidity_analysis",
+    "liquidity_regime",
+    "logic_pipeline",
+    "macro_context",
+    "market_breadth",
+    "market_sentiment_composite",
+    "market_structure",
+    "miner_pressure",
+    "narrative_regime",
+    "news_sentiment",
+    "onchain_lead_lag",
+    "pipeline_latency",
+    "portfolio_risk",
+    "regime_detection",
+    "retail_fomo_index",
+    "sentiment_signal",
+    "smart_money_conviction",
+    "stablecoin_pulse",
+    "technical_indicators",
+    "temporal_pattern",
+    "time_slice",
+    "unlock_impact",
+    "volatility_forecast"
+  ],
+  "n_audit_bands": 13,
+  "audit_bands": [
+    {
+      "band_name": "exchange",
+      "module_name": "exchange_data",
+      "required": true,
+      "description": "交易所微观结构、价格、盘口、资金费率与 basis 快照。"
+    },
+    {
+      "band_name": "macro",
+      "module_name": "macro_data",
+      "required": true,
+      "description": "跨市场宏观利率、美元、风险偏好与商品背景。"
+    },
+    {
+      "band_name": "news",
+      "module_name": "news_data",
+      "required": true,
+      "description": "公开新闻、监管、治理与项目公告文本流。"
+    },
+    {
+      "band_name": "event_calendar",
+      "module_name": "event_calendar_data",
+      "required": true,
+      "description": "未来宏观、ETF、解锁与升级催化剂日历。"
+    },
+    {
+      "band_name": "onchain",
+      "module_name": "onchain_data",
+      "required": true,
+      "description": "链上资金流、储备、桥流、TVL、网络活跃度。"
+    },
+    {
+      "band_name": "tokenomics",
+      "module_name": "tokenomics_data",
+      "required": true,
+      "description": "供给变化、解锁压力、基金会钱包流与质押率。"
+    },
+    {
+      "band_name": "options",
+      "module_name": "options_data",
+      "required": true,
+      "description": "隐含波动率、gamma、墙位、期权持仓与流向。"
+    },
+    {
+      "band_name": "alternative",
+      "module_name": "alternative_data",
+      "required": false,
+      "description": "稳定币供给、搜索热度、GitHub 活跃度等补充特征。"
+    },
+    {
+      "band_name": "perpetual_dex",
+      "module_name": "perpetual_dex_data",
+      "required": false,
+      "description": "dYdX/Hyperliquid/GMX 永续 DEX funding 和成交量。"
+    },
+    {
+      "band_name": "onchain_address",
+      "module_name": "onchain_address_data",
+      "required": false,
+      "description": "Arkham/Etherscan 巨鲸地址画像和资金流。"
+    },
+    {
+      "band_name": "dex_liquidity",
+      "module_name": "dex_liquidity_data",
+      "required": false,
+      "description": "Uniswap V3/Curve 池 TVL 和 tick 流动性分布。"
+    },
+    {
+      "band_name": "gas_network",
+      "module_name": "gas_network_data",
+      "required": false,
+      "description": "以太坊 Gas 价格、网络拥堵和 Gas 尖刺。"
+    },
+    {
+      "band_name": "governance",
+      "module_name": "governance_data",
+      "required": false,
+      "description": "Snapshot/Tally DAO 治理提案和投票。"
+    }
+  ],
+  "asset_band_weights": {
+    "exchange": 0.3,
+    "news": 0.15,
+    "event_calendar": 0.1,
+    "onchain": 0.15,
+    "tokenomics": 0.1,
+    "options": 0.1,
+    "alternative": 0.05,
+    "macro": 0.05
+  }
+}

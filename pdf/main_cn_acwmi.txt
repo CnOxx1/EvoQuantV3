@@ -291,22 +291,18 @@ W_t^{\mathrm{AI},(r,m)}
 
 ### 4.5 自适应条件世界模型指数（ACWMI）
 
-定义 4.5（ACWMI）.  
+定义 4.5（ACWMI）. 为避免五因子原始乘积过度坍塌，同时保留对数可分解性，定义加权几何平均形式：
 
 \mathrm{ACWMI}_t^{(r,m)}
 =
-\big(B_t^{\mathrm{hier}}\big)^{\gamma_B(r)}
-\cdot
-\big(U_t\big)^{\gamma_U(r)}
-\cdot
-\big(H_t^{\mathrm{cont}}\big)^{\gamma_H(r)}
-\cdot
-\big(S_t\big)^{\gamma_S(r)}
-\cdot
-\big(C_t\big)^{\gamma_C(r)},
+\exp\!\left(
+\frac{\sum_{x\in\{B,U,H,S,C\}}\gamma_x(r)\log x_t}{\sum_x\gamma_x(r)}
+\right),
 
 
-其中指数向量 \gamma(r)=(\gamma_B,\gamma_U,\gamma_H,\gamma_S,\gamma_C)(r) 满足 \gamma_\bullet(r)>0，并在危机体制提高 \gamma_H,\gamma_C，在趋势体制提高 \gamma_S。
+其中 B\equiv B_t^{\mathrm{hier}}，H\equiv H_t^{\mathrm{cont}}，指数向量 \gamma(r) 满足 \gamma_\bullet(r)>0，并在危机体制提高 \gamma_H,\gamma_C，在趋势体制提高 \gamma_S。
+
+> 图表与 SCI 英文稿：完整图 1–8 与表 1–5 见 pdf/figures/、pdf/tables/ 及 pdf/sci/main_acwmi_sci.pdf。基于项目真实 WMI 实现的蒙特卡洛面板（N=2160）显示，因子分解模型对分析质量的解释力（R^2=0.484）显著高于标量 WMI（R^2=0.115）。
 
 与第一代 \mathrm{WMI} 相比，ACWMI 有三点本质扩展：
 

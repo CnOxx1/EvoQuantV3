@@ -1,0 +1,408 @@
+%% SCI-ready manuscript (Elsevier elsarticle style)
+%% Target outlets: Expert Systems with Applications / Information Sciences /
+%% Finance Research Letters / Knowledge-Based Systems
+\documentclass[review,12pt]{elsarticle}
+
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{lineno}
+\usepackage{natbib}
+\graphicspath{{../figures/}}
+
+\journal{Expert Systems with Applications}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+
+\begin{document}
+\begin{frontmatter}
+
+\title{Beyond Breadth--Stability--Honesty: Regime-Conditional Adaptive World Models for AI-Based Cryptocurrency Market Analysis}
+
+\author[mymainaddress]{Guocong Li}
+\ead{lmu151638@gmail.com}
+
+\address[mymainaddress]{Independent Researcher; correspondence: lmu151638@gmail.com}
+
+\begin{abstract}
+Many AI-based market systems fail less because the predictor is weak than because the market world presented to the model is thin, stale, or dishonest. Prior work formalized this observation as a data world-model infrastructure and defined a World Model Index $\mathrm{WMI}_t=B_t\times U_t\times H_t$ along breadth, stability, and honesty. While useful, the product form is non-decomposable, honesty is often discrete, compilation is task-agnostic, and evidence remains flat. This paper develops a second-generation \emph{Regime-Conditional Adaptive World Model} (RCA-WM). We replace flat breadth with a hierarchy from 43 data domains through 13 audit bands and asset readiness; redefine honesty via exclusion and contamination rates; introduce signal integrity and cross-evidence consistency; and define a regime--task conditional compilation operator together with a weighted-geometric Adaptive Conditional World Model Index (ACWMI). Using the open EvoQuant implementation and a controlled Monte Carlo panel ($N=2160$ asset-day observations), factor-decomposed models explain analysis quality far better than scalar WMI ($R^2=0.484$ vs.\ $0.115$), and ACWMI induces substantially more state-dependent abstention in crisis regimes. The contribution is to elevate market world modeling from a static product score to a conditional, auditable, and operationally degradable scientific object.
+\end{abstract}
+
+\begin{keyword}
+AI market world model \sep cryptocurrency \sep data-centric AI \sep quality governance \sep point-in-time correctness \sep abstention
+\end{keyword}
+
+\begin{highlights}
+\item Diagnoses five structural limits of the first-generation $\mathrm{WMI}=B\times U\times H$ index.
+\item Proposes hierarchical breadth, continuous honesty, signal integrity, and consistency factors.
+\item Defines regime--task conditional compilation and a weighted-geometric ACWMI.
+\item Maps the theory onto a production-scale system with 43 domains and mechanism engines.
+\item Shows in controlled experiments that factor models dominate scalar WMI for analysis quality.
+\end{highlights}
+
+\end{frontmatter}
+
+\linenumbers
+
+\section{Introduction}
+\label{sec:intro}
+
+In public narratives, failures of AI trading systems are often attributed to model capacity, hyper-parameter tuning, or prompt design. In live markets, however, the binding constraint is frequently epistemic: the agent does not see a sufficiently broad, stable, and honest representation of the market. Cryptocurrency markets amplify this problem because the same price path can correspond to very different states once exchange fragmentation, leverage crowding, funding distortions, options walls, unlock schedules, and macro liquidity are taken into account \citep{makarov2020,liu2022}.
+
+Prior research on the EvoQuant project formalized this claim as a \emph{world-model-first} agenda \citep{li2026wmi}. Latent market states are mapped to AI-visible objects through a world-model generator, and world-model quality is summarized by
+\begin{equation}
+\mathrm{WMI}_t = B_t \times U_t \times H_t,
+\label{eq:wmi}
+\end{equation}
+where $B_t$, $U_t$, and $H_t$ denote breadth, stability, and honesty. Engineering counterparts include \texttt{latest\_*} snapshots, quality gating, separation of main and diagnostic views, and multi-band bundles.
+
+Equation~\eqref{eq:wmi} is a valuable first object, but it is no longer sufficient for contemporary systems that already expose asset-level readiness matrices, mechanism-layer engines (regime, cascade, lead--lag, narrative, alpha decay), point-in-time reconstruction, and multi-level degradation. This paper therefore asks a sharper question:
+
+\begin{quote}
+How should a market world model be compiled for AI under regime, task, and resource constraints, rather than merely made thicker?
+\end{quote}
+
+\subsection{Contributions}
+\begin{enumerate}
+\item \textbf{Diagnostic.} We identify five formal limitations of product-form WMI: collapse under zeros, non-identifiability, discrete honesty, static weights, and missing PIT/degradation objects.
+\item \textbf{Theoretical.} We propose RCA-WM with hierarchical breadth, continuous honesty, signal integrity $S_t$, consistency $C_t$, and regime--task compilation $\Pi_t^{(r,m)}$.
+\item \textbf{Metric.} We replace Eq.~\eqref{eq:wmi} by a weighted geometric ACWMI that remains decomposable and regime-sensitive.
+\item \textbf{Systems mapping.} We map every theoretical object to concrete modules in EvoQuant (43 domains, 13 audit bands, pipeline latency, degradation manager, etc.).
+\item \textbf{Empirical protocol.} We provide Monte Carlo / event-study experiments grounded in the project's real WMI implementation, showing large gains from factor decomposition.
+\end{enumerate}
+
+\section{Related work}
+\label{sec:lit}
+
+Asset pricing theory treats expected returns and discount rates as conditional on an information set \citep{fama1993,cochrane2005}. Machine-learning asset pricing expands that set with high-dimensional characteristics \citep{gu2020,kelly2019,nagel2021}, while multiple-testing critiques warn that naive feature expansion creates false discoveries \citep{harvey2016}. Measurement-error and robustness literatures emphasize that decisions should account for noisy or misspecified information worlds \citep{fuller1987,carroll2006,hansen2008}. Data-centric AI likewise argues that improving data and labels can dominate model changes.
+
+Our position differs from feature-expansion papers: the object of study is not ``more predictors,'' but the \emph{governance and compilation} of an asynchronous multi-source market world. Relative to \citet{li2026wmi}, we optimize the world-model index itself and absorb mechanism engines, PIT correctness, and degraded-mode honesty into the formal framework.
+
+\section{Limitations of first-generation WMI}
+\label{sec:limits}
+
+\paragraph{Product collapse.}
+Because $\partial \mathrm{WMI}/\partial B = UH$, improvements in breadth become invisible when stability or honesty is near zero. This is useful as an alarm but harmful for identification: stale worlds and honestly gated worlds receive similar low scores.
+
+\paragraph{Discrete honesty.}
+In the production code, honesty is often collapsed to \{\texttt{ok},\texttt{thin},\texttt{blocked}\}, discarding continuous information in exclusion lists and contamination counts.
+
+\paragraph{Task- and regime-agnostic compilation.}
+The first-generation operator $\Pi_t=B_t\circ M_t\circ A_t$ uses the same evidence weights in tranquil and crisis regimes. Yet liquidation cascades and contagion metrics are far more informative in crises than narrative heat.
+
+\paragraph{Flat evidence assumption.}
+Current systems expose about 43 data domains and 13 audit bands, while asset readiness still compresses into a small weighted band set. Flat eight-band breadth understates hierarchical structure.
+
+\paragraph{Missing PIT and degradation objects.}
+Point-in-time slices and NORMAL$\to$EMERGENCY degradation already exist operationally, but first-generation theory does not score historical leakage or resilient honesty under resource loss.
+
+\section{Regime-Conditional Adaptive World Models}
+\label{sec:theory}
+
+\subsection{Hierarchical evidence composition}
+Let $D_{d,t}$ denote data domain $d=1,\dots,D$ (here $D=43$), $E_{k,t}$ audit band $k=1,\dots,K$ ($K=13$), and $A_{i,t}$ asset-level readiness. Market world objects are
+\begin{equation}
+W_t=\Gamma\big(\{A_{i,t}\},\{E_{k,t}\},M_t^{\mathrm{mech}}\big),
+\end{equation}
+where $M_t^{\mathrm{mech}}$ collects mechanism-engine outputs.
+
+\begin{definition}[Hierarchical breadth]
+\begin{equation}
+B_t^{\mathrm{hier}}=\alpha_1 B_t^{\mathrm{domain}}+\alpha_2 B_t^{\mathrm{band}}+\alpha_3 B_t^{\mathrm{asset}},
+\quad \alpha_1+\alpha_2+\alpha_3=1.
+\label{eq:bhier}
+\end{equation}
+\end{definition}
+
+\subsection{Continuous honesty}
+Let $\rho_t^{\mathrm{ex}}$ be the exclusion rate of non-AI-ready sources and $\rho_t^{\mathrm{cont}}$ the contamination rate of the main view.
+\begin{definition}[Continuous honesty]
+\begin{equation}
+H_t^{\mathrm{cont}}=\exp(-\beta_1\rho_t^{\mathrm{cont}})\cdot\big(1-\beta_2(1-\rho_t^{\mathrm{ex}})\big)_+.
+\label{eq:hcont}
+\end{equation}
+\end{definition}
+This rewards systems that strip bad evidence rather than pretending completeness.
+
+\subsection{Signal integrity and consistency}
+\begin{definition}[Signal integrity]
+\begin{equation}
+S_t=\frac{1}{|\mathcal{S}|}\sum_{s\in\mathcal{S}} g(h_{s,t})\,(1-c_{s,t})\,\tilde u_{s,t},
+\end{equation}
+where $h_{s,t}$, $c_{s,t}$, and $\tilde u_{s,t}$ are half-life, crowding, and normalized surprise.
+\end{definition}
+
+\begin{definition}[Cross-evidence consistency]
+\begin{equation}
+C_t=\frac{2}{K(K-1)}\sum_{k<k'}\max\{\kappa_{kk',t},0\}\,\mathbf{1}\{a_{k,t}=a_{k',t}=1\}.
+\end{equation}
+\end{definition}
+
+\subsection{Conditional compilation}
+For regime $r$ and task $m$,
+\begin{equation}
+\Pi_t^{(r,m)}=B_t^{(r,m)}\circ M_t^{(r,m)}\circ A_t\circ \Psi_t^{\mathrm{mech}},
+\label{eq:pi}
+\end{equation}
+with evidence weights proportional to estimated marginal information gains.
+
+\subsection{Adaptive Conditional World Model Index}
+To avoid harsh collapse while preserving multiplicativity in logs, we define ACWMI as a weighted geometric mean:
+\begin{equation}
+\mathrm{ACWMI}_t^{(r,m)}
+=
+\exp\!\left(
+\frac{\sum_{x\in\{B,U,H,S,C\}}\gamma_x(r)\log x_t}{\sum_x \gamma_x(r)}
+\right),
+\label{eq:acwmi}
+\end{equation}
+where $\gamma(r)$ raises honesty/consistency weights in crises and signal-integrity weights in trends.
+
+\begin{proposition}[Honesty incentive compatibility]
+If gating raises $\rho^{\mathrm{ex}}$ and lowers $\rho^{\mathrm{cont}}$, then $H^{\mathrm{cont}}$ increases; ACWMI need not fall even if $B^{\mathrm{hier}}$ declines. Product-form WMI with discrete honesty can punish the same honest gating.
+\end{proposition}
+
+\subsection{Point-in-time path and resilient honesty}
+Define the PIT world $W_{\tau|t}^{\mathrm{PIT}}$ using only information and rules available at $\tau$, and leakage
+\begin{equation}
+\mathrm{Leak}_{\tau|t}
+=
+\frac{\#\{\text{future/post-edited objects used}\}}{\#\{\text{main-view objects}\}}.
+\end{equation}
+Under degradation level $\ell_t$, resilient honesty penalizes high confidence when the world is intentionally thinned.
+
+\subsection{State-dependent abstention}
+\begin{equation}
+c_{\mathrm{abs},t}
+=
+c_0\big(1+\eta_1(1-\mathrm{ACWMI}_t)+\eta_2(1-C_t)+\eta_3\mathbf{1}\{\ell_t\neq\mathrm{NORMAL}\}\big).
+\label{eq:abstain}
+\end{equation}
+
+\section{Systems mapping to EvoQuant}
+\label{sec:system}
+
+Figure~\ref{fig:arch} summarizes the compilation chain. Table~\ref{tab:map} maps theory to implementation. Empirically, the repository currently exposes 43 data-layer domains, 39 logic modules, and 13 audit bands; asset readiness uses weighted bands (exchange 0.30, news/on-chain 0.15, etc.). Production WMI is already computed in \texttt{ai\_market\_context} as $B\times U\times H$, with $U$ from pipeline-latency freshness and abstention suggested when $\mathrm{WMI}<0.2$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig1_architecture.png}
+\caption{Hierarchical evidence composition and conditional compilation in RCA-WM.}
+\label{fig:arch}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Theory--implementation map.}
+\label{tab:map}
+\begin{tabular}{lll}
+\toprule
+Theory object & EvoQuant implementation & Upgrade vs.\ WMI \\
+\midrule
+Latent state $S_t$ & Multi-domain collectors + engines & Extended \\
+Breadth $B$ & 43 domains / 13 bands / asset readiness & Hierarchical \\
+Stability $U$ & \texttt{pipeline\_latency} freshness & Retained \\
+Honesty $H$ & quality flags + exclusions & Continuous $H^{\mathrm{cont}}$ \\
+Compilation $\Pi$ & logic-pipeline DAG phases & Regime--task conditional \\
+Mechanism layer & cascade/lead-lag/narrative/decay & New \\
+PIT path & \texttt{time\_slice}+versioning & New \\
+Degraded mode & DegradationManager & Resilient honesty \\
+Abstention & \texttt{should\_ai\_abstain} & State-dependent \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig2_coverage_compare.png}
+\caption{Evidence coverage under thin, thick (Gen-1), and RCA-WM (Gen-2) worlds.}
+\label{fig:cover}
+\end{figure}
+
+\section{Experimental design}
+\label{sec:design}
+
+We combine (i) project inventory statistics from live code and (ii) a controlled Monte Carlo panel that calls the repository's real WMI function for the first-generation benchmark.
+
+\paragraph{Panel.}
+$N_i=18$ assets, $T=120$ days, regimes $\{\mathrm{trend},\mathrm{range},\mathrm{crisis}\}$ with Markov switches. Outages occur with probability 0.12 in crises and 0.03 otherwise. For each asset-day we construct $B^{\mathrm{hier}},U,H^{\mathrm{cont}},S,C$, compute production WMI, and form ACWMI via Eq.~\eqref{eq:acwmi}. Analysis quality $Q$ is a latent score increasing in ACWMI, honesty, consistency, and signal integrity, and decreasing under outages; explanation volatility (EV) and unsupported-claim rate (UCR) are recorded as interpretability metrics.
+
+\paragraph{Estimands.}
+\begin{align}
+Q_{i,t}&=\alpha+\beta_W\mathrm{WMI}_{i,t}+\varepsilon_{i,t},\\
+Q_{i,t}&=\alpha+\beta_B B+\beta_U U+\beta_H H^{\mathrm{cont}}+\beta_S S+\beta_C C+\varepsilon_{i,t}.
+\end{align}
+We also study outage event contrasts and abstention--accuracy Pareto frontiers.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Descriptive regime heterogeneity}
+Table~\ref{tab:regime} shows that crisis states exhibit lower WMI/ACWMI and much higher ACWMI-based abstention (94.7\%) than WMI-threshold abstention (1.4\%). First-generation WMI therefore under-triggers refusal precisely when world conflict is highest.
+
+\begin{table}[t]
+\centering
+\caption{Regime-level means from the Monte Carlo panel.}
+\label{tab:regime}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Regime & $N$ & WMI & ACWMI & $C$ & $S$ & $Q$ & Abstain$_{\mathrm{AC}}$ \\
+\midrule
+Crisis & 486 & 0.409 & 0.466 & 0.532 & 0.080 & 0.543 & 0.947 \\
+Range  &1008 & 0.668 & 0.592 & 0.560 & 0.258 & 0.607 & 0.564 \\
+Trend  & 666 & 0.672 & 0.553 & 0.561 & 0.249 & 0.603 & 0.806 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig3_factor_paths.png}
+\caption{Time paths of WMI, ACWMI, quality, and constituent factors.}
+\label{fig:paths}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig4_regime_box.png}
+\caption{Distribution of WMI and ACWMI across regimes.}
+\label{fig:box}
+\end{figure}
+
+\subsection{Quality regressions}
+Table~\ref{tab:reg} reports standardized OLS fits. Scalar WMI yields $R^2=0.115$. Factor decomposition raises $R^2$ to $0.484$; ACWMI alone achieves $0.345$; combining ACWMI with factors reaches $0.489$. Honesty, signal integrity, and consistency dominate breadth/stability coefficients, confirming that second-generation objects carry incremental explanatory content.
+
+\begin{table}[t]
+\centering
+\caption{Standardized regressions of analysis quality $Q$.}
+\label{tab:reg}
+\begin{tabular}{lcccc}
+\toprule
+ & A & B & C & D \\
+\midrule
+WMI & 0.340 &  &  &  \\
+$B^{\mathrm{hier}}$ &  & 0.084 &  & 0.058 \\
+$U$ &  & 0.067 &  & 0.041 \\
+$H^{\mathrm{cont}}$ &  & 0.434 &  & 0.394 \\
+$S$ &  & 0.381 &  & 0.207 \\
+$C$ &  & 0.349 &  & 0.261 \\
+ACWMI &  &  & 0.587 & 0.238 \\
+$R^2$ & 0.115 & 0.484 & 0.345 & 0.489 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{fig5_quality_scatter.png}
+\caption{Association between world-model indices and analysis quality.}
+\label{fig:scatter}
+\end{figure}
+
+\subsection{Outage event contrasts}
+Table~\ref{tab:outage} shows that module outages reduce $Q$ by about 0.21--0.23 across regimes while raising unsupported claims. ACWMI abstention approaches one under outages, whereas WMI remains comparatively insensitive.
+
+\begin{table}[t]
+\centering
+\caption{Outage versus non-outage contrasts.}
+\label{tab:outage}
+\begin{tabular}{llrrrrr}
+\toprule
+Regime & Outage & $N$ & $Q$ & UCR & WMI & Abstain$_{\mathrm{AC}}$ \\
+\midrule
+Crisis & 0 & 450 & 0.559 & 0.300 & 0.414 & 0.942 \\
+Crisis & 1 &  36 & 0.349 & 0.365 & 0.352 & 1.000 \\
+Range  & 0 & 954 & 0.619 & 0.306 & 0.671 & 0.540 \\
+Range  & 1 &  54 & 0.393 & 0.372 & 0.611 & 0.982 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\linewidth]{fig6_event_study.png}
+\caption{Event-time profile around source outages in crisis regimes.}
+\label{fig:event}
+\end{figure}
+
+\subsection{Pareto frontier and honesty incentives}
+Figure~\ref{fig:pareto} shows that ACWMI-based abstention policies dominate WMI thresholds on the abstain-rate vs.\ supported-claim-accuracy frontier. Figure~\ref{fig:honest} shows that higher exclusion rates raise continuous honesty and do not collapse ACWMI in the same way that naive breadth loss would suggest under product WMI.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\linewidth]{fig7_pareto.png}
+\caption{Pareto frontier of abstention versus supported-claim accuracy.}
+\label{fig:pareto}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\linewidth]{fig8_honesty_incentive.png}
+\caption{Honesty incentive: exclusion improves $H^{\mathrm{cont}}$ without ACWMI collapse.}
+\label{fig:honest}
+\end{figure}
+
+\section{Discussion}
+\label{sec:disc}
+
+The results support a shift from ``thicken the world'' to ``compile the right world.'' Three implications follow. First, world-model evaluation should be multi-objective---prediction, explanation stability, calibration, auditability, mechanism coverage, and PIT non-leakage---rather than a single forecast loss. Second, abstention is not a post-hoc heuristic; it is part of the world-model contract (Eq.~\eqref{eq:abstain}). Third, mechanism engines are not optional analytics: they belong inside the compilation operator $\Psi^{\mathrm{mech}}$.
+
+Limitations remain. The Monte Carlo panel is controlled rather than a full live backtest; regime exponents $\gamma(r)$ require estimation discipline; and mechanism engines can themselves misclassify regimes, motivating second-order gates on regime uncertainty. External validity outside 24/7 crypto markets is not automatic.
+
+\section{Conclusion}
+\label{sec:conc}
+
+This paper optimized the first-generation world-model index into a regime-conditional adaptive framework. By combining hierarchical breadth, continuous honesty, signal integrity, consistency, conditional compilation, and PIT/degradation semantics, ACWMI becomes a decomposable and operationally meaningful scientific object. In project-grounded experiments, factor models and ACWMI substantially outperform scalar WMI for analysis-quality explanation and induce crisis-aware abstention. For long-lived AI market systems, the scarce asset is not a prompt or a single model, but a stable, conditional, and auditable data world model.
+
+\appendix
+\section{Notation}
+Key symbols: $B^{\mathrm{hier}}$ hierarchical breadth; $H^{\mathrm{cont}}$ continuous honesty; $S$ signal integrity; $C$ consistency; $\Pi^{(r,m)}$ conditional compiler; $\mathrm{ACWMI}$ adaptive conditional index; $\mathrm{Leak}$ PIT leakage; $\mathrm{MER}$ mechanism-explanation rate.
+
+\section{Reproducibility}
+Experiments are generated by \texttt{pdf/sci/run\_paper\_experiments.py}, which imports production WMI from \texttt{logic\_layer.ai\_market\_context.service}. Unit tests for related modules (\texttt{ai\_market\_context}, contagion, alpha decay, liquidation cascade, asset readiness) pass in the accompanying repository run.
+
+\begin{thebibliography}{99}
+
+\bibitem[Carroll et~al.(2006)]{carroll2006}
+Carroll, R.J., Ruppert, D., Stefanski, L.A., Crainiceanu, C.M., 2006. Measurement Error in Nonlinear Models. 2nd ed. Chapman and Hall/CRC.
+
+\bibitem[Cochrane(2005)]{cochrane2005}
+Cochrane, J.H., 2005. Asset Pricing. Revised ed. Princeton University Press.
+
+\bibitem[Fama and French(1993)]{fama1993}
+Fama, E.F., French, K.R., 1993. Common risk factors in the returns on stocks and bonds. Journal of Financial Economics 33, 3--56.
+
+\bibitem[Fuller(1987)]{fuller1987}
+Fuller, W.A., 1987. Measurement Error Models. Wiley.
+
+\bibitem[Gu et~al.(2020)]{gu2020}
+Gu, S., Kelly, B., Xiu, D., 2020. Empirical asset pricing via machine learning. Review of Financial Studies 33, 2223--2273.
+
+\bibitem[Hansen and Sargent(2008)]{hansen2008}
+Hansen, L.P., Sargent, T.J., 2008. Robustness. Princeton University Press.
+
+\bibitem[Harvey et~al.(2016)]{harvey2016}
+Harvey, C.R., Liu, Y., Zhu, H., 2016. \ldots and the cross-section of expected returns. Review of Financial Studies 29, 5--68.
+
+\bibitem[Kelly et~al.(2019)]{kelly2019}
+Kelly, B.T., Pruitt, S., Su, Y., 2019. Characteristics are covariances. Journal of Financial Economics 134, 501--524.
+
+\bibitem[Li(2026)]{li2026wmi}
+Li, G., 2026. From ``Model-First'' to ``World-Model-First'': A study of cryptocurrency data world model infrastructure for AI-based market analysis. Working paper.
+
+\bibitem[Liu et~al.(2022)]{liu2022}
+Liu, Y., Tsyvinski, A., Wu, X., 2022. Common risk factors in cryptocurrency. Journal of Finance 77, 1133--1177.
+
+\bibitem[Makarov and Schoar(2020)]{makarov2020}
+Makarov, I., Schoar, A., 2020. Trading and arbitrage in cryptocurrency markets. Journal of Financial Economics 135, 293--319.
+
+\bibitem[Nagel(2021)]{nagel2021}
+Nagel, S., 2021. Machine Learning in Asset Pricing. Princeton University Press.
+
+\end{thebibliography}
+
+\end{document}
