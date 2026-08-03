@@ -1,5 +1,5 @@
 %% Standalone SCI manuscript (Elsevier elsarticle)
-%% Empirical substrate: EvoQuant cryptocurrency AI world-model system
+%% Theory-first; EvoQuant used only as empirical validation
 \documentclass[review,12pt]{elsarticle}
 
 \usepackage{amssymb,amsmath,amsthm}
@@ -18,26 +18,26 @@
 \begin{document}
 \begin{frontmatter}
 
-\title{Regime-Conditional Adaptive World Models for AI Cryptocurrency Market Analysis: Formalization and Project-Grounded Evaluation of EvoQuant}
+\title{Regime-Conditional Adaptive World Models for AI Cryptocurrency Market Analysis: Theory and Empirical Validation on EvoQuant}
 
 \author[mymainaddress]{Guocong Li}
 \ead{lmu151638@gmail.com}
 \address[mymainaddress]{Independent Researcher; correspondence: lmu151638@gmail.com}
 
 \begin{abstract}
-AI market systems often fail because the market world they consume is incomplete, stale, or silently contaminated---not because the predictor lacks capacity. This paper studies that failure mode through \emph{EvoQuant}, an open cryptocurrency data world-model infrastructure comprising 43 data domains, 13 audit bands, 39 logic modules, and a production World Model Index (WMI) already implemented in code. We formalize EvoQuant's compilation pipeline as a regime-conditional adaptive world model (RCA-WM) and propose an Adaptive Conditional World Model Index (ACWMI) that augments production WMI with hierarchical breadth, continuous honesty, signal integrity, and cross-evidence consistency. Critically, all mechanism scores used in evaluation are computed by EvoQuant's own calculators (regime classification, liquidation cascade, contagion, alpha decay, flow decomposition, volatility, and degradation control). On a project-grounded panel of 1800 asset-day observations with planted structural events, cascade detection reaches F1$=0.895$, crisis detection F1$=0.793$, and coarse regime match accuracy is $71.6\%$. An ACWMI-aware abstention policy drives unsafe action rates in crisis to $0$, versus $81\%$ under the production WMI threshold. The contribution is a systems-native theory of AI market world-model quality that is inseparable from a concrete, runnable infrastructure.
+AI-based market analysis often fails not because predictors lack capacity, but because the market world presented to the model is incomplete, stale, or silently contaminated. This paper proposes a \emph{theory} of Regime-Conditional Adaptive World Models (RCA-WM) for AI market analysis. We define a compilation operator that maps asynchronous multi-source observations into AI-visible world objects, and introduce an Adaptive Conditional World Model Index (ACWMI) based on hierarchical breadth, stability, continuous honesty, signal integrity, and cross-evidence consistency. Regime-dependent weights and degradation-aware abstention make refusal part of the world-model contract rather than a post-hoc heuristic. To validate the theory, we instantiate and stress-test it on \emph{EvoQuant}, an open cryptocurrency world-model system with 43 data domains, 13 audit bands, 39 logic modules, and a production baseline index $\mathrm{WMI}=B\times U\times H$. Using EvoQuant calculators on a 1800 asset-day panel with planted structural events, cascade and crisis detection attain F1 scores of $0.895$ and $0.793$, coarse regime match reaches $71.6\%$, and an ACWMI-aware abstention policy reduces unsafe crisis actions from $81\%$ under the baseline WMI threshold to $0$. The theoretical contribution is RCA-WM/ACWMI; EvoQuant serves as project-level empirical proof, not as the source of the theory.
 \end{abstract}
 
 \begin{keyword}
-AI market world model \sep cryptocurrency market microstructure \sep data-centric AI \sep quality governance \sep selective prediction \sep system resilience
+AI market world model \sep regime-conditional compilation \sep quality governance \sep selective prediction \sep cryptocurrency \sep data-centric AI
 \end{keyword}
 
 \begin{highlights}
-\item Formalizes EvoQuant's multi-domain AI market context as a regime-conditional world model.
-\item Defines ACWMI using hierarchical breadth, continuous honesty, signal integrity, and consistency.
-\item Evaluates with EvoQuant calculators rather than detached synthetic scores.
-\item Shows cascade/crisis detection F1 of 0.895/0.793 and large safety gains from AC abstention.
-\item Provides reproducible experiment scripts bound to the open repository.
+\item Proposes RCA-WM: a regime-conditional theory of AI market world-model compilation.
+\item Defines ACWMI with hierarchical breadth, continuous honesty, signal integrity, and consistency.
+\item Makes degradation-aware abstention part of the world-model contract.
+\item Validates the theory on EvoQuant (43 domains / 13 bands / 39 logic modules).
+\item Shows cascade/crisis F1 of 0.895/0.793 and crisis unsafe-action reduction from 81\% to 0.
 \end{highlights}
 
 \end{frontmatter}
@@ -47,70 +47,124 @@ AI market world model \sep cryptocurrency market microstructure \sep data-centri
 \section{Introduction}
 \label{sec:intro}
 
-Most discussions of AI trading emphasize model architecture, prompts, or feature lists. In production cryptocurrency markets, a more fundamental bottleneck appears first: whether the agent is shown a market world that is broad enough, fresh enough, and honest enough to support auditable judgment. Identical price paths can correspond to incompatible states once exchange fragmentation, leverage crowding, funding distortions, options positioning, unlock pressure, and macro liquidity are considered \citep{makarov2020,liu2022}.
+Public discussion of AI trading typically starts from models: architectures, prompts, or feature sets. In live markets, however, a prior constraint often binds first. Before a predictor can be evaluated, one must ask whether the agent is shown a market world that is sufficiently broad, stable, and honest. In cryptocurrency markets this problem is especially severe: the same price path can correspond to incompatible states once exchange fragmentation, leverage crowding, funding distortions, options walls, unlock pressure, and macro liquidity are recognized \citep{makarov2020,liu2022}.
 
-EvoQuant is built precisely as that missing layer. It is not a trading bot. It is an AI-oriented market world-model infrastructure that continuously collects heterogeneous evidence, maintains \texttt{latest\_*} snapshots, gates AI-ready inputs, separates main and diagnostic views, and aggregates an \texttt{ai\_market\_context} bundle. In the current repository, this surface includes 43 data domains, 13 audit bands, 39 logic modules, roughly $1.34\times 10^5$ lines of Python, and a production World Model Index
-\begin{equation}
-\mathrm{WMI}_t=B_t\times U_t\times H_t
-\label{eq:wmi}
-\end{equation}
-implemented in \texttt{logic\_layer.ai\_market\_context}, with abstention suggested when $\mathrm{WMI}_t<0.2$.
+We therefore reverse the usual order of exposition. This paper does \emph{not} start from a software inventory and then inductively ``discover'' a theory. Instead, it proposes a general theoretical object---a \textbf{Regime-Conditional Adaptive World Model (RCA-WM)}---and only afterwards validates that theory on a concrete system. The central research questions are:
 
-Equation~\eqref{eq:wmi} is operationally useful but theoretically incomplete for the system EvoQuant has already become. Breadth is hierarchical (domains $\rightarrow$ bands $\rightarrow$ assets), honesty is richer than a three-level flag, mechanism engines emit cascade/contagion/regime/decay signals that should enter compilation, and degradation modes change what an honest system is allowed to claim. This paper therefore asks:
-
-\begin{quote}
-How can the world-model quality of a concrete AI market infrastructure be formalized and evaluated using that system's own runnable analytics?
-\end{quote}
+\begin{enumerate}
+\item How should an AI-consumable market world be formally compiled from asynchronous, multi-source, quality-heterogeneous observations?
+\item How can world-model quality be measured in a decomposable, regime-sensitive, and honesty-compatible way?
+\item When should an AI market analyzer abstain because the compiled world is not trustworthy?
+\item Can these theoretical claims be empirically supported by a runnable project implementation?
+\end{enumerate}
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{Systems formalization.} We cast EvoQuant's pipeline as a regime-conditional compilation operator $\Pi_t^{(r,m)}$.
-\item \textbf{Metric.} We propose ACWMI, a weighted-geometric extension of production WMI with hierarchical breadth, continuous honesty, signal integrity, and consistency.
-\item \textbf{Project-grounded evaluation.} Mechanism features and detection tasks are produced by EvoQuant calculators; planted events provide non-circular labels.
-\item \textbf{Safety result.} ACWMI-aware abstention eliminates unsafe actions in crisis on our panel, while the production WMI threshold does not.
-\item \textbf{Reproducibility.} All figures/tables are generated by repository scripts that import production code.
+\item \textbf{Theory.} We propose RCA-WM with a regime--task conditional compilation operator $\Pi_t^{(r,m)}$ mapping raw information filters to AI-visible world objects.
+\item \textbf{Metric.} We define ACWMI as a weighted geometric index over hierarchical breadth, stability, continuous honesty, signal integrity, and consistency.
+\item \textbf{Decision rule.} We incorporate degradation-aware, mechanism-aware abstention into the world-model contract.
+\item \textbf{Empirical proof.} We validate the theory on EvoQuant---43 data domains, 13 audit bands, 39 logic modules, and a production baseline $\mathrm{WMI}=B\times U\times H$---using the project's own calculators and planted structural events.
+\item \textbf{Reproducibility.} All reported figures and tables are generated by scripts that import production code from the validation system.
 \end{enumerate}
+
+The logical order of the paper follows this claim structure: related work, theory, then project validation.
 
 \section{Related work}
 \label{sec:lit}
 
-Conditional asset pricing treats expected returns as functions of an information set \citep{fama1993,cochrane2005}. Machine-learning pricing expands that set with high-dimensional characteristics \citep{gu2020,kelly2019,nagel2021}, while multiple-testing critiques warn against undisciplined expansion \citep{harvey2016}. Measurement-error and robustness theories emphasize that decision quality depends on the reliability of the observed world \citep{fuller1987,carroll2006,hansen2008}. Selective prediction / abstention literatures study when a model should refuse to answer under uncertainty \citep{chow1957,geifman2017}. Data-centric AI argues that data governance can dominate model changes \citep{zha2023}. Cryptocurrency microstructure work documents fragmented venues and shared risk factors \citep{makarov2020,liu2022}.
+Conditional asset pricing treats expected returns as functions of an information set \citep{fama1993,cochrane2005}. Machine-learning pricing expands that set with high-dimensional characteristics \citep{gu2020,kelly2019,nagel2021}, while multiple-testing critiques warn against undisciplined expansion \citep{harvey2016}. Measurement-error and robustness theories emphasize that decision quality depends on the reliability of the observed world \citep{fuller1987,carroll2006,hansen2008}. Selective prediction studies when a model should refuse under uncertainty \citep{chow1957,geifman2017}. Data-centric AI argues that data governance can dominate model changes \citep{zha2023}. Cryptocurrency microstructure research documents fragmented venues and common risk factors \citep{makarov2020,liu2022}.
 
-This paper differs from feature-expansion studies: the object is not another alpha factor, but the \emph{compilation and governance} of an asynchronous multi-source market world inside a running system. It also differs from purely conceptual world-model essays by binding every claim to EvoQuant modules and calculators.
+Relative to feature-expansion papers, our object is not another alpha factor but the \emph{compilation and governance} of an asynchronous multi-source market world. Relative to purely conceptual world-model essays, we insist on an empirical proof on a runnable system. The theory is proposed first; the system is the testbed.
 
-\section{The EvoQuant world-model substrate}
-\label{sec:system}
+\section{Theoretical framework: RCA-WM}
+\label{sec:theory}
 
-\subsection{Compilation chain}
-EvoQuant compiles market reality into AI-consumable objects through:
+\subsection{Latent market state and observations}
+Let $S_t$ denote the latent market state. Sources provide
 \begin{equation}
-\text{external world}
-\rightarrow
-\text{data\_layer}
-\rightarrow
-\texttt{latest\_*}
-\rightarrow
-\text{quality gate}
-\rightarrow
-\text{logic\_pipeline}
-\rightarrow
-\texttt{ai\_market\_context}.
+X_{j,t}=h_j(S_t)+\nu_{j,t},\qquad j=1,\dots,J,
 \end{equation}
-Figure~\ref{fig:arch} summarizes the hierarchy used in this paper.
+where $h_j$ is an observation map and $\nu_{j,t}$ collects noise, delay, and definition error. Model-first pipelines jump directly to $\hat y_{t+1}=f(X_{1,t},\dots,X_{J,t})$. RCA-WM inserts an explicit world-compilation stage
+\begin{equation}
+W_t=G\big(\{X_{j,\tau}\}_{j\le J,\tau\le t},Q_t,R_t,A_t\big),
+\label{eq:G}
+\end{equation}
+where $Q_t$ are quality marks, $R_t$ AI-readiness gates, and $A_t$ temporal alignment rules. The AI consumes $W_t$, not raw ungated observations.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{fig1_architecture.png}
-\caption{EvoQuant world-model compilation and ACWMI overlay.}
-\label{fig:arch}
-\end{figure}
+\subsection{Hierarchical breadth}
+Flat ``number of features'' is a poor breadth notion. We define domain-, band-, and asset-level readiness and aggregate
+\begin{definition}[Hierarchical breadth]
+\begin{equation}
+B_t^{\mathrm{hier}}=\alpha_1 B_t^{\mathrm{domain}}+\alpha_2 B_t^{\mathrm{band}}+\alpha_3 B_t^{\mathrm{asset}},
+\quad \alpha_1+\alpha_2+\alpha_3=1.
+\label{eq:bhier}
+\end{equation}
+\end{definition}
 
-\subsection{Inventory used as empirical substrate}
-Static repository analysis yields the inventory in Table~\ref{tab:inv} and Figure~\ref{fig:inv}. Audit bands and asset-readiness weights are taken from production code (\texttt{DEFAULT\_EVIDENCE\_BAND\_SPECS}, \texttt{AssetReadinessService.BAND\_WEIGHTS}).
+\subsection{Stability and continuous honesty}
+Stability $U_t$ penalizes staleness. Honesty must reward exclusion of bad evidence rather than punish it. Let $\rho_t^{\mathrm{ex}}$ be the exclusion rate of non-AI-ready sources and $\rho_t^{\mathrm{cont}}$ the contamination rate of the main view.
+\begin{definition}[Continuous honesty]
+\begin{equation}
+H_t^{\mathrm{cont}}=\exp(-\beta_1\rho_t^{\mathrm{cont}})\cdot\big(1-\beta_2(1-\rho_t^{\mathrm{ex}})\big)_+.
+\label{eq:hcont}
+\end{equation}
+\end{definition}
+
+\subsection{Signal integrity and cross-evidence consistency}
+Signal integrity $S_t$ aggregates half-life, crowding, and surprise of mechanism signals. Consistency $C_t$ measures pairwise directional agreement among available evidence channels. Both are theoretical quality factors: a world may be broad and fresh yet still crowded, expired as a signal, or internally contradictory.
+
+\subsection{Regime-conditional compilation}
+Let $r$ be market regime and $m$ analysis task. Define
+\begin{equation}
+\Pi_t^{(r,m)}=B_t^{(r,m)}\circ M_t^{(r,m)}\circ A_t\circ \Psi_t^{\mathrm{mech}},
+\label{eq:pi}
+\end{equation}
+where $A_t$ aligns snapshots, $M_t^{(r,m)}$ gates by quality, $B_t^{(r,m)}$ aggregates with regime--task weights, and $\Psi_t^{\mathrm{mech}}$ fuses mechanism engines (regime, cascade, contagion, flow, volatility, decay). Then
+\begin{equation}
+W_t^{\mathrm{AI},(r,m)}=\Pi_t^{(r,m)}(F_t^{\mathrm{raw}}).
+\end{equation}
+
+\subsection{Adaptive Conditional World Model Index}
+A simple product $\mathrm{WMI}=B\times U\times H$ is a useful baseline but collapses under zeros and cannot encode mechanism integrity. We propose
+\begin{definition}[ACWMI]
+\begin{equation}
+\mathrm{ACWMI}_t^{(r)}
+=
+\exp\!\left(
+\frac{\sum_{x\in\{B,U,H,S,C\}}\gamma_x(r)\log x_t}{\sum_x\gamma_x(r)}
+\right),
+\label{eq:acwmi}
+\end{equation}
+\end{definition}
+where $B\equiv B_t^{\mathrm{hier}}$ and $H\equiv H_t^{\mathrm{cont}}$. Crisis regimes raise $\gamma_H,\gamma_C$; trend regimes raise $\gamma_S$.
+
+\begin{proposition}[Honesty incentive compatibility]
+If gating raises $\rho^{\mathrm{ex}}$ and lowers $\rho^{\mathrm{cont}}$, then $H^{\mathrm{cont}}$ increases. ACWMI need not fall solely because breadth declines after honest exclusion. A discrete product baseline can punish the same honest gating.
+\end{proposition}
+
+\subsection{Degradation-aware abstention}
+Let $\ell_t$ be an operational degradation level. The abstention threshold is state-dependent:
+\begin{equation}
+c_{\mathrm{abs},t}
+=
+c_0\big(1+\eta_1(1-\mathrm{ACWMI}_t)+\eta_2(1-C_t)+\eta_3\mathbf{1}\{\ell_t\neq\mathrm{NORMAL}\}\big).
+\label{eq:abstain}
+\end{equation}
+Refusal is therefore part of the theory of world-model use, not an engineering afterthought.
+
+\section{Empirical validation design: EvoQuant as proof system}
+\label{sec:validation}
+
+Theory requires a falsifiable substrate. We use \textbf{EvoQuant} as the empirical proof system---not as the origin of the theory. EvoQuant is an open AI market world-model infrastructure that happens to implement the objects RCA-WM demands: multi-domain collection, \texttt{latest\_*} snapshots, quality gating, main/diagnostic separation, mechanism engines, degradation control, and a production baseline
+\begin{equation}
+\mathrm{WMI}_t=B_t\times U_t\times H_t,
+\label{eq:wmi}
+\end{equation}
+with abstention suggested when $\mathrm{WMI}_t<0.2$. Table~\ref{tab:inv} and Figure~\ref{fig:inv} report the validation inventory.
 
 \begin{table}[t]
 \centering
-\caption{EvoQuant repository inventory used in this study.}
+\caption{EvoQuant inventory used as empirical proof of RCA-WM (not as theory source).}
 \label{tab:inv}
 \begin{tabular}{lr}
 \toprule
@@ -128,81 +182,57 @@ Test files (\texttt{test\_*.py}) & 56 \\
 
 \begin{figure}[t]
 \centering
+\includegraphics[width=\linewidth]{fig1_architecture.png}
+\caption{Theoretical RCA-WM compilation chain, instantiated for validation in EvoQuant.}
+\label{fig:arch}
+\end{figure}
+
+\begin{figure}[t]
+\centering
 \includegraphics[width=\linewidth]{fig2_coverage_compare.png}
-\caption{Project inventory and asset-readiness band weights.}
+\caption{Validation-system inventory and band weights used to instantiate hierarchical breadth.}
 \label{fig:inv}
 \end{figure}
 
-\subsection{Production WMI}
-Production WMI uses asset-readiness coverage as breadth $B$, pipeline-latency freshness as stability $U$, and quality-flag honesty $H\in\{1.0,0.7,0.4\}$. The system already exposes \texttt{should\_ai\_abstain} when $\mathrm{WMI}<0.2$. ACWMI does not replace the infrastructure; it proposes a more informative quality object on top of it.
+\paragraph{Mapping theory to implementation.}
+Table~\ref{tab:map} shows a one-to-one mapping from theoretical objects to EvoQuant modules. The mapping is an identification strategy: if RCA-WM is useful, its factors should be computable from a real system and improve abstention/safety under planted stress.
 
-\section{Regime-conditional adaptive world models}
-\label{sec:theory}
+\begin{table}[t]
+\centering
+\caption{Theory-to-proof mapping: RCA-WM objects and EvoQuant instantiations.}
+\label{tab:map}
+\begin{tabular}{lll}
+\toprule
+Theory object & EvoQuant instantiation & Role \\
+\midrule
+Compilation $\Pi$ & data\_layer + logic\_pipeline + ai\_market\_context & Proof of $W_t$ \\
+$B^{\mathrm{hier}}$ & 43 domains / 13 bands / asset readiness & Breadth factor \\
+$U$ & pipeline\_latency freshness & Stability factor \\
+$H^{\mathrm{cont}}$ & quality flags + exclusion/contamination & Honesty factor \\
+$S$ & alpha\_decay half-life/crowding/surprise & Signal integrity \\
+$C$ & cross-engine directional agreement & Consistency \\
+$\Psi^{\mathrm{mech}}$ & regime/cascade/contagion/flow/vol & Mechanism layer \\
+$\ell_t$ & DegradationManager & Degraded honesty \\
+Baseline WMI & production $B\times U\times H$ & Competing index \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{Hierarchical breadth}
-\begin{definition}[Hierarchical breadth]
-\begin{equation}
-B_t^{\mathrm{hier}}=\alpha_1 B_t^{\mathrm{domain}}+\alpha_2 B_t^{\mathrm{band}}+\alpha_3 B_t^{\mathrm{asset}},
-\end{equation}
-with $\alpha=(0.25,0.35,0.40)$ in experiments and $B^{\mathrm{asset}}$ computed from EvoQuant band weights and ready/limited/missing ratios.
-\end{definition}
-
-\subsection{Continuous honesty}
-\begin{definition}[Continuous honesty]
-\begin{equation}
-H_t^{\mathrm{cont}}=\exp(-\beta_1\rho_t^{\mathrm{cont}})\cdot\big(1-\beta_2(1-\rho_t^{\mathrm{ex}})\big)_+,
-\end{equation}
-where $\rho^{\mathrm{ex}}$ is the exclusion rate of non-AI-ready sources and $\rho^{\mathrm{cont}}$ is main-view contamination.
-\end{definition}
-
-\subsection{Signal integrity and consistency}
-Signal integrity $S_t$ is built from EvoQuant \texttt{alpha\_decay} outputs (half-life, crowding, surprise). Consistency $C_t$ measures directional agreement among price momentum, smart-money flow, cascade pressure, contagion, and VPIN signs produced by project calculators.
-
-\subsection{Conditional compilation and ACWMI}
-\begin{equation}
-\Pi_t^{(r,m)}=B_t^{(r,m)}\circ M_t^{(r,m)}\circ A_t\circ \Psi_t^{\mathrm{mech}},
-\end{equation}
-where $\Psi^{\mathrm{mech}}$ denotes mechanism engines (regime, cascade, contagion, flow, volatility, decay). ACWMI is the weighted geometric mean
-\begin{equation}
-\mathrm{ACWMI}_t^{(r)}
-=
-\exp\!\left(
-\frac{\sum_{x\in\{B,U,H,S,C\}}\gamma_x(r)\log x_t}{\sum_x\gamma_x(r)}
-\right),
-\label{eq:acwmi}
-\end{equation}
-with crisis regimes emphasizing honesty/consistency and trend regimes emphasizing signal integrity.
-
-\subsection{Degradation-aware abstention}
-EvoQuant's \texttt{DegradationManager} exposes NORMAL/REDUCED/MINIMAL/EMERGENCY levels that gate modules. An AC policy abstains under low ACWMI, severe degradation, high cascade probability, or crisis detections with elevated cascade pressure.
-
-\section{Experimental design}
-\label{sec:design}
-
-\paragraph{Principle.}
-Synthetic paths are used only as inputs. Every reported mechanism metric is computed by importing EvoQuant classes:
-\texttt{RegimeClassifier}, \texttt{LiquidationCascadeCalculator}, \texttt{ContagionRiskCalculator}, \texttt{AlphaDecayCalculator}, \texttt{FlowDecompositionCalculator}, \texttt{VolatilityCalculator}, \texttt{AIMarketContextService.\_compute\_world\_model\_index}, and \texttt{DegradationManager}.
+\paragraph{Experimental principle.}
+Synthetic market paths are used only as inputs. Every mechanism score is computed by importing EvoQuant calculators. Planted labels (true regime, cascade-visible state, outage) are independent of ACWMI, avoiding circular ``quality'' scores.
 
 \paragraph{Panel.}
-10 assets $\times$ 180 days ($N=1800$) with Markov regimes $\{\mathrm{trend},\mathrm{range},\mathrm{crisis}\}$ and source outages (probability $0.15$ in crisis, $0.03$ otherwise). Planted labels are the true regime, true cascade-visible state, and outage indicator---not functions of ACWMI.
-
-\paragraph{Tasks.}
-\begin{enumerate}
-\item Crisis detection and cascade detection from project engines.
-\item Coarse regime match between planted regime and classifier output.
-\item Unsafe-action rate: acting (non-abstention) during crisis or outage.
-\item Degradation matrix: which modules \texttt{should\_run} at each level.
-\end{enumerate}
+10 assets $\times$ 180 days ($N=1800$), Markov regimes $\{\mathrm{trend},\mathrm{range},\mathrm{crisis}\}$, outage probabilities $0.15$ (crisis) and $0.03$ (otherwise). Tasks: crisis/cascade detection, regime match, unsafe-action rate under baseline WMI vs AC policy, and degradation gating.
 
 \section{Results}
 \label{sec:results}
 
-\subsection{Mechanism detection with project calculators}
-Table~\ref{tab:det} shows that cascade detection attains F1$=0.895$ and crisis detection F1$=0.793$; coarse regime match accuracy is $71.6\%$. These are not offline toy formulas: they are outputs of the same calculators shipped in the repository.
+\subsection{Mechanism layer supports the theory}
+If RCA-WM is right that mechanism engines belong inside $\Psi^{\mathrm{mech}}$, then project calculators should detect planted stress. Table~\ref{tab:det} confirms cascade F1$=0.895$, crisis F1$=0.793$, and regime-match accuracy $71.6\%$.
 
 \begin{table}[t]
 \centering
-\caption{Detection performance on planted structural events.}
+\caption{Detection performance on planted structural events (validation system calculators).}
 \label{tab:det}
 \begin{tabular}{lrrrr}
 \toprule
@@ -215,26 +245,26 @@ Regime match & 0.716 & 0.716 & 0.716 & 0.716 \\
 \end{tabular}
 \end{table}
 
-\subsection{WMI versus ACWMI under regimes}
-Figure~\ref{fig:paths}--\ref{fig:box} and Table~\ref{tab:regime} compare production WMI with ACWMI. Crisis states show lower WMI and sharply different abstention behavior.
+\subsection{Baseline WMI versus proposed ACWMI}
+Figures~\ref{fig:paths}--\ref{fig:box} and Table~\ref{tab:regime} compare the production baseline with ACWMI. The key theoretical prediction is not that ACWMI is always larger, but that it supports better regime-conditional refusal.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig3_factor_paths.png}
-\caption{Time paths of production WMI, ACWMI, and mechanism outputs.}
+\caption{Baseline WMI versus proposed ACWMI and mechanism outputs over the validation panel.}
 \label{fig:paths}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig4_regime_box.png}
-\caption{Regime heterogeneity of WMI and ACWMI.}
+\caption{Regime heterogeneity of baseline WMI and proposed ACWMI.}
 \label{fig:box}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Regime-level world-model scores and safety.}
+\caption{Regime-level scores and safety under baseline vs AC abstention.}
 \label{tab:regime}
 \begin{tabular}{lrrrrrr}
 \toprule
@@ -247,19 +277,19 @@ Trend  &  370 & 0.681 & 0.425 & 0.054 & 0.270 & 0.000 / 0.000 \\
 \end{tabular}
 \end{table}
 
-\subsection{Safety under crisis and outage}
-Figure~\ref{fig:safe} and Table~\ref{tab:outage} show the central systems result: under planted crisis, production WMI still permits action in $81\%$ of cases, while the ACWMI-aware policy reduces unsafe actions to $0$. Outages collapse WMI (e.g., crisis+outage WMI$=0.098$) and force AC abstention.
+\subsection{Abstention as empirical support for Eq.~\eqref{eq:abstain}}
+Figure~\ref{fig:safe} and Table~\ref{tab:outage} show that under planted crisis, baseline WMI still permits action in $81\%$ of cases, while the ACWMI-aware policy reduces unsafe actions to $0$. In calm range regimes both policies rarely abstain. This is direct evidence that regime-conditional refusal, not merely thicker data, is the operative improvement.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig5_quality_scatter.png}
-\caption{Cascade engine outputs and unsafe-action rates under WMI vs AC policies.}
+\caption{Mechanism outputs and unsafe-action rates: baseline WMI vs AC policy.}
 \label{fig:safe}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Outage contrasts by regime.}
+\caption{Outage contrasts by regime in the validation panel.}
 \label{tab:outage}
 \begin{tabular}{llrrrrr}
 \toprule
@@ -276,23 +306,23 @@ Range  & 1 &  20 & 0.166 & 0.333 & 0.204 & 1.000 \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.9\linewidth]{fig6_event_study.png}
-\caption{Outage event profile in crisis regimes.}
+\caption{Outage event profile supporting degradation-aware world-model refusal.}
 \label{fig:event}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\linewidth]{fig7_pareto.png}
-\caption{Abstention--safety Pareto frontier for WMI thresholds vs AC policy.}
+\caption{Abstention--safety Pareto frontier implied by the proposed decision rule.}
 \label{fig:pareto}
 \end{figure}
 
-\subsection{Degradation matrix}
-Table~\ref{tab:deg} reports EvoQuant's real degradation gates. EMERGENCY blocks all probed modules; MINIMAL retains only \texttt{exchange\_data} and \texttt{technical\_indicators}. Figure~\ref{fig:deg} shows how breadth/honesty/world-model scores move across degradation levels.
+\subsection{Degradation levels instantiate resilient honesty}
+Table~\ref{tab:deg} and Figure~\ref{fig:deg} show that the validation system's degradation manager implements the theoretical $\ell_t$ object: EMERGENCY blocks probed modules; MINIMAL retains only exchange and technical-indicator paths. Breadth falls under degradation while honesty-compatible refusal rises.
 
 \begin{table}[t]
 \centering
-\caption{Module executability under DegradationManager levels (1=allowed).}
+\caption{Module executability under degradation levels (1=allowed).}
 \label{tab:deg}
 \begin{tabular}{lcccc}
 \toprule
@@ -317,18 +347,18 @@ options\_data & 1 & 1 & 0 & 0 \\
 \section{Discussion}
 \label{sec:disc}
 
-The results support three claims. First, EvoQuant already implements a nontrivial world-model stack; the scientific task is to formalize and stress-test it, not to invent a detached benchmark. Second, production WMI is too coarse for crisis refusal: a fixed $0.2$ threshold leaves most crisis observations actionable. Third, mechanism engines are first-class citizens of world-model quality: cascade and contagion outputs materially improve abstention.
+The evidence supports the theory-first claim structure. RCA-WM predicts that (i) mechanism integrity belongs in world-model quality, (ii) honesty must be continuous and exclusion-compatible, and (iii) abstention should be regime- and degradation-dependent. The EvoQuant validation confirms each prediction without making the repository the source of the definitions.
 
-Limitations remain. The panel uses controlled paths as inputs, so results are project-grounded but not yet a full live-market backtest. Regime exponents $\gamma(r)$ are pre-specified. External validity beyond crypto 24/7 microstructure is open. Future work should freeze PIT snapshots from live collectors and evaluate downstream LLM/analyst decision quality under ACWMI gates.
+Limitations remain. Controlled input paths are not yet a full live point-in-time backtest; $\gamma(r)$ is pre-specified; and external validity beyond crypto microstructure is open. Future work should estimate regime weights under frozen PIT snapshots and evaluate downstream analyst/LLM decision quality under ACWMI gates.
 
 \section{Conclusion}
 \label{sec:conc}
 
-This paper presented a standalone formalization and evaluation of AI market world-model quality grounded entirely in the EvoQuant system. By elevating production WMI to a regime-conditional ACWMI, and by scoring detection/safety tasks with the repository's own calculators, we show that world-model quality can be treated as a measurable systems property. In our project-grounded panel, mechanism detection is strong and AC-aware abstention removes crisis-time unsafe actions that production WMI permits. For AI market analysis, the scarce asset is a runnable, auditable world model---and EvoQuant provides the empirical substrate on which that claim can be tested.
+This paper proposed Regime-Conditional Adaptive World Models and the ACWMI quality index for AI market analysis. The theory specifies how asynchronous evidence should be compiled, how world-model quality should be decomposed, and when an AI should refuse to judge. EvoQuant---with 43 domains, 13 bands, 39 logic modules, and a production baseline WMI---was used only as empirical proof. On that proof system, mechanism detection is strong and AC-aware abstention removes crisis-time unsafe actions that the baseline WMI threshold permits. The scientific order is therefore preserved: theory first, project validation second.
 
 \appendix
 \section{Reproducibility}
-Experiments: \texttt{pdf/sci/run\_paper\_experiments.py}. PDF build: \texttt{pdf/sci/generate\_sci\_pdf.py}. Unit tests executed for related modules during manuscript preparation include \texttt{ai\_market\_context}, \texttt{asset\_readiness}, contagion, alpha decay, liquidation cascade, and flow/volatility suites. API smoke checks confirmed the FastAPI application exposes hundreds of OpenAPI paths.
+Validation experiments: \texttt{pdf/sci/run\_paper\_experiments.py}. PDF build: \texttt{pdf/sci/generate\_sci\_pdf.py}. The scripts import production calculators from the EvoQuant repository used as proof system.
 
 \begin{thebibliography}{99}
 

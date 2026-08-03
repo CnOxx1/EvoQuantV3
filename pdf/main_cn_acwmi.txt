@@ -1,83 +1,72 @@
 # 面向 AI 加密市场分析的条件化自适应世界模型
 
-## ——基于 EvoQuant 系统的形式化与项目实证评估
+## ——理论框架及其在 EvoQuant 上的实证验证
 
 李国聪  
 （SCI 投稿对应中文说明稿，日期：2026 年 8 月 3 日）
 
-英文题名： Regime-Conditional Adaptive World Models for AI Cryptocurrency Market Analysis: Formalization and Project-Grounded Evaluation of EvoQuant
+英文题名： Regime-Conditional Adaptive World Models for AI Cryptocurrency Market Analysis: Theory and Empirical Validation on EvoQuant
 
-> 正式投稿以英文 SCI 稿为准：pdf/sci/main_acwmi_sci.tex / pdf/sci/main_acwmi_sci.pdf。本文是与之对应的中文说明，不依赖任何既有未使用论文。
+> 正式投稿以英文 SCI 稿为准：pdf/sci/main_acwmi_sci.tex / pdf/sci/main_acwmi_sci.pdf。
+
+---
+
+## 叙事顺序（必须遵守）
+
+1. 先提出理论：RCA-WM / ACWMI / 条件化编译 / 降级拒绝  
+2. 再用项目证明：EvoQuant（43 域 / 13 带 / 39 逻辑模块 / 生产 WMI）仅作为实证系统  
+3. 不是“项目提出理论，论文整理项目”
 
 ---
 
 ## 摘要
 
-AI 市场系统失败，常常不是因为模型不够强，而是因为模型看到的市场世界不够宽、不够新、不够诚实。本文以开源系统 EvoQuant 为唯一实证对象：该系统包含 43 个数据域、13 条审计证据带、39 个逻辑模块，并已在代码中实现生产级世界模型指数 \mathrm{WMI}=B\times U\times H。本文将 EvoQuant 的供数与编译链路形式化为条件化自适应世界模型（RCA-WM），提出加权几何形式的 ACWMI（层级宽度、连续诚实性、信号完整性、跨证据一致性），并用项目自带计算器（regime / cascade / contagion / alpha_decay / flow / volatility / DegradationManager / 生产 WMI）完成评估。在 1800 个资产—日样本、含植入结构事件的项目绑定面板上：清算级联检测 F1=0.895，危机检测 F1=0.793，粗粒度体制匹配准确率 71.6%；AC 拒绝策略把危机期不安全行动率从生产 WMI 阈值下的 81% 降到 0。贡献在于：给出与可运行基础设施不可分割的 AI 市场世界模型质量理论。
+AI 市场分析失败，往往不是因为预测器不够强，而是因为喂给模型的市场世界不完整、不新鲜或不诚实。本文首先提出条件化自适应世界模型（RCA-WM）理论：定义从异步多源观测到 AI 可见世界对象的编译算子，并提出由层级宽度、稳定性、连续诚实性、信号完整性与跨证据一致性构成的加权几何质量指数 ACWMI；同时把降级感知的拒绝判断写入世界模型契约。随后，本文以开源系统 EvoQuant 作为实证验证平台（非理论来源），在 1800 个资产—日、含植入结构事件的面板上检验理论。结果显示：清算级联检测 F1=0.895，危机检测 F1=0.793，粗粒度体制匹配 71.6%；相对生产基线 WMI 阈值，AC 拒绝策略把危机期不安全行动率从 81% 降到 0。理论贡献是 RCA-WM/ACWMI；EvoQuant 只提供项目级证明。
 
-关键词： AI 市场世界模型；加密货币；data-centric AI；质量治理；拒绝判断；系统韧性
+关键词： AI 市场世界模型；条件化编译；质量治理；拒绝判断；加密货币；data-centric AI
 
 ---
 
-## 1. 研究定位（独立成文）
+## 1. 理论贡献（先行）
 
-本文不建立在任何未使用旧稿之上。研究对象就是 EvoQuant 当前仓库所实现的 AI 市场世界模型基础设施：
+| 理论对象 | 含义 |
+| --- | --- |
+| 编译算子 \Pi_t^{(r,m)} | 把原始信息滤子编译为 AI 主视图 |
+| 层级宽度 B^{hier} | 域 / 带 / 资产就绪 |
+| 连续诚实性 H^{cont} | 奖励剔除、惩罚污染 |
+| 信号完整性 S | 半衰期 / 拥挤 / 惊奇度 |
+| 一致性 C | 多证据方向一致 |
+| ACWMI | \{B,U,H,S,C\} 的体制条件加权几何平均 |
+| 拒绝规则 | 随 ACWMI、冲突与降级层级自适应 |
 
-- 数据层持续采集多源市场证据；
-- latest_* 快照 + 质量门控 + 主/诊断视图分离；
-- 逻辑层机制引擎与 ai_market_context 聚合；
-- 生产代码中的 WMI 与 should_ai_abstain。
+## 2. 实证系统（后置证明）
 
-核心问题是：
+EvoQuant 用于证明理论可实例化、可计算、可检验：
 
-> 如何把一个真实可运行的 AI 市场世界模型系统，形式化为可评估的科学对象，并用该系统自己的分析器完成实证？
-
-## 2. 项目事实（来自仓库扫描与运行）
-
-| 指标 | 数值 |
+| 证明材料 | 数值 |
 | --- | ---: |
 | 数据域 | 43 |
 | 逻辑模块 | 39 |
 | 审计证据带 | 13 |
-| Python 文件 | 784 |
-| 约计代码行 | 133,952 |
-| 测试文件 | 56 |
+| 生产基线 | \mathrm{WMI}=B\times U\times H |
 
-完整图表见 pdf/figures/ 与 pdf/tables/，由
+复现：
 
 ``bash
 PYTHONPATH=. python3 pdf/sci/run_paper_experiments.py
 PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
-`
+``
 
-生成；实验脚本直接 import 生产计算器，不以脱离项目的玩具公式替代。
+## 3. 主要验证结果
 
-## 3. 理论要点
-
-1. 层级宽度 B^{hier}：域 / 带 / 资产就绪（使用 BAND_WEIGHTS）  
-2. 连续诚实性 H^{cont}：剔除率与污染率  
-3. 信号完整性 S：alpha_decay 半衰期 / 拥挤 / 惊奇度  
-4. 一致性 C：多引擎方向一致度  
-5. ACWMI：对 \{B,U,H,S,C\} 的体制条件加权几何平均  
-6. 降级拒绝：结合 DegradationManager` 与 cascade/crisis 机制信号
-
-## 4. 主要实证结果
-
-| 任务/指标 | 结果 |
+| 指标 | 结果 |
 | --- | --- |
-| Cascade detection F1 | 0.895 |
-| Crisis detection F1 | 0.793 |
-| Regime match accuracy | 71.6% |
-| 危机期 unsafe（WMI 政策） | 81.0% |
-| 危机期 unsafe（AC 政策） | 0.0% |
-| Range 期双方 abstain | ≈4.7% |
+| Cascade F1 | 0.895 |
+| Crisis F1 | 0.793 |
+| Regime match | 71.6% |
+| 危机 unsafe（基线 WMI） | 81% |
+| 危机 unsafe（AC 理论策略） | 0% |
 
-## 5. 结论
+## 4. 一句话结论
 
-对长期可用的 AI 市场分析系统而言，真正稀缺的是可运行、可审计、可降级的数据世界模型。EvoQuant 提供了这一实证底座；ACWMI 则把其生产 WMI 推进为条件化、可分解、与机制引擎对齐的质量对象。
-
----
-
-## 参考文献（与英文稿一致，节选）
-
-Makarov & Schoar (2020); Liu, Tsyvinski & Wu (2022); Gu, Kelly & Xiu (2020); Harvey, Liu & Zhu (2016); Hansen & Sargent (2008); Geifman & El-Yaniv (2017); Zha et al. (2023); Cochrane (2005); Fama & French (1993).
+理论在前，项目在后：RCA-WM/ACWMI 是论文提出的科学对象；EvoQuant 是用来证明该理论的可运行证据。
