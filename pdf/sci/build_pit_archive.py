@@ -108,6 +108,7 @@ def band_observation_time(
     ex, mk, an = conns["exchange"], conns["market"], conns["analytics"]
 
     if band == "exchange":
+        # prefer merged_klines 1d, else raw klines
         if table_exists(an, "merged_klines"):
             ts = latest_ts(
                 an,
@@ -131,6 +132,7 @@ def band_observation_time(
         return None
 
     if band == "macro" and table_exists(mk, "macro_timeseries"):
+        # use available_at when present for true PIT, else observation_time
         cols = [r[1] for r in mk.execute("PRAGMA table_info(macro_timeseries)").fetchall()]
         if "available_at" in cols:
             return latest_ts(
@@ -172,6 +174,8 @@ def band_observation_time(
                 f"SELECT MAX({tcol}) FROM event_calendar_events WHERE {tcol}<=?",
                 (asof_s,),
             )
+
+    # funding contributes to exchange-band richness via separate age field in panel builder
     return None
 
 

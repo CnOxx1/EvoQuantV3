@@ -35,12 +35,18 @@ make paper-pdf
 make test-paper
 ```
 
-Or via the orchestrator:
+Or via the orchestrator / scripts:
 
 ```bash
 PYTHONPATH=. python3 pdf/sci/paper_lab.py smoke
 PYTHONPATH=. python3 pdf/sci/paper_lab.py all
 PYTHONPATH=. python3 pdf/sci/paper_lab.py all --with-bootstrap
+
+# equivalent low-level path
+PYTHONPATH=. python3 pdf/sci/bootstrap_multiband_archive.py
+PYTHONPATH=. python3 pdf/sci/build_pit_archive.py
+PYTHONPATH=. python3 pdf/sci/run_pit_jf_experiments.py
+PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
 ```
 
 ## Scripts
