@@ -1,26 +1,38 @@
-# 论文包：真实多带 PIT + JF/RFS 取向
+# 论文包：完整 JF/RFS 工作论文 + 真实多带 PIT
 
-## 本轮关键
+## 完整顶刊稿（主入口）
 
-1. **灌库**：OKX exchange / macro / alternative / news / onchain / options / tokenomics  
-2. **PIT 面板**：`pdf/data/pit_multiband_panel.csv`（400 天 × 10 资产）  
-3. **识别**：真实 thin vs thick + durable-band LOBO  
-4. **论文**：按真实 PIT 结果重写
-
-## 复现
+| 语言 | 源文件 | PDF |
+| --- | --- | --- |
+| **英文** | `pdf/sci/main_jf_rfs.tex` | `pdf/sci/main_jf_rfs.pdf` |
+| **中文** | `pdf/cn/main_cn_jf.md` | `pdf/cn/main_cn_jf.pdf` |
 
 ```bash
-# 1) 灌库（耗时；OKX-only runtime patch，不改仓库配置提交）
+make paper-full
+```
+
+理论公式来自 `pdf/original/`；实证来自真实 PIT 面板 `pdf/data/pit_multiband_panel.csv`。  
+EvoQuant 是实验室，不是理论来源。
+
+## 目录
+
+| 路径 | 内容 |
+| --- | --- |
+| `pdf/sci/` | 英文正式稿、实证脚本、PDF 生成 |
+| `pdf/cn/` | 中文完整稿 |
+| `pdf/original/` | 原论文可复用源材料 |
+| `pdf/data/` | PIT 面板与收益数据 |
+| `pdf/figures/` · `pdf/tables/` | 图表 |
+
+## 复现实证
+
+```bash
+make paper-lab
+# 或
 PYTHONPATH=. python3 pdf/sci/bootstrap_multiband_archive.py
-
-# 2) 从历史表构建 PIT
 PYTHONPATH=. python3 pdf/sci/build_pit_archive.py
-
-# 3) 真实 PIT 实证
 PYTHONPATH=. python3 pdf/sci/run_pit_jf_experiments.py
-
-# 4) PDF
-PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
+PYTHONPATH=. python3 pdf/sci/generate_full_manuscript_pdf.py
 ```
 
 ## 关键 OOS 结果（真实 PIT）

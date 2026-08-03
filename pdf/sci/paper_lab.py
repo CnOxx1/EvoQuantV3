@@ -112,6 +112,10 @@ def main() -> int:
     if args.step == "yahoo-exp":
         return _run("run_jf_experiments.py")
     if args.step == "pdf":
+        # Prefer the complete JF/RFS manuscript renderer when present.
+        full = SCI / "generate_full_manuscript_pdf.py"
+        if full.exists():
+            return _run("generate_full_manuscript_pdf.py")
         return _run("generate_sci_pdf.py")
     if args.step == "experiments":
         return _run("run_paper_experiments.py")
