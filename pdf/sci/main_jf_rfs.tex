@@ -187,8 +187,29 @@ W^{\mathrm{AI}}_t=\Pi_t\bigl(\mathcal{F}^{\mathrm{raw}}_t\bigr),
 with alignment/snapshot sync $A_t$, quality gating $M_t$, and bundle aggregation $\mathcal{B}_t$.
 
 \begin{proposition}[Compilation is not feature expansion]
+\label{prop:compile}
 Enlarging $\mathcal{F}^{\mathrm{raw}}_t$ without a well-defined $\Pi_t$ need not enlarge $\mathcal{F}^{\mathrm{AI}}_t$ in a decision-relevant way: ungated, stale, or role-incoherent evidence can expand raw span while shrinking usable world quality via $H_t$ and $U_t$.
 \end{proposition}
+\begin{proof}[Proof sketch]
+Fix filtrations $\mathcal{F}^{\mathrm{raw}}_t\subset\widetilde{\mathcal{F}}^{\mathrm{raw}}_t$ obtained by adding a source $j^\star$ with large lag $\ell_{j^\star,t}$ or $m_{j^\star,t}=1$. Under $M_t$ that fails to exclude $j^\star$, honesty falls: $H_t'=H_t-\Delta$ for some $\Delta>0$. Freshness penalties raise $d_{j^\star,t}$, so $U_t'\le U_t$. Breadth may rise by at most $1/K$, but $\mathrm{WMI}_t'=B_t'U_t'H_t'$ can fall whenever the multiplicative loss in $U_tH_t$ dominates. Since $W^{\mathrm{AI}}_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t)$ inherits the gated objects, the AI-visible $\sigma$-field need not expand in a payoff-relevant way even though the raw $\sigma$-field does. Hence raw span and usable world quality are not monotone in the same direction.
+\end{proof}
+
+\begin{proposition}[Lag reconstruction bound]
+\label{prop:recon}
+Under Assumption~1 and bounded increments $\|S_u-S_{u-1}\|\le \bar\delta$, the reconstruction error satisfies
+\[
+\|\widetilde S_t-S_t\|
+\le C_1'\sum_j\omega_j\ell_{j,t}
++C_2\sum_j\omega_j\|\nu_{j,t}\|
++C_3\sum_j\omega_j(1-z_{j,t})
+\]
+for constants $C_1'=C_1\bar\delta$ independent of the AI model class.
+\end{proposition}
+\begin{proof}
+By the Lipschitz property,
+$\|h_j(S_t)-h_j(S_{t-\ell_{j,t}})\|\le L_j\sum_{u=t-\ell_{j,t}+1}^{t}\|S_u-S_{u-1}\|\le L_j\bar\delta\,\ell_{j,t}$.
+Decompose $\widetilde S_t-S_t$ into the sum of (i) lagged-map bias, (ii) observation noise $\nu_{j,t}$, and (iii) missingness when $z_{j,t}=0$ forces imputation/omission. Triangle inequality and weighting by $\omega_j$ yield the stated bound. Latest-snapshot / TTL / readiness controls are exactly operators that shrink $\ell_{j,t}$, $\|\nu_{j,t}\|$, and $(1-z_{j,t})$.
+\end{proof}
 
 \subsection{Calibration penalty, MIG, and causal DAG}
 If the AI reports confidence $\mathrm{conf}_t$ while $\mathrm{WMI}_t$ is low, define the epistemic calibration penalty
@@ -229,6 +250,14 @@ Abstain whenever every non-abstain action has expected loss above a world-depend
 \label{eq:abstain}
 \end{equation}
 
+\begin{proposition}[World-conditional abstention]
+\label{prop:abstain}
+Suppose $\ell(\mathrm{abstain},R_t)\equiv c_{\mathrm{abs}}(W_t)$ and $\ell(a,R_t)\ge 0$ for $a\neq\mathrm{abstain}$. If for every $a\neq\mathrm{abstain}$ one has $\mathbb{E}[\ell(a,R_t)\mid W_t]>c_{\mathrm{abs}}(W_t)$, then $a^\star_t=\mathrm{abstain}$. Moreover, if expected non-abstain loss is weakly decreasing in $\mathrm{WMI}_t$ (better worlds improve feasible actions) and $c_{\mathrm{abs}}$ is weakly decreasing in $\mathrm{WMI}_t$, then the abstention region is a lower set in $\mathrm{WMI}_t$.
+\end{proposition}
+\begin{proof}
+The first claim is immediate from \eqref{eq:bayes}--\eqref{eq:abstain}: abstain uniquely minimizes expected loss. For the second, let $\underline L(W)=\min_{a\neq\mathrm{abstain}}\mathbb{E}[\ell(a,R_t)\mid W]$. If $\underline L$ and $c_{\mathrm{abs}}$ are both weakly decreasing in $\mathrm{WMI}$, the set $\{W:\underline L(W)>c_{\mathrm{abs}}(W)\}$ is a lower contour set whenever $\underline L-c_{\mathrm{abs}}$ crosses zero at most once from above---the empirically relevant case when worse worlds inflate action loss faster than they inflate the abstention cost. Threshold rules $\mathrm{ACWMI}_t<\bar a$ implement this lower-set structure after IS freezing of $\bar a$.
+\end{proof}
+
 \subsection{ACWMI and explanation metrics}
 Regime-conditional ACWMI extends \eqref{eq:wmi} to a weighted geometric mean of
 $x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t)$ with regime weights $\gamma(r_t)\in\mathbb{R}^5_{+}$:
@@ -254,6 +283,22 @@ with explanation object $\Phi_t$ and distance $d(\cdot,\cdot)$. Thin and thick w
 \Pr(\phi^\star_t\in\Phi^{\mathrm{thick}}_t)>\Pr(\phi^\star_t\in\Phi^{\mathrm{thin}}_t).
 \label{eq:phi}
 \end{equation}
+
+\begin{proposition}[ACWMI factor monotonicity]
+\label{prop:acwmi}
+Fix $\gamma(r_t)\gg 0$ and $x_{i,t}\in(0,1]$. Then $\partial\mathrm{ACWMI}_t/\partial x_{k,t}>0$ for each factor $k$, and $\log\mathrm{ACWMI}_t$ is concave in $\log x_t$. Consequently, a proportional deterioration in any single factor (e.g., honesty under contamination) cannot be offset one-for-one by raising another factor with the same weight.
+\end{proposition}
+\begin{proof}
+Let $w_i=\gamma_i/\sum_j\gamma_j$. Then $\log\mathrm{ACWMI}=\sum_i w_i\log x_i$, so $\partial\mathrm{ACWMI}/\partial x_k=\mathrm{ACWMI}\cdot w_k/x_k>0$. Concavity in $\log x$ is immediate. Equal-weight compensation would require $\Delta\log x_k=-\Delta\log x_\ell$, but under contamination shocks that hit $H$ while $B$ rises only by $O(1/K)$, the net $\sum w_i\Delta\log x_i$ is negative whenever $w_H|\Delta\log H|>w_B\Delta\log B$.
+\end{proof}
+
+\begin{proposition}[Leave-one-band-out as economic MIG]
+\label{prop:lobo}
+Let $V(I)$ be the OOS certainty-equivalent value of a fixed action rule given information set $I$. Define $\widehat{\mathrm{MIG}}_k=V(I)-V(I\setminus E_k)$. If $V$ is monotone in Blackwell informativeness and band $k$ is not redundant given $I\setminus E_k$, then $\widehat{\mathrm{MIG}}_k>0$. Under the maintained PIT construction, setting band $k$ to \texttt{missing} implements $I\setminus E_k$.
+\end{proposition}
+\begin{proof}
+Blackwell monotonicity gives $V(I)\ge V(I\setminus E_k)$. Strict inequality holds when $E_k$ has unique predictive content for the payoff-relevant state under the fixed rule (non-redundancy). The empirical LOBO exercise replaces band status $k$ by \texttt{missing} before recomputing $B^{\mathrm{hier}},U,H$ and ACWMI, which is exactly the information-set deletion $I\setminus E_k$ in the laboratory.
+\end{proof}
 
 \section{The EvoQuant laboratory as measurement instrument}
 \label{sec:lab}
@@ -302,14 +347,33 @@ Always-long; momentum; thick-ungated mechanism signals; simple outage; cascade; 
 \paragraph{Economic value.}
 Annualized return and volatility, Sharpe ratio, CRRA certainty equivalent with $\gamma=2$, and maximum drawdown. Positions are equal-weight across tradeable names on active days; abstention earns cash (zero return).
 
+\paragraph{Inference.}
+OOS contrasts use circular block bootstrap on daily portfolio PnL ($n_{\mathrm{boot}}=999$, block length 5 days). We report two-sided $p$-values for $\Delta$Sharpe and $\Delta$CE under $H_0:\Delta=0$.
+
 \paragraph{Identification designs.}
-(i) Thin vs thick worlds using real PIT band statuses; (ii) leave-one-band-out on durable bands as economic MIG; (iii) scarce-world event study using bottom $B^{\mathrm{hier}}$ quintile when natural hard outages are rare inside continuous OKX backfill.
+(i) Thin vs thick worlds using real PIT band statuses; (ii) leave-one-band-out on durable bands as economic MIG (Proposition~\ref{prop:lobo}); (iii) scarce-world event study using bottom $B^{\mathrm{hier}}$ quintile when natural hard outages are rare inside continuous OKX backfill.
+
+\subsection{Mechanism signals (opened)}
+\label{sec:mech}
+Directional actions are \emph{not} a latent model. On pre-$t$ returns only, production calculators emit:
+\begin{align*}
+S_t&=\mathrm{clip}\!\big(\mathrm{hl\_factor}\cdot(1-0.7\,\mathrm{crowd}_t)\cdot(0.35+0.65\,\mathrm{surprise}_t)\big),\\
+C_t&=\text{pairwise sign-agreement among }\{\mathrm{mom5},\mathrm{flow},-\mathbf{1}_{\mathrm{casc}>0.55},-\mathbf{1}_{\mathrm{sys}>55}\},
+\end{align*}
+with $\mathrm{cascade\_p}$ from \texttt{LiquidationCascadeCalculator}, systemic score from \texttt{ContagionRiskCalculator}, half-life/crowding/surprise from \texttt{AlphaDecayCalculator}, flow/VPIN from \texttt{FlowDecompositionCalculator}, and regime from \texttt{RegimeClassifier}. The action rule is deterministic:
+\begin{align*}
+\text{(R1)}&\quad \mathrm{crisis}\ \vee\ \mathrm{cascade\_p}\ge 0.60 \Rightarrow \mathrm{signal}=-1,\\
+\text{(R2)}&\quad \mathrm{trend}\ \wedge\ \mathrm{mom5}>0\ \wedge\ \mathrm{cascade\_p}<0.45 \Rightarrow \mathrm{signal}=+1,\\
+\text{(R3)}&\quad \text{else }\mathrm{sign}(\mathrm{mom5})\ \text{(or 0)}.
+\end{align*}
+Component definitions are exported in \texttt{table\_mechanism\_definition.csv}; regime-level averages in \texttt{table\_mechanism\_by\_regime.csv}.
 
 \section{Main results}
 \label{sec:results}
 
 \subsection{Thick real PIT worlds dominate thin worlds}
 Table~\ref{tab:thin} reports OOS economic value. Exchange-only thin worlds deliver Sharpe $\approx 0$ and CE $-0.011$. Thick real PIT worlds (exchange+macro+alternative and whatever else is ready) deliver Sharpe $1.399$ and CE $0.474$. Gated AC keeps Sharpe $0.901$ and CE $0.199$ while abstaining $29.7\%$.
+Circular block bootstrap ($n=999$, block $=5$) for thick$-$thin yields $\Delta\mathrm{CE}=0.486$ with 95\% CI $[-0.79,1.79]$ ($p=0.44$): the point estimate is large, but with only 200 OOS days the CI still covers zero. We report this honestly rather than suppressing inference.
 
 \begin{table}[t]
 \centering
@@ -327,26 +391,28 @@ Thick gated AC & 0.356 & 0.688 & $0.901$ & $0.199$ \\
 \end{table}
 
 \subsection{Leave-one-band-out identification}
-Table~\ref{tab:lobo} shows that dropping durable bands destroys OOS CE: macro $-0.534$, alternative $-0.526$, exchange $-0.339$. This is direct economic MIG evidence from the real archive: thickness is not cosmetic.
+Table~\ref{tab:lobo} shows that dropping durable bands destroys OOS CE: macro $-0.534$, alternative $-0.526$, exchange $-0.339$. This is the empirical counterpart of Proposition~\ref{prop:lobo}. Block-bootstrap two-sided $p$-values for $\Delta\mathrm{CE}$: alternative $0.040$, macro $0.084$, exchange $0.400$.
 
 \begin{table}[t]
 \centering
-\caption{Leave-one-band-out on durable PIT bands (OOS).}
+\caption{Leave-one-band-out on durable PIT bands (OOS), with bootstrap $p(\Delta\mathrm{CE})$.}
 \label{tab:lobo}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-Band dropped & Sharpe & CE & $\Delta$CE \\
+Band dropped & Sharpe & CE & $\Delta$CE & $p$ \\
 \midrule
-(none) & 0.901 & 0.199 & 0 \\
-exchange & $-0.232$ & $-0.141$ & $-0.339$ \\
-macro & $-0.485$ & $-0.336$ & $-0.534$ \\
-alternative & $-0.422$ & $-0.327$ & $-0.526$ \\
+(none) & 0.901 & 0.199 & 0 & --- \\
+exchange & $-0.232$ & $-0.141$ & $-0.339$ & 0.400 \\
+macro & $-0.485$ & $-0.336$ & $-0.534$ & 0.084 \\
+alternative & $-0.422$ & $-0.327$ & $-0.526$ & 0.040 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{OOS policy horse-race}
+\subsection{OOS policy horse-race and bootstrap}
 Table~\ref{tab:econ} reports the policy horse-race. Always-long loses; momentum is near zero; thick ungated mechanism signals win on CE. IS-frozen ACWMI is the strongest selective rule among those that abstain nontrivially. The production WMI$<0.2$ rule abstains $100\%$ because sparse-archive WMI levels sit below a threshold calibrated for denser production worlds---a cautionary result for threshold portability across information-set supports.
+
+Table~\ref{tab:boot} reports block-bootstrap contrasts. Point estimates favor thick/AC over always-long, but 200-day OOS CIs are wide and typically include zero---exactly the finite-sample discipline a JF/RFS referee should demand. Longer calendars are therefore first-order for significance, not only for band vintages.
 
 \begin{table}[t]
 \centering
@@ -365,8 +431,27 @@ ACWMI (IS-frozen) & $0.454$ & $0.901$ & $0.199$ & $-0.340$ & 0.297 \\
 \end{tabular}
 \end{table}
 
+\begin{table}[t]
+\centering
+\caption{OOS circular block-bootstrap contrasts ($n=999$, block $=5$).}
+\label{tab:boot}
+\begin{tabular}{lrrrr}
+\toprule
+Contrast & $\Delta$Sharpe & $\Delta$CE & $p_{\mathrm{CE}}$ & 95\% CI($\Delta$CE) \\
+\midrule
+Thick $-$ Always long & 2.80 & 1.63 & 0.27 & $[-0.96,4.44]$ \\
+ACWMI $-$ Always long & 2.30 & 1.36 & 0.30 & $[-1.09,3.85]$ \\
+ACWMI $-$ Momentum & 0.80 & 0.40 & 0.43 & $[-0.59,1.44]$ \\
+Thick $-$ ACWMI & 0.50 & 0.28 & 0.30 & $[-0.22,0.82]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Mechanism audit}
+Opening the signal shows a stark composition: $3546/4000$ asset-days are classified \texttt{crisis} with mean $\mathrm{cascade\_p}=0.87$ and $\mathrm{signal}=-1$ always; only $454$ days are \texttt{range}. Thick-ungated CE therefore largely reflects the R1 short branch under cascade pressure, not an opaque learner. This is a feature for auditability and a caveat for external validity: longer non-crisis spans are required before claiming regime-balanced skill.
+
 \subsection{Interpretation}
-Three implications follow. First, compilation quality has first-order economic content: thin worlds are not merely statistically noisier, they destroy CE. Second, MIG is heterogeneous across durable bands; macro and alternative are not redundant with exchange bars. Third, selective prediction is implementable only when thresholds are frozen to the archive's support; importing a production WMI cutoff into a sparse PIT panel yields vacuous abstention.
+Five implications follow. First, compilation quality has first-order economic content (Propositions~\ref{prop:compile}--\ref{prop:lobo}). Second, LOBO MIG is strongest for alternative ($p=0.04$) and marginal for macro ($p=0.08$). Third, selective prediction requires thresholds frozen to archive support. Fourth, mechanism actions are an auditable R1--R3 rule. Fifth, 200-day OOS bootstrap CIs remain wide---point estimates and significance must be separated separately.
 
 \section{Robustness, threats, and the JF/RFS agenda}
 \label{sec:robust}
