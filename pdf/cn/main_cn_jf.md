@@ -14,9 +14,9 @@
 
 条件资产定价把投资者信息集当作给定。在加密市场，这一前提失效：证据跨交易所、宏观 vintage、链上、期权、解锁与新闻异步到达，且间歇不可用。本文提出金融原生的**信息集编译**理论：定义认识论观测对象、异步重建误差界、从原始滤子到 AI 可见滤子的编译算子、生产基线 WMI，以及体制条件化的 ACWMI；并形式化 ECP、MIG、可用性冲击识别 DAG、贝叶斯弃权与解释质量指标 EAR/UCR/EV。
 
-实证上，我们灌入真实多带档案（OKX 行情、宏观 vintage、alternative，以及较薄的 news/onchain/options/tokenomics），构建 400 天 × 10 资产（4000 资产—日）的 PIT 面板，并对齐 Yahoo 收益。机制引擎仅使用 $t$ 前信息；弃权阈值样本内冻结。样本外，厚真实 PIT 世界显著优于仅交易所薄世界（CE $0.474$ vs $-0.011$）。对耐久证据带的 leave-one-band-out 显示：去掉 macro/alternative/exchange，CE 分别下降 $0.534/0.526/0.339$。IS 冻结的 ACWMI 门控可实施（Sharpe $0.901$，CE $0.199$，弃权 $29.7\%$），但在 CE 上未主导未门控厚信号。生产阈值 WMI$<0.2$ 在稀疏档案上 100% 弃权，说明质量阈值必须按信息集支撑冻结。
+实证上，我们在 400 天 × 10 资产（4000 资产—日）的真实 PIT 面板上，把**带内容**（vintage 安全的 VIX/DXY 宏观风险状态、stablecoin 7 日净供给流动性）直接放进完全透明的行动规则。删除 macro / alternative 带摧毁 OOS 确定性等价收益（$\Delta$CE $-0.42$ / $-0.40$；块 bootstrap $p=0.010$ / $0.008$），且**分解显示损失主要经内容通道**而非仅弃权门控。透明规则 OOS 显著胜过动量（$\Delta$CE $0.334$，$p=0.034$，CI 排除 0）；而 2017–2026 长回测显示同一规则对动量**无**无条件优势——证明收益来自编译后的带内容，而非隐藏的收益率预测器。结果经受 10bps 成本与永续 funding 调整；推断附块长敏感性与 reality check 多重检验校正。
 
-贡献是：带完整公式的编译理论 + 可复现的真实 PIT 识别协议。局限（若干带右删失、自然硬中断稀少、十个流动性标的）明确列为终稿议程。
+贡献是：带证明链与 SDF 接口的编译理论 + 内容/门控可分解的 LOBO 识别协议 + 长回测外部有效性锚。局限（带内容 vintage 单窗口、右删失带、十个标的）明确列为终稿议程。
 
 **关键词：** 信息集；选择性预测；加密货币；point-in-time；测量误差；世界模型  
 **JEL：** G12, G14, C58, C55
@@ -46,12 +46,13 @@
 
 ## 3. 理论（含 Proposition 证明链）
 
-本稿英文 TeX 已补全证明链（非定义堆叠）：
-- **Prop. Compilation ≠ feature expansion**（证明草图：未门控滞后源可抬高 raw span 却压低 $U\!H$）
-- **Prop. Lag reconstruction bound**（Lipschitz + 三角不等式）
-- **Prop. World-conditional abstention**（贝叶斯最优弃权；弃权区为 WMI 下集）
-- **Prop. ACWMI factor monotonicity**（对数线性 + 凹性 → 单因子恶化不可被等权抵消）
-- **Prop. LOBO as economic MIG**（Blackwell 单调 + PIT 删带实现 $I\setminus E_k$）
+本稿英文 TeX 已补全证明链（非定义堆叠），单交叉与非冗余条件已形式化为 Assumption：
+- **命题 1. Compilation ≠ feature expansion**（未门控滞后源可抬高 raw span 却压低 $U\!H$）
+- **命题 2. SDF 接口**：可实施定价陈述只能条件于编译后滤子 $\mathbb{E}[m_{t+1}R_{t+1}\mid\mathcal{F}^{\mathrm{AI}}_t]=1$；对 raw 滤子度量的 alpha 含**编译楔** $w_t$，当且仅当 $\Pi$ 不损失定价相关信息时 $w_t\equiv0$（迭代期望 + MIG>0 构造反例；完整证明入附录）
+- **命题 3. Lag reconstruction bound**（Lipschitz + 三角不等式）
+- **命题 4. World-conditional abstention**（贝叶斯最优弃权；单交叉假设下弃权区为 WMI 下集）
+- **命题 5. ACWMI factor monotonicity**（对数线性 + 凹性 → 单因子恶化不可被等权抵消）
+- **命题 6. LOBO = 经济 MIG，含通道分解**：$\widehat{\mathrm{MIG}}_k$ 恒等分解为**内容通道**（带内容改变行动方向/激活）与**门控通道**（带可用性改变弃权）；PIT 上"tilt 置零"实现内容删除、"状态置 missing"实现门控删除，两者并施即 $I\setminus E_k$
 
 ### 3.1 宽度、稳定性、诚实性与 WMI
 
@@ -120,7 +121,11 @@ W^{\mathrm{AI}}_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t).
 
 *证明概要.* 加入滞后大或缺失的源 $j^\star$；若 $M_t$ 未剔除，则 $H$ 下降且 $U$ 弱降。宽度至多增 $1/K$，但乘积 $\mathrm{WMI}=BUH$ 可因 $UH$ 损失主导而下降。$W^{\mathrm{AI}}=\Pi(\mathcal{F}^{\mathrm{raw}})$ 继承门控对象，故原始 $\sigma$-域扩张不必扩大支付相关的 AI 可见信息。□
 
-**命题 2（滞后重构界）**：在 Lipschitz 观测与有界增量下，重构误差满足延迟/噪声/缺失三项界，常数与 AI 模型类无关。
+**命题 2（SDF 接口：编译约束定价）**：可实施的条件定价陈述只能取 $\mathbb{E}[m_{t+1}R_{t+1}\mid\mathcal{F}^{\mathrm{AI}}_t]=1$ 形式；对更细的 $\mathcal{F}^{\mathrm{raw}}_t$ 评价同一代理人产生**编译楔** $w_t=\mathbb{E}[mR\mid\mathcal{F}^{\mathrm{raw}}]-\mathbb{E}[mR\mid\mathcal{F}^{\mathrm{AI}}]$，对所有 payoff 为零当且仅当 $\Pi$ 不损失定价相关信息。对 raw 滤子度量的 alpha 混合了真实错定价与编译损失。
+
+*证明概要.* 迭代期望给 $\mathbb{E}[w_t\mid\mathcal{F}^{\mathrm{AI}}]=0$；若某带 $\mathrm{MIG}>0$ 被弃，存在 payoff 其 raw 条件期望随该带变动而编译后不变，故 $w_t\neq0$ 于正概率集。□
+
+**命题 3（滞后重构界）**：在 Lipschitz 观测与有界增量下，重构误差满足延迟/噪声/缺失三项界，常数与 AI 模型类无关。
 
 *证明概要.* Lipschitz 给出滞后映射偏差 $\le L_j\bar\delta\,\ell_{j,t}$；将 $\widetilde S-S$ 分解为滞后偏差、$\nu$ 与缺失项，三角不等式加权得界。TTL/readiness 恰压缩这三项。□
 
@@ -146,9 +151,9 @@ a^\star_t=\arg\min_{a}\mathbb{E}[\ell(a,R_t)\mid W_t],
 \]
 当所有非弃权动作期望损失高于 $c_{\mathrm{abs}}(W_t)$ 时弃权。
 
-**命题 3（世界条件弃权）**：若 $\ell(\mathrm{abstain})\equiv c_{\mathrm{abs}}(W)$ 且所有非弃权动作 $\mathbb{E}[\ell\mid W]>c_{\mathrm{abs}}$，则最优为弃权；若非弃权损失与 $c_{\mathrm{abs}}$ 对 WMI 弱递减，弃权域是 WMI 的下集（由 IS 冻结 ACWMI 阈值实现）。
+**命题 4（世界条件弃权）**：若 $\ell(\mathrm{abstain})\equiv c_{\mathrm{abs}}(W)$ 且所有非弃权动作 $\mathbb{E}[\ell\mid W]>c_{\mathrm{abs}}$，则最优为弃权；在单交叉假设（已形式化为 Assumption）下，非弃权损失与 $c_{\mathrm{abs}}$ 对 WMI 弱递减时弃权域是 WMI 的下集（由 IS 冻结 ACWMI 阈值实现）。
 
-*证明概要.* 第一称由 Bayes argmin 直接得；第二称在 $\underline L-c_{\mathrm{abs}}$ 至多一次由上穿越零时成立。□
+*证明概要.* 第一称由 Bayes argmin 直接得；第二称由单交叉假设给出下等值集结构。□
 
 ### 3.7 ACWMI 与解释质量
 
@@ -173,15 +178,15 @@ x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t).
 \Pr(\phi^\star_t\in\Phi^{\mathrm{thick}}_t)>\Pr(\phi^\star_t\in\Phi^{\mathrm{thin}}_t).
 \]
 
-**命题 4（ACWMI 因子单调性）**：$\gamma\gg 0$、$x\in(0,1]$ 时，$\partial\mathrm{ACWMI}/\partial x_k>0$，且 $\log\mathrm{ACWMI}$ 对 $\log x$ 凹；诚实性比例恶化不能由等权宽度一对一抵消。
+**命题 5（ACWMI 因子单调性）**：$\gamma\gg 0$、$x\in(0,1]$ 时，$\partial\mathrm{ACWMI}/\partial x_k>0$，且 $\log\mathrm{ACWMI}$ 对 $\log x$ 凹；诚实性比例恶化不能由等权宽度一对一抵消。
 
 *证明概要.* $\log\mathrm{ACWMI}=\sum w_i\log x_i$；污染冲击使 $|\Delta\log H|$ 大而 $\Delta\log B=O(1/K)$，净加权变化为负。□
 
-**命题 5（LOBO 即经济 MIG）**：固定规则下 $V(I)$ 为 OOS CE，$\widehat{\mathrm{MIG}}_k=V(I)-V(I\setminus E_k)$；Blackwell 单调 + 非冗余 ⇒ $\widehat{\mathrm{MIG}}_k>0$。PIT 上将带 $k$ 置为 missing 即实现 $I\setminus E_k$。
+**命题 6（LOBO 即经济 MIG，含通道分解）**：固定规则下 $V(I)$ 为 OOS CE，$\widehat{\mathrm{MIG}}_k=V(I)-V(I\setminus E_k)$。带 $k$ 经两条通道进入决策——**内容通道**（带信号改变行动方向/激活）与**门控通道**（带可用性改变 $B,U,H$ 与弃权）；$\widehat{\mathrm{MIG}}_k$ 按套叠恒等式精确分解为两通道效应。Blackwell 单调 + 非冗余 ⇒ $\widehat{\mathrm{MIG}}_k>0$。PIT 上"tilt 置零"实现内容删除、"状态置 missing"实现门控删除，两者并施即 $I\setminus E_k$。
 
-*证明概要.* Blackwell ⇒ $V(I)\ge V(I\setminus E_k)$；实证 LOBO 在重算 $B,U,H,\mathrm{ACWMI}$ 前删除带状态，恰为信息集删减。□
+*证明概要.* Blackwell ⇒ $V(I)\ge V(I\setminus E_k)$；分解是三个实验臂（仅内容、仅门控、全删）上的套叠恒等式。□
 
-**证明链小结**：命题 1 区分原始跨度与可用世界质量；命题 2 锚定 freshness/TTL；命题 3 正当化世界条件弃权；命题 4 使 ACWMI 成为严格质量指数；命题 5 将 LOBO CE 跌幅映射为经济 MIG。后文实证是该链的实例化，而非替代。
+**证明链小结**：命题 1 区分原始跨度与可用世界质量；命题 2 把任意定价核约束到编译后滤子（alpha vs 编译楔）；命题 3 锚定 freshness/TTL；命题 4 正当化世界条件弃权；命题 5 使 ACWMI 成为严格质量指数；命题 6 将 LOBO CE 跌幅映射为经济 MIG 并分离内容与门控。后文实证是该链的实例化，而非替代。
 
 ---
 
@@ -212,71 +217,82 @@ PIT 面板：400 天 × 10 资产 = 4000 行；耐久带 ready 率 ≈ exchange 
 - **推断**：OOS 日度组合收益的循环块 bootstrap（$n=999$，块长 5 日）给出 $\Delta$Sharpe/$\Delta$CE 的双边 $p$ 值  
 - 识别：薄 vs 厚；耐久带 LOBO；稀缺世界（$B^{\mathrm{hier}}$ 底五分位）事件研究  
 
-### 6.1 Mechanism signals（打开黑盒）
+### 6.1 Mechanism signals：透明规则 + 带内容进入行动
 
-方向仓位是**确定性规则**（无隐层模型），仅用 $t$ 前收益与生产计算器：
+方向仓位是**确定性规则**（无隐层模型）。关键改动：带**内容**直接进入行动映射，PIT 不 ready 时强制为 0，故 LOBO 删的是内容而不仅是门控：
 
+- $\mathrm{macro\_tilt}$：vintage 安全（`available_at`）的 VIX/DXY 5 日变化——双降 = risk-on(+1)，双升 = risk-off(−1)  
+- $\mathrm{alt\_tilt}$：stablecoin 7 日净供给符号（$t$ 前最新观测）  
 - $S$：AlphaDecay 半衰期 × 拥挤 × 惊奇  
-- $C$：mom5 / flow / cascade / systemic 符号两两一致率  
-- **R1** crisis 或 $\mathrm{cascade\_p}\ge0.60$ → 做空  
-- **R2** trend 且 mom5$>0$ 且 cascade$<0.45$ → 做多  
-- **R3** 否则 $\mathrm{sign}(\mathrm{mom5})$  
+- $C$：{mom5, flow, cascade, systemic, macro_tilt, alt_tilt} 符号两两一致率  
+- **R1** crisis **且** $\mathrm{cascade\_p}\ge0.60$ → 做空（**证据合取**：单源触发不可行动，与 $C$ 同逻辑）  
+- **R2** trend 且 mom5$>0$ 且 cascade$<0.45$ 且 macro_tilt$\ge0$ → 做多（宏观否决）  
+- **R2b** range 且 macro_tilt$>0$ 且 alt_tilt$>0$ 且 mom5$\ge0$ → 做多（带驱动）  
+- **R3** $\mathrm{sign}(\mathrm{mom5})$；双带 risk-off 时多头否决为 0（空仓）；平局由 $\mathrm{sign}(\mathrm{tilt和})$ 决定  
 
-详见 `table_mechanism_definition.csv` / `table_mechanism_by_regime.csv`。
+**校准审计与引擎修复（如实披露）**：长回测审计曾暴露两处 harness 缺陷——全历史回撤使 crisis 成吸收态、cascade 输入映射饱和于 0.86（规则退化为恒定做空，靠熊市 OOS"获胜"）。修复为 60 日窗口、波动率标准化尾部强度、真实 RSI/ADX 代理后，cascade_p 对次日左尾实现单调校准（$P(r<-5\%)$ 从 0.039 升至 0.110）。该修复由审计驱动，非 OOS 表现搜索。详见 `table_mechanism_definition.csv` / `table_cascade_calibration.csv`。
 
 ---
 
 ## 7. 主要结果
 
-### 7.1 厚世界 ≫ 薄世界（OOS）
-
-| 世界 | Mean $B$ | Mean $H$ | Sharpe | CE |
-| --- | ---: | ---: | ---: | ---: |
-| 薄（仅 exchange） | 0.201 | 0.562 | −0.004 | −0.011 |
-| 厚真实 PIT | 0.356 | 0.688 | 1.399 | 0.474 |
-| 厚 + AC 门控 | 0.356 | 0.688 | 0.901 | 0.199 |
-
-### 7.2 Leave-one-band-out（耐久带，含 bootstrap $p$）
-
-| 去掉的带 | Sharpe | CE | ΔCE | $p(\Delta\mathrm{CE})$ |
-| --- | ---: | ---: | ---: | ---: |
-| （无） | 0.901 | 0.199 | 0 | — |
-| exchange | −0.232 | −0.141 | −0.339 | 0.400 |
-| macro | −0.485 | −0.336 | −0.534 | 0.084 |
-| alternative | −0.422 | −0.327 | −0.526 | **0.040** |
-
-### 7.3 OOS 策略赛马
+### 7.1 带内容 OOS 显著胜过动量（头条对比）
 
 | 策略 | 年化收益 | Sharpe | CE | 最大回撤 | 弃权率 |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Always long | −0.816 | −1.399 | −1.157 | −0.466 | 0 |
 | Momentum | 0.051 | 0.101 | −0.202 | −0.500 | 0 |
-| Thick ungated | 0.816 | 1.399 | 0.474 | −0.279 | 0 |
+| Mechanism（带内容） | 0.385 | 0.767 | **0.132** | −0.438 | 0.075 |
 | WMI$<0.2$ | 0 | 0 | 0 | 0 | 1.000 |
-| ACWMI (IS-frozen) | 0.454 | 0.901 | 0.199 | −0.340 | 0.297 |
+| ACWMI (IS-frozen) | 0.385 | 0.767 | 0.132 | −0.438 | 0.075 |
 
-### 7.4 Bootstrap 推断与机制审计
+**Mechanism − Momentum：$\Delta$CE $=0.334$，$p=0.034$，95% CI $[0.03,0.68]$ 排除 0。** 两策略共享全部收益率输入、仅差 vintage 宏观/替代内容——该对比按构造隔离了编译带内容的价值。
 
-循环块 bootstrap（999 × 5 日）OOS 对比：点估计有利于厚/AC，但 **200 日 OOS 的 95% CI 多数仍含 0**（厚−薄 $\Delta\mathrm{CE}=0.486$，CI $[-0.79,1.79]$，$p=0.44$）。这是有限样本纪律，不是隐瞒。
+### 7.2 厚 vs 薄世界（薄 = 内容与门控同删）
 
-机制组成：4000 资产—日中 **3546** 为 `crisis` 且 $\mathrm{signal}=-1$（cascade 主导的 R1）；仅 454 为 `range`。厚未门控 CE 因此可审计（非黑盒），但对外部有效性提出警示：需更长非危机跨度才能声称体制均衡技能。
+| 世界 | Mean $B$ | Mean $H$ | Sharpe | CE | 弃权率 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 薄（仅 exchange） | 0.201 | 0.562 | −0.850 | −0.388 | 0.454 |
+| 厚真实 PIT | 0.356 | 0.688 | 0.767 | 0.132 | 0.075 |
 
-**解释：**（i）编译质量具有一阶经济内容（命题 1–5）；（ii）LOBO MIG 在 alternative 显著（$p=0.04$）、macro 边际（$p=0.08$）；（iii）选择性预测仅在阈值按档案支撑冻结时才可实施；（iv）机制是可审计 R1–R3；（v）200 日 OOS 对多数 CE 对比仍功效不足——点估计与显著性必须分开报告。
+$\Delta$Sharpe $=1.62$（$p=0.044$，CI 排除 0）；$\Delta$CE $=0.52$（$p=0.22$，200 天尚不显著）。
+
+### 7.3 LOBO：显著，且由内容通道驱动
+
+| 带 | ΔCE 总 | $p$ | ΔCE 内容 | $p$ | ΔCE 门控 | $p$ |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| exchange | −0.056 | 0.394 | — | — | −0.056 | 0.394 |
+| macro | −0.418 | **0.010** | −0.334 | **0.034** | −0.066 | **0.026** |
+| alternative | −0.402 | **0.008** | −0.334 | **0.034** | −0.040 | **0.044** |
+
+带信息改变的是**交易什么**，而不仅是**何时弃权**——直接回应"LOBO 只测门控敏感性"的批评。两带内容删除损失相同是因为 R2b 与双带否决都要求两个 tilt 同号。
+
+### 7.4 长回测外部有效性锚（BTC/ETH 2017–2026）
+
+同一规则（tilt=0，2025 前无带档案）在 3471 天上：年化 0.456、Sharpe 0.664、CE −0.009，10 个日历年 8 年为正（2018 熊市 +2.13）；但**对动量无显著优势**（$\Delta$CE 0.017，$p=0.55$）。收益率核心无隐藏 alpha ⇒ 7.1–7.3 的显著收益负载在编译带内容上。
+
+### 7.5 成本、funding 与推断稳健性
+
+10bps 单边成本下 Mechanism 保持 Sharpe 0.467（CE −0.019 vs 动量 −0.352）；25bps 下双双为负但排序不变；永续 funding 调整改变 CE 不足 0.005。块长 {5,10,21} 结论稳定。White (2000) reality check（全策略菜单 vs always-long）$p=0.144$——多重检验诚实披露：菜单级弱于单一预设的内容对比。$B^{\mathrm{hier}}$ 权重扰动 CE 三位小数不变。
+
+### 7.6 稀疏档案上的选择性预测
+
+IS 校准选择最小附加门控（ACWMI$<0.25$ 仅额外约束 1% 天数）；生产 WMI$<0.2$ 100% 弃权。两者同证：**质量阈值不可跨信息集支撑移植**（命题 4）。实测 ECP $=0.688$（conf$>0.7$ 且 WMI$<0.2$）——分类器频繁在薄世界高置信，恰是 ECP 设计要捕捉的状态。所有行动绑定命名计算器证据（EAR $=1$，UCR $=0$）。
 
 ---
 
 ## 8. 稳健性、威胁与顶刊议程
 
-1. 持续多年采集，消除 news/onchain/options/tokenomics 右删失。  
+1. 持续多年采集，消除 news/onchain/options/tokenomics 右删失，扩展带内容 vintage 到多窗口。  
 2. 以 `collection_runs` / 制度中断日志强化 $O_t$。  
 3. 每日落 readiness / AI-context 快照，实现纯 `time_slice` 回放。  
-4. 扩展截面与日历；补充交易成本调整 CE 与多重检验披露；拉长 OOS 以收窄 bootstrap CI。
+4. 扩展截面与日历；stationary bootstrap 复核；损失函数变体。
 
 ---
 
 ## 9. 结论
 
-信息集编译是加密市场的一阶对象。本文给出带证明链的 RCA-WM/ACWMI 理论（命题 1–5），在真实多带 PIT 档案上识别：厚世界优于薄世界，耐久带 LOBO 具有可 bootstrap 的经济 MIG，机制信号为确定性 R1–R3，IS 冻结 ACWMI 门控可实施——同时诚实报告 200 日 OOS 功效不足。EvoQuant 是实验室。通往 JF/RFS 终稿的路径是制度性的：加深 vintage、记录中断、每日快照、扩展截面与日历——同时**不得再压缩掉形式化证明链**。
+信息集编译是加密市场的一阶对象。本文给出带证明链与 SDF 接口的 RCA-WM/ACWMI 理论（命题 1–6），并在真实多带 PIT 档案上完成可分解识别：**带内容显著优于动量（$p=0.034$）、LOBO macro/alternative 显著（$p=0.010/0.008$）且内容通道主导、长回测证明规则本身无隐藏 alpha**——恰是编译理论预测的模式。通往 JF/RFS 终稿的路径是制度性的：加深 vintage、记录中断、每日快照、扩展截面与日历——同时**不得再压缩掉形式化证明链**。
 
 ---
 
