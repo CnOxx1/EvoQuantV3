@@ -1,31 +1,39 @@
 # EvoQuant 论文参考与理论扩展
 
-本目录存放项目相关的学术论文文本与 PDF。
+本目录存放项目相关学术论文、SCI 投稿稿、以及由项目代码生成的图/表。
 
-## 文件说明
+## 文件结构
 
-| 文件 | 说明 |
-| --- | --- |
-| `main_cn_core.pdf` | 前序论文 PDF（来自 EvoQuantWeb）：《从“模型优先”到“世界模型优先”》 |
-| `main_cn_acwmi.md` | **新论文** Markdown 源稿 |
-| `main_cn_acwmi.pdf` | **新论文** PDF |
-| `main_cn_acwmi.txt` | **新论文** 纯文本版 |
-| `generate_acwmi_pdf.py` | 由 Markdown 生成 PDF 的脚本 |
+```text
+pdf/
+  main_cn_core.pdf              # 前序论文（World-Model-First / WMI）
+  main_cn_acwmi.md|.txt|.pdf    # 中文理论优化稿
+  main_cn_acwmi_sci.pdf         # SCI 英文稿（含图表）副本
+  figures/                      # Fig.1–Fig.8
+  tables/                       # Table CSV / panel data
+  sci/
+    main_acwmi_sci.tex          # Elsevier elsarticle 源稿
+    main_acwmi_sci.pdf          # SCI 英文 PDF
+    run_paper_experiments.py    # 实验与出图脚本
+    generate_sci_pdf.py         # PDF 渲染脚本
+    README.md
+```
 
-## 理论演进关系
+## 理论演进
 
-1. **第一代（前序论文）**  
-   提出世界模型优先命题，定义  
-   \(\mathrm{WMI}_t = B_t \times U_t \times H_t\)，  
-   并形式化 `latest_*`、质量门控、主/诊断视图分离与八证据带编译。
+1. **第一代**：\(\mathrm{WMI}=B\times U\times H\)
+2. **第二代（本文）**：RCA-WM / 加权几何 \(\mathrm{ACWMI}\)
+   - 层级宽度、连续诚实性、信号完整性、跨证据一致性
+   - 体制–任务条件化编译、点时路径、降级韧性诚实性
 
-2. **第二代（本文）**  
-   针对乘积坍塌、离散诚实性、任务无关编译、扁平证据带、缺少点时与降级理论等局限，提出  
-   **条件化自适应世界模型（RCA-WM）** 与  
-   \(\mathrm{ACWMI}_t^{(r,m)}\)。
-
-## 重新生成 PDF
+## 复现图表
 
 ```bash
-python3 pdf/generate_acwmi_pdf.py
+PYTHONPATH=. python3 pdf/sci/run_paper_experiments.py
+PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
 ```
+
+关键实证结果（示意，以脚本最新输出为准）：
+
+- 因子分解模型 \(R^2=0.484\) vs 标量 WMI \(R^2=0.115\)
+- 危机体制下 ACWMI 拒绝判断率远高于 WMI 固定阈值

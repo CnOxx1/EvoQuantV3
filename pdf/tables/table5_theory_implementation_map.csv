@@ -1,0 +1,10 @@
+Theory object,EvoQuant implementation,Upgrade vs WMI
+Latent state S_t,Multi-domain collectors + mechanism engines,Extended
+Breadth B,43 domains / 13 audit bands / asset readiness,Hierarchical
+Stability U,pipeline_latency freshness summary,Retained
+Honesty H,quality_flag + ai_excluded_sources,Continuous H_cont
+Compilation Pi,logic_pipeline DAG phases,Regime-task conditional
+Mechanism layer,cascade/lead-lag/narrative/alpha_decay/regime,New
+PIT path,time_slice + snapshot_versioning,New
+Degraded mode,DegradationManager levels,Resilient honesty
+Abstention,should_ai_abstain / adaptive threshold,State-dependent

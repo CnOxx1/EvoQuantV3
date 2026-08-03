@@ -1,0 +1,5 @@
+Model,R2,Intercept,WMI,B_hier,U,H_cont,S,C,ACWMI
+Model A: WMI only,0.1154,-0.0,0.3397,,,,,,
+Model B: factor decomposition,0.4838,-0.0,,0.0841,0.0671,0.434,0.3807,0.3492,
+Model C: ACWMI,0.3448,-0.0,,,,,,,0.5872
+Model D: ACWMI + factors,0.4891,-0.0,,0.0583,0.0407,0.3936,0.2073,0.2611,0.2375

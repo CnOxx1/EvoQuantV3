@@ -1,0 +1,11 @@
+Symbol,Definition
+S_t,Latent market state
+WMI_t,First-generation product index B×U×H
+B_hier,Hierarchical breadth (domain/band/asset)
+H_cont,Continuous honesty from exclusion/contamination
+S_t,Signal integrity
+C_t,Cross-evidence consistency
+ACWMI,Adaptive conditional world-model index
+"Pi^(r,m)",Regime-task conditional compilation operator
+Leak,Point-in-time information leakage rate
+MER,Mechanism-level explanation coverage

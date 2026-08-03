@@ -1,0 +1,14 @@
+Band,Module,Required,Asset weight,Role in world model
+exchange,exchange_data,Yes,0.3,交易所微观结构、价格、盘口、资金费率与 basis 快照。
+macro,macro_data,Yes,0.05,跨市场宏观利率、美元、风险偏好与商品背景。
+news,news_data,Yes,0.15,公开新闻、监管、治理与项目公告文本流。
+event_calendar,event_calendar_data,Yes,0.1,未来宏观、ETF、解锁与升级催化剂日历。
+onchain,onchain_data,Yes,0.15,链上资金流、储备、桥流、TVL、网络活跃度。
+tokenomics,tokenomics_data,Yes,0.1,供给变化、解锁压力、基金会钱包流与质押率。
+options,options_data,Yes,0.1,隐含波动率、gamma、墙位、期权持仓与流向。
+alternative,alternative_data,No,0.05,稳定币供给、搜索热度、GitHub 活跃度等补充特征。
+perpetual_dex,perpetual_dex_data,No,,dYdX/Hyperliquid/GMX 永续 DEX funding 和成交量。
+onchain_address,onchain_address_data,No,,Arkham/Etherscan 巨鲸地址画像和资金流。
+dex_liquidity,dex_liquidity_data,No,,Uniswap V3/Curve 池 TVL 和 tick 流动性分布。
+gas_network,gas_network_data,No,,以太坊 Gas 价格、网络拥堵和 Gas 尖刺。
+governance,governance_data,No,,Snapshot/Tally DAO 治理提案和投票。
