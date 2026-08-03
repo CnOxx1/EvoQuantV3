@@ -2,9 +2,10 @@
 
 **李国聪** — 面向 JF/RFS 的说明稿
 
+> 本文件位于中文论文包：`pdf/cn/`。  
 > 正式投稿以英文稿为准：`pdf/sci/main_acwmi_sci.tex` / `pdf/sci/main_acwmi_sci.pdf`。  
 > 原论文可复用源材料：`pdf/original/`。  
-> 复现入口：`pdf/sci/README.md`（`make paper-lab`）。
+> 复现入口：`pdf/sci/README.md`（`make paper-lab`）；中文 PDF：`python3 pdf/cn/generate_cn_pdf.py`。
 
 ## 本轮完成
 

@@ -18,8 +18,10 @@ ROOT = Path(__file__).resolve().parents[1]
 FIG = ROOT / "figures"
 TAB = ROOT / "tables"
 DATA = ROOT / "data"
+CN = ROOT / "cn"
 OUT_EN = Path(__file__).resolve().parent / "main_acwmi_sci.pdf"
-OUT = ROOT / "main_cn_acwmi_sci.pdf"
+# Keep a mirror under pdf/cn/ for the Chinese paper package (English SCI body for now).
+OUT_CN_MIRROR = CN / "main_cn_acwmi_sci.pdf"
 
 
 def styles():
@@ -218,8 +220,10 @@ def build():
         author="Guocong Li",
     )
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
-    OUT.write_bytes(OUT_EN.read_bytes())
+    CN.mkdir(parents=True, exist_ok=True)
+    OUT_CN_MIRROR.write_bytes(OUT_EN.read_bytes())
     print("Wrote", OUT_EN, OUT_EN.stat().st_size)
+    print("Mirrored", OUT_CN_MIRROR, OUT_CN_MIRROR.stat().st_size)
 
 
 if __name__ == "__main__":

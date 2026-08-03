@@ -5,6 +5,7 @@
 - Theory: RCA-WM / ACWMI (epistemic observations, lag bounds, filters, ECP/MIG, DAG, Φ, EAR/UCR/EV)
 - Proof system: EvoQuant (multi-band collectors, readiness, WMI/ACWMI, time-slice PIT)
 - Source epistemology: `pdf/original/`
+- Chinese manuscript package: `pdf/cn/`
 - EvoQuant is **not** the source of the theory — it is the empirical instrument
 
 ## Project APIs that serve the paper
