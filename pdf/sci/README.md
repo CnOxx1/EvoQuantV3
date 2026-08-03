@@ -1,12 +1,11 @@
-# JF/RFS-oriented manuscript
-
-**Object:** information-set compilation (not alpha discovery).  
-**Lab:** EvoQuant calculators + readiness/WMI code.  
-**Data:** real Yahoo daily crypto returns with chronological IS/OOS freeze.
+# Real PIT / JF-RFS manuscript
 
 ```bash
-PYTHONPATH=. python3 pdf/sci/run_jf_experiments.py
+PYTHONPATH=. python3 pdf/sci/bootstrap_multiband_archive.py
+PYTHONPATH=. python3 pdf/sci/build_pit_archive.py
+PYTHONPATH=. python3 pdf/sci/run_pit_jf_experiments.py
 PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
 ```
 
-Honest finding in current sample: thick ungated beats IS-frozen ACWMI on OOS CE; thin worlds and exchange-band dropout hurt; availability shocks identify WMI/ACWMI drops.
+Durable historical bands in current archive: **exchange, macro, alternative**.  
+News/onchain/options/tokenomics are mostly collection-day right-censored.

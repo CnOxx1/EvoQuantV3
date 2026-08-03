@@ -1,0 +1,18 @@
+{
+  "n_rows": 4000,
+  "n_days": 400,
+  "start": "2025-06-30",
+  "end": "2026-08-03",
+  "mean_ready": 3.005,
+  "outage_rate": 0.0025,
+  "band_ready_rates": {
+    "exchange": 0.9975,
+    "news": 0.0075,
+    "event_calendar": 0.0,
+    "onchain": 0.0,
+    "tokenomics": 0.0,
+    "options": 0.0,
+    "alternative": 1.0,
+    "macro": 1.0
+  }
+}

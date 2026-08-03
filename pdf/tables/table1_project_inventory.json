@@ -1,18 +1,37 @@
 {
-  "n_assets": 10,
-  "n_days": 710,
-  "n_obs": 7100,
-  "start": "2024-08-24",
-  "end": "2026-08-03",
-  "is_oos_cut": "2025-08-14",
-  "data_source": "Yahoo Finance daily adjusted closes",
+  "design": "real multi-band PIT from SQLite history + Yahoo returns",
+  "pit": {
+    "n_rows": 4000,
+    "n_days": 400,
+    "start": "2025-06-30",
+    "end": "2026-08-03",
+    "mean_ready": 3.005,
+    "outage_rate": 0.0025,
+    "band_ready_rates": {
+      "exchange": 0.9975,
+      "news": 0.0075,
+      "event_calendar": 0.0,
+      "onchain": 0.0,
+      "tokenomics": 0.0,
+      "options": 0.0,
+      "alternative": 1.0,
+      "macro": 1.0
+    }
+  },
+  "is_oos_cut": "2026-01-16",
   "frozen_thresholds": {
-    "ac_thr": 0.55,
-    "c_thr": 0.25,
-    "is_ce": -0.35889939395545356,
-    "is_abstain": 0.4546478873239437,
-    "is_sharpe": -0.13111572641996067,
+    "ac_thr": 0.35000000000000003,
+    "c_thr": 0.35,
+    "is_ce": 0.15078787765302026,
+    "is_abstain": 0.3005,
+    "is_sharpe": 0.8155384049246936,
     "casc_only_thr": 0.7,
     "wmi_thr": 0.2
-  }
+  },
+  "hist_bands": [
+    "exchange",
+    "macro",
+    "alternative"
+  ],
+  "timeslice_months": 14
 }

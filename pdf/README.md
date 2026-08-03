@@ -1,28 +1,34 @@
-# 论文包：面向 JF/RFS 的信息集编译研究
+# 论文包：真实多带 PIT + JF/RFS 取向
 
-目标期刊路径：**Journal of Finance / Review of Financial Studies**（当前为 submission-oriented draft）。
+## 本轮关键
 
-## 叙事
-
-1. 信息集编译是资产定价一等对象（非又一个 alpha）
-2. RCA-WM / ACWMI + 可用性冲击识别
-3. **真实收益** + IS 冻结阈值 + OOS 经济价值 + 强基线 + 消融
-4. EvoQuant 仅作测量实验室，不是理论来源
-5. 如实报告：本样本 ACWMI **不**在 CE 上优于 thick ungated
+1. **灌库**：OKX exchange / macro / alternative / news / onchain / options / tokenomics  
+2. **PIT 面板**：`pdf/data/pit_multiband_panel.csv`（400 天 × 10 资产）  
+3. **识别**：真实 thin vs thick + durable-band LOBO  
+4. **论文**：按真实 PIT 结果重写
 
 ## 复现
 
 ```bash
-# 若需重下行情（已缓存 pdf/data/crypto_daily_yahoo.csv）
-PYTHONPATH=. python3 pdf/sci/run_jf_experiments.py
+# 1) 灌库（耗时；OKX-only runtime patch，不改仓库配置提交）
+PYTHONPATH=. python3 pdf/sci/bootstrap_multiband_archive.py
+
+# 2) 从历史表构建 PIT
+PYTHONPATH=. python3 pdf/sci/build_pit_archive.py
+
+# 3) 真实 PIT 实证
+PYTHONPATH=. python3 pdf/sci/run_pit_jf_experiments.py
+
+# 4) PDF
 PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
 ```
 
-## 主文件
+## 关键 OOS 结果（真实 PIT）
 
-| 文件 | 说明 |
-| --- | --- |
-| `sci/main_acwmi_sci.tex` / `.pdf` | JF/RFS 取向英文稿 |
-| `sci/run_jf_experiments.py` | 真实收益 OOS 实证 |
-| `data/crypto_daily_yahoo.csv` | Yahoo 日收益缓存 |
-| `original/` | 原 World-Model-First 论文源材料 |
+| 结果 | 数值 |
+| --- | ---: |
+| Thick CE | 0.474 |
+| Thin CE | −0.011 |
+| LOBO ΔCE macro / alt / exchange | −0.534 / −0.526 / −0.339 |
+| ACWMI Sharpe / CE | 0.901 / 0.199 |
+| WMI&lt;0.2 | 100% abstain（阈值不匹配稀疏档案） |

@@ -1,4 +1,4 @@
-%% JF/RFS-oriented manuscript draft
+%% JF/RFS manuscript draft — real multi-band PIT archive
 \documentclass[12pt]{article}
 
 \usepackage[margin=1in]{geometry}
@@ -12,11 +12,10 @@
 \graphicspath{{../figures/}}
 
 \newtheorem{definition}{Definition}
-\newtheorem{proposition}{Proposition}
 
 \title{Compiling the Market Information Set:\\
 World-Model Quality, Selective Prediction, and Economic Value\\
-in Cryptocurrency Markets\footnote{Draft prepared for submission-oriented development toward the \textit{Journal of Finance} / \textit{Review of Financial Studies}. Empirical design uses real daily returns with chronologically frozen thresholds. Multi-source vintaged archives remain the binding constraint for a full top-finance submission.}}
+in Cryptocurrency Markets\footnote{Draft for development toward the \textit{Journal of Finance} / \textit{Review of Financial Studies}. Empirics use a real multi-band point-in-time archive populated from the project's collectors and queried via history tables / \texttt{time\_slice}.}}
 \author{Guocong Li\\
 Independent Researcher\\
 \texttt{lmu151638@gmail.com}}
@@ -26,200 +25,125 @@ Independent Researcher\\
 \maketitle
 
 \begin{abstract}
-Conditional asset pricing and machine-learning return prediction treat the investor's information set as given. In cryptocurrency markets, that premise is first-order false: the economically relevant world is asynchronous, multi-source, and frequently unavailable. This paper formalizes \emph{information-set compilation} as an object of study. We define epistemic observation objects, lag/reconstruction bounds, a regime-conditional compilation operator, and an Adaptive Conditional World Model Index (ACWMI). Refusal to act is modeled as Bayes-optimal selective prediction when compiled world quality is low. Empirically, we construct a point-in-time panel on real daily returns for ten major cryptocurrencies (2024-08 to 2026-08), freeze abstention thresholds in-sample, and evaluate out-of-sample economic value against strong baselines. Availability shocks that are orthogonal to returns identify large declines in world-model indices. Thin (exchange-only) worlds underperform thick worlds; leaving out the exchange band produces the largest certainty-equivalent loss. Mechanism-based signals dominate always-long and momentum baselines out of sample. An IS-frozen ACWMI gate is more conservative than ungated thick signals and does not dominate on certainty equivalent in this sample---a result we report rather than conceal. The paper's contribution is a finance-native theory and identification protocol for world-model quality; a full JF/RFS test requires vintaged multi-band archives, which the accompanying infrastructure is designed to support.
+Conditional asset pricing treats the investor's information set as given. In cryptocurrency markets that premise fails: evidence is asynchronous, multi-source, and intermittently unavailable. This paper formalizes \emph{information-set compilation} and measures world-model quality with an Adaptive Conditional World Model Index (ACWMI). Empirically, we populate a real multi-band archive---OKX exchange bars, macro vintages, alternative series, plus thinner news/on-chain/options/tokenomics snapshots---and construct a 400-day point-in-time panel (10 assets, 4{,}000 asset-days) aligned to Yahoo returns. Mechanism engines use only pre-$t$ history. Abstention thresholds are frozen in-sample. Out of sample, thick real PIT worlds dominate exchange-only thin worlds (CE $0.47$ vs $-0.01$). Leave-one-band-out on durable bands shows large CE losses from dropping macro ($-0.53$), alternative ($-0.53$), or exchange ($-0.34$). An IS-frozen ACWMI gate remains implementable (Sharpe $0.90$, CE $0.20$) but does not dominate ungated thick signals on CE. The production WMI$<0.2$ rule is mis-scaled for sparse archives (100\% abstention), illustrating why quality thresholds must be frozen to the information set's support. The contribution is a finance-native compilation theory plus a reproducible PIT identification protocol on a live multi-band laboratory.
 \end{abstract}
 
-\noindent\textbf{Keywords:} information set, selective prediction, cryptocurrency, measurement error, data-centric asset pricing, abstention\\
+\noindent\textbf{Keywords:} information set, selective prediction, cryptocurrency, point-in-time, measurement error\\
 \textbf{JEL:} G12, G14, C58, C55
 
 \section{Introduction}
 
-The central state variable in modern asset pricing is an information set. Cochrane's stochastic discount factor framework, Fama--French factor models, and machine-learning pricing all condition expected returns on what agents are assumed to know \citep{fama1993,cochrane2005,gu2020,kelly2019,nagel2021}. The literature's discipline has focused on how that information is \emph{used}---linear betas, nonlinear learners, multiple-testing controls \citep{harvey2016}---not on how it is \emph{compiled} from asynchronous, quality-heterogeneous market evidence.
+Modern asset pricing conditions on an information set $I_t$ \citep{fama1993,cochrane2005,gu2020,kelly2019,nagel2021}. The literature's discipline has focused on how $I_t$ is \emph{used}, not how it is \emph{compiled} from asynchronous, quality-heterogeneous evidence. Cryptocurrency markets make compilation first-order: venue fragmentation, leverage, options walls, unlocks, on-chain flows, and macro liquidity can map the same price path into incompatible states \citep{makarov2020,liu2022}.
 
-Cryptocurrency markets make the compilation problem unavoidable. Fragmented venues, leverage and liquidations, options walls, unlock schedules, on-chain flows, and macro liquidity can map the same price path into incompatible economic states \citep{makarov2020,liu2022}. An AI or quantitative analyst that ``sees'' only a thin slice of this world is not estimating a different model; it is solving a different inference problem.
-
-This paper asks four finance questions:
-\begin{enumerate}
-\item How should an investor-facing market world be formalized as a compiled information set rather than a raw feature matrix?
-\item How can world-model quality be measured in a way that is honesty-compatible (penalizing contamination, not honest exclusion)?
-\item When is refusal to trade Bayes-optimal given world quality?
-\item Does compiled world quality have measurable consequences for out-of-sample economic value?
-\end{enumerate}
-
-\paragraph{Contributions.}
-(i) A theory of Regime-Conditional Adaptive World Models (RCA-WM) that absorbs a World-Model-First epistemology: epistemic observations, lag bounds, information filters, explanation-confidence penalties, and selective prediction. (ii) ACWMI, a regime-conditional geometric quality index over breadth, stability, honesty, signal integrity, and consistency. (iii) An identification strategy based on availability shocks $O_t$ that shift world quality without, by construction, shifting contemporaneous returns. (iv) An empirical protocol with \emph{real} crypto returns, chronological IS/OOS freezing, strong baselines, leave-one-band-out, and thin-versus-thick comparisons. (v) An honest mapping to a runnable measurement system (EvoQuant) used only as laboratory infrastructure.
-
-\paragraph{Positioning for top finance journals.}
-Relative to ML pricing, we do not propose another return predictor. Relative to crypto factor papers, we do not claim a new risk factor. The object is the \emph{governance and compilation of the conditional information set}---closer in spirit to measurement-error and robustness theories \citep{fuller1987,carroll2006,hansen2008} and to selective prediction \citep{chow1957,geifman2017} than to alpha discovery.
-
-\section{Related literature}
-
-\textbf{Conditional information sets.} Asset pricing takes $I_t$ as primitive \citep{cochrane2005}. We study the map from raw asynchronous evidence to an AI-/investor-usable $I_t$.
-
-\textbf{High-dimensional predictors and mining risk.} \citet{gu2020}, \citet{kelly2019}, and \citet{nagel2021} expand characteristics; \citet{harvey2016} warn against undisciplined discovery. Our claim is prior: expansion without governance can worsen the compiled world.
-
-\textbf{Measurement error and robustness.} Classical EIV and robust control \citep{fuller1987,carroll2006,hansen2008} motivate treating world quality as a first-order constraint on decision rules.
-
-\textbf{Selective prediction.} Abstention has a long decision-theoretic history \citep{chow1957,geifman2017}. We make abstention a function of compiled world quality, not only of predictive entropy.
-
-\textbf{Crypto microstructure.} Venue fragmentation and common risk factors \citep{makarov2020,liu2022} justify multi-band worlds.
+This paper (i) formalizes Regime-Conditional Adaptive World Models (RCA-WM) and ACWMI, (ii) populates a real multi-band archive using the project's collectors, (iii) builds a point-in-time panel from history tables, and (iv) evaluates OOS economic value with frozen thresholds and leave-one-band-out identification.
 
 \section{Theory}
 
-\subsection{Epistemic observations and compilation}
-Let $S_t$ be the latent market state and $X_{j,t}=h_j(S_t)+\nu_{j,t}$ source observations. An epistemic object is
-\begin{equation}
-O_{j,t}=(x_{j,t},\tau_{j,t},q_{j,t},g_{j,t},r_{j,t}),
-\end{equation}
-with timestamp, quality, gate, and semantic role. The compiled world is $W_t=G(\{O_{j,\tau}\},Q_t,R_t,A_t)$. Investors/AI consume $W_t$, not ungated raw feeds.
+Epistemic observations $O_{j,t}=(x,\tau,q,g,r)$ carry timestamps, quality, gates, and roles. Asynchronous lags induce a reconstruction bound with delay, noise, and missingness terms. Compilation maps raw filters $\mathcal{F}^{\mathrm{raw}}$ into AI-visible $\mathcal{F}^{\mathrm{AI}}$. ACWMI is the regime-conditional geometric mean of hierarchical breadth, stability, continuous honesty, signal integrity, and consistency. Abstention is Bayes-optimal when expected loss of every non-abstain action exceeds a world-dependent cost. Identification uses availability/coverage variation $O_t\to W_t\to A_t$.
 
-\subsection{Lag bound}
-With lag $\ell_{j,t}$ and Lipschitz $h_j$, reconstruction error admits the bound
-\begin{equation}
-\|\tilde S_t-S_t\|
-\le C_1\sum_j\omega_j\ell_{j,t}+C_2\sum_j\omega_j\|\nu_{j,t}\|+C_3\sum_j\omega_j(1-z_{j,t}).
-\end{equation}
+\section{Data and PIT archive}
 
-\subsection{ACWMI and selective prediction}
-Let factors $\{B^{\mathrm{hier}},U,H^{\mathrm{cont}},S,C\}$ denote hierarchical breadth, stability, continuous honesty, signal integrity, and consistency. Define
-\begin{equation}
-\mathrm{ACWMI}_t^{(r)}
-=
-\exp\!\left(\frac{\sum_x\gamma_x(r)\log x_t}{\sum_x\gamma_x(r)}\right).
-\end{equation}
-With action set including abstain and loss $\ell(a,R_t)$, abstain is optimal when the best non-abstain risk exceeds a world-dependent cost $c_{\mathrm{abs}}(W_t)$. Operationally we use an IS-frozen threshold rule on $(\mathrm{ACWMI}_t,C_t)$.
+\subsection{Populated laboratory}
+We bootstrap the project's split SQLite store (OKX-only exchange path; Binance/Bybit blocked in this environment):
+\begin{itemize}
+\item \textbf{Exchange:} $\sim$9.4k OKX klines / merged bars for 10 symbols, daily range 2025-06-30 to 2026-08-03; 2.4k funding rows.
+\item \textbf{Macro:} 81k vintaged points (\texttt{available\_at} present), spanning decades to 2026-08-03.
+\item \textbf{Alternative:} 89k points from 2017 onward (stablecoin/related series; Google Trends largely rate-limited).
+\item \textbf{News / on-chain / options / tokenomics:} populated but mostly right-censored to collection day.
+\item \textbf{\texttt{time\_slice}:} historically resolves klines; analytics snapshots remain sparse, so multi-band PIT is built from raw history tables via \texttt{build\_pit\_archive.py}.
+\end{itemize}
 
-\subsection{Identification}
-Let $W_t$ be world quality, $A_t$ analysis/decision quality, $M_t$ market complexity, $O_t$ an availability shock, and $C_t$ confounding configuration:
-\begin{equation}
-O_t\to W_t\to A_t,\quad M_t\to W_t,\ A_t,\quad C_t\to W_t,A_t.
-\end{equation}
-We construct $O_t$ as return-orthogonal Bernoulli availability shocks, so event-time moves in $W_t$ are not mechanical return artifacts. Full institutional identification will replace constructed $O_t$ with logged collector/API outages.
+\subsection{PIT panel}
+For each date $t$ and asset, band status $\in\{\mathrm{ready},\mathrm{limited},\mathrm{missing}\}$ is inferred from the latest observation time $\le t$ and band-specific freshness thresholds. Breadth/stability/honesty and production WMI are computed with project code. Durable historical bands are $\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}$. Yahoo daily returns provide the payoff series; engines use only pre-$t$ returns.
 
 \section{Empirical design}
 
-\subsection{Data}
-Daily returns for BTC, ETH, SOL, XRP, BNB, ADA, AVAX, LINK, DOT, and NEAR from Yahoo Finance, 2024-08-04 to 2026-08-03 ($N=7{,}300$ asset-days before warm-up; 20-day warm-up for engines). All signals use only pre-$t$ history (point-in-time). Equal-weight portfolios are formed daily.
-
-\subsection{Information-set layer}
-Because a multi-year multi-band archive is not yet populated in-repository, band readiness is constructed with production band weights and the project's WMI implementation, then subjected to return-orthogonal availability shocks ($p=0.08$). Mechanism scores (regime, cascade, contagion, flow, alpha-decay) are computed by importing production calculators on real return windows. This is a stepping-stone design toward vintaged PIT using the project's \texttt{time\_slice} layer.
-
-\subsection{IS/OOS freeze}
-Chronological split at 2025-08-14 (355 IS days / 355 OOS days). Abstention thresholds for ACWMI are chosen on IS only by maximizing Sharpe subject to abstain rate $\in[5\%,55\%]$. Production WMI threshold $0.2$ is never tuned. Frozen parameters: $\mathrm{ACWMI}<0.55$ or $C<0.25$.
-
-\subsection{Strategies}
-Always-long; momentum-always; thick-ungated mechanism signal; simple outage rule; simple cascade rule (IS-calibrated); WMI$<0.2$; ACWMI (IS-frozen). Economic value: annualized return/vol, Sharpe, CRRA certainty equivalent ($\gamma=2$), max drawdown, abstain rate.
+Chronological IS/OOS split (200/200 days) at 2026-01-16. AC thresholds frozen on IS by Sharpe maximization with abstain rate $\in[5\%,55\%]$: $\mathrm{ACWMI}<0.35$ or $C<0.35$. Production WMI threshold $0.2$ is never tuned. Baselines: always-long, momentum, thick-ungated, simple outage, cascade, WMI, ACWMI. Economic value: annualized return/vol, Sharpe, CRRA CE ($\gamma=2$), max DD.
 
 \section{Results}
 
-\subsection{Availability shocks identify world-quality variation}
-Around return-orthogonal outages, mean WMI falls from about $0.88$ to $0.23$ and ACWMI from about $0.58$ to $0.44$ at event day $0$, while contemporaneous equal-weight returns remain near zero (Table~\ref{tab:event}, Figure~\ref{fig:event}). This supports $O_t\to W_t$ without a mechanical return confound.
+\subsection{Thick real PIT worlds dominate thin worlds}
+Table~\ref{tab:thin}: exchange-only thin worlds deliver OOS Sharpe $\approx 0$ and CE $-0.01$. Thick real PIT worlds (exchange+macro+alternative and whatever else is ready) deliver Sharpe $1.40$ and CE $0.47$. Gated AC keeps Sharpe $0.90$ and CE $0.20$ while abstaining $29.7\%$.
 
 \begin{table}[t]
 \centering
-\caption{Event study around return-orthogonal availability shocks.}
-\label{tab:event}
-\begin{tabular}{rrrrr}
-\toprule
-$k$ & Return & WMI & ACWMI & $N$ \\
-\midrule
-$-1$ & 0.0013 & 0.879 & 0.586 & 55 \\
-$0$ & $-0.0002$ & 0.234 & 0.445 & 55 \\
-$+1$ & 0.0025 & 0.879 & 0.584 & 54 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{OOS economic value}
-Table~\ref{tab:econ} reports OOS results. Always-long and momentum lose money in this window. Mechanism signals (thick ungated) deliver Sharpe $1.26$ and CE $0.40$. The production WMI threshold never binds (abstain rate $0$). The IS-frozen ACWMI gate abstains $21.7\%$ of the time, cutting exposure and delivering Sharpe $0.58$ and CE $\approx 0$. \textbf{We do not claim ACWMI dominance on CE in this sample.} The finance content is that (i) compiled mechanism information beats naive baselines, (ii) a frozen quality gate is implementable without OOS tuning, and (iii) gating is economically consequential (more cash, different risk profile).
-
-\begin{table}[t]
-\centering
-\caption{Out-of-sample economic value (equal-weight daily portfolios; thresholds frozen on IS).}
-\label{tab:econ}
-\begin{tabular}{lrrrrr}
-\toprule
-Policy & Ann.\ ret & Sharpe & CE & Max DD & Abstain \\
-\midrule
-Always long & $-0.796$ & $-1.264$ & $-1.198$ & $-0.676$ & 0.000 \\
-Momentum always & $-0.392$ & $-0.749$ & $-0.667$ & $-0.550$ & 0.000 \\
-Thick ungated & $0.796$ & $1.264$ & $0.401$ & $-0.279$ & 0.000 \\
-Simple outage rule & $0.544$ & $0.878$ & $0.162$ & $-0.343$ & 0.085 \\
-WMI ($0.2$) & $0.796$ & $1.264$ & $0.401$ & $-0.279$ & 0.000 \\
-ACWMI (IS-frozen) & $0.326$ & $0.579$ & $0.011$ & $-0.362$ & 0.217 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Thin versus thick worlds}
-Exchange-only thin worlds produce OOS Sharpe $-0.24$ and CE $-0.19$, while thick worlds are strongly positive (Table~\ref{tab:thin}). Honest gating raises mean honesty from $0.36$ (ungated) to $0.80$ (gated). Thickness matters; whether gating helps depends on whether low-quality states truly destroy signal value in the sample.
-
-\begin{table}[t]
-\centering
-\caption{Thin vs thick-ungated vs thick-gated worlds (OOS).}
+\caption{Thin vs thick worlds on the real PIT archive (OOS).}
 \label{tab:thin}
 \begin{tabular}{lrrrr}
 \toprule
 World & Mean $B$ & Mean $H$ & Sharpe & CE \\
 \midrule
-Thin (exchange only) & 0.269 & 0.877 & $-0.240$ & $-0.192$ \\
-Thick ungated & 0.914 & 0.364 & $1.264$ & $0.401$ \\
-Thick gated (AC) & 0.914 & 0.798 & $0.579$ & $0.011$ \\
+Thin (exchange only) & 0.201 & 0.562 & $-0.004$ & $-0.011$ \\
+Thick real PIT & 0.356 & 0.688 & $1.399$ & $0.474$ \\
+Thick gated AC & 0.356 & 0.688 & $0.901$ & $0.199$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Leave-one-band-out}
-Dropping the exchange band produces the largest CE loss ($-0.085$); news and on-chain follow (Table~\ref{tab:lobo}). Alternative data is not valuable in this window ($+0.017$). Band-level MIG is therefore heterogeneous---consistent with the theory that ``thicker'' is not uniformly better.
+\subsection{Leave-one-band-out identification}
+Table~\ref{tab:lobo}: dropping durable bands destroys OOS CE---macro $-0.53$, alternative $-0.53$, exchange $-0.34$. This is direct economic MIG evidence from the real archive: thickness is not cosmetic.
 
 \begin{table}[t]
 \centering
-\caption{Leave-one-band-out OOS certainty-equivalent changes.}
+\caption{Leave-one-band-out on durable PIT bands (OOS).}
 \label{tab:lobo}
 \begin{tabular}{lrrr}
 \toprule
 Band dropped & Sharpe & CE & $\Delta$CE \\
 \midrule
-(none) & 0.579 & 0.011 & 0 \\
-exchange & 0.354 & $-0.074$ & $-0.085$ \\
-news & 0.401 & $-0.063$ & $-0.074$ \\
-onchain & 0.401 & $-0.063$ & $-0.074$ \\
-options & 0.506 & $-0.012$ & $-0.023$ \\
-alternative & 0.603 & 0.028 & $+0.017$ \\
+(none) & 0.901 & 0.199 & 0 \\
+exchange & $-0.232$ & $-0.141$ & $-0.339$ \\
+macro & $-0.485$ & $-0.336$ & $-0.534$ \\
+alternative & $-0.422$ & $-0.327$ & $-0.526$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Conditional signal value}
-Sorting on ACWMI alone does \emph{not} produce a clean monotonic decline in signal IC in this OOS window (Appendix table). Low-ACWMI states partly coincide with periods where short mechanism signals performed well. This qualifies the abstention motive and motivates double-sorts by regime $\times$ quality and, ultimately, vintaged multi-band shocks that are cleaner than constructed readiness.
+\subsection{OOS policy horse-race}
+Table~\ref{tab:econ}: always-long loses; momentum is near zero; thick ungated mechanism signals win on CE. IS-frozen ACWMI is second-best among selective rules. The production WMI$<0.2$ rule abstains $100\%$ because sparse-archive WMI levels sit below a threshold calibrated for denser production worlds---a cautionary result for threshold portability.
 
-\section{What remains for a JF/RFS submission}
+\begin{table}[t]
+\centering
+\caption{Out-of-sample economic value on real PIT panel.}
+\label{tab:econ}
+\begin{tabular}{lrrrrr}
+\toprule
+Policy & Ann.\ ret & Sharpe & CE & Max DD & Abstain \\
+\midrule
+Always long & $-0.816$ & $-1.399$ & $-1.157$ & $-0.466$ & 0.000 \\
+Momentum always & $0.051$ & $0.101$ & $-0.202$ & $-0.500$ & 0.000 \\
+Thick ungated & $0.816$ & $1.399$ & $0.474$ & $-0.279$ & 0.000 \\
+WMI ($0.2$) & $0.000$ & $0.000$ & $0.000$ & $0.000$ & 1.000 \\
+ACWMI (IS-frozen) & $0.454$ & $0.901$ & $0.199$ & $-0.340$ & 0.297 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{\texttt{time\_slice} status}
+Monthly \texttt{time\_slice} probes show historical kline readiness with sparse analytics snapshots. This motivates the hybrid design: raw multi-band history for $W_t$, \texttt{time\_slice} for logic-domain replay as snapshot density grows.
+
+\section{What remains for JF/RFS}
 
 \begin{enumerate}
-\item Populate a multi-year vintaged archive (klines, funding, options, on-chain, macro with \texttt{available\_at}) and replay via \texttt{time\_slice}.
-\item Replace constructed $O_t$ with logged collector/API outages and exchange incidents.
-\item Estimate band-level MIG with real leave-one-source dropouts.
-\item Evaluate analyst/LLM judgment quality (EAR/ECP) on frozen bundles, not only portfolio CE.
-\item Cross-market external validity beyond the ten-asset crypto complex.
+\item Continuous multi-year collection so news/on-chain/options/tokenomics cease to be right-censored.
+\item Logged institutional outages as $O_t$ (natural hard outages are rare inside a continuous OKX backfill).
+\item Persist daily readiness/AI-context snapshots for pure \texttt{time\_slice} replay.
+\item Recalibrate/freeze WMI thresholds on the archive's support before comparing to ACWMI.
+\item External validity beyond ten liquid names.
 \end{enumerate}
 
 \section{Conclusion}
 
-Information-set compilation is a first-order asset-pricing object in markets where evidence is asynchronous and intermittently unavailable. RCA-WM/ACWMI provide a theory of that object; real-return OOS experiments with frozen thresholds show that thick compiled worlds and mechanism signals matter, availability shocks identify world-quality variation, and band ablations are economically heterogeneous. Selective ACWMI gating is implementable but not CE-dominant in the present sample. The path to a top-finance publication is therefore clear: keep the theory and identification protocol, and replace the constructed information-set layer with a full vintaged multi-source PIT archive.
+Information-set compilation is measurable. On a real multi-band PIT archive, thick worlds dominate thin worlds, and durable bands have large leave-one-out economic value. Selective ACWMI gating is implementable under frozen thresholds but is not CE-dominant versus ungated thick signals in this sample. The laboratory path to a top-finance paper is now concrete: keep collecting, snapshot daily, and replace right-censored bands with vintaged histories.
 
 \appendix
 \section{Reproducibility}
-Real returns: \texttt{pdf/data/crypto\_daily\_yahoo.csv}. Experiments: \texttt{pdf/sci/run\_jf\_experiments.py}. Frozen thresholds: \texttt{pdf/sci/frozen\_thresholds.json}. Figures/tables under \texttt{pdf/figures}, \texttt{pdf/tables}.
+Bootstrap: \texttt{pdf/sci/bootstrap\_multiband\_archive.py}. PIT panel: \texttt{pdf/sci/build\_pit\_archive.py}. Empirics: \texttt{pdf/sci/run\_pit\_jf\_experiments.py}. Panel: \texttt{pdf/data/pit\_multiband\_panel.csv}. Inventory: \texttt{pdf/data/archive\_inventory.json}.
 
 \begin{thebibliography}{99}
-\bibitem[Carroll et~al.(2006)]{carroll2006} Carroll, R.J., et al., 2006. Measurement Error in Nonlinear Models. Chapman \& Hall/CRC.
-\bibitem[Chow(1957)]{chow1957} Chow, C., 1957. IRE Trans. Electronic Computers 6, 247--254.
 \bibitem[Cochrane(2005)]{cochrane2005} Cochrane, J.H., 2005. Asset Pricing. Princeton.
 \bibitem[Fama and French(1993)]{fama1993} Fama, E.F., French, K.R., 1993. JFE 33, 3--56.
-\bibitem[Fuller(1987)]{fuller1987} Fuller, W.A., 1987. Measurement Error Models. Wiley.
-\bibitem[Geifman and El-Yaniv(2017)]{geifman2017} Geifman, Y., El-Yaniv, R., 2017. NeurIPS.
 \bibitem[Gu et~al.(2020)]{gu2020} Gu, S., Kelly, B., Xiu, D., 2020. RFS 33, 2223--2273.
-\bibitem[Hansen and Sargent(2008)]{hansen2008} Hansen, L.P., Sargent, T.J., 2008. Robustness. Princeton.
 \bibitem[Harvey et~al.(2016)]{harvey2016} Harvey, C.R., Liu, Y., Zhu, H., 2016. RFS 29, 5--68.
 \bibitem[Kelly et~al.(2019)]{kelly2019} Kelly, B.T., Pruitt, S., Su, Y., 2019. JFE 134, 501--524.
 \bibitem[Liu et~al.(2022)]{liu2022} Liu, Y., Tsyvinski, A., Wu, X., 2022. JF 77, 1133--1177.
