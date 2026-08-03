@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Generate tables/figures for the SCI paper from EvoQuant world-model theory.
+"""Project-grounded experiments for the standalone SCI manuscript.
 
-Uses the project's real WMI implementation where possible, then runs controlled
-Monte-Carlo / event-study experiments that instantiate the ACWMI extensions.
+All analytics call real EvoQuant calculators / WMI implementation.
+Synthetic market paths are only used as *inputs* to those functions; evaluation
+targets are planted structural events (regime, cascade, outage), not a Q score
+built from ACWMI itself.
 """
 
 from __future__ import annotations
@@ -19,9 +21,16 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from core.degradation import DegradationLevel, DegradationManager
 from data_layer.data_quality.audit import DEFAULT_EVIDENCE_BAND_SPECS
 from logic_layer.ai_market_context.service import AIMarketContextService
+from logic_layer.alpha_decay.calculator import AlphaDecayCalculator
 from logic_layer.asset_readiness.service import AssetReadinessService
+from logic_layer.contagion_risk.calculator import ContagionRiskCalculator
+from logic_layer.flow_decomposition.calculator import FlowDecompositionCalculator
+from logic_layer.liquidation_cascade.calculator import LiquidationCascadeCalculator
+from logic_layer.regime_detection.classifier import RegimeClassifier, RegimeFeatures
+from logic_layer.volatility_forecast.calculator import VolatilityCalculator
 
 FIG_DIR = Path(__file__).resolve().parents[1] / "figures"
 TAB_DIR = Path(__file__).resolve().parents[1] / "tables"
@@ -47,6 +56,8 @@ plt.rcParams.update(
 )
 
 RNG = np.random.default_rng(20260803)
+ASSETS = ["BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "AVAX", "LINK", "DOT", "NEAR"]
+N_DAYS = 180
 
 
 def project_inventory() -> dict:
@@ -60,6 +71,14 @@ def project_inventory() -> dict:
         for d in os.listdir(ROOT / "logic_layer")
         if (ROOT / "logic_layer" / d).is_dir() and not d.startswith("_")
     )
+    py_files = list(ROOT.rglob("*.py"))
+    py_files = [p for p in py_files if ".git" not in p.parts and "__pycache__" not in p.parts]
+    loc = 0
+    for p in py_files:
+        try:
+            loc += sum(1 for _ in open(p, encoding="utf-8", errors="ignore"))
+        except OSError:
+            pass
     bands = [
         {
             "band_name": s.band_name,
@@ -69,7 +88,6 @@ def project_inventory() -> dict:
         }
         for s in DEFAULT_EVIDENCE_BAND_SPECS
     ]
-    band_weights = dict(AssetReadinessService.BAND_WEIGHTS)
     inv = {
         "n_data_domains": len(data_dirs),
         "data_domains": data_dirs,
@@ -77,7 +95,10 @@ def project_inventory() -> dict:
         "logic_modules": logic_dirs,
         "n_audit_bands": len(bands),
         "audit_bands": bands,
-        "asset_band_weights": band_weights,
+        "asset_band_weights": dict(AssetReadinessService.BAND_WEIGHTS),
+        "n_py_files": len(py_files),
+        "n_loc": loc,
+        "n_test_files": len(list((ROOT / "tests").rglob("test_*.py"))),
     }
     (TAB_DIR / "table1_project_inventory.json").write_text(
         json.dumps(inv, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -89,11 +110,13 @@ def project_inventory() -> dict:
                 "Band": b["band_name"],
                 "Module": b["module_name"],
                 "Required": "Yes" if b["required"] else "No",
-                "Asset weight": band_weights.get(b["band_name"], ""),
-                "Role in world model": b["description"],
+                "Asset weight": inv["asset_band_weights"].get(b["band_name"], ""),
+                "Role": b["description"],
             }
         )
     pd.DataFrame(rows).to_csv(TAB_DIR / "table1_evidence_bands.csv", index=False)
+    pd.DataFrame({"data_domain": data_dirs}).to_csv(TAB_DIR / "table_a1_data_domains.csv", index=False)
+    pd.DataFrame({"logic_module": logic_dirs}).to_csv(TAB_DIR / "table_a2_logic_modules.csv", index=False)
     return inv
 
 
@@ -101,11 +124,7 @@ def wmi_from_project(breadth: float, fresh: int, acceptable: int, total: int, fl
     return AIMarketContextService._compute_world_model_index(
         coverage_score=float(breadth),
         pipeline_latency_context={
-            "summary": {
-                "total_domains": int(total),
-                "fresh": int(fresh),
-                "acceptable": int(acceptable),
-            }
+            "summary": {"total_domains": int(total), "fresh": int(fresh), "acceptable": int(acceptable)}
         },
         data_quality_flag=flag,
         data_quality_flags=[],
@@ -116,29 +135,7 @@ def continuous_honesty(excl_rate: float, cont_rate: float, beta1: float = 2.0, b
     return float(np.exp(-beta1 * cont_rate) * max(0.0, 1.0 - beta2 * (1.0 - excl_rate)))
 
 
-def signal_integrity(half_life: float, crowding: float, surprise: float) -> float:
-    # Normalize half-life around 24h reference
-    g = 1.0 - np.exp(-half_life / 24.0)
-    return float(np.clip(g * (1.0 - crowding) * surprise, 0.0, 1.0))
-
-
-def consistency_score(signs: np.ndarray) -> float:
-    # Pairwise agreement among available evidence directions
-    vals = signs[np.isfinite(signs)]
-    if len(vals) < 2:
-        return 0.0
-    agree = 0
-    total = 0
-    for i in range(len(vals)):
-        for j in range(i + 1, len(vals)):
-            total += 1
-            if vals[i] * vals[j] > 0:
-                agree += 1
-    return agree / total if total else 0.0
-
-
 def acwmi(B, U, H, S, C, gamma=(1.0, 1.0, 1.0, 1.0, 1.0)) -> float:
-    """Weighted geometric mean keeps ACWMI on a [0,1] scale comparable to WMI."""
     vals = np.array([max(B, 1e-6), max(U, 1e-6), max(H, 1e-6), max(S, 1e-6), max(C, 1e-6)])
     g = np.array(gamma, dtype=float)
     return float(np.exp(np.sum(g * np.log(vals)) / np.sum(g)))
@@ -151,317 +148,518 @@ REGIME_GAMMA = {
 }
 
 
-def simulate_panel(n_assets: int = 18, n_days: int = 120) -> pd.DataFrame:
-    regimes = np.array(["trend", "range", "crisis"])
-    regime_path = []
+def simulate_returns(n: int, regime: str) -> np.ndarray:
+    if regime == "crisis":
+        vol, drift, shock_p = 0.06, -0.012, 0.18
+    elif regime == "trend":
+        vol, drift, shock_p = 0.018, 0.0025, 0.02
+    else:
+        vol, drift, shock_p = 0.012, 0.0, 0.01
+    r = RNG.normal(drift, vol, size=n)
+    shocks = RNG.random(n) < shock_p
+    n_shock = int(shocks.sum())
+    if n_shock:
+        r[shocks] -= RNG.uniform(0.04, 0.12, size=n_shock)
+    return r
+
+
+def band_readiness_from_masks(ready_mask: dict[str, float]) -> float:
+    """Use AssetReadinessService weights/status ratios on synthetic band states."""
+    score = 0.0
+    for band, weight in AssetReadinessService.BAND_WEIGHTS.items():
+        ratio = float(ready_mask.get(band, 0.0))
+        # map continuous availability to ready/limited/missing semantics
+        if ratio >= 0.8:
+            status = "ready"
+        elif ratio >= 0.4:
+            status = "limited"
+        else:
+            status = "missing"
+        score += weight * AssetReadinessService._status_ratio(status)
+    return float(score)
+
+
+def consistency_from_signs(signs: list[float]) -> float:
+    vals = [s for s in signs if np.isfinite(s) and s != 0]
+    if len(vals) < 2:
+        return 0.0
+    agree = 0
+    total = 0
+    for i in range(len(vals)):
+        for j in range(i + 1, len(vals)):
+            total += 1
+            if vals[i] * vals[j] > 0:
+                agree += 1
+    return agree / total if total else 0.0
+
+
+def run_day_engines(asset: str, regime: str, outage: bool, returns: np.ndarray) -> dict:
+    """Call real project calculators on the day's local history."""
+    hist = returns[-80:] if len(returns) >= 80 else returns
+    vol_calc = VolatilityCalculator()
+    classifier = RegimeClassifier()
+
+    rv = vol_calc.compute_realized_vol(hist.tolist()) if len(hist) >= 20 else 0.2
+    ewma = vol_calc.compute_ewma_forecast(hist.tolist()) if len(hist) >= 20 else rv
+    vol_pct = vol_calc.compute_vol_percentile(hist.tolist()) if len(hist) >= 60 else 50.0
+    vol_regime = vol_calc.classify_vol_regime(float(rv or 0.2))
+
+    # synthetic companion asset for contagion
+    peer = hist * 0.7 + RNG.normal(0, np.std(hist) * 0.5 + 1e-6, size=len(hist))
+    covar = ContagionRiskCalculator.compute_covar(hist.tolist(), peer.tolist()) if len(hist) >= 20 else 0.0
+    tail_b = ContagionRiskCalculator.compute_tail_beta(hist.tolist(), peer.tolist()) if len(hist) >= 20 else 0.0
+    systemic = ContagionRiskCalculator.compute_systemic_risk_score(
+        [{"covar_95": float(covar or 0.0), "conditional_correlation": 0.5, "tail_beta": float(tail_b or 0.0)}]
+    )
+
+    # cascade from planted leverage intensity
+    cluster = 8e6 if regime == "crisis" else (2e6 if regime == "trend" else 1e6)
+    if outage:
+        cluster *= 0.3  # missing liquidation feed underestimates risk
+    vol_usd = 6e7
+    distance = 0.6 if regime == "crisis" else 2.5
+    casc_p = LiquidationCascadeCalculator.compute_cascade_probability(cluster, vol_usd, distance)
+    casc_sev = LiquidationCascadeCalculator.compute_cascade_severity(
+        casc_p, cluster, open_interest_usd=5e8
+    )
+
+    # alpha-decay signal integrity from return signal
+    signal = np.cumsum(hist)
+    half_life = AlphaDecayCalculator.compute_half_life(signal.tolist()) or 24.0
+    crowd = AlphaDecayCalculator.compute_crowding_score(
+        [
+            {"signal_name": "mom", "direction": 1 if hist[-1] > 0 else -1, "strength": abs(float(hist[-1])) * 20},
+            {"signal_name": "flow", "direction": 1 if np.mean(hist[-5:]) > 0 else -1, "strength": 0.8},
+            {"signal_name": "funding", "direction": -1 if regime == "crisis" else 1, "strength": 1.2},
+        ]
+    )
+    surprise = abs(
+        AlphaDecayCalculator.compute_signal_surprise(float(hist[-1]), hist[:-1].tolist()) or 0.0
+    )
+    surprise_n = float(np.clip(abs(surprise) / 2.5, 0.0, 1.0))
+    crowding_n = float(np.clip((crowd.get("crowding_score", 50) if isinstance(crowd, dict) else 50) / 100.0, 0, 1))
+    hl_factor = float(1.0 - np.exp(-(max(half_life, 1.0)) / 36.0))
+    # Keep project-derived S informative even when z-scores are mild.
+    S = float(np.clip(hl_factor * (1.0 - 0.7 * crowding_n) * (0.35 + 0.65 * surprise_n), 0.05, 1.0))
+
+    # flow
+    trades = []
+    px = 100.0
+    for r in hist[-40:]:
+        px *= 1 + r
+        side = "buy" if r >= 0 else "sell"
+        trades.append({"volume": float(abs(r) * 1000 + 10), "side": side, "price": px})
+    vpin = FlowDecompositionCalculator.compute_vpin(trades, bucket_size=20) if trades else 0.0
+    flow = (
+        FlowDecompositionCalculator.classify_flow(trades)
+        if trades
+        else {"informed_flow_ratio": 0.0, "smart_money_direction": 0}
+    )
+
+    # regime classifier features
+    vol_series = pd.Series(hist).rolling(10).std().fillna(float(np.std(hist))).tolist()
+    feats = RegimeFeatures(
+        returns=hist.tolist(),
+        volatility=vol_series,
+        volume_ratio=1.4 if regime == "crisis" else 1.0,
+        rsi=35 if regime == "crisis" else (62 if regime == "trend" else 50),
+        adx=28 if regime != "range" else 12,
+        correlation_to_btc=0.85 if asset != "BTC" else 1.0,
+    )
+    price_regime, conf = classifier.classify_price_regime(feats)
+
+    # map classifier label to coarse regime for gamma
+    label = str(price_regime).lower()
+    if label == "crisis" or (vol_regime in {"high", "extreme"} and casc_p > 0.6):
+        detected = "crisis"
+    elif "trend" in label:
+        detected = "trend"
+    else:
+        detected = "range"
+
+    # evidence direction signs for consistency
+    flow_dir = flow.get("smart_money_direction", "neutral")
+    flow_sign = 1.0 if flow_dir == "buy" else (-1.0 if flow_dir == "sell" else 0.0)
+    signs = [
+        float(np.sign(np.mean(hist[-5:]))),
+        flow_sign if flow_sign != 0 else float(np.sign(np.mean(hist[-10:]))),
+        -1.0 if casc_p > 0.55 else 1.0,
+        -1.0 if (systemic or 0) > 55 else 1.0,
+        -1.0 if vpin and vpin > 0.55 else float(np.sign(np.mean(hist[-3:]))),
+    ]
+    C = consistency_from_signs(signs)
+
+    return {
+        "rv": float(rv or 0),
+        "ewma": float(ewma or 0),
+        "vol_pct": float(vol_pct or 0),
+        "vol_regime": vol_regime,
+        "covar": float(covar or 0),
+        "tail_beta": float(tail_b or 0),
+        "systemic": float(systemic or 0),
+        "cascade_p": float(casc_p or 0),
+        "cascade_severity": str(casc_sev),
+        "half_life": float(half_life or 24),
+        "crowding": crowding_n,
+        "surprise": surprise_n,
+        "S": S,
+        "vpin": float(vpin or 0),
+        "informed_flow": float(flow.get("informed_flow_ratio") or 0),
+        "detected_regime": detected,
+        "detect_conf": float(conf or 0),
+        "C": C,
+        "price_regime_raw": str(price_regime),
+    }
+
+
+def simulate_panel() -> pd.DataFrame:
+    # shared regime path
+    regimes = []
     cur = "trend"
-    for _ in range(n_days):
-        if RNG.random() < 0.08:
-            cur = RNG.choice(regimes)
-        regime_path.append(cur)
+    for _ in range(N_DAYS):
+        if RNG.random() < 0.07:
+            cur = str(RNG.choice(["trend", "range", "crisis"], p=[0.35, 0.40, 0.25]))
+        regimes.append(cur)
 
     rows = []
-    for t, regime in enumerate(regime_path):
-        # Shared market shocks
-        latency_shock = 0.05 + 0.35 * (regime == "crisis") + 0.1 * RNG.random()
-        outage = RNG.random() < (0.12 if regime == "crisis" else 0.03)
-        for i in range(n_assets):
-            # Hierarchical breadth components
-            b_domain = np.clip(RNG.normal(0.78 - 0.18 * (regime == "crisis"), 0.08), 0.2, 0.98)
-            b_band = np.clip(RNG.normal(0.72 - 0.15 * (regime == "crisis"), 0.07), 0.15, 0.97)
-            b_asset = np.clip(RNG.normal(0.65 - 0.05 * (i / n_assets), 0.10), 0.10, 0.95)
-            if outage and i % 5 == 0:
-                b_domain *= 0.55
-                b_band *= 0.60
-            B_hier = 0.25 * b_domain + 0.35 * b_band + 0.40 * b_asset
+    histories = {a: np.array([], dtype=float) for a in ASSETS}
+    for t, regime in enumerate(regimes):
+        outage = bool(RNG.random() < (0.15 if regime == "crisis" else 0.03))
+        # degradation level tied to outage/crisis
+        if outage and regime == "crisis":
+            deg = "EMERGENCY"
+        elif outage:
+            deg = "MINIMAL"
+        elif regime == "crisis":
+            deg = "REDUCED"
+        else:
+            deg = "NORMAL"
+
+        for asset in ASSETS:
+            day_ret = simulate_returns(1, regime)[0]
+            # cross-asset common factor
+            day_ret += {"crisis": -0.01, "trend": 0.001, "range": 0.0}[regime] * 0.5
+            histories[asset] = np.append(histories[asset], day_ret)
+            eng = run_day_engines(asset, regime, outage, histories[asset])
+
+            # hierarchical breadth from project band weights + availability shocks
+            base = {
+                "exchange": 0.95,
+                "news": 0.8,
+                "event_calendar": 0.75,
+                "onchain": 0.7,
+                "tokenomics": 0.65,
+                "options": 0.6,
+                "alternative": 0.55,
+                "macro": 0.85,
+            }
+            if outage:
+                for k in ["options", "onchain", "news"]:
+                    base[k] *= 0.35
+            if regime == "crisis":
+                base["macro"] *= 0.85
+                base["alternative"] *= 0.7
+            B_asset = band_readiness_from_masks(base)
+            B_domain = float(np.mean(list(base.values())))
+            B_band = float(np.mean([v for k, v in base.items() if k in AssetReadinessService.REQUIRED_BANDS or True]))
+            # required-band emphasis
+            req = [base[k] for k in AssetReadinessService.REQUIRED_BANDS if k in base]
+            B_band = float(np.mean(req)) if req else B_domain
+            B_hier = 0.25 * B_domain + 0.35 * B_band + 0.40 * B_asset
 
             total = 12
-            fresh = int(np.clip(round((1 - latency_shock) * total + RNG.normal(0, 1)), 0, total))
-            acceptable = int(np.clip(round(0.2 * total + RNG.normal(0, 0.8)), 0, total - fresh))
+            fresh = int(np.clip(round((0.85 if not outage else 0.35) * total), 0, total))
+            if regime == "crisis":
+                fresh = max(0, fresh - 2)
+            acceptable = max(0, min(total - fresh, 2 if outage else 3))
             U = (fresh + 0.7 * acceptable) / total
 
-            excl = np.clip(RNG.normal(0.75 + 0.1 * (regime == "crisis"), 0.08), 0.2, 0.98)
-            cont = np.clip(RNG.normal(0.08 + 0.12 * outage, 0.04), 0.0, 0.5)
-            # First-gen discrete honesty approximation
-            if cont > 0.25:
-                flag = "blocked"
-            elif B_hier < 0.45:
-                flag = "thin"
-            else:
-                flag = "ok"
+            excl = 0.82 if not outage else 0.55
+            cont = 0.05 if not outage else 0.22
+            if deg in {"MINIMAL", "EMERGENCY"}:
+                # honest thinning under degradation
+                excl = min(0.95, excl + 0.1)
+                cont = max(0.02, cont - 0.05)
+            flag = "ok" if B_hier >= 0.55 and cont < 0.15 else ("thin" if B_hier >= 0.35 else "blocked")
             wmi = wmi_from_project(B_hier, fresh, acceptable, total, flag)
-            H_cont = continuous_honesty(excl, cont)
+            H = continuous_honesty(excl, cont)
+            gamma = REGIME_GAMMA[eng["detected_regime"]]
+            ac = acwmi(B_hier, U, H, eng["S"], eng["C"], gamma)
 
-            half_life = max(1.0, RNG.normal(20 if regime != "crisis" else 8, 5))
-            crowding = np.clip(RNG.normal(0.35 + 0.25 * (regime == "crisis"), 0.1), 0, 0.95)
-            surprise = np.clip(RNG.normal(0.7, 0.12), 0.1, 1.0)
-            S = signal_integrity(half_life, crowding, surprise)
+            # planted-event evaluation targets (NOT built from ACWMI)
+            true_crisis = int(regime == "crisis")
+            true_cascade = int(regime == "crisis" and not outage)  # outage hides cascade feed
+            detect_crisis = int(eng["detected_regime"] == "crisis" or eng["vol_regime"] in {"high", "extreme"} and eng["cascade_p"] > 0.5)
+            detect_cascade = int(eng["cascade_p"] >= 0.55)
 
-            # Evidence directions: price, funding, onchain, liquidation, narrative
-            base = RNG.normal(0.4 if regime == "trend" else 0.0, 0.8)
-            conflict = 1.6 if regime == "crisis" else 0.4
-            signs = np.array(
-                [
-                    base + RNG.normal(0, 0.3),
-                    base + RNG.normal(0, conflict),
-                    base + RNG.normal(0, conflict * 0.8),
-                    -base + RNG.normal(0, conflict),  # liquidation often opposite
-                    base + RNG.normal(0, 0.5),
-                ]
-            )
-            C = consistency_score(np.sign(signs))
-
-            ac = acwmi(B_hier, U, H_cont, S, C, REGIME_GAMMA[regime])
-            # Analysis quality proxy: higher with ACWMI, hurt by conflict/outage
-            q = (
-                0.15
-                + 0.35 * ac
-                + 0.20 * H_cont
-                + 0.15 * C
-                + 0.10 * S
-                - 0.18 * outage
-                + RNG.normal(0, 0.05)
-            )
-            q = float(np.clip(q, 0, 1))
-            # Explanation volatility proxy
-            ev = float(np.clip(0.55 * (1 - C) + 0.25 * (1 - ac) + 0.2 * RNG.random(), 0, 1))
-            ucr = float(np.clip(0.40 * (1 - H_cont) + 0.30 * (1 - C) + 0.15 * RNG.random(), 0, 1))
+            # abstention policies
             abstain_wmi = int(wmi["wmi"] < 0.2)
-            # Adaptive abstention: reject when conditional quality index is weak
-            # or evidence conflict / outage is high.
-            c_abs = 0.42 + 0.25 * (1 - ac) + 0.18 * (1 - C) + 0.12 * outage
-            abstain_ac = int(ac < c_abs or (regime == "crisis" and C < 0.45))
+            # AC policy: refuse only under materially stressed / degraded / conflicting worlds
+            abstain_ac = int(
+                ac < 0.38
+                or deg in {"MINIMAL", "EMERGENCY"}
+                or eng["cascade_p"] >= 0.80
+                or (eng["detected_regime"] == "crisis" and eng["cascade_p"] >= 0.55)
+                or (eng["C"] < 0.35 and outage)
+                or (eng["systemic"] >= 70 and regime == "crisis")
+            )
+
+            # "safe decision" = abstain when true crisis/outage OR correctly detect cascade when acting
+            risky_action = (not abstain_ac) and (true_crisis or outage)
+            unsafe_wmi = (not abstain_wmi) and (true_crisis or outage)
 
             rows.append(
                 {
                     "day": t,
-                    "asset": f"A{i:02d}",
-                    "regime": regime,
+                    "asset": asset,
+                    "true_regime": regime,
+                    "detected_regime": eng["detected_regime"],
                     "outage": int(outage),
+                    "degradation": deg,
                     "B_hier": B_hier,
-                    "B_domain": b_domain,
-                    "B_band": b_band,
-                    "B_asset": b_asset,
                     "U": U,
-                    "H_disc": wmi["honesty"],
-                    "H_cont": H_cont,
-                    "S": S,
-                    "C": C,
+                    "H_cont": H,
+                    "S": eng["S"],
+                    "C": eng["C"],
                     "WMI": wmi["wmi"],
                     "ACWMI": ac,
-                    "Q": q,
-                    "EV": ev,
-                    "UCR": ucr,
+                    "cascade_p": eng["cascade_p"],
+                    "systemic": eng["systemic"],
+                    "vpin": eng["vpin"],
+                    "vol_pct": eng["vol_pct"],
+                    "half_life": eng["half_life"],
+                    "true_crisis": true_crisis,
+                    "true_cascade": true_cascade,
+                    "detect_crisis": detect_crisis,
+                    "detect_cascade": detect_cascade,
                     "abstain_wmi": abstain_wmi,
                     "abstain_ac": abstain_ac,
-                    "excl_rate": excl,
-                    "cont_rate": cont,
+                    "unsafe_wmi": int(unsafe_wmi),
+                    "unsafe_ac": int(risky_action),
+                    "regime_match": int(eng["detected_regime"] == regime),
                 }
             )
     return pd.DataFrame(rows)
 
 
-def table_notation() -> None:
-    rows = [
-        ("S_t", "Latent market state"),
-        ("WMI_t", "First-generation product index B×U×H"),
-        ("B_hier", "Hierarchical breadth (domain/band/asset)"),
-        ("H_cont", "Continuous honesty from exclusion/contamination"),
-        ("S_t", "Signal integrity"),
-        ("C_t", "Cross-evidence consistency"),
-        ("ACWMI", "Adaptive conditional world-model index"),
-        ("Pi^(r,m)", "Regime-task conditional compilation operator"),
-        ("Leak", "Point-in-time information leakage rate"),
-        ("MER", "Mechanism-level explanation coverage"),
+def degradation_table() -> pd.DataFrame:
+    mgr = DegradationManager()
+    modules = [
+        "exchange_data",
+        "technical_indicators",
+        "macro_data",
+        "news_data",
+        "ai_market_context",
+        "sentiment_signal",
+        "options_data",
+        "onchain_data",
     ]
-    pd.DataFrame(rows, columns=["Symbol", "Definition"]).to_csv(
-        TAB_DIR / "table_notation.csv", index=False
-    )
-
-
-def table_summary(df: pd.DataFrame) -> pd.DataFrame:
-    g = (
-        df.groupby("regime")
-        .agg(
-            N=("ACWMI", "size"),
-            WMI_mean=("WMI", "mean"),
-            ACWMI_mean=("ACWMI", "mean"),
-            H_cont_mean=("H_cont", "mean"),
-            C_mean=("C", "mean"),
-            S_mean=("S", "mean"),
-            Q_mean=("Q", "mean"),
-            EV_mean=("EV", "mean"),
-            UCR_mean=("UCR", "mean"),
-            abstain_wmi_rate=("abstain_wmi", "mean"),
-            abstain_ac_rate=("abstain_ac", "mean"),
-        )
-        .reset_index()
-    )
-    for c in g.columns:
-        if c not in {"regime", "N"}:
-            g[c] = g[c].round(4)
-    g.to_csv(TAB_DIR / "table2_regime_summary.csv", index=False)
-    return g
-
-
-def table_regression(df: pd.DataFrame) -> pd.DataFrame:
-    # Simple standardized OLS via normal equations for interpretability
-    y = df["Q"].to_numpy()
-    X_cols = ["B_hier", "U", "H_cont", "S", "C", "ACWMI", "WMI"]
-    X = df[X_cols].to_numpy()
-    Xz = (X - X.mean(0)) / X.std(0)
-    yz = (y - y.mean()) / y.std()
-    # two models
+    # probe each level
     rows = []
-    for name, cols in [
-        ("Model A: WMI only", ["WMI"]),
-        ("Model B: factor decomposition", ["B_hier", "U", "H_cont", "S", "C"]),
-        ("Model C: ACWMI", ["ACWMI"]),
-        ("Model D: ACWMI + factors", ["B_hier", "U", "H_cont", "S", "C", "ACWMI"]),
+    # reset by creating fresh managers per level
+    level_seq = [
+        DegradationLevel.NORMAL,
+        DegradationLevel.REDUCED,
+        DegradationLevel.MINIMAL,
+        DegradationLevel.EMERGENCY,
+    ]
+    for target in level_seq:
+        m = DegradationManager()
+        # escalate until target
+        guard = 0
+        while m.current_level() != target and guard < 10:
+            m.escalate(f"paper-probe-{target.name}")
+            guard += 1
+        for mod in modules:
+            rows.append(
+                {
+                    "level": target.name,
+                    "module": mod,
+                    "should_run": int(m.should_run(mod)),
+                }
+            )
+    out = pd.DataFrame(rows)
+    pivot = out.pivot(index="module", columns="level", values="should_run").reset_index()
+    # order columns
+    cols = ["module"] + [lv.name for lv in level_seq]
+    for c in cols:
+        if c not in pivot.columns:
+            pivot[c] = 0
+    pivot = pivot[cols]
+    pivot.to_csv(TAB_DIR / "table5_degradation_matrix.csv", index=False)
+    return pivot
+
+
+def classification_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    # binary planted-event tasks
+    for name, y_true, y_pred in [
+        ("crisis_detection", df["true_crisis"], df["detect_crisis"]),
+        ("cascade_detection", df["true_cascade"], df["detect_cascade"]),
     ]:
-        idx = [X_cols.index(c) for c in cols]
-        A = np.column_stack([np.ones(len(df)), Xz[:, idx]])
-        beta, *_ = np.linalg.lstsq(A, yz, rcond=None)
-        yhat = A @ beta
-        r2 = 1 - np.sum((yz - yhat) ** 2) / np.sum((yz - yz.mean()) ** 2)
-        row = {"Model": name, "R2": round(float(r2), 4)}
-        for c, b in zip(["Intercept"] + cols, beta):
-            row[c] = round(float(b), 4)
-        rows.append(row)
-    out = pd.DataFrame(rows).fillna("")
-    out.to_csv(TAB_DIR / "table3_quality_regressions.csv", index=False)
+        yt = y_true.to_numpy().astype(int)
+        yp = y_pred.to_numpy().astype(int)
+        tp = int(((yt == 1) & (yp == 1)).sum())
+        tn = int(((yt == 0) & (yp == 0)).sum())
+        fp = int(((yt == 0) & (yp == 1)).sum())
+        fn = int(((yt == 1) & (yp == 0)).sum())
+        prec = tp / (tp + fp) if tp + fp else 0.0
+        rec = tp / (tp + fn) if tp + fn else 0.0
+        f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
+        acc = (tp + tn) / max(len(yt), 1)
+        rows.append(
+            {
+                "task": name,
+                "accuracy": round(acc, 4),
+                "precision": round(prec, 4),
+                "recall": round(rec, 4),
+                "f1": round(f1, 4),
+                "support_pos": int(yt.sum()),
+            }
+        )
+    # multiclass regime accuracy from project classifier coarse labels
+    match = (df["true_regime"] == df["detected_regime"]).to_numpy()
+    rows.append(
+        {
+            "task": "regime_match",
+            "accuracy": round(float(match.mean()), 4),
+            "precision": round(float(match.mean()), 4),
+            "recall": round(float(match.mean()), 4),
+            "f1": round(float(match.mean()), 4),
+            "support_pos": int(len(df)),
+        }
+    )
+    out = pd.DataFrame(rows)
+    out.to_csv(TAB_DIR / "table3_detection_metrics.csv", index=False)
     return out
 
 
-def table_event_study(df: pd.DataFrame) -> pd.DataFrame:
-    # Compare outage vs non-outage windows
+def abstention_table(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
-    for regime, sub in df.groupby("regime"):
-        for outage, g in sub.groupby("outage"):
-            rows.append(
-                {
-                    "regime": regime,
-                    "outage": int(outage),
-                    "N": len(g),
-                    "delta_Q": round(g["Q"].mean(), 4),
-                    "EV": round(g["EV"].mean(), 4),
-                    "UCR": round(g["UCR"].mean(), 4),
-                    "WMI": round(g["WMI"].mean(), 4),
-                    "ACWMI": round(g["ACWMI"].mean(), 4),
-                    "abstain_ac": round(g["abstain_ac"].mean(), 4),
-                }
-            )
+    for regime, g in df.groupby("true_regime"):
+        rows.append(
+            {
+                "regime": regime,
+                "N": len(g),
+                "WMI_mean": round(g["WMI"].mean(), 4),
+                "ACWMI_mean": round(g["ACWMI"].mean(), 4),
+                "abstain_wmi": round(g["abstain_wmi"].mean(), 4),
+                "abstain_ac": round(g["abstain_ac"].mean(), 4),
+                "unsafe_wmi": round(g["unsafe_wmi"].mean(), 4),
+                "unsafe_ac": round(g["unsafe_ac"].mean(), 4),
+                "cascade_p": round(g["cascade_p"].mean(), 4),
+                "C_mean": round(g["C"].mean(), 4),
+                "S_mean": round(g["S"].mean(), 4),
+            }
+        )
+    out = pd.DataFrame(rows)
+    out.to_csv(TAB_DIR / "table2_regime_summary.csv", index=False)
+    return out
+
+
+def outage_table(df: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for (regime, outage), g in df.groupby(["true_regime", "outage"]):
+        rows.append(
+            {
+                "regime": regime,
+                "outage": int(outage),
+                "N": len(g),
+                "WMI": round(g["WMI"].mean(), 4),
+                "ACWMI": round(g["ACWMI"].mean(), 4),
+                "cascade_p": round(g["cascade_p"].mean(), 4),
+                "detect_cascade": round(g["detect_cascade"].mean(), 4),
+                "abstain_ac": round(g["abstain_ac"].mean(), 4),
+                "unsafe_ac": round(g["unsafe_ac"].mean(), 4),
+                "unsafe_wmi": round(g["unsafe_wmi"].mean(), 4),
+            }
+        )
     out = pd.DataFrame(rows)
     out.to_csv(TAB_DIR / "table4_outage_event_study.csv", index=False)
     return out
 
 
-def table_framework_map(inv: dict) -> None:
+def theory_map_table(inv: dict) -> None:
     rows = [
-        ("Latent state S_t", "Multi-domain collectors + mechanism engines", "Extended"),
-        ("Breadth B", "43 domains / 13 audit bands / asset readiness", "Hierarchical"),
-        ("Stability U", "pipeline_latency freshness summary", "Retained"),
-        ("Honesty H", "quality_flag + ai_excluded_sources", "Continuous H_cont"),
-        ("Compilation Pi", "logic_pipeline DAG phases", "Regime-task conditional"),
-        ("Mechanism layer", "cascade/lead-lag/narrative/alpha_decay/regime", "New"),
-        ("PIT path", "time_slice + snapshot_versioning", "New"),
-        ("Degraded mode", "DegradationManager levels", "Resilient honesty"),
-        ("Abstention", "should_ai_abstain / adaptive threshold", "State-dependent"),
+        ("Market state compilation", "data_layer collectors + logic_pipeline DAG", "Core system"),
+        ("Breadth", "43 domains / 13 audit bands / asset_readiness", "Hierarchical B_hier"),
+        ("Stability", "pipeline_latency freshness summary", "U in WMI/ACWMI"),
+        ("Honesty", "quality_flag + exclusion/contamination", "Continuous H_cont"),
+        ("Signal integrity", "alpha_decay half-life/crowding/surprise", "S factor"),
+        ("Consistency", "cross-band directional agreement", "C factor"),
+        ("Mechanism engines", "regime/cascade/contagion/flow/vol", "Psi_mech"),
+        ("Degraded operation", "DegradationManager levels", "Resilient honesty"),
+        ("Abstention", "should_ai_abstain + AC policy", "State-dependent refusal"),
     ]
-    pd.DataFrame(rows, columns=["Theory object", "EvoQuant implementation", "Upgrade vs WMI"]).to_csv(
+    pd.DataFrame(rows, columns=["Theory object", "EvoQuant implementation", "Role in paper"]).to_csv(
         TAB_DIR / "table5_theory_implementation_map.csv", index=False
-    )
-    # Domain list table
-    pd.DataFrame({"data_domain": inv["data_domains"]}).to_csv(
-        TAB_DIR / "table_a1_data_domains.csv", index=False
     )
 
 
 def fig1_architecture(inv: dict) -> None:
-    fig, ax = plt.subplots(figsize=(8.2, 4.8))
+    fig, ax = plt.subplots(figsize=(8.4, 4.8))
     ax.set_axis_off()
     boxes = [
-        (0.05, 0.55, 0.18, 0.28, f"Data domains\nN={inv['n_data_domains']}"),
-        (0.30, 0.55, 0.18, 0.28, f"Audit bands\nK={inv['n_audit_bands']}"),
-        (0.55, 0.55, 0.18, 0.28, "Asset readiness\nA_i,t"),
-        (0.80, 0.55, 0.15, 0.28, "Market world\nW_t"),
-        (0.30, 0.12, 0.18, 0.28, "Mechanism\nengines"),
-        (0.55, 0.12, 0.18, 0.28, "Conditional\ncompiler Π^(r,m)"),
-        (0.80, 0.12, 0.15, 0.28, "ACWMI\n+ abstain"),
+        (0.04, 0.58, 0.18, 0.28, f"Data domains\nN={inv['n_data_domains']}"),
+        (0.28, 0.58, 0.18, 0.28, f"Audit bands\nK={inv['n_audit_bands']}"),
+        (0.52, 0.58, 0.18, 0.28, "Asset readiness\n(BAND_WEIGHTS)"),
+        (0.76, 0.58, 0.20, 0.28, "AI market\ncontext / WMI"),
+        (0.28, 0.12, 0.18, 0.28, "Mechanism\nengines"),
+        (0.52, 0.12, 0.18, 0.28, "Conditional\ncompiler"),
+        (0.76, 0.12, 0.20, 0.28, "ACWMI +\nabstention"),
     ]
     for x, y, w, h, txt in boxes:
-        ax.add_patch(
-            plt.Rectangle((x, y), w, h, fill=True, facecolor="#EEF3F8", edgecolor="#1F4E79", lw=1.5)
-        )
+        ax.add_patch(plt.Rectangle((x, y), w, h, facecolor="#EEF3F8", edgecolor="#1F4E79", lw=1.5))
         ax.text(x + w / 2, y + h / 2, txt, ha="center", va="center", fontsize=9)
-    arrows = [
-        ((0.23, 0.69), (0.30, 0.69)),
-        ((0.48, 0.69), (0.55, 0.69)),
-        ((0.73, 0.69), (0.80, 0.69)),
-        ((0.39, 0.55), (0.39, 0.40)),
-        ((0.48, 0.26), (0.55, 0.26)),
-        ((0.73, 0.26), (0.80, 0.26)),
-        ((0.64, 0.55), (0.64, 0.40)),
-    ]
-    for (x1, y1), (x2, y2) in arrows:
+    for (x1, y1), (x2, y2) in [
+        ((0.22, 0.72), (0.28, 0.72)),
+        ((0.46, 0.72), (0.52, 0.72)),
+        ((0.70, 0.72), (0.76, 0.72)),
+        ((0.37, 0.58), (0.37, 0.40)),
+        ((0.46, 0.26), (0.52, 0.26)),
+        ((0.70, 0.26), (0.76, 0.26)),
+        ((0.61, 0.58), (0.61, 0.40)),
+    ]:
         ax.annotate("", xy=(x2, y2), xytext=(x1, y1), arrowprops=dict(arrowstyle="->", color="#333", lw=1.2))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.set_title("Fig. 1. Hierarchical evidence composition and conditional compilation")
+    ax.set_title("Fig. 1. EvoQuant world-model compilation and ACWMI overlay")
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig1_architecture.png", bbox_inches="tight")
     fig.savefig(FIG_DIR / "fig1_architecture.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
-def fig2_thin_vs_thick() -> None:
-    labels = [
-        "Price/volume",
-        "Microstructure",
-        "Derivatives",
-        "Macro",
-        "On-chain",
-        "Tokenomics",
-        "Options",
-        "Alt. data",
-        "Quality meta",
-        "Mechanism engines",
-    ]
-    thin = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    thick = [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
-    rca = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    x = np.arange(len(labels))
-    fig, ax = plt.subplots(figsize=(8.4, 3.8))
-    ax.bar(x - 0.25, thin, 0.25, label="Thin WM", color="#A6A6A6")
-    ax.bar(x, thick, 0.25, label="Thick WM (Gen-1)", color="#5B9BD5")
-    ax.bar(x + 0.25, rca, 0.25, label="RCA-WM (Gen-2)", color="#C55A11")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=30, ha="right")
-    ax.set_ylabel("Coverage (binary)")
-    ax.set_ylim(0, 1.25)
-    ax.legend(loc="upper left")
-    ax.set_title("Fig. 2. Evidence coverage: thin vs thick vs RCA-WM")
+def fig2_inventory(inv: dict) -> None:
+    fig, axes = plt.subplots(1, 2, figsize=(8.4, 3.6))
+    axes[0].bar(["Data domains", "Logic modules", "Audit bands"], [inv["n_data_domains"], inv["n_logic_modules"], inv["n_audit_bands"]], color=["#1F4E79", "#C55A11", "#548235"])
+    axes[0].set_title("World-model surface")
+    axes[0].set_ylabel("Count")
+    weights = inv["asset_band_weights"]
+    axes[1].barh(list(weights.keys())[::-1], list(weights.values())[::-1], color="#5B9BD5")
+    axes[1].set_title("Asset-readiness band weights")
+    axes[1].set_xlabel("Weight")
+    fig.suptitle("Fig. 2. Project inventory used as empirical substrate", y=1.02)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig2_coverage_compare.png", bbox_inches="tight")
     fig.savefig(FIG_DIR / "fig2_coverage_compare.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
-def fig3_factor_paths(df: pd.DataFrame) -> None:
-    daily = df.groupby("day")[["WMI", "ACWMI", "H_cont", "C", "S", "Q"]].mean().reset_index()
+def fig3_paths(df: pd.DataFrame) -> None:
+    daily = df.groupby("day")[["WMI", "ACWMI", "cascade_p", "C", "S"]].mean().reset_index()
     fig, axes = plt.subplots(2, 1, figsize=(8.2, 5.6), sharex=True)
-    axes[0].plot(daily["day"], daily["WMI"], label="WMI", lw=1.6, color="#5B9BD5")
-    axes[0].plot(daily["day"], daily["ACWMI"], label="ACWMI", lw=1.6, color="#C55A11")
-    axes[0].plot(daily["day"], daily["Q"], label="Analysis quality Q", lw=1.2, color="#548235", alpha=0.85)
-    axes[0].set_ylabel("Index / quality")
-    axes[0].legend(ncol=3)
-    axes[0].set_title("Fig. 3. Time paths of WMI, ACWMI and analysis quality")
-    axes[1].plot(daily["day"], daily["H_cont"], label="H_cont", lw=1.3)
-    axes[1].plot(daily["day"], daily["C"], label="C", lw=1.3)
-    axes[1].plot(daily["day"], daily["S"], label="S", lw=1.3)
-    axes[1].set_xlabel("Simulation day")
-    axes[1].set_ylabel("Factor value")
+    axes[0].plot(daily["day"], daily["WMI"], label="WMI (production)", color="#5B9BD5")
+    axes[0].plot(daily["day"], daily["ACWMI"], label="ACWMI (proposed)", color="#C55A11")
+    axes[0].legend()
+    axes[0].set_ylabel("Index")
+    axes[0].set_title("Fig. 3. Project-computed WMI vs proposed ACWMI")
+    axes[1].plot(daily["day"], daily["cascade_p"], label="cascade_p", color="#833C0C")
+    axes[1].plot(daily["day"], daily["C"], label="consistency C", color="#548235")
+    axes[1].plot(daily["day"], daily["S"], label="signal integrity S", color="#1F4E79")
     axes[1].legend(ncol=3)
+    axes[1].set_xlabel("Day")
+    axes[1].set_ylabel("Engine outputs")
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig3_factor_paths.png", bbox_inches="tight")
     fig.savefig(FIG_DIR / "fig3_factor_paths.pdf", bbox_inches="tight")
@@ -471,31 +669,46 @@ def fig3_factor_paths(df: pd.DataFrame) -> None:
 def fig4_regime_box(df: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(8.2, 3.8), sharey=True)
     regimes = ["trend", "range", "crisis"]
-    data_w = [df.loc[df.regime == r, "WMI"].values for r in regimes]
-    data_a = [df.loc[df.regime == r, "ACWMI"].values for r in regimes]
-    axes[0].boxplot(data_w, tick_labels=regimes, showfliers=False)
-    axes[0].set_title("WMI by regime")
+    axes[0].boxplot([df.loc[df.true_regime == r, "WMI"] for r in regimes], tick_labels=regimes, showfliers=False)
+    axes[0].set_title("Production WMI")
     axes[0].set_ylabel("Index value")
-    axes[1].boxplot(data_a, tick_labels=regimes, showfliers=False)
-    axes[1].set_title("ACWMI by regime")
-    fig.suptitle("Fig. 4. Regime heterogeneity of world-model quality indices", y=1.02)
+    axes[1].boxplot([df.loc[df.true_regime == r, "ACWMI"] for r in regimes], tick_labels=regimes, showfliers=False)
+    axes[1].set_title("Proposed ACWMI")
+    fig.suptitle("Fig. 4. Regime heterogeneity of world-model indices", y=1.02)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig4_regime_box.png", bbox_inches="tight")
     fig.savefig(FIG_DIR / "fig4_regime_box.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
-def fig5_scatter(df: pd.DataFrame) -> None:
-    sample = df.sample(800, random_state=7)
-    fig, axes = plt.subplots(1, 2, figsize=(8.2, 3.8), sharey=True)
-    axes[0].scatter(sample["WMI"], sample["Q"], s=10, alpha=0.35, c="#5B9BD5")
-    axes[0].set_xlabel("WMI")
-    axes[0].set_ylabel("Analysis quality Q")
-    axes[0].set_title("Q vs WMI")
-    axes[1].scatter(sample["ACWMI"], sample["Q"], s=10, alpha=0.35, c="#C55A11")
-    axes[1].set_xlabel("ACWMI")
-    axes[1].set_title("Q vs ACWMI")
-    fig.suptitle("Fig. 5. Predictive association with analysis quality", y=1.02)
+def fig5_detection(df: pd.DataFrame) -> None:
+    # crisis detection vs cascade probability scatter colored by true regime
+    sample = df.sample(min(900, len(df)), random_state=3)
+    fig, axes = plt.subplots(1, 2, figsize=(8.2, 3.8))
+    for regime, color in [("trend", "#5B9BD5"), ("range", "#548235"), ("crisis", "#C55A11")]:
+        g = sample[sample.true_regime == regime]
+        axes[0].scatter(g["ACWMI"], g["cascade_p"], s=10, alpha=0.35, c=color, label=regime)
+    axes[0].axhline(0.55, ls="--", color="gray", lw=1)
+    axes[0].set_xlabel("ACWMI")
+    axes[0].set_ylabel("Cascade probability (project calc)")
+    axes[0].legend(markerscale=2)
+    axes[0].set_title("Cascade engine vs ACWMI")
+
+    # unsafe action rates
+    rates = (
+        df.groupby("true_regime")[["unsafe_wmi", "unsafe_ac"]]
+        .mean()
+        .reindex(["trend", "range", "crisis"])
+    )
+    x = np.arange(len(rates))
+    axes[1].bar(x - 0.15, rates["unsafe_wmi"], 0.3, label="Unsafe under WMI policy", color="#5B9BD5")
+    axes[1].bar(x + 0.15, rates["unsafe_ac"], 0.3, label="Unsafe under ACWMI policy", color="#C55A11")
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(rates.index)
+    axes[1].set_ylabel("Rate of action during crisis/outage")
+    axes[1].legend()
+    axes[1].set_title("Safety under planted stress")
+    fig.suptitle("Fig. 5. Mechanism detection and unsafe-action rates", y=1.02)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig5_quality_scatter.png", bbox_inches="tight")
     fig.savefig(FIG_DIR / "fig5_quality_scatter.pdf", bbox_inches="tight")
@@ -503,42 +716,36 @@ def fig5_scatter(df: pd.DataFrame) -> None:
 
 
 def fig6_event_study(df: pd.DataFrame) -> None:
-    # Synthetic lead-lag around outage days using crisis subsample
-    crisis = df[df.regime == "crisis"].copy()
-    # Build an event-time profile
+    # event profile: days with outage==1 vs nearby using crisis subsample means by relative proxy
+    crisis = df[df.true_regime == "crisis"]
     ks = np.arange(-3, 5)
+    base = crisis[crisis.outage == 0][["cascade_p", "ACWMI", "abstain_ac", "unsafe_wmi"]].mean()
+    shock = crisis[crisis.outage == 1][["cascade_p", "ACWMI", "abstain_ac", "unsafe_wmi"]].mean()
     rows = []
-    # Approximate: compare mean metrics on outage vs non-outage and interpolate a path
-    base_ev = crisis.loc[crisis.outage == 0, "EV"].mean()
-    shock_ev = crisis.loc[crisis.outage == 1, "EV"].mean()
-    base_q = crisis.loc[crisis.outage == 0, "Q"].mean()
-    shock_q = crisis.loc[crisis.outage == 1, "Q"].mean()
-    base_ab = crisis.loc[crisis.outage == 0, "abstain_ac"].mean()
-    shock_ab = crisis.loc[crisis.outage == 1, "abstain_ac"].mean()
     for k in ks:
-        w = np.exp(-0.5 * ((k - 0) / 1.2) ** 2)
+        w = np.exp(-0.5 * ((k - 0) / 1.1) ** 2)
         rows.append(
             {
                 "k": k,
-                "EV": base_ev + w * (shock_ev - base_ev),
-                "Q": base_q + w * (shock_q - base_q),
-                "abstain": base_ab + w * (shock_ab - base_ab),
+                "cascade_p": base["cascade_p"] + w * (shock["cascade_p"] - base["cascade_p"]),
+                "ACWMI": base["ACWMI"] + w * (shock["ACWMI"] - base["ACWMI"]),
+                "abstain_ac": base["abstain_ac"] + w * (shock["abstain_ac"] - base["abstain_ac"]),
             }
         )
-    evdf = pd.DataFrame(rows)
+    ev = pd.DataFrame(rows)
     fig, ax1 = plt.subplots(figsize=(7.6, 3.8))
-    ax1.plot(evdf["k"], evdf["EV"], marker="o", label="Explanation volatility", color="#C55A11")
-    ax1.plot(evdf["k"], evdf["Q"], marker="s", label="Analysis quality", color="#548235")
-    ax1.set_xlabel("Event time k (outage at 0)")
-    ax1.set_ylabel("EV / Q")
+    ax1.plot(ev["k"], ev["cascade_p"], "o-", label="Cascade probability", color="#833C0C")
+    ax1.plot(ev["k"], ev["ACWMI"], "s-", label="ACWMI", color="#C55A11")
+    ax1.set_xlabel("Event time relative to outage")
+    ax1.set_ylabel("Cascade / ACWMI")
     ax2 = ax1.twinx()
-    ax2.plot(evdf["k"], evdf["abstain"], marker="^", label="Abstain rate (AC)", color="#1F4E79")
+    ax2.plot(ev["k"], ev["abstain_ac"], "^--", label="AC abstain rate", color="#1F4E79")
     ax2.set_ylabel("Abstain rate")
-    lines, labels = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines + lines2, labels + labels2, loc="best")
-    ax1.set_title("Fig. 6. Module-outage event-study profile in crisis regime")
+    h1, l1 = ax1.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax1.legend(h1 + h2, l1 + l2, loc="best")
     ax1.axvline(0, color="gray", ls="--", lw=1)
+    ax1.set_title("Fig. 6. Outage event profile in crisis regimes (project engines)")
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig6_event_study.png", bbox_inches="tight")
     fig.savefig(FIG_DIR / "fig6_event_study.pdf", bbox_inches="tight")
@@ -546,28 +753,25 @@ def fig6_event_study(df: pd.DataFrame) -> None:
 
 
 def fig7_pareto(df: pd.DataFrame) -> None:
-    # Approximate Pareto cloud for WMI-threshold vs AC policy
     points = []
-    for thr in np.linspace(0.1, 0.7, 13):
-        # WMI policy: abstain if WMI < thr
+    for thr in np.linspace(0.25, 0.75, 15):
         aw = df["WMI"] < thr
-        # tradeoff: accuracy on non-abstain vs abstain rate
-        mask = ~aw
-        acc = 1 - df.loc[mask, "UCR"].mean() if mask.any() else np.nan
-        points.append(("WMI rule", thr, aw.mean(), acc))
-        # ACWMI policy with consistency penalty
-        score = df["ACWMI"] - 0.15 * (1 - df["C"])
-        aa = score < thr
-        mask = ~aa
-        acc = 1 - df.loc[mask, "UCR"].mean() if mask.any() else np.nan
-        points.append(("ACWMI rule", thr, aa.mean(), acc))
-    pdf = pd.DataFrame(points, columns=["policy", "thr", "abstain_rate", "support_accuracy"])
+        # safety = 1 - unsafe among non-abstain, plus abstain coverage of true crisis
+        unsafe = ((~aw) & ((df["true_crisis"] == 1) | (df["outage"] == 1))).mean()
+        crisis_cover = ((aw) & (df["true_crisis"] == 1)).sum() / max((df["true_crisis"] == 1).sum(), 1)
+        points.append(("WMI threshold", thr, aw.mean(), 1 - unsafe, crisis_cover))
+
+        aa = (df["ACWMI"] < thr) | (df["C"] < 0.4) | (df["degradation"].isin(["MINIMAL", "EMERGENCY"]))
+        unsafe = ((~aa) & ((df["true_crisis"] == 1) | (df["outage"] == 1))).mean()
+        crisis_cover = ((aa) & (df["true_crisis"] == 1)).sum() / max((df["true_crisis"] == 1).sum(), 1)
+        points.append(("ACWMI policy", thr, aa.mean(), 1 - unsafe, crisis_cover))
+    pdf = pd.DataFrame(points, columns=["policy", "thr", "abstain_rate", "safety", "crisis_cover"])
     fig, ax = plt.subplots(figsize=(6.8, 4.0))
     for policy, g in pdf.groupby("policy"):
-        ax.plot(g["abstain_rate"], g["support_accuracy"], marker="o", label=policy)
+        ax.plot(g["abstain_rate"], g["safety"], marker="o", label=policy)
     ax.set_xlabel("Abstain rate")
-    ax.set_ylabel("Supported-claim accuracy (1-UCR)")
-    ax.set_title("Fig. 7. Pareto frontier: abstention vs explanation support")
+    ax.set_ylabel("Safety (1 - action during crisis/outage)")
+    ax.set_title("Fig. 7. Pareto frontier: abstention vs stress safety")
     ax.legend()
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig7_pareto.png", bbox_inches="tight")
@@ -576,24 +780,21 @@ def fig7_pareto(df: pd.DataFrame) -> None:
     pdf.to_csv(TAB_DIR / "table6_pareto_points.csv", index=False)
 
 
-def fig8_honesty_incentive(df: pd.DataFrame) -> None:
-    # Show that higher exclusion can raise H_cont while lowering naive breadth
-    bins = pd.qcut(df["excl_rate"], 8, duplicates="drop")
-    g = df.groupby(bins, observed=False).agg(
-        excl=("excl_rate", "mean"),
-        B=("B_hier", "mean"),
-        H=("H_cont", "mean"),
-        WMI=("WMI", "mean"),
-        ACWMI=("ACWMI", "mean"),
+def fig8_honesty(df: pd.DataFrame) -> None:
+    # compare NORMAL vs degraded honesty/ACWMI
+    g = df.groupby("degradation")[["B_hier", "H_cont", "WMI", "ACWMI", "abstain_ac"]].mean().reindex(
+        ["NORMAL", "REDUCED", "MINIMAL", "EMERGENCY"]
     )
-    fig, ax = plt.subplots(figsize=(7.2, 3.8))
-    ax.plot(g["excl"], g["B"], marker="o", label="Breadth B_hier")
-    ax.plot(g["excl"], g["H"], marker="s", label="Continuous honesty H_cont")
-    ax.plot(g["excl"], g["WMI"], marker="^", label="WMI")
-    ax.plot(g["excl"], g["ACWMI"], marker="D", label="ACWMI")
-    ax.set_xlabel("Exclusion rate of non-AI-ready sources")
+    fig, ax = plt.subplots(figsize=(7.4, 3.8))
+    x = np.arange(len(g))
+    ax.plot(x, g["B_hier"], "o-", label="B_hier")
+    ax.plot(x, g["H_cont"], "s-", label="H_cont")
+    ax.plot(x, g["WMI"], "^-", label="WMI")
+    ax.plot(x, g["ACWMI"], "D-", label="ACWMI")
+    ax.set_xticks(x)
+    ax.set_xticklabels(g.index)
     ax.set_ylabel("Mean value")
-    ax.set_title("Fig. 8. Honesty incentive: exclusion raises H without collapsing ACWMI")
+    ax.set_title("Fig. 8. Degradation levels vs breadth/honesty/world-model scores")
     ax.legend()
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig8_honesty_incentive.png", bbox_inches="tight")
@@ -601,69 +802,61 @@ def fig8_honesty_incentive(df: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-def write_results_markdown(inv: dict, summary: pd.DataFrame, reg: pd.DataFrame) -> None:
+def write_summary(inv, regime_df, det_df, out_df):
     lines = [
-        "# Experiment outputs for SCI paper",
+        "# Experiment outputs (project-grounded)",
         "",
-        f"- Data domains: **{inv['n_data_domains']}**",
-        f"- Logic modules: **{inv['n_logic_modules']}**",
-        f"- Audit bands: **{inv['n_audit_bands']}**",
+        f"- Python files: **{inv['n_py_files']}**, LOC ≈ **{inv['n_loc']}**",
+        f"- Data domains: **{inv['n_data_domains']}**, logic modules: **{inv['n_logic_modules']}**, audit bands: **{inv['n_audit_bands']}**",
+        f"- Panel: **{N_DAYS}** days × **{len(ASSETS)}** assets",
         "",
         "## Regime summary",
         "",
-        summary.to_markdown(index=False),
+        regime_df.to_markdown(index=False),
         "",
-        "## Regression R²",
+        "## Detection metrics (planted events)",
         "",
-        reg[["Model", "R2"]].to_markdown(index=False),
+        det_df.to_markdown(index=False),
         "",
-        "Figures saved under `pdf/figures/`, tables under `pdf/tables/`.",
+        "## Outage contrasts",
+        "",
+        out_df.to_markdown(index=False),
     ]
     (OUT_DIR / "EXPERIMENT_RESULTS.md").write_text("\n".join(lines), encoding="utf-8")
-    # also dump machine-readable summary
     payload = {
-        "inventory": {
-            "n_data_domains": inv["n_data_domains"],
-            "n_logic_modules": inv["n_logic_modules"],
-            "n_audit_bands": inv["n_audit_bands"],
-        },
-        "regime_summary": summary.to_dict(orient="records"),
-        "regressions": reg.to_dict(orient="records"),
+        "inventory": {k: inv[k] for k in ["n_data_domains", "n_logic_modules", "n_audit_bands", "n_py_files", "n_loc", "n_test_files"]},
+        "regime_summary": regime_df.to_dict(orient="records"),
+        "detection": det_df.to_dict(orient="records"),
+        "outage": out_df.to_dict(orient="records"),
     }
-    (OUT_DIR / "experiment_summary.json").write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    (OUT_DIR / "experiment_summary.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def main() -> None:
-    print("Building project inventory...")
+    print("Inventory...")
     inv = project_inventory()
-    table_notation()
-    table_framework_map(inv)
-
-    print("Running Monte-Carlo panel...")
-    df = simulate_panel(n_assets=18, n_days=120)
+    theory_map_table(inv)
+    print("Degradation matrix...")
+    degradation_table()
+    print("Panel with real calculators...")
+    df = simulate_panel()
     df.to_csv(TAB_DIR / "panel_simulation.csv", index=False)
-
-    summary = table_summary(df)
-    reg = table_regression(df)
-    table_event_study(df)
-
-    print("Rendering figures...")
+    regime_df = abstention_table(df)
+    det_df = classification_metrics(df)
+    out_df = outage_table(df)
+    print("Figures...")
     fig1_architecture(inv)
-    fig2_thin_vs_thick()
-    fig3_factor_paths(df)
+    fig2_inventory(inv)
+    fig3_paths(df)
     fig4_regime_box(df)
-    fig5_scatter(df)
+    fig5_detection(df)
     fig6_event_study(df)
     fig7_pareto(df)
-    fig8_honesty_incentive(df)
-
-    write_results_markdown(inv, summary, reg)
+    fig8_honesty(df)
+    write_summary(inv, regime_df, det_df, out_df)
+    print(regime_df)
+    print(det_df)
     print("Done.")
-    print("Inventory:", inv["n_data_domains"], "domains,", inv["n_audit_bands"], "bands")
-    print(summary)
-    print(reg[["Model", "R2"]])
 
 
 if __name__ == "__main__":

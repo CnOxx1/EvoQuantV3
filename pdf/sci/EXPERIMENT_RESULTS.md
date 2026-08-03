@@ -1,24 +1,32 @@
-# Experiment outputs for SCI paper
+# Experiment outputs (project-grounded)
 
-- Data domains: **43**
-- Logic modules: **39**
-- Audit bands: **13**
+- Python files: **784**, LOC ≈ **133952**
+- Data domains: **43**, logic modules: **39**, audit bands: **13**
+- Panel: **180** days × **10** assets
 
 ## Regime summary
 
-| regime   |    N |   WMI_mean |   ACWMI_mean |   H_cont_mean |   C_mean |   S_mean |   Q_mean |   EV_mean |   UCR_mean |   abstain_wmi_rate |   abstain_ac_rate |
-|:---------|-----:|-----------:|-------------:|--------------:|---------:|---------:|---------:|----------:|-----------:|-------------------:|------------------:|
-| crisis   |  486 |     0.4093 |       0.4655 |        0.7859 |   0.5317 |   0.0796 |   0.5432 |    0.4916 |     0.3044 |             0.0144 |            0.9465 |
-| range    | 1008 |     0.6679 |       0.5915 |        0.7411 |   0.5601 |   0.2584 |   0.6067 |    0.444  |     0.3095 |             0      |            0.5635 |
-| trend    |  666 |     0.6721 |       0.5527 |        0.7475 |   0.5613 |   0.2492 |   0.6026 |    0.4518 |     0.3093 |             0      |            0.8063 |
+| regime   |    N |   WMI_mean |   ACWMI_mean |   abstain_wmi |   abstain_ac |   unsafe_wmi |   unsafe_ac |   cascade_p |   C_mean |   S_mean |
+|:---------|-----:|-----------:|-------------:|--------------:|-------------:|-------------:|------------:|------------:|---------:|---------:|
+| crisis   | 1000 |     0.5041 |       0.5459 |        0.19   |       1      |         0.81 |           0 |      0.8591 |   0.8816 |   0.0745 |
+| range    |  430 |     0.6851 |       0.4697 |        0.0465 |       0.0465 |         0    |           0 |      0.2705 |   0.4419 |   0.0547 |
+| trend    |  370 |     0.681  |       0.4254 |        0.0541 |       0.2703 |         0    |           0 |      0.3662 |   0.4751 |   0.0604 |
 
-## Regression R²
+## Detection metrics (planted events)
 
-| Model                         |     R2 |
-|:------------------------------|-------:|
-| Model A: WMI only             | 0.1154 |
-| Model B: factor decomposition | 0.4838 |
-| Model C: ACWMI                | 0.3448 |
-| Model D: ACWMI + factors      | 0.4891 |
+| task              |   accuracy |   precision |   recall |     f1 |   support_pos |
+|:------------------|-----------:|------------:|---------:|-------:|--------------:|
+| crisis_detection  |     0.7161 |      0.6664 |   0.979  | 0.793  |          1000 |
+| cascade_detection |     0.8944 |      0.81   |   1      | 0.895  |           810 |
+| regime_match      |     0.7156 |      0.7156 |   0.7156 | 0.7156 |          1800 |
 
-Figures saved under `pdf/figures/`, tables under `pdf/tables/`.
+## Outage contrasts
+
+| regime   |   outage |   N |    WMI |   ACWMI |   cascade_p |   detect_cascade |   abstain_ac |   unsafe_ac |   unsafe_wmi |
+|:---------|---------:|----:|-------:|--------:|------------:|-----------------:|-------------:|------------:|-------------:|
+| crisis   |        0 | 810 | 0.5995 |  0.5789 |      0.9275 |                1 |       1      |           0 |            1 |
+| crisis   |        1 | 190 | 0.0975 |  0.4055 |      0.5675 |                1 |       1      |           0 |            0 |
+| range    |        0 | 410 | 0.7104 |  0.4764 |      0.2738 |                0 |       0      |           0 |            0 |
+| range    |        1 |  20 | 0.166  |  0.3334 |      0.2038 |                0 |       1      |           0 |            0 |
+| trend    |        0 | 350 | 0.7104 |  0.4294 |      0.3738 |                0 |       0.2286 |           0 |            0 |
+| trend    |        1 |  20 | 0.166  |  0.3555 |      0.2338 |                0 |       1      |           0 |            0 |
