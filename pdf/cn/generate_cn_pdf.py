@@ -19,6 +19,7 @@ from reportlab.platypus import (
     Spacer,
 )
 
+# Chinese manuscript package lives under pdf/cn/
 ROOT = Path(__file__).resolve().parent
 MD_PATH = ROOT / "main_cn_acwmi.md"
 PDF_PATH = ROOT / "main_cn_acwmi.pdf"
