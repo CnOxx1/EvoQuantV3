@@ -1,36 +1,23 @@
-# SCI manuscript package
+# Standalone SCI manuscript (EvoQuant-grounded)
 
-This folder contains the English SCI-ready manuscript that optimizes the first-generation World Model Index (WMI) into a Regime-Conditional Adaptive World Model (RCA-WM / ACWMI).
+This package is a **standalone** SCI submission. It does **not** depend on any unused prior paper. All theory is formalized from the EvoQuant repository; all mechanism metrics are computed by importing production calculators.
 
 ## Files
 
-| File | Description |
+| File | Role |
 | --- | --- |
-| `main_acwmi_sci.tex` | Elsevier `elsarticle` LaTeX source (submission-ready structure) |
-| `main_acwmi_sci.pdf` | Rendered English PDF with figures/tables |
-| `run_paper_experiments.py` | Reproducible experiment runner (imports production WMI) |
-| `generate_sci_pdf.py` | PDF renderer embedding `pdf/figures` and `pdf/tables` |
+| `main_acwmi_sci.tex` | Elsevier elsarticle source |
+| `main_acwmi_sci.pdf` | English PDF with figures/tables |
+| `run_paper_experiments.py` | Project-bound experiment runner |
+| `generate_sci_pdf.py` | PDF renderer |
 | `EXPERIMENT_RESULTS.md` | Latest numeric summary |
-| `experiment_summary.json` | Machine-readable summary |
 
 ## Reproduce
 
 ```bash
-# from repo root
 PYTHONPATH=. python3 pdf/sci/run_paper_experiments.py
 PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
+PYTHONPATH=. python3 -m pytest tests/ai_market_context tests/asset_readiness \
+  tests/test_contagion_risk.py tests/test_alpha_decay.py \
+  tests/test_liquidation_cascade.py -q
 ```
-
-Related unit tests used for validation:
-
-```bash
-PYTHONPATH=. python3 -m pytest tests/ai_market_context tests/test_contagion_risk.py \
-  tests/test_alpha_decay.py tests/test_liquidation_cascade.py tests/asset_readiness -q
-```
-
-## Suggested SCI venues
-
-- Expert Systems with Applications
-- Information Sciences
-- Knowledge-Based Systems
-- Finance Research Letters (shorter version)

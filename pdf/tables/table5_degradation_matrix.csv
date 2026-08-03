@@ -1,0 +1,9 @@
+module,NORMAL,REDUCED,MINIMAL,EMERGENCY
+ai_market_context,1,1,0,0
+exchange_data,1,1,1,0
+macro_data,1,1,0,0
+news_data,1,1,0,0
+onchain_data,1,1,0,0
+options_data,1,1,0,0
+sentiment_signal,1,1,0,0
+technical_indicators,1,1,1,0

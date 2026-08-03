@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render an SCI-style English PDF with embedded figures and tables."""
+"""Render standalone SCI PDF grounded in EvoQuant project results."""
 
 from __future__ import annotations
 
@@ -7,15 +7,13 @@ import csv
 from pathlib import Path
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import cm, inch
+from reportlab.lib.units import cm
 from reportlab.platypus import (
     Image,
     KeepTogether,
-    ListFlowable,
-    ListItem,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -27,31 +25,27 @@ from reportlab.platypus import (
 ROOT = Path(__file__).resolve().parents[1]
 FIG = ROOT / "figures"
 TAB = ROOT / "tables"
-OUT = ROOT / "main_cn_acwmi_sci.pdf"
-# Also English-named alias
 OUT_EN = Path(__file__).resolve().parent / "main_acwmi_sci.pdf"
+OUT = ROOT / "main_cn_acwmi_sci.pdf"
 
 
 def styles():
     base = getSampleStyleSheet()
-    font = "Times-Roman"
-    font_b = "Times-Bold"
-    font_i = "Times-Italic"
+    font, font_b, font_i = "Times-Roman", "Times-Bold", "Times-Italic"
     return {
-        "journal": ParagraphStyle("journal", fontName=font_i, fontSize=9, alignment=TA_CENTER, textColor=colors.HexColor("#444444"), spaceAfter=8),
-        "title": ParagraphStyle("title", fontName=font_b, fontSize=14, leading=18, alignment=TA_CENTER, spaceAfter=10),
+        "journal": ParagraphStyle("journal", fontName=font_i, fontSize=9, alignment=TA_CENTER, textColor=colors.HexColor("#444"), spaceAfter=8),
+        "title": ParagraphStyle("title", fontName=font_b, fontSize=13.5, leading=17, alignment=TA_CENTER, spaceAfter=10),
         "author": ParagraphStyle("author", fontName=font, fontSize=11, alignment=TA_CENTER, spaceAfter=2),
         "affil": ParagraphStyle("affil", fontName=font_i, fontSize=9, alignment=TA_CENTER, spaceAfter=8),
-        "h1": ParagraphStyle("h1", fontName=font_b, fontSize=12, leading=16, spaceBefore=12, spaceAfter=6),
+        "h1": ParagraphStyle("h1", fontName=font_b, fontSize=12, leading=15, spaceBefore=12, spaceAfter=6),
         "h2": ParagraphStyle("h2", fontName=font_b, fontSize=11, leading=14, spaceBefore=8, spaceAfter=4),
         "body": ParagraphStyle("body", fontName=font, fontSize=10, leading=13.5, alignment=TA_JUSTIFY, firstLineIndent=12, spaceAfter=6),
         "abs": ParagraphStyle("abs", fontName=font, fontSize=9.5, leading=13, alignment=TA_JUSTIFY, spaceAfter=6),
         "caption": ParagraphStyle("caption", fontName=font, fontSize=9, leading=11, alignment=TA_CENTER, spaceBefore=3, spaceAfter=10),
         "ref": ParagraphStyle("ref", fontName=font, fontSize=9, leading=11, leftIndent=12, firstLineIndent=-12, spaceAfter=3),
         "eq": ParagraphStyle("eq", fontName=font_i, fontSize=10, leading=13, alignment=TA_CENTER, spaceBefore=4, spaceAfter=4),
-        "note": ParagraphStyle("note", fontName=font_i, fontSize=9, leading=12, alignment=TA_LEFT, spaceAfter=6),
+        "note": ParagraphStyle("note", fontName=font_i, fontSize=9, leading=12, spaceAfter=6),
         "hl": ParagraphStyle("hl", fontName=font, fontSize=9.5, leading=12, leftIndent=8, spaceAfter=2),
-        "footer": ParagraphStyle("footer", fontName=font, fontSize=8, alignment=TA_CENTER),
     }
 
 
@@ -59,315 +53,243 @@ def P(text, style):
     return Paragraph(text, style)
 
 
-def read_csv(name: str):
+def read_csv(name):
     with open(TAB / name, newline="", encoding="utf-8") as f:
         return list(csv.reader(f))
 
 
 def make_table(data, col_widths=None):
-    sty = TableStyle(
-        [
-            ("FONTNAME", (0, 0), (-1, 0), "Times-Bold"),
-            ("FONTNAME", (0, 1), (-1, -1), "Times-Roman"),
-            ("FONTSIZE", (0, 0), (-1, -1), 8),
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F0F0F0")),
-            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#666666")),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (1, 0), (-1, -1), "CENTER"),
-            ("ALIGN", (0, 0), (0, -1), "LEFT"),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-            ("LEFTPADDING", (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-        ]
-    )
     t = Table(data, colWidths=col_widths, hAlign="CENTER")
-    t.setStyle(sty)
+    t.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (-1, 0), "Times-Bold"),
+                ("FONTNAME", (0, 1), (-1, -1), "Times-Roman"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F0F0F0")),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#666666")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
     return t
 
 
-def fig(name, width=16 * cm):
-    path = FIG / name
-    return Image(str(path), width=width, height=width * 0.48 if "fig1" in name or "fig3" in name else width * 0.45)
+def fig(name, width=16 * cm, ratio=0.48):
+    return Image(str(FIG / name), width=width, height=width * ratio)
 
 
 def on_page(canvas, doc):
     canvas.saveState()
     canvas.setFont("Times-Roman", 8)
-    canvas.drawCentredString(A4[0] / 2, 1.2 * cm, f"{doc.page}")
-    canvas.drawString(2 * cm, A4[1] - 1.2 * cm, "Li — Regime-Conditional Adaptive World Models")
+    canvas.drawString(2 * cm, A4[1] - 1.2 * cm, "Li — Adaptive World Models for EvoQuant")
+    canvas.drawCentredString(A4[0] / 2, 1.2 * cm, str(doc.page))
     canvas.restoreState()
 
 
 def build():
     S = styles()
     story = []
-
-    story.append(P("Manuscript draft for SCI submission (Elsevier-like formatting)", S["journal"]))
-    story.append(P("Beyond Breadth–Stability–Honesty: Regime-Conditional Adaptive World Models for AI-Based Cryptocurrency Market Analysis", S["title"]))
+    story.append(P("SCI manuscript draft (Elsevier-like formatting) — standalone, project-grounded", S["journal"]))
+    story.append(P(
+        "Regime-Conditional Adaptive World Models for AI Cryptocurrency Market Analysis: "
+        "Formalization and Project-Grounded Evaluation of EvoQuant",
+        S["title"],
+    ))
     story.append(P("Guocong Li", S["author"]))
     story.append(P("Independent Researcher; Email: lmu151638@gmail.com", S["affil"]))
-    story.append(P("Target journals: <i>Expert Systems with Applications</i> / <i>Information Sciences</i> / <i>Knowledge-Based Systems</i>", S["affil"]))
+    story.append(P("Suggested venues: <i>Expert Systems with Applications</i> / <i>Information Sciences</i> / <i>Knowledge-Based Systems</i>", S["affil"]))
 
     story.append(P("<b>Highlights</b>", S["h2"]))
     for h in [
-        "Diagnoses five structural limits of the first-generation WMI = B × U × H index.",
-        "Proposes hierarchical breadth, continuous honesty, signal integrity, and consistency.",
-        "Defines regime–task conditional compilation and a weighted-geometric ACWMI.",
-        "Maps the theory onto EvoQuant with 43 domains, 13 audit bands, and mechanism engines.",
-        "Shows factor models dominate scalar WMI for analysis-quality explanation (R² 0.484 vs 0.115).",
+        "Formalizes EvoQuant’s multi-domain AI market context as a regime-conditional world model.",
+        "Defines ACWMI using hierarchical breadth, continuous honesty, signal integrity, and consistency.",
+        "Evaluates with EvoQuant calculators rather than detached synthetic scores.",
+        "Cascade/crisis detection F1 = 0.895 / 0.793; AC abstention cuts crisis unsafe actions from 81% to 0.",
+        "All figures/tables are reproducible from the open repository.",
     ]:
         story.append(P("• " + h, S["hl"]))
 
     story.append(P("<b>Abstract</b>", S["h2"]))
     story.append(P(
-        "Many AI-based market systems fail less because the predictor is weak than because the market world "
-        "presented to the model is thin, stale, or dishonest. Prior work formalized this observation as a data "
-        "world-model infrastructure and defined a World Model Index WMI<sub>t</sub>=B<sub>t</sub>×U<sub>t</sub>×H<sub>t</sub> "
-        "along breadth, stability, and honesty. While useful, the product form is non-decomposable, honesty is often "
-        "discrete, compilation is task-agnostic, and evidence remains flat. This paper develops a second-generation "
-        "<b>Regime-Conditional Adaptive World Model (RCA-WM)</b>. We replace flat breadth with a hierarchy from 43 data "
-        "domains through 13 audit bands and asset readiness; redefine honesty via exclusion and contamination rates; "
-        "introduce signal integrity and cross-evidence consistency; and define a regime–task conditional compilation "
-        "operator together with a weighted-geometric Adaptive Conditional World Model Index (ACWMI). Using the open "
-        "EvoQuant implementation and a controlled Monte Carlo panel (N=2160 asset-day observations), factor-decomposed "
-        "models explain analysis quality far better than scalar WMI (R²=0.484 vs 0.115), and ACWMI induces substantially "
-        "more state-dependent abstention in crisis regimes. The contribution is to elevate market world modeling from a "
-        "static product score to a conditional, auditable, and operationally degradable scientific object.",
+        "AI market systems often fail because the market world they consume is incomplete, stale, or silently contaminated—"
+        "not because the predictor lacks capacity. This paper studies that failure mode through <b>EvoQuant</b>, an open "
+        "cryptocurrency data world-model infrastructure comprising 43 data domains, 13 audit bands, 39 logic modules, and a "
+        "production World Model Index (WMI) already implemented in code. We formalize EvoQuant’s compilation pipeline as a "
+        "regime-conditional adaptive world model (RCA-WM) and propose an Adaptive Conditional World Model Index (ACWMI) that "
+        "augments production WMI with hierarchical breadth, continuous honesty, signal integrity, and cross-evidence consistency. "
+        "All mechanism scores used in evaluation are computed by EvoQuant’s own calculators (regime classification, liquidation "
+        "cascade, contagion, alpha decay, flow decomposition, volatility, and degradation control). On a project-grounded panel "
+        "of 1800 asset-day observations with planted structural events, cascade detection reaches F1=0.895, crisis detection "
+        "F1=0.793, and coarse regime match accuracy is 71.6%. An ACWMI-aware abstention policy drives unsafe action rates in "
+        "crisis to 0, versus 81% under the production WMI threshold. The contribution is a systems-native theory of AI market "
+        "world-model quality that is inseparable from a concrete, runnable infrastructure.",
         S["abs"],
     ))
-    story.append(P("<b>Keywords:</b> AI market world model; cryptocurrency; data-centric AI; quality governance; point-in-time correctness; abstention", S["note"]))
-    story.append(P("<b>JEL:</b> G10, G17, C55, C82, O33 &nbsp;&nbsp; <b>MSC:</b> 91G70, 68T05", S["note"]))
+    story.append(P("<b>Keywords:</b> AI market world model; cryptocurrency; data-centric AI; quality governance; selective prediction; system resilience", S["note"]))
 
-    # 1
     story.append(P("1. Introduction", S["h1"]))
     story.append(P(
-        "In public narratives, failures of AI trading systems are often attributed to model capacity or prompt design. "
-        "In live markets, the binding constraint is frequently epistemic: the agent does not observe a sufficiently broad, "
-        "stable, and honest market world. Cryptocurrency markets amplify this problem because identical price paths can "
-        "correspond to different structural states once exchange fragmentation, leverage crowding, funding distortions, "
-        "options walls, unlock schedules, and macro liquidity are recognized.",
+        "Most discussions of AI trading emphasize model architecture or feature lists. In production cryptocurrency markets, "
+        "a more fundamental bottleneck appears first: whether the agent is shown a market world that is broad enough, fresh enough, "
+        "and honest enough to support auditable judgment. Identical price paths can correspond to incompatible states once exchange "
+        "fragmentation, leverage crowding, funding distortions, options positioning, unlock pressure, and macro liquidity are considered.",
         S["body"],
     ))
     story.append(P(
-        "Prior work on the EvoQuant project formalized a world-model-first agenda and defined WMI<sub>t</sub>=B<sub>t</sub>×U<sub>t</sub>×H<sub>t</sub>. "
-        "Engineering counterparts include latest_* snapshots, quality gating, main/diagnostic view separation, and multi-band bundles. "
-        "This first-generation object is valuable but insufficient for systems that already expose asset-level readiness matrices, "
-        "mechanism engines, point-in-time reconstruction, and multi-level degradation. This paper therefore asks: "
-        "<i>how should a market world model be compiled for AI under regime, task, and resource constraints, rather than merely made thicker?</i>",
-        S["body"],
-    ))
-    story.append(P("1.1 Contributions", S["h2"]))
-    story.append(P(
-        "(i) Diagnostic: five formal limits of product-form WMI. (ii) Theoretical: RCA-WM with hierarchical breadth, continuous honesty, "
-        "signal integrity S<sub>t</sub>, consistency C<sub>t</sub>, and conditional compilation Π<sub>t</sub><sup>(r,m)</sup>. "
-        "(iii) Metric: weighted-geometric ACWMI. (iv) Systems mapping onto EvoQuant. (v) Project-grounded Monte Carlo / event-study evidence.",
+        "EvoQuant is built as that missing layer. It is not a trading bot. It is an AI-oriented market world-model infrastructure that "
+        "collects heterogeneous evidence, maintains latest_* snapshots, gates AI-ready inputs, separates main/diagnostic views, and "
+        "aggregates an ai_market_context bundle. The current repository exposes 43 data domains, 13 audit bands, 39 logic modules, "
+        "about 1.34×10<sup>5</sup> lines of Python, and a production index WMI<sub>t</sub>=B<sub>t</sub>×U<sub>t</sub>×H<sub>t</sub> "
+        "with abstention suggested when WMI&lt;0.2. This paper formalizes that stack as a regime-conditional adaptive world model and "
+        "evaluates the proposed ACWMI using EvoQuant’s own runnable analytics.",
         S["body"],
     ))
 
-    # 2
     story.append(P("2. Related work", S["h1"]))
     story.append(P(
-        "Asset pricing treats expected returns as conditional on an information set (Fama and French, 1993; Cochrane, 2005). "
-        "Machine-learning asset pricing expands that set with high-dimensional characteristics (Gu et al., 2020; Kelly et al., 2019; Nagel, 2021), "
-        "while multiple-testing critiques warn against naive feature expansion (Harvey et al., 2016). Measurement-error and robustness "
-        "literatures emphasize decisions under noisy information worlds (Fuller, 1987; Carroll et al., 2006; Hansen and Sargent, 2008). "
-        "Our object is not “more predictors,” but the governance and compilation of an asynchronous multi-source market world.",
+        "Conditional asset pricing treats expected returns as functions of an information set (Fama and French, 1993; Cochrane, 2005). "
+        "Machine-learning pricing expands characteristics (Gu et al., 2020; Kelly et al., 2019; Nagel, 2021), while multiple-testing "
+        "critiques warn against undisciplined expansion (Harvey et al., 2016). Measurement-error and robustness theories emphasize "
+        "reliable observation (Fuller, 1987; Carroll et al., 2006; Hansen and Sargent, 2008). Selective prediction studies refusal under "
+        "uncertainty (Chow, 1957; Geifman and El-Yaniv, 2017). Data-centric AI argues governance can dominate model changes (Zha et al., 2023). "
+        "Crypto microstructure documents fragmented venues and shared factors (Makarov and Schoar, 2020; Liu et al., 2022). "
+        "This paper differs by binding world-model theory to a concrete runnable system rather than a detached feature benchmark.",
         S["body"],
     ))
 
-    # 3
-    story.append(P("3. Limitations of first-generation WMI", S["h1"]))
+    story.append(P("3. The EvoQuant world-model substrate", S["h1"]))
     story.append(P(
-        "Product collapse makes breadth improvements invisible when U or H is near zero. Discrete honesty discards exclusion/contamination intensities. "
-        "Task- and regime-agnostic compilation uses the same weights in tranquil and crisis markets. Flat evidence assumptions understate the hierarchy "
-        "from 43 domains to 13 audit bands and asset readiness. Finally, point-in-time leakage and degraded-mode honesty are operationally present but "
-        "absent from the first-generation score.",
+        "EvoQuant compiles market reality through data_layer → latest_* → quality gate → logic_pipeline → ai_market_context. "
+        "Production WMI uses asset-readiness coverage as breadth, pipeline-latency freshness as stability, and quality-flag honesty. "
+        "Table 1 and Figures 1–2 summarize the empirical substrate used throughout the paper.",
+        S["body"],
+    ))
+    story.append(KeepTogether([fig("fig1_architecture.png", 16.3*cm, 0.50), P("Fig. 1. EvoQuant world-model compilation and ACWMI overlay.", S["caption"])]))
+    inv_tbl = [
+        ["Quantity", "Value"],
+        ["Data domains", "43"],
+        ["Logic modules", "39"],
+        ["Audit evidence bands", "13"],
+        ["Python files", "784"],
+        ["Approximate LOC", "133,952"],
+        ["Test files", "56"],
+    ]
+    story.append(make_table(inv_tbl, [6*cm, 3*cm]))
+    story.append(P("Table 1. EvoQuant repository inventory used in this study.", S["caption"]))
+    story.append(KeepTogether([fig("fig2_coverage_compare.png", 16*cm, 0.42), P("Fig. 2. Project inventory and asset-readiness band weights.", S["caption"])]))
+
+    story.append(P("4. Regime-conditional adaptive world models", S["h1"]))
+    story.append(P(
+        "We define hierarchical breadth from domains/bands/assets using production BAND_WEIGHTS; continuous honesty from exclusion and "
+        "contamination rates; signal integrity from alpha_decay half-life/crowding/surprise; and consistency from directional agreement "
+        "across project engines (momentum, smart-money flow, cascade, contagion, VPIN). ACWMI is the weighted geometric mean",
+        S["body"],
+    ))
+    story.append(P("ACWMI<sub>t</sub><sup>(r)</sup> = exp( Σ γ<sub>x</sub>(r) log x<sub>t</sub> / Σ γ<sub>x</sub>(r) ), x∈{B,U,H,S,C}.", S["eq"]))
+    story.append(P(
+        "Crisis regimes emphasize honesty/consistency; trend regimes emphasize signal integrity. Abstention is degradation-aware and "
+        "mechanism-aware (cascade/crisis detections), not only a fixed WMI cutoff.",
         S["body"],
     ))
 
-    # 4 Theory
-    story.append(P("4. Regime-Conditional Adaptive World Models", S["h1"]))
-    story.append(P("4.1 Hierarchical breadth", S["h2"]))
+    story.append(P("5. Experimental design", S["h1"]))
     story.append(P(
-        "Let D<sub>d,t</sub> denote data domains (D=43), E<sub>k,t</sub> audit bands (K=13), and A<sub>i,t</sub> asset readiness. "
-        "Hierarchical breadth is the convex combination",
-        S["body"],
-    ))
-    story.append(P("B<sub>t</sub><sup>hier</sup> = α<sub>1</sub> B<sub>t</sub><sup>domain</sup> + α<sub>2</sub> B<sub>t</sub><sup>band</sup> + α<sub>3</sub> B<sub>t</sub><sup>asset</sup>,", S["eq"]))
-    story.append(P("with α<sub>1</sub>+α<sub>2</sub>+α<sub>3</sub>=1.", S["body"]))
-
-    story.append(P("4.2 Continuous honesty, signal integrity, consistency", S["h2"]))
-    story.append(P(
-        "Continuous honesty rewards exclusion of non-AI-ready sources and penalizes main-view contamination:",
-        S["body"],
-    ))
-    story.append(P("H<sub>t</sub><sup>cont</sup> = exp(−β<sub>1</sub> ρ<sub>t</sub><sup>cont</sup>) · (1 − β<sub>2</sub>(1 − ρ<sub>t</sub><sup>ex</sup>))<sub>+</sub>.", S["eq"]))
-    story.append(P(
-        "Signal integrity S<sub>t</sub> aggregates half-life, crowding, and surprise from mechanism engines (e.g., alpha-decay). "
-        "Consistency C<sub>t</sub> measures pairwise directional agreement across available evidence bands.",
+        "Synthetic paths are used only as inputs. Every reported mechanism metric is computed by importing EvoQuant classes: "
+        "RegimeClassifier, LiquidationCascadeCalculator, ContagionRiskCalculator, AlphaDecayCalculator, FlowDecompositionCalculator, "
+        "VolatilityCalculator, AIMarketContextService._compute_world_model_index, and DegradationManager. The panel covers 10 assets × "
+        "180 days (N=1800) with planted regimes/outages. Evaluation targets are planted structural events, not scores built from ACWMI itself.",
         S["body"],
     ))
 
-    story.append(P("4.3 Conditional compilation and ACWMI", S["h2"]))
-    story.append(P("For regime r and task m,", S["body"]))
-    story.append(P("Π<sub>t</sub><sup>(r,m)</sup> = B<sub>t</sub><sup>(r,m)</sup> ∘ M<sub>t</sub><sup>(r,m)</sup> ∘ A<sub>t</sub> ∘ Ψ<sub>t</sub><sup>mech</sup>.", S["eq"]))
+    story.append(P("6. Results", S["h1"]))
+    story.append(P("6.1 Mechanism detection", S["h2"]))
     story.append(P(
-        "ACWMI is defined as a weighted geometric mean, keeping the index on a [0,1] scale while remaining decomposable in logs:",
+        "Table 2 shows cascade detection F1=0.895 and crisis detection F1=0.793; coarse regime match accuracy is 71.6%. "
+        "These metrics come from the same calculators shipped in the repository.",
         S["body"],
     ))
-    story.append(P(
-        "ACWMI<sub>t</sub><sup>(r,m)</sup> = exp( Σ<sub>x∈{B,U,H,S,C}</sub> γ<sub>x</sub>(r) log x<sub>t</sub> / Σ γ<sub>x</sub>(r) ).",
-        S["eq"],
-    ))
-    story.append(P(
-        "Crisis regimes raise γ<sub>H</sub> and γ<sub>C</sub>; trend regimes raise γ<sub>S</sub>. State-dependent abstention thresholds increase when ACWMI is low, "
-        "consistency collapses, or the system enters degraded mode.",
-        S["body"],
-    ))
+    det = read_csv("table3_detection_metrics.csv")
+    story.append(make_table(det, [3.5*cm, 2.2*cm, 2.2*cm, 2.0*cm, 1.8*cm, 2.2*cm]))
+    story.append(P("Table 2. Detection performance on planted structural events.", S["caption"]))
 
-    # Figure 1-2
-    story.append(KeepTogether([fig("fig1_architecture.png", 16.5 * cm), P("Fig. 1. Hierarchical evidence composition and conditional compilation in RCA-WM.", S["caption"])]))
-    story.append(KeepTogether([fig("fig2_coverage_compare.png", 16.5 * cm), P("Fig. 2. Evidence coverage under thin, thick (Gen-1), and RCA-WM (Gen-2) worlds.", S["caption"])]))
-
-    # 5 Systems
-    story.append(P("5. Systems mapping to EvoQuant", S["h1"]))
+    story.append(P("6.2 WMI versus ACWMI and safety", S["h2"]))
     story.append(P(
-        "The repository currently exposes 43 data-layer domains, 39 logic modules, and 13 audit bands. Production WMI is computed in "
-        "<font face='Courier'>ai_market_context</font> as B×U×H, with U derived from pipeline-latency freshness and a default abstain suggestion when WMI&lt;0.2. "
-        "Table 1 maps theoretical objects to concrete modules.",
-        S["body"],
-    ))
-    map_rows = read_csv("table5_theory_implementation_map.csv")
-    story.append(make_table(map_rows, col_widths=[3.2 * cm, 7.2 * cm, 4.2 * cm]))
-    story.append(P("Table 1. Theory–implementation map between RCA-WM and EvoQuant.", S["caption"]))
-
-    band_rows = read_csv("table1_evidence_bands.csv")
-    # shorten for page
-    short = [band_rows[0]] + [[r[0], r[1], r[2], r[3]] for r in band_rows[1:]]
-    short[0] = ["Band", "Module", "Required", "Asset weight"]
-    story.append(make_table(short, col_widths=[3.5 * cm, 4.5 * cm, 2.2 * cm, 2.5 * cm]))
-    story.append(P("Table 2. Audit evidence bands and asset-readiness weights used by the system.", S["caption"]))
-
-    # 6 Design
-    story.append(P("6. Experimental design", S["h1"]))
-    story.append(P(
-        "We combine live code inventory statistics with a controlled Monte Carlo panel that calls the repository’s real WMI implementation "
-        "for the first-generation benchmark. The panel uses 18 assets and 120 days (N=2160), Markov regime switches among "
-        "{trend, range, crisis}, and source outages with probability 0.12 in crises and 0.03 otherwise. For each asset-day we construct "
-        "B<sup>hier</sup>, U, H<sup>cont</sup>, S, C; compute production WMI; form ACWMI; and record analysis quality Q, explanation volatility EV, "
-        "and unsupported-claim rate UCR.",
-        S["body"],
-    ))
-
-    # 7 Results
-    story.append(P("7. Results", S["h1"]))
-    story.append(P("7.1 Regime heterogeneity", S["h2"]))
-    story.append(P(
-        "Table 3 shows that crisis states exhibit lower world-model scores and much higher ACWMI-based abstention (94.7%) than "
-        "WMI-threshold abstention (1.4%). First-generation WMI therefore under-triggers refusal precisely when conflict is highest.",
+        "Table 3 and Figures 3–5 show the central systems result: in crisis, production WMI still permits action in 81% of cases, "
+        "while the ACWMI-aware policy reduces unsafe actions to 0. In calm range regimes both policies rarely abstain (~4.7%).",
         S["body"],
     ))
     reg = read_csv("table2_regime_summary.csv")
-    # select columns
-    header = ["regime", "N", "WMI", "ACWMI", "C", "S", "Q", "abstain_WMI", "abstain_AC"]
-    body = []
+    reg_short = [["regime", "N", "WMI", "ACWMI", "abstain_WMI", "abstain_AC", "unsafe_WMI", "unsafe_AC"]]
     for r in reg[1:]:
-        body.append([r[0], r[1], r[2], r[3], r[5], r[6], r[7], r[10], r[11]])
-    story.append(make_table([header] + body, col_widths=[1.8*cm]+[1.6*cm]*8))
-    story.append(P("Table 3. Regime-level means from the Monte Carlo panel.", S["caption"]))
+        reg_short.append([r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]])
+    story.append(make_table(reg_short, [1.7*cm] + [1.7*cm] * 7))
+    story.append(P("Table 3. Regime-level world-model scores and safety.", S["caption"]))
 
-    story.append(KeepTogether([fig("fig3_factor_paths.png", 16.2 * cm), P("Fig. 3. Time paths of WMI, ACWMI, quality, and constituent factors.", S["caption"])]))
-    story.append(KeepTogether([fig("fig4_regime_box.png", 15.5 * cm), P("Fig. 4. Distribution of WMI and ACWMI across regimes.", S["caption"])]))
+    story.append(KeepTogether([fig("fig3_factor_paths.png", 16*cm, 0.55), P("Fig. 3. Time paths of production WMI, ACWMI, and mechanism outputs.", S["caption"])]))
+    story.append(KeepTogether([fig("fig4_regime_box.png", 15.5*cm, 0.42), P("Fig. 4. Regime heterogeneity of WMI and ACWMI.", S["caption"])]))
+    story.append(KeepTogether([fig("fig5_quality_scatter.png", 16*cm, 0.42), P("Fig. 5. Cascade engine outputs and unsafe-action rates.", S["caption"])]))
 
-    story.append(P("7.2 Quality regressions", S["h2"]))
-    story.append(P(
-        "Standardized OLS fits (Table 4) show that scalar WMI yields R²=0.115. Factor decomposition raises R² to 0.484; "
-        "ACWMI alone achieves 0.345; combining ACWMI with factors reaches 0.489. Honesty, signal integrity, and consistency "
-        "dominate breadth/stability coefficients, confirming that second-generation objects carry incremental content.",
-        S["body"],
-    ))
-    # Compact regression table from known results
-    reg_tbl = [
-        ["Variable", "Model A", "Model B", "Model C", "Model D"],
-        ["WMI", "0.340", "", "", ""],
-        ["B_hier", "", "0.084", "", "0.058"],
-        ["U", "", "0.067", "", "0.041"],
-        ["H_cont", "", "0.434", "", "0.394"],
-        ["S", "", "0.381", "", "0.207"],
-        ["C", "", "0.349", "", "0.261"],
-        ["ACWMI", "", "", "0.587", "0.238"],
-        ["R²", "0.115", "0.484", "0.345", "0.489"],
-    ]
-    story.append(make_table(reg_tbl, col_widths=[2.8*cm, 2.4*cm, 2.4*cm, 2.4*cm, 2.4*cm]))
-    story.append(P("Table 4. Standardized regressions of analysis quality Q.", S["caption"]))
-    story.append(KeepTogether([fig("fig5_quality_scatter.png", 16*cm), P("Fig. 5. Association between world-model indices and analysis quality.", S["caption"])]))
-
-    story.append(P("7.3 Outages, Pareto frontier, and honesty incentives", S["h2"]))
-    story.append(P(
-        "Outages reduce Q by about 0.21–0.23 and raise unsupported claims (Table 5). ACWMI abstention approaches one under outages, "
-        "whereas WMI remains comparatively insensitive. Figure 7 shows that ACWMI abstention policies dominate WMI thresholds on the "
-        "abstain-rate versus supported-claim-accuracy frontier. Figure 8 shows that higher exclusion raises continuous honesty without "
-        "collapsing ACWMI in the manner implied by naive product penalties.",
-        S["body"],
-    ))
+    story.append(P("6.3 Outages, Pareto frontier, and degradation", S["h2"]))
     out = read_csv("table4_outage_event_study.csv")
-    out_short = [["regime", "outage", "N", "Q", "UCR", "WMI", "ACWMI", "abstain_AC"]]
+    out_short = [["regime", "outage", "N", "WMI", "ACWMI", "cascade_p", "abstain_AC", "unsafe_WMI"]]
     for r in out[1:]:
-        out_short.append([r[0], r[1], r[2], r[3], r[5], r[6], r[7], r[8]])
-    story.append(make_table(out_short, col_widths=[1.8*cm]+[1.7*cm]*7))
-    story.append(P("Table 5. Outage versus non-outage contrasts.", S["caption"]))
+        out_short.append([r[0], r[1], r[2], r[3], r[4], r[5], r[7], r[9]])
+    story.append(make_table(out_short, [1.6*cm]*8))
+    story.append(P("Table 4. Outage contrasts by regime.", S["caption"]))
+    story.append(KeepTogether([fig("fig6_event_study.png", 15.2*cm, 0.42), P("Fig. 6. Outage event profile in crisis regimes.", S["caption"])]))
+    story.append(KeepTogether([fig("fig7_pareto.png", 14.5*cm, 0.48), P("Fig. 7. Abstention–safety Pareto frontier.", S["caption"])]))
 
-    story.append(KeepTogether([fig("fig6_event_study.png", 15.5*cm), P("Fig. 6. Event-time profile around source outages in crisis regimes.", S["caption"])]))
-    story.append(KeepTogether([fig("fig7_pareto.png", 14.5*cm), P("Fig. 7. Pareto frontier of abstention versus supported-claim accuracy.", S["caption"])]))
-    story.append(KeepTogether([fig("fig8_honesty_incentive.png", 15.5*cm), P("Fig. 8. Honesty incentive: exclusion improves H_cont without ACWMI collapse.", S["caption"])]))
+    deg = read_csv("table5_degradation_matrix.csv")
+    story.append(make_table(deg, [4.2*cm, 2.0*cm, 2.0*cm, 2.0*cm, 2.2*cm]))
+    story.append(P("Table 5. Module executability under DegradationManager (1=allowed).", S["caption"]))
+    story.append(KeepTogether([fig("fig8_honesty_incentive.png", 15.2*cm, 0.42), P("Fig. 8. Degradation levels versus breadth/honesty/world-model scores.", S["caption"])]))
 
-    # 8 Discussion
-    story.append(P("8. Discussion", S["h1"]))
+    story.append(P("7. Discussion", S["h1"]))
     story.append(P(
-        "The results support a shift from “thicken the world” to “compile the right world.” World-model evaluation should be multi-objective—"
-        "prediction, explanation stability, calibration, auditability, mechanism coverage, and PIT non-leakage. Abstention is part of the "
-        "world-model contract, not a post-hoc heuristic. Mechanism engines belong inside the compilation operator. Limitations remain: the "
-        "panel is controlled rather than a full live backtest; regime exponents require estimation discipline; and mechanism engines can "
-        "misclassify regimes, motivating second-order uncertainty gates.",
+        "Three claims follow. First, EvoQuant already implements a nontrivial world-model stack; the scientific task is to formalize "
+        "and stress-test it. Second, production WMI’s fixed 0.2 threshold is too coarse for crisis refusal. Third, mechanism engines "
+        "are first-class citizens of world-model quality. Limitations: controlled input paths are not yet a full live-market PIT backtest; "
+        "regime exponents are pre-specified; external validity beyond crypto remains open.",
         S["body"],
     ))
 
-    # 9 Conclusion
-    story.append(P("9. Conclusion", S["h1"]))
+    story.append(P("8. Conclusion", S["h1"]))
     story.append(P(
-        "This paper optimized the first-generation world-model index into a regime-conditional adaptive framework. By combining hierarchical "
-        "breadth, continuous honesty, signal integrity, consistency, conditional compilation, and PIT/degradation semantics, ACWMI becomes a "
-        "decomposable and operationally meaningful scientific object. In project-grounded experiments, factor models and ACWMI substantially "
-        "outperform scalar WMI for analysis-quality explanation and induce crisis-aware abstention. For long-lived AI market systems, the scarce "
-        "asset is not a prompt or a single model, but a stable, conditional, and auditable data world model.",
+        "This paper presented a standalone formalization and evaluation of AI market world-model quality grounded entirely in EvoQuant. "
+        "By elevating production WMI to regime-conditional ACWMI, and by scoring detection/safety with the repository’s own calculators, "
+        "we show that world-model quality can be treated as a measurable systems property. In our project-grounded panel, mechanism detection "
+        "is strong and AC-aware abstention removes crisis-time unsafe actions that production WMI permits.",
         S["body"],
     ))
 
-    # Appendix / repro
     story.append(P("Appendix A. Reproducibility", S["h1"]))
     story.append(P(
-        "Figures and tables are generated by <font face='Courier'>pdf/sci/run_paper_experiments.py</font>, which imports production WMI from "
-        "<font face='Courier'>logic_layer.ai_market_context.service</font>. Related unit tests "
-        "(ai_market_context, contagion_risk, alpha_decay, liquidation_cascade, asset_readiness) passed in the accompanying repository run (15/15). "
-        "LaTeX source for journal submission is provided as <font face='Courier'>pdf/sci/main_acwmi_sci.tex</font> (elsarticle).",
+        "Experiments: <font face='Courier'>pdf/sci/run_paper_experiments.py</font>. PDF build: "
+        "<font face='Courier'>pdf/sci/generate_sci_pdf.py</font>. LaTeX source: "
+        "<font face='Courier'>pdf/sci/main_acwmi_sci.tex</font>. Related unit tests and API smoke checks were executed during manuscript preparation.",
         S["body"],
     ))
 
     story.append(P("References", S["h1"]))
     refs = [
-        "Carroll, R.J., Ruppert, D., Stefanski, L.A., Crainiceanu, C.M., 2006. Measurement Error in Nonlinear Models. 2nd ed. Chapman and Hall/CRC.",
+        "Carroll, R.J., Ruppert, D., Stefanski, L.A., Crainiceanu, C.M., 2006. Measurement Error in Nonlinear Models. 2nd ed. Chapman & Hall/CRC.",
+        "Chow, C., 1957. An optimum character recognition system using decision functions. IRE Trans. Electronic Computers 6, 247–254.",
         "Cochrane, J.H., 2005. Asset Pricing. Revised ed. Princeton University Press.",
         "Fama, E.F., French, K.R., 1993. Common risk factors in the returns on stocks and bonds. Journal of Financial Economics 33, 3–56.",
         "Fuller, W.A., 1987. Measurement Error Models. Wiley.",
+        "Geifman, Y., El-Yaniv, R., 2017. Selective classification for deep neural networks. NeurIPS.",
         "Gu, S., Kelly, B., Xiu, D., 2020. Empirical asset pricing via machine learning. Review of Financial Studies 33, 2223–2273.",
         "Hansen, L.P., Sargent, T.J., 2008. Robustness. Princeton University Press.",
         "Harvey, C.R., Liu, Y., Zhu, H., 2016. …and the cross-section of expected returns. Review of Financial Studies 29, 5–68.",
         "Kelly, B.T., Pruitt, S., Su, Y., 2019. Characteristics are covariances. Journal of Financial Economics 134, 501–524.",
-        "Li, G., 2026. From “Model-First” to “World-Model-First”: A study of cryptocurrency data world model infrastructure for AI-based market analysis. Working paper.",
         "Liu, Y., Tsyvinski, A., Wu, X., 2022. Common risk factors in cryptocurrency. Journal of Finance 77, 1133–1177.",
         "Makarov, I., Schoar, A., 2020. Trading and arbitrage in cryptocurrency markets. Journal of Financial Economics 135, 293–319.",
         "Nagel, S., 2021. Machine Learning in Asset Pricing. Princeton University Press.",
+        "Zha, D., Bhat, Z.P., Lai, K.-H., Yang, F., Hu, X., 2023. Data-centric AI: Perspectives and challenges. SDM.",
     ]
     for r in refs:
         story.append(P(r, S["ref"]))
@@ -379,13 +301,12 @@ def build():
         rightMargin=2.0 * cm,
         topMargin=1.8 * cm,
         bottomMargin=1.8 * cm,
-        title="Beyond Breadth-Stability-Honesty: Regime-Conditional Adaptive World Models",
+        title="Regime-Conditional Adaptive World Models for EvoQuant",
         author="Guocong Li",
     )
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
-    print("Wrote", OUT_EN, OUT_EN.stat().st_size)
-    # Keep a stable copy at pdf/ root for the manuscript package.
     OUT.write_bytes(OUT_EN.read_bytes())
+    print("Wrote", OUT_EN, OUT_EN.stat().st_size)
     print("Wrote", OUT, OUT.stat().st_size)
 
 

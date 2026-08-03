@@ -1,4 +1,4 @@
-Band,Module,Required,Asset weight,Role in world model
+Band,Module,Required,Asset weight,Role
 exchange,exchange_data,Yes,0.3,交易所微观结构、价格、盘口、资金费率与 basis 快照。
 macro,macro_data,Yes,0.05,跨市场宏观利率、美元、风险偏好与商品背景。
 news,news_data,Yes,0.15,公开新闻、监管、治理与项目公告文本流。

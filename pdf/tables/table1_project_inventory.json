@@ -177,5 +177,8 @@
     "options": 0.1,
     "alternative": 0.05,
     "macro": 0.05
-  }
+  },
+  "n_py_files": 784,
+  "n_loc": 133952,
+  "n_test_files": 56
 }

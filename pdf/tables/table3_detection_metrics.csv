@@ -1,0 +1,4 @@
+task,accuracy,precision,recall,f1,support_pos
+crisis_detection,0.7161,0.6664,0.979,0.793,1000
+cascade_detection,0.8944,0.81,1.0,0.895,810
+regime_match,0.7156,0.7156,0.7156,0.7156,1800
