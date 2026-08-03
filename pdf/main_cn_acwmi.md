@@ -72,12 +72,16 @@ EvoQuant 用于证明理论可实例化、可计算、可检验：
 | 审计证据带 | 13 |
 | 生产基线 | \(\mathrm{WMI}=B\times U\times H\) |
 
-复现：
+复现（项目侧 paper lab，与生产 API 对齐）：
 
 ```bash
-PYTHONPATH=. python3 pdf/sci/run_paper_experiments.py
-PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
+make paper-smoke
+make paper-lab            # PIT → JF 实证 → PDF
+make paper-lab WITH_BOOTSTRAP=1
 ```
+
+生产接口：`BandPITService`（多带 PIT）、`load_availability_shocks`（\(O_t\)）、
+`WORLD_MODEL_INDEX_MODE` / `ACWMI_ABSTAIN_THRESHOLD`（WMI/ACWMI）。详见 `pdf/sci/README.md`。
 
 ## 3. 主要验证结果
 

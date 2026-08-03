@@ -27,6 +27,8 @@ class TimeSliceService:
         "asset_readiness",
         "ai_market_context",
         "exchange_comparison",
+        # Raw multi-band PIT (history tables; for paper identification when snapshots are sparse)
+        "band_readiness",
     )
 
     # 各域数据的正常更新间隔（秒），超过则标记为 stale
@@ -41,6 +43,7 @@ class TimeSliceService:
         "asset_readiness": 7200,
         "ai_market_context": 7200,
         "exchange_comparison": 3600,
+        "band_readiness": 2 * 86400,
     }
 
     def __init__(self, db: DBManager | None = None):
@@ -175,6 +178,7 @@ class TimeSliceService:
             "asset_readiness": self._slice_asset_readiness,
             "ai_market_context": self._slice_ai_market_context,
             "exchange_comparison": self._slice_exchange_comparison,
+            "band_readiness": self._slice_band_readiness,
         }
         handler = dispatch.get(domain)
         if not handler:
@@ -371,6 +375,40 @@ class TimeSliceService:
         return DomainSlice(
             domain="exchange_comparison", status=status,
             data_timestamp=data_ts, staleness_seconds=staleness, payload=payload,
+        )
+
+    def get_band_readiness_at(
+        self,
+        timestamp: str | datetime,
+        symbols: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Paper-facing helper: reconstruct multi-band readiness from raw history at t."""
+        from logic_layer.time_slice.band_pit import BandPITService
+
+        return BandPITService().get_band_readiness_at(timestamp, symbols=symbols)
+
+    def _slice_band_readiness(
+        self, timestamp: str, symbols: list[str] | None, timeframe: str, requested_dt: datetime
+    ) -> DomainSlice:
+        payload = self.get_band_readiness_at(timestamp, symbols=symbols)
+        market = payload.get("market_band_statuses") or {}
+        ready_n = sum(1 for s in market.values() if s == "ready")
+        if ready_n == 0:
+            return DomainSlice(domain="band_readiness", status="missing", payload=payload)
+        # Prefer exchange observation time as domain timestamp when available
+        from logic_layer.time_slice.band_pit import BandPITService
+
+        ex_obs = BandPITService().observe_band("exchange", timestamp, symbol=(symbols or ["BTC/USDT"])[0])
+        data_ts = ex_obs.observation_time
+        status, staleness = self._compute_staleness_and_status("band_readiness", data_ts, requested_dt)
+        if status == "missing" and ready_n > 0:
+            status = "ready" if ready_n >= 2 else "stale"
+        return DomainSlice(
+            domain="band_readiness",
+            status=status,
+            data_timestamp=data_ts,
+            staleness_seconds=staleness,
+            payload=payload,
         )
 
     def close(self):

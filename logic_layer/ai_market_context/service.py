@@ -312,6 +312,49 @@ class AIMarketContextService:
             return 0.0
 
     @staticmethod
+    def _acwmi_proxies(
+        *,
+        asset_readiness_row: dict,
+        data_quality_flags: list[str],
+    ) -> tuple[float, float]:
+        """Derive paper ACWMI inputs S (signal integrity) and C (cross evidence).
+
+        Production bundles may not store S/C explicitly; these proxies keep
+        WORLD_MODEL_INDEX_MODE=acwmi runnable from live readiness/quality fields.
+        """
+        n_flags = len(data_quality_flags or [])
+        s_val = max(0.05, min(1.0, 1.0 - 0.12 * n_flags))
+
+        ready = float(asset_readiness_row.get("ready_band_count") or 0.0)
+        limited = float(asset_readiness_row.get("limited_band_count") or 0.0)
+        missing = float(asset_readiness_row.get("missing_band_count") or 0.0)
+        total = ready + limited + missing
+        if total <= 0:
+            bands = asset_readiness_row.get("bands") or {}
+            if bands:
+                ready = float(
+                    sum(
+                        1
+                        for detail in bands.values()
+                        if str((detail or {}).get("status") or "") == "ready"
+                    )
+                )
+                limited = float(
+                    sum(
+                        1
+                        for detail in bands.values()
+                        if str((detail or {}).get("status") or "")
+                        in {"limited", "stale", "degraded", "partial"}
+                    )
+                )
+                total = float(len(bands))
+        if total <= 0:
+            c_val = 0.05
+        else:
+            c_val = max(0.05, min(1.0, (ready + 0.5 * limited) / total))
+        return s_val, c_val
+
+    @staticmethod
     def _quality_flag(
         *,
         coverage_score: float,
@@ -638,11 +681,17 @@ class AIMarketContextService:
         bundle["quality_notes"] = quality_notes
         bundle["risk_flags"] = self._build_risk_flags(bundle)
         bundle["evidence"] = self._build_evidence(bundle)
+        signal_integrity, cross_evidence = self._acwmi_proxies(
+            asset_readiness_row=asset_readiness_row,
+            data_quality_flags=data_quality_flags,
+        )
         bundle["world_model_index"] = self._compute_world_model_index(
             coverage_score=coverage_score,
             pipeline_latency_context=bundle.get("pipeline_latency_context") or {},
             data_quality_flag=data_quality_flag,
             data_quality_flags=data_quality_flags,
+            signal_integrity=signal_integrity,
+            cross_evidence=cross_evidence,
         )
         return bundle
 
@@ -867,15 +916,29 @@ class AIMarketContextService:
         pipeline_latency_context: dict,
         data_quality_flag: str,
         data_quality_flags: list[str],
+        signal_integrity: float | None = None,
+        cross_evidence: float | None = None,
+        gamma: tuple[float, ...] | None = None,
+        abstain_threshold: float | None = None,
+        index_mode: str | None = None,
     ) -> dict:
-        """计算世界模型质量指数 WMI = B_t × U_t × H_t。
+        """计算世界模型质量指数。
 
-        B_t (宽度): 基于 asset_readiness coverage_score
-        U_t (稳定性): 基于 pipeline_latency 各域新鲜度
-        H_t (诚实性): 基于质量门控拦截率
+        默认生产路径: WMI = B_t × U_t × H_t。
+        可选论文路径: ACWMI = exp(Σ γ log x / Σ γ)，x∈{B,U,H,S,C}。
+
+        额外 kwargs 保持向后兼容：旧调用方不传 S/C 时行为不变。
         """
+        import math
+
+        from config.settings import (
+            ACWMI_ABSTAIN_THRESHOLD,
+            WMI_ABSTAIN_THRESHOLD,
+            WORLD_MODEL_INDEX_MODE,
+        )
+
         # B_t: 直接使用 coverage_score (0~1)
-        breadth = coverage_score
+        breadth = float(coverage_score)
 
         # U_t: 基于 pipeline_latency summary
         latency_summary = pipeline_latency_context.get("summary") or {}
@@ -883,37 +946,59 @@ class AIMarketContextService:
         fresh = latency_summary.get("fresh") or 0
         acceptable = latency_summary.get("acceptable") or 0
         stability = (fresh + acceptable * 0.7) / total_domains if total_domains > 0 else 0.0
-        stability = min(1.0, max(0.0, stability))
+        stability = min(1.0, max(0.0, float(stability)))
 
         # H_t: 基于质量门控状态
-        # 诚实性 = 系统成功拦截了不合格数据的比例
-        flag_penalties = {
-            "market_world_model_blocked": 0.3,
-            "asset_evidence_blocked": 0.2,
-            "asset_evidence_thin": 0.1,
-            "macro_context_not_ai_ready": 0.05,
-            "cross_exchange_execution_not_ai_ready": 0.05,
-            "news_context_missing": 0.05,
-        }
         # 有门控标记说明系统在正确拦截（诚实），没有门控但 quality 差反而不诚实
         if data_quality_flag in ("ok", "partial"):
-            honesty = 1.0  # 系统认为数据可用，且有门控机制在工作
+            honesty = 1.0
         elif data_quality_flag == "thin":
-            honesty = 0.7  # 数据薄但系统诚实标记了
+            honesty = 0.7
         else:
-            honesty = 0.4  # blocked 状态
+            honesty = 0.4
 
         wmi = round(breadth * stability * honesty, 4)
+        mode = (index_mode or WORLD_MODEL_INDEX_MODE or "wmi").strip().lower()
+        s_val = None if signal_integrity is None else float(max(1e-6, min(1.0, signal_integrity)))
+        c_val = None if cross_evidence is None else float(max(1e-6, min(1.0, cross_evidence)))
 
-        return {
+        acwmi = None
+        if s_val is not None and c_val is not None:
+            vals = [
+                max(breadth, 1e-6),
+                max(stability, 1e-6),
+                max(honesty, 1e-6),
+                s_val,
+                c_val,
+            ]
+            weights = list(gamma) if gamma is not None else [1.0, 1.0, 1.0, 1.0, 1.0]
+            if len(weights) != 5:
+                weights = [1.0, 1.0, 1.0, 1.0, 1.0]
+            wsum = float(sum(weights)) or 1.0
+            acwmi = round(math.exp(sum(w * math.log(v) for w, v in zip(weights, vals)) / wsum), 4)
+
+        decision_index = acwmi if (mode == "acwmi" and acwmi is not None) else wmi
+        if abstain_threshold is None:
+            thr = ACWMI_ABSTAIN_THRESHOLD if (mode == "acwmi" and acwmi is not None) else WMI_ABSTAIN_THRESHOLD
+        else:
+            thr = float(abstain_threshold)
+
+        out = {
             "wmi": wmi,
             "breadth": round(breadth, 4),
             "stability": round(stability, 4),
             "honesty": round(honesty, 4),
             "interpretation": (
-                "sufficient" if wmi >= 0.6
-                else "marginal" if wmi >= 0.3
+                "sufficient" if decision_index >= 0.6
+                else "marginal" if decision_index >= 0.3
                 else "insufficient"
             ),
-            "should_ai_abstain": wmi < 0.2,
+            "should_ai_abstain": decision_index < thr,
+            "abstain_threshold": thr,
+            "index_mode": mode if (mode != "acwmi" or acwmi is not None) else "wmi",
         }
+        if acwmi is not None:
+            out["acwmi"] = acwmi
+            out["signal_integrity"] = round(s_val, 4)
+            out["cross_evidence"] = round(c_val, 4)
+        return out

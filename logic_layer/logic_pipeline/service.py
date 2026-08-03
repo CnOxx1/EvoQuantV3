@@ -48,6 +48,7 @@ _MODULE_DEPENDENCIES: dict[str, set[str]] = {
     "feature_standardization": {"technical_indicators"},
     "cross_asset_analysis": {"technical_indicators"},
     "portfolio_risk": {"cross_asset_analysis"},
+    # Audit is best-effort (paper trail); do not hard-block readiness if audit fails.
     "asset_readiness": {"feature_standardization", "cross_asset_analysis"},
     "ai_market_context": {"portfolio_risk", "market_breadth", "asset_readiness"},
     "pipeline_latency": {"ai_market_context"},
@@ -262,6 +263,7 @@ def _run_dag_pipeline() -> dict[str, str]:
         ModuleNode("portfolio_risk", _make_portfolio_risk(),
                    depends_on=["cross_asset_analysis"]),
         ModuleNode("market_breadth", _make_market_breadth()),
+        ModuleNode("data_quality_audit", _make_data_quality_audit()),
         ModuleNode("asset_readiness", _make_asset_readiness(),
                    depends_on=["feature_standardization", "cross_asset_analysis"]),
         ModuleNode("ai_market_context", _make_ai_market_context(),
@@ -315,6 +317,7 @@ def _run_classic_pipeline() -> dict[str, str]:
 
     # === Phase 3: 依赖 Phase 2 的模块 ===
     results = _run_phase("Phase3", [
+        ("data_quality_audit", _make_data_quality_audit()),
         ("portfolio_risk", _make_portfolio_risk()),
         ("market_breadth", _make_market_breadth()),
         ("asset_readiness", _make_asset_readiness()),
@@ -445,12 +448,23 @@ def _make_market_breadth() -> callable:
     return _run
 
 
+def _make_data_quality_audit() -> callable:
+    """Persist market-world audit snapshot for paper-grade daily panels."""
+    def _run():
+        from data_layer.data_quality.audit import DataLayerAuditService
+        DataLayerAuditService().save_market_world_audit_snapshot()
+    return _run
+
+
 def _make_asset_readiness() -> callable:
     def _run():
         from logic_layer.asset_readiness.service import AssetReadinessService
         svc = AssetReadinessService()
         try:
             bundle = svc.build_latest_context_bundle()
+            # Ensure dated snapshot_time field exists for PIT replay consumers.
+            if isinstance(bundle, dict) and "snapshot_time" not in bundle:
+                bundle["snapshot_time"] = bundle.get("generated_at") or bundle.get("as_of")
             svc.save_snapshot(bundle)
         finally:
             svc.close()

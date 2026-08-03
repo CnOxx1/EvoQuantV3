@@ -1,0 +1,34 @@
+{
+  "built_at": "2026-08-03",
+  "exchange": {
+    "venue": "okx",
+    "klines": 9373,
+    "merged_klines": 9373,
+    "funding_rates": 2448,
+    "symbols_1d": ["ADA/USDT", "AVAX/USDT", "BNB/USDT", "BTC/USDT", "DOT/USDT", "ETH/USDT", "LINK/USDT", "NEAR/USDT", "SOL/USDT", "XRP/USDT"],
+    "range_1d": ["2025-06-30", "2026-08-03"]
+  },
+  "market": {
+    "macro_timeseries": 81013,
+    "macro_range": ["1962-01-02", "2026-08-03"],
+    "alternative_timeseries": 88761,
+    "alternative_range": ["2017-11-29", "2026-08-03"],
+    "news_articles": 198,
+    "onchain_timeseries": 46,
+    "options_timeseries": 24,
+    "tokenomics_timeseries": 40
+  },
+  "analytics": {
+    "asset_readiness_snapshots": 2,
+    "ai_market_context_snapshots": 18,
+    "note": "Historical analytics snapshots remain sparse; multi-band PIT uses raw history tables via build_pit_archive.py. time_slice currently resolves klines historically and latest analytics snapshots."
+  },
+  "pit_panel": {
+    "file": "pdf/data/pit_multiband_panel.csv",
+    "rows": 4000,
+    "days": 400,
+    "range": ["2025-06-30", "2026-08-03"],
+    "durable_bands": ["exchange", "macro", "alternative"],
+    "right_censored_bands": ["news", "onchain", "options", "tokenomics", "event_calendar"]
+  }
+}

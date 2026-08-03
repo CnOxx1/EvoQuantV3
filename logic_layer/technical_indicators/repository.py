@@ -266,7 +266,8 @@ class TechnicalIndicatorRepository:
         """
 
         # v4.3.0: 预转换 open_time 列为 ISO 字符串，避免循环内逐行 pd.Timestamp()
-        open_time_iso = pd.to_datetime(frame["open_time"]).strftime("%Y-%m-%dT%H:%M:%S")
+        # Series 必须用 .dt.strftime，不能直接 .strftime
+        open_time_iso = pd.to_datetime(frame["open_time"]).dt.strftime("%Y-%m-%dT%H:%M:%S")
         params_list = [
             (
                 row.symbol,
