@@ -5,4 +5,6 @@ S (signal integrity),clip( hl_factor*(1-0.7*crowding_n)*(0.35+0.65*surprise_n) )
 C (consistency),"pairwise sign-agreement among {mom5, flow_sign, -1_{casc>0.55}, -1_{sys>55}}","mom5, VPIN/flow class, cascade_p, systemic",ACWMI factor + AC abstention gate
 detected_regime,RegimeClassifier.classify_price_regime(RegimeFeatures) with crisis override,"returns, rolling vol, RSI/ADX proxies, cascade_p, vol_regime",R1/R2 branching
 mom5,sign(mean(r_{t-5:t})),last 5 pre-t daily returns,R2/R3 directional fallback
-signal,R1→-1; R2→+1; else sign(mom5) or 0,"detected_regime, cascade_p, mom5",position when not abstaining
+macro_tilt,+1 if VIX_5d_chg<0 and DXY_5d_chg<0; -1 if both>0; else 0; forced 0 when macro band not ready,"vintaged macro_timeseries (available_at <= t): VIX, DXY","macro-band content: veto in R2, band-long in R2b, tie-break in R3, sign in C"
+alt_tilt,sign(stablecoin_net_supply_change_7d at latest obs < t); forced 0 when alternative band not ready,alternative_timeseries stablecoin 7d net supply (pre-t),"alternative-band content: band-long in R2b, tie-break in R3, sign in C"
+signal,R1 (crisis AND casc>=0.60)→-1; R2→+1 (macro veto); R2b→+1 (band-driven); R3 sign(mom5) with double-risk-off long veto; ties sign(macro_tilt+alt_tilt),"detected_regime, cascade_p, mom5, macro_tilt, alt_tilt",position when not abstaining; R1 requires evidence conjunction
