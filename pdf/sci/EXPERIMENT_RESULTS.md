@@ -1,6 +1,6 @@
 # Experiment outputs (project-grounded)
 
-- Python files: **784**, LOC ≈ **133952**
+- Python files: **784**, LOC ≈ **133886**
 - Data domains: **43**, logic modules: **39**, audit bands: **13**
 - Panel: **180** days × **10** assets
 
