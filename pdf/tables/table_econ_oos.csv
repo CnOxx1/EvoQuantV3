@@ -1,0 +1,8 @@
+policy,ann_return,ann_vol,Sharpe,CE,max_DD,abstain_rate,N_days
+Always long,-0.8164,0.5836,-1.399,-1.1568,-0.4661,0.0,200
+Momentum always,0.0506,0.5009,0.101,-0.2019,-0.4997,0.0,200
+Thick ungated,0.8164,0.5836,1.399,0.4743,-0.2792,0.0,200
+Simple outage rule,0.8164,0.5836,1.399,0.4743,-0.2792,0.0,200
+Simple cascade rule,0.0,0.0,0.0,0.0,0.0,1.0,200
+WMI threshold (0.2),0.0,0.0,0.0,0.0,0.0,1.0,200
+ACWMI (IS-frozen),0.454,0.5039,0.901,0.1986,-0.3398,0.297,200

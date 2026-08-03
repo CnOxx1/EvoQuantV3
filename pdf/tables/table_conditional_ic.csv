@@ -1,0 +1,7 @@
+sample,ACWMI_tercile,N,mean_ACWMI,signal_IC,hit_rate,ann_active_ret,outage_rate
+all,low,1184,0.518,0.00515,0.575,1.8812,0.247
+all,mid,1183,0.597,0.00281,0.568,1.025,0.006
+all,high,1183,0.706,-0.00142,0.495,-0.5182,0.0
+no_outage,low,1084,0.545,0.00367,0.534,1.3408,0.0
+no_outage,mid,1082,0.606,0.00227,0.571,0.8288,0.0
+no_outage,high,1084,0.712,-0.00106,0.504,-0.3878,0.0

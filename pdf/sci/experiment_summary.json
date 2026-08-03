@@ -1,185 +1,228 @@
 {
   "inventory": {
-    "n_data_domains": 43,
-    "n_logic_modules": 39,
-    "n_audit_bands": 13,
-    "n_py_files": 784,
-    "n_loc": 134039,
-    "n_test_files": 56
+    "design": "real multi-band PIT from SQLite history + Yahoo returns",
+    "pit": {
+      "n_rows": 4000,
+      "n_days": 400,
+      "start": "2025-06-30",
+      "end": "2026-08-03",
+      "mean_ready": 3.005,
+      "outage_rate": 0.0025,
+      "band_ready_rates": {
+        "exchange": 0.9975,
+        "news": 0.0075,
+        "event_calendar": 0.0,
+        "onchain": 0.0,
+        "tokenomics": 0.0,
+        "options": 0.0,
+        "alternative": 1.0,
+        "macro": 1.0
+      }
+    },
+    "is_oos_cut": "2026-01-16",
+    "frozen_thresholds": {
+      "ac_thr": 0.35000000000000003,
+      "c_thr": 0.35,
+      "is_ce": 0.15078787765302026,
+      "is_abstain": 0.3005,
+      "is_sharpe": 0.8155384049246936,
+      "casc_only_thr": 0.7,
+      "wmi_thr": 0.2
+    },
+    "hist_bands": [
+      "exchange",
+      "macro",
+      "alternative"
+    ],
+    "timeslice_months": 14
   },
-  "regime_summary": [
+  "econ_oos": [
     {
-      "regime": "crisis",
-      "N": 1000,
-      "WMI_mean": 0.5041,
-      "ACWMI_mean": 0.5459,
-      "abstain_wmi": 0.19,
-      "abstain_ac": 1.0,
-      "unsafe_wmi": 0.81,
-      "unsafe_ac": 0.0,
-      "cascade_p": 0.8591,
-      "C_mean": 0.8816,
-      "S_mean": 0.0745
+      "policy": "Always long",
+      "ann_return": -0.8164,
+      "ann_vol": 0.5836,
+      "Sharpe": -1.399,
+      "CE": -1.1568,
+      "max_DD": -0.4661,
+      "abstain_rate": 0.0,
+      "N_days": 200
     },
     {
-      "regime": "range",
-      "N": 430,
-      "WMI_mean": 0.6851,
-      "ACWMI_mean": 0.4697,
-      "abstain_wmi": 0.0465,
-      "abstain_ac": 0.0465,
-      "unsafe_wmi": 0.0,
-      "unsafe_ac": 0.0,
-      "cascade_p": 0.2705,
-      "C_mean": 0.4419,
-      "S_mean": 0.0547
+      "policy": "Momentum always",
+      "ann_return": 0.0506,
+      "ann_vol": 0.5009,
+      "Sharpe": 0.101,
+      "CE": -0.2019,
+      "max_DD": -0.4997,
+      "abstain_rate": 0.0,
+      "N_days": 200
     },
     {
-      "regime": "trend",
-      "N": 370,
-      "WMI_mean": 0.681,
-      "ACWMI_mean": 0.4254,
-      "abstain_wmi": 0.0541,
-      "abstain_ac": 0.2703,
-      "unsafe_wmi": 0.0,
-      "unsafe_ac": 0.0,
-      "cascade_p": 0.3662,
-      "C_mean": 0.4751,
-      "S_mean": 0.0604
+      "policy": "Thick ungated",
+      "ann_return": 0.8164,
+      "ann_vol": 0.5836,
+      "Sharpe": 1.399,
+      "CE": 0.4743,
+      "max_DD": -0.2792,
+      "abstain_rate": 0.0,
+      "N_days": 200
+    },
+    {
+      "policy": "Simple outage rule",
+      "ann_return": 0.8164,
+      "ann_vol": 0.5836,
+      "Sharpe": 1.399,
+      "CE": 0.4743,
+      "max_DD": -0.2792,
+      "abstain_rate": 0.0,
+      "N_days": 200
+    },
+    {
+      "policy": "Simple cascade rule",
+      "ann_return": 0.0,
+      "ann_vol": 0.0,
+      "Sharpe": 0.0,
+      "CE": 0.0,
+      "max_DD": 0.0,
+      "abstain_rate": 1.0,
+      "N_days": 200
+    },
+    {
+      "policy": "WMI threshold (0.2)",
+      "ann_return": 0.0,
+      "ann_vol": 0.0,
+      "Sharpe": 0.0,
+      "CE": 0.0,
+      "max_DD": 0.0,
+      "abstain_rate": 1.0,
+      "N_days": 200
+    },
+    {
+      "policy": "ACWMI (IS-frozen)",
+      "ann_return": 0.454,
+      "ann_vol": 0.5039,
+      "Sharpe": 0.901,
+      "CE": 0.1986,
+      "max_DD": -0.3398,
+      "abstain_rate": 0.297,
+      "N_days": 200
     }
   ],
-  "detection": [
+  "lobo": [
     {
-      "task": "crisis_detection",
-      "accuracy": 0.7161,
-      "precision": 0.6664,
-      "recall": 0.979,
-      "f1": 0.793,
-      "support_pos": 1000
+      "band_dropped": "(none)",
+      "Sharpe": 0.901,
+      "CE": 0.1986,
+      "abstain_rate": 0.297,
+      "dCE": 0.0
     },
     {
-      "task": "cascade_detection",
-      "accuracy": 0.8944,
-      "precision": 0.81,
-      "recall": 1.0,
-      "f1": 0.895,
-      "support_pos": 810
+      "band_dropped": "exchange",
+      "Sharpe": -0.232,
+      "CE": -0.1406,
+      "abstain_rate": 0.737,
+      "dCE": -0.3391
     },
     {
-      "task": "regime_match",
-      "accuracy": 0.7156,
-      "precision": 0.7156,
-      "recall": 0.7156,
-      "f1": 0.7156,
-      "support_pos": 1800
+      "band_dropped": "macro",
+      "Sharpe": -0.485,
+      "CE": -0.3358,
+      "abstain_rate": 0.572,
+      "dCE": -0.5344
+    },
+    {
+      "band_dropped": "alternative",
+      "Sharpe": -0.422,
+      "CE": -0.3272,
+      "abstain_rate": 0.522,
+      "dCE": -0.5257
     }
   ],
-  "outage": [
+  "thin_thick": [
     {
-      "regime": "crisis",
-      "outage": 0,
-      "N": 810,
-      "WMI": 0.5995,
-      "ACWMI": 0.5789,
-      "cascade_p": 0.9275,
-      "detect_cascade": 1.0,
-      "abstain_ac": 1.0,
-      "unsafe_ac": 0.0,
-      "unsafe_wmi": 1.0
+      "world": "Thin (exchange only, real PIT)",
+      "mean_B": 0.201,
+      "mean_H": 0.562,
+      "mean_ACWMI": 0.288,
+      "Sharpe": -0.004,
+      "CE": -0.0114,
+      "abstain_rate": 0.933
     },
     {
-      "regime": "crisis",
-      "outage": 1,
-      "N": 190,
-      "WMI": 0.0975,
-      "ACWMI": 0.4055,
-      "cascade_p": 0.5675,
-      "detect_cascade": 1.0,
-      "abstain_ac": 1.0,
-      "unsafe_ac": 0.0,
-      "unsafe_wmi": 0.0
+      "world": "Thick real PIT (ex+macro+alt\u2026)",
+      "mean_B": 0.356,
+      "mean_H": 0.688,
+      "mean_ACWMI": 0.415,
+      "Sharpe": 1.399,
+      "CE": 0.4743,
+      "abstain_rate": 0.0
     },
     {
-      "regime": "range",
-      "outage": 0,
-      "N": 410,
-      "WMI": 0.7104,
-      "ACWMI": 0.4764,
-      "cascade_p": 0.2738,
-      "detect_cascade": 0.0,
-      "abstain_ac": 0.0,
-      "unsafe_ac": 0.0,
-      "unsafe_wmi": 0.0
-    },
-    {
-      "regime": "range",
-      "outage": 1,
-      "N": 20,
-      "WMI": 0.166,
-      "ACWMI": 0.3334,
-      "cascade_p": 0.2038,
-      "detect_cascade": 0.0,
-      "abstain_ac": 1.0,
-      "unsafe_ac": 0.0,
-      "unsafe_wmi": 0.0
-    },
-    {
-      "regime": "trend",
-      "outage": 0,
-      "N": 350,
-      "WMI": 0.7104,
-      "ACWMI": 0.4294,
-      "cascade_p": 0.3738,
-      "detect_cascade": 0.0,
-      "abstain_ac": 0.2286,
-      "unsafe_ac": 0.0,
-      "unsafe_wmi": 0.0
-    },
-    {
-      "regime": "trend",
-      "outage": 1,
-      "N": 20,
-      "WMI": 0.166,
-      "ACWMI": 0.3555,
-      "cascade_p": 0.2338,
-      "detect_cascade": 0.0,
-      "abstain_ac": 1.0,
-      "unsafe_ac": 0.0,
-      "unsafe_wmi": 0.0
+      "world": "Thick gated AC (real PIT)",
+      "mean_B": 0.356,
+      "mean_H": 0.688,
+      "mean_ACWMI": 0.415,
+      "Sharpe": 0.901,
+      "CE": 0.1986,
+      "abstain_rate": 0.297
     }
   ],
-  "explanation_quality": [
+  "event_study": [
     {
-      "policy": "baseline / all",
-      "N": 1800,
-      "EAR": 0.677,
-      "UCR": 0.323,
-      "EV": 0.032,
-      "ECP_rate": 0.101
+      "k": -3,
+      "ret": -0.00224,
+      "WMI": 0.0923,
+      "ACWMI": 0.3907,
+      "B_hier": 0.3522,
+      "N": 132
     },
     {
-      "policy": "baseline / crisis",
-      "N": 1000,
-      "EAR": 0.962,
-      "UCR": 0.038,
-      "EV": 0.027,
-      "ECP_rate": 0.181
+      "k": -2,
+      "ret": -0.00067,
+      "WMI": 0.0929,
+      "ACWMI": 0.3926,
+      "B_hier": 0.3538,
+      "N": 132
     },
     {
-      "policy": "AC-gated / all",
-      "N": 1800,
-      "EAR": 0.742,
-      "UCR": 0.258,
-      "EV": 0.032,
-      "ECP_rate": 0.001
+      "k": -1,
+      "ret": -0.00018,
+      "WMI": 0.0929,
+      "ACWMI": 0.3927,
+      "B_hier": 0.3538,
+      "N": 132
     },
     {
-      "policy": "AC-gated / crisis",
-      "N": 1000,
-      "EAR": 1.0,
-      "UCR": 0.0,
-      "EV": 0.027,
-      "ECP_rate": 0.002
+      "k": 0,
+      "ret": -0.00236,
+      "WMI": 0.0923,
+      "ACWMI": 0.3911,
+      "B_hier": 0.3522,
+      "N": 133
+    },
+    {
+      "k": 1,
+      "ret": -0.00068,
+      "WMI": 0.0935,
+      "ACWMI": 0.3931,
+      "B_hier": 0.3548,
+      "N": 133
+    },
+    {
+      "k": 2,
+      "ret": 7e-05,
+      "WMI": 0.0935,
+      "ACWMI": 0.3932,
+      "B_hier": 0.3548,
+      "N": 133
+    },
+    {
+      "k": 3,
+      "ret": -0.00225,
+      "WMI": 0.0935,
+      "ACWMI": 0.3925,
+      "B_hier": 0.3548,
+      "N": 133
     }
   ]
 }

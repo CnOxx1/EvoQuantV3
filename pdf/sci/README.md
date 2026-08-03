@@ -1,15 +1,11 @@
-# Theory-first SCI manuscript
-
-**Theory first, project second.**
-
-- Theory: RCA-WM / ACWMI, absorbing World-Model-First objects (epistemic observations, lag bounds, filters, ECP/MIG, DAG, Φ, EAR/UCR/EV)
-- Proof system: EvoQuant (43 domains / 13 bands / 39 logic modules / baseline WMI)
-- Source epistemology: `pdf/original/`
-- EvoQuant is **not** the source of the theory
-
-## Reproduce
+# Real PIT / JF-RFS manuscript
 
 ```bash
-PYTHONPATH=. python3 pdf/sci/run_paper_experiments.py
+PYTHONPATH=. python3 pdf/sci/bootstrap_multiband_archive.py
+PYTHONPATH=. python3 pdf/sci/build_pit_archive.py
+PYTHONPATH=. python3 pdf/sci/run_pit_jf_experiments.py
 PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
 ```
+
+Durable historical bands in current archive: **exchange, macro, alternative**.  
+News/onchain/options/tokenomics are mostly collection-day right-censored.
