@@ -2,10 +2,12 @@
 
 **Theory first, project second.**
 
-- Theory: RCA-WM / ACWMI (epistemic observations, lag bounds, filters, ECP/MIG, DAG, Φ, EAR/UCR/EV)
+- Theory (displayed equations): `main_acwmi_sci.tex` §Theory — restored from `pdf/original/`
+- Chinese theory package: `pdf/cn/main_cn_theory.md`
 - Proof system: EvoQuant (multi-band collectors, readiness, WMI/ACWMI, time-slice PIT)
-- Source epistemology: `pdf/original/`
+- Source epistemology: `pdf/original/main_cn_pm.txt`
 - EvoQuant is **not** the source of the theory — it is the empirical instrument
+- **Length note:** a ~5-page empirics sketch is **not** a JF/RFS submission; keep expanding theory + identification
 
 ## Project APIs that serve the paper
 
