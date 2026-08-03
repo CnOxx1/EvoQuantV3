@@ -1,0 +1,873 @@
+ AI 
+opop AI 
+
+1
+c2026  5  18 
+From "Model-First" to "World-Model-First": A Study of Cryptocurrency Data World Model Infrastructure for AI-Based Market Analysis
+cb  AI ab F830.9TP18 A 
+ AI a a  aabo AI  p  AI  baa bundle   AI a aa ab  latest_* aa a bundle a  AI bo paab
+AI  
+Abstract: This paper studies an overlooked but fundamental issue in AI-based financial applications: for an intelligent system that continuously interprets market states and produces auditable judgments, its performance frontier is often constrained less by
+1Li Guocongblmu151638@gmail.comb b
+1
+
+ AI 
+model complexity than by whether the market world presented to it is sufficiently broad, stable, and honest. Motivated by the proposition that many so-called AI trading systems fail not because the model is not smart enough, but because the market worldview fed into the model is too thin, this paper does not treat the current project as a return predictor or an automated trading engine. Instead, it conceptualizes the project as a data world model infrastructure for AI-based market analysis. Combining project documentation, code structure, database semantics, and logic-layer bundle construction, the paper develops a formal framework that maps latent market states to AI-visible world objects. It then defines world model quality along three dimensions--breadth, stability, and honesty--and proposes evaluative objects such as the World Model Index, explanation volatility, unsupported claim rate, stale-input sensitivity, and evidence attribution rate. The analysis suggests that the core value of the project lies not in directly generating trading answers, but in reducing world-model error, compressing spurious explanatory degrees of freedom, and improving the auditability and institutional usability of AI conclusions through latest_* snapshots, quality gating, the separation of main and diagnostic views, bundle aggregation across eight evidence bands, and temporal governance. The paper contributes by elevating the notion of a "market world model" from an engineering narrative to a formal, identifiable, and evaluable academic object.
+Key words:AI market world model; cryptocurrency; data infrastructure; market microstructure; information set; quality governance
+JEL G10G17C55C82O33
+1 
+1.1 
+AI a bb  aab
+b baaa ab  AI  K  
+2
+
+ AI 
+opb  AI aa
+
+1.2 
+op2 b  AI b AI 
+1. aaaaa 2. aa 3.  AI b
+op 
+1.  AI  2. aa AI 
+ 3. alatest_* aa
+ 4.  AI a
+
+1.3 
+b AI   boaapb aaabundle  opb  AI b
+2op b
+3
+
+ AI 
+1.4 
+   AI  aa data-centric AI  b
+2 
+2.1 
+a b Fama and French  Cochrane  [4, 5, 6, 3]b ab
+baaa basisaaa b b
+2.2 
+  [12, 8, 15]b Harvey, Liu and Zhu [10]  ab ab
+op oaapb
+b
+2.3 a
+Makarov and Schoar [14] Liu, Tsyvinski and Wu [13] b a  [7, 2]b
+4
+
+ AI 
+ [9]b b
+errors-in-variables aa  AI b
+2.4  data-centric AI 
+ data-centric AIbdatacentric AI  ab aa b
+
+3  AI 
+
+3.1 
+
+ Stba aaaab AI  St 
+
+Xj,t = hj(St) + j,t, j = 1, . . . , J,
+
+(3.1)
+
+ hj(·)  j j,t ab
+
+ f (·)  Xj,t  
+
+y^t+1 = f (X1,t, . . . , XJ,t).
+
+(3.2)
+
+ (3.2) aa
+
+ AI b f (·) o
+
+p
+
+Wt = G {Xj, }jJ,t, Qt, Rt, At ,
+
+(3.3)
+
+ Qt Rt  AI-ready At bAI   Wtb
+
+5
+
+ AI 
+
+3.2 
+
+ 3.1 ().  t  K k  AI  ak,t = 1 0b
+
+1K
+
+Bt = K
+
+ak,t.
+
+k=1
+
+(3.4)
+
+ 3.2 ().  dj,t  j  freshness penalty 
+
+
+
+J
+
+Ut = exp - jdj,t ,
+
+(3.5)
+
+j=1
+
+ j b
+
+ 3.3 ().  mj,t = 1  j  AI  
+
+Ht = 1 -
+
+J j=1
+
+mj,t
+
+.
+
+J
+
+(3.6)
+
+
+
+WMIt = Bt × Ut × Ht.
+
+(3.7)
+
+ (3.7) b
+
+3.3 opo +  +  + p
+
+ AI  xj,taa 
+
+Oj,t = (xj,t, j,t, qj,t, gj,t, rj,t).
+
+(3.8)
+
+ j,t qj,t gj,t rj,t  bAI  b
+
+3.4 
+b St+1 = F (St, t+1), 6
+
+(3.9)
+
+ AI 
+
+ t+1 b j  t  St
+
+
+
+Xjo,bts = hj (St-j,t ) + j,t,
+
+(3.10)
+
+ j,t  0 b hj(·)  Lipschitz 
+
+hj(St) - hj (St-j,t )
+
+t
+
+ Lj
+
+Su - Su-1.
+
+u=t-j,t+1
+
+(3.11)
+
+AI opb  S~t 
+
+
+J
+
+J
+
+J
+
+S~t - St  C1 jj,t + C2 jj,t + C3 j(1 - zj,t),
+
+j=1
+
+j=1
+
+j=1
+
+(3.12)
+
+a/b latest_*  afreshness/TTL  is_ready_for_ai b
+
+aa aaaaaa
+ AI aab
+ 1 
+
+7
+
+ AI 
+
+ St   latest_*a bundle  WtAI b
+
+ 2 a
+
+3.5 
+
+opoAI p
+
+b
+
+Ftraw =  {Xjo,bs}jJ, t ,
+
+(3.13)
+
+ t 
+
+FtAI =  WtAI , Dt ,
+
+(3.14)
+
+ AI b  Ftraw Ftraw  FtAI 
+
+t = Bt  Mt  At,
+
+(3.15)
+
+ At Mt Bt  bundle
+
+b
+
+WtAI = t(Ftraw).
+
+(3.16)
+
+3.6  AI 
+ AI  t  regime  p(rt | Wt)  conftb WMIt  conft o pb
+
+ECPt = 1{conft > c¯}1{WMIt < w}.
+
+(3.17)
+
+8
+
+ AI 
+
+ quality_flagais_ready_for_aiarisk_flags  evidence   AI b
+
+3.7 
+
+ AI 
+
+b Rt  AI  
+
+H(Rt | Itthin) - H(Rt | Itthick) = I(Rt; Itthick \ Itthin | Itthin).
+
+(3.18)
+
+ k  m 
+
+MIG(km,t) = I Rt(m); Ek,t | It(-k) .
+
+(3.19)
+
+op b
+
+3.8 
+ Wt At  AI Mt Ot  Ct  DAG 
+
+Ot  Wt  At, Mt  Wt, Mt  At, Ct  Wt, At.
+
+(3.20)
+
+ (3.20)  Mt  Ct o AI p ba  Ot b
+
+ DAG aaa AI b
+
+ 3 
+9
+
+ AI 
+
+3.9 
+ AI op opb
+
+A = {bullish, bearish, neutral, abstain},
+
+(3.21)
+
+ (a, Rt) cabs
+
+at
+
+=
+
+arg min E aA
+
+(a, Rt)
+
+|
+
+Wt
+
+.
+
+(3.22)
+
+
+
+min E
+a=abstain
+
+(a, Rt)
+
+|
+
+Wt
+
+> cabs,
+
+(3.23)
+
+ abstainbb
+
+3.10 
+
+ AI  b t  t  AI  
+
+tthin = tthick,
+
+(3.24)
+
+
+
+Pr(t  tthick) > Pr(t  tthin),
+
+(3.25)
+
+ t b  AI opopb
+
+4  AI 
+4.1  AI 
+      latest_*   
+ AI   /  AI 
+10
+
+ AI 
+b AI opo pb
+aaa data layer alatest_* a logic layer 
+ AI-ready bundleb  4  AI 
+4.2 
+ 8  3 b 1  b
+11
+
+ AI 
+
+ 1 
+
+
+
+
+
+
+
+
+ /     
+
+exchange_data
+
+atickeraorderbookafundinga
+
+trade flowaopen interestaliquidationsa
+
+positioningabasis 
+
+macro_data
+
+ DXYaaaVIXaa
+
+
+
+news_data
+
+a
+
+event_calendar_data
+
+onchain_data
+
+aaaTVLa
+
+
+
+tokenomics_data aaa
+
+
+
+options_data
+
+aaGammaa
+
+
+
+alternative_data aa
+
+
+
+technical_indicators AI-ready 
+
+exchange_comparison
+
+ai_market_context
+
+b b
+
+4.3 latest_* 
+ latest_* b  latest_tickersalatest_funding_ratesalatest_orderbook_snapshotsa latest_macro_timeseriesalatest_onchain_timeseriesalatest_tokenomics_timeseriesa latest_options_timeseriesalatest_alternative_timeseries b
+a  AI opb b
+4.4 opo AI p
+health_status quality_flag  latest  okapartialafallbackastale  unknownis_ready_for_ai
+
+12
+
+ AI 
+
+ AI b
+
+ 1, zj,t = 0,
+
+j t  AI-ready , .
+
+AI 
+
+WtAI = {Xj,t : zj,t = 1}, b
+
+(4.1) (4.2)
+
+4.5 AI 
+ bundle  AI araw_* aai_excluded_sourcesa source_health  quality_notesbop  AI ab b
+
+4.6 bundle
+ai_market_context bundle 
+· market_microstructure · derivatives_structure · cross_exchange_execution · onchain_capital_flow · tokenomics_supply_pressure · macro_regime · news_and_events · attention_and_builder_activity
+ coverage_scoreadata_quality_flagarisk_flags  evidenceb bundle  JSONb
+
+13
+
+ AI 
+
+ ai_market_context bundle  coverage_scoreadata_quality_flagarisk_flags 
+evidenceb
+
+ 5 AI bundle 
+
+4.7 a
+
+op opb 2 b
+ 2 
+
+/
+
+
+
+ AI 
+
+exchange_data a  AI 
+
+
+
+
+
+macro_data
+
+  AI 
+
+
+
+
+
+news_data +
+
+  AI 
+
+event_calendar_data 
+
+
+
+onchain_data
+
+  AI aa
+
+
+
+TVL 
+
+tokenomics_data a  AI 
+
+
+
+
+
+options_data
+
+aa
+
+ AI 
+
+Gamma 
+
+
+
+alternative_data a  AI 
+
+
+
+
+
+technical_indicators/exchange_acompariason/ai_market_context
+
+ AI 
+
+AI-ready 
+
+op b
+
+14
+
+ AI 
+
+4.8 
+
+b 3 b
+ 3 
+
+
+
+
+
+
+
+
+
+catalog 
+
+macro_factor_catalog a
+
+options_factor_catalog a
+
+
+
+history 
+
+tickers
+
+
+
+macro_timeseries
+
+
+
+onchain_timeseries 
+
+latest 
+
+latest_tickers
+
+
+
+latest_macro_timeseries
+
+
+
+context/snapshot exchange_comparison_snapshotsa
+
+
+
+macro_context_snapshotsAI-ready 
+
+ai_market_context_snapshots
+
+o p
+o p
+o p
+o  AIp
+
+ b
+
+4.9 a
+
+a b v  (tv)  AI 
+
+Wt(v) = (tv)(Ftraw),
+
+W (v) t
+
+=
+
+(v t
+
+)(Ftraw
+
+).
+
+(4.3)
+
+ v = v opo
+
+pb j,t
+
+
+
+O~j,t = (xj,t, j,t, qj,t, gj,t, rj,t, j,t),
+
+(4.4)
+
+ j,t aa AI b opb
+
+15
+
+ AI 
+ bundle aa b
+ 6 a
+5  AI 
+5.1  AI 
+ AI ab  AI aaaa  AI opopb
+5.2 
+ short squeezea b aaaGammaa opb
+5.3 op
+ AI  b latest_*  bundle o p AI b
+5.4  AI 
+ state state of observabilityb quality_flagais_ready_for_aia ai_excluded_sources  risk_flags AI o
+16
+
+ AI 
+pb
+5.5 a
+ AI  b funding abasis aaaa  AI  b
+5.6  AI 
+ AI ab a evidence  risk_flagsa latest   AI ab
+5.7 aa
+aab bundle  context/snapshot o popb
+
+6 op
+
+6.1 
+
+
+
+Itthin = {price, volume, basic indicators, simple news},
+
+(6.1)
+
+Itthick = {Itthin, microstructure, derivatives, macro, on-chain, tokenomics, options, alternative, quality met (6.2)
+ F 
+
+y^tt+hi1n = f (Itthin),
+
+y^tt+hi1ck = f (Itthick).
+
+(6.3)
+
+ regime a aab
+
+17
+
+ AI 
+
+6.2 
+ Qi,t+h  i  t  AI  
+
+Qi,t+h = i + t + 1WMIi,t + 2Bi,t + 3Ui,t + 4Hi,t + Zi,t + i,t+h,
+ i t Zi,t b 
+
+(6.4)
+
+
+
+Qi,t+h = Qti,hti+ckh - Qit,hti+nh,
+
+(6.5)
+
+Qi,t+h = i + t + 1WMIi,t + 2Stresst + 3WMIi,t × Stresst + ui,t+h.
+
+(6.6)
+
+ BtaUtaHt  WMIt  AI  Zi,t  Qi,t+haEARaUCRaEV b
+
+ 7  AI 
+
+6.3 
+
+a opb T0  a is_ready_for_ai 
+
+Qi, = i +  +
+
+kDi(,k) + i, ,
+
+k=-1
+
+ Di(,k)  lead/lag b
+
+(6.7)
+
+18
+
+ AI 
+
+ is_ready_for_ai a b
+
+ 8 
+
+6.4 
+
+ AI  bcEAR
+
+EARt
+
+=
+
+#{ bundle/evidence #{}
+
+} ,
+
+(6.8)
+
+cUCR
+
+UCRt = 1 - EARt,
+
+cEV
+
+(6.9)
+
+EVt
+
+=
+
+1
+
+d(t, t-1) , + d(Wt, Wt-1)
+
+ d(·, ·) b
+
+(6.10)
+
+6.5  Pareto 
+ b
+Jt = Predictive Accuracy, Explanation Stability, Calibration, Auditability . (6.11)
+ Pareto  ab
+
+19
+
+ AI 
+
+ 4 
+
+
+
+
+
+
+
+
+
+   
+
+a a  EVa a  ECPaa stale sensitivity EARaUCRa 
+
+ 
+ 
+   
+
+aa 
+bundleaevidencea risk_flags
+quality_flaga is_ready_for_ai raw/diagnostic a alatest 
+
+b b
+
+6.6 
+
+ b
+
+St = Stliq, Stcrowd, Stmacro, Stsupply, Stnarrative ,
+
+(6.12)
+
+aab aa AI  b
+
+6.7 
+ 1.  2.  bundle  3.  4. aa 5. o AI p
+opb 20
+
+ AI 
+7 
+7.1  Fama­FrenchaCochrane 
+Fama­French  Cochrane   [5, 3]b Fama­French o poAI  pb
+op opoaa
+pb market ontology engineering feature engineeringb
+7.2 a
+ [7, 2]  [9] baa o  AI pb
+7.3  data-centric AI 
+data-centric AI ab  b latest_*aquality_flagais_ready_for_aiabundle   data-centric AI b
+8 a
+8.1 
+ aab opop (3.20) b
+21
+
+ AI 
+8.2 
+ biio AI pii iio AI piib
+8.3 ­
+ 24/7 aaa ba ab
+AI  opb  AI b
+9 
+ AI AI  b o AI p aab
+b aaaaaa b latest_* aa abundle op AI  b AI  AI   AI ab
+ AI  aa prompt b
+A 
+22
+
+
+St Xj,t Xjo,bts j,t j,t Wt WtAI Dt Bt Ut Ht WMIt t t Qi,t+h EARt UCRt EVt ECPt MIG(km,t )
+
+ AI 
+
+  j       AI        AI  AI   AI       k  m 
+
+B 
+ 1.  8  3  2. SQLite  42  3.  181  21  90  4.  15 a 17 atokenomics  12 a 55 a
+ 28  5.  BTC/USDTaETH/USDTaSOL/USDTaSUI/USDT 6.  binanceaokxabybit 7.  K  1ma5ma15ma1ha4ha1db
+23
+
+ AI 
+C 
+C.1 
+aa AI  ab
+C.2 
+1. aa 2.  3. aatokenomicsaa 4.  quality_flag  is_ready_for_aib
+C.3 
+1.  2.  3.  4.  bundle  5. opopb
+
+[1] Asness C S, Moskowitz T J, Pedersen L H. Value and Momentum Everywhere[J]. Journal of Finance, 2013, 68(3): 929­985.
+[2] Carroll R J, Ruppert D, Stefanski L A, Crainiceanu C M. Measurement Error in Nonlinear Models: A Modern Perspective[M]. 2nd ed. Boca Raton: Chapman and Hall/CRC, 2006.
+[3] Cochrane J H. Asset Pricing[M]. Revised Edition. Princeton: Princeton University Press, 2005.
+24
+
+ AI 
+[4] Fama E F, French K R. The Cross-Section of Expected Stock Returns[J]. Journal of Finance, 1992, 47(2): 427­465.
+[5] Fama E F, French K R. Common Risk Factors in the Returns on Stocks and Bonds[J]. Journal of Financial Economics, 1993, 33(1): 3­56.
+[6] Fama E F, French K R. A Five-Factor Asset Pricing Model[J]. Journal of Financial Economics, 2015, 116(1): 1­22.
+[7] Fuller W A. Measurement Error Models[M]. New York: Wiley, 1987. [8] Gu S, Kelly B, Xiu D. Empirical Asset Pricing via Machine Learning[J]. Review of
+Financial Studies, 2020, 33(5): 2223­2273. [9] Hansen L P, Sargent T J. Robustness[M]. Princeton: Princeton University Press,
+2008. [10] Harvey C R, Liu Y, Zhu H. ...and the Cross-Section of Expected Returns[J]. Review
+of Financial Studies, 2016, 29(1): 5­68. [11] Jegadeesh N, Titman S. Returns to Buying Winners and Selling Losers: Implications
+for Stock Market Efficiency[J]. Journal of Finance, 1993, 48(1): 65­91. [12] Kelly B T, Pruitt S, Su Y. Characteristics Are Covariances: A Unified Model of
+Risk and Return[J]. Journal of Financial Economics, 2019, 134(3): 501­524. [13] Liu Y, Tsyvinski A, Wu X. Common Risk Factors in Cryptocurrency[J]. Journal of
+Finance, 2022, 77(2): 1133­1177. [14] Makarov I, Schoar A. Trading and Arbitrage in Cryptocurrency Markets[J]. Journal
+of Financial Economics, 2020, 135(2): 293­319. [15] Nagel S. Machine Learning in Asset Pricing[M]. Princeton: Princeton University
+Press, 2021. [16] Shmueli G. To Explain or to Predict?[J]. Statistical Science, 2010, 25(3): 289­310.
+25
+
+

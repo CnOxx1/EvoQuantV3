@@ -1,0 +1,5 @@
+policy,N,EAR,UCR,EV,ECP_rate
+baseline / all,1800,0.677,0.323,0.032,0.101
+baseline / crisis,1000,0.962,0.038,0.027,0.181
+AC-gated / all,1800,0.742,0.258,0.032,0.001
+AC-gated / crisis,1000,1.0,0.0,0.027,0.002

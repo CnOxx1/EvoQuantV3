@@ -1,0 +1,1872 @@
+世界模型优先与 AI 市场分析
+
+从“模型优先”到“世界模型优先”：面向 AI
+市场分析的
+
+加密货币数据世界模型基础设施研究
+
+李国聪1
+
+（投稿版模板，日期：2026 年 5 月 18 日）
+
+英文题名：From “Model-First” to “World-Model-First”: A Study of Cryptocurrency
+
+Data World Model Infrastructure for AI-Based Market Analysis
+
+基金项目：此处填写基金项目名称与编号（如无，可在正式投稿前删除）。
+作者简介：李国聪，研究方向为 AI 市场分析、量化数据基础设施与金融统计建模。
+文献标识码：A
+中图分类号：F830.9；TP18
+
+文章编号：待定
+
+摘要：本文研究一个在 AI 金融应用讨论中经常被忽视、但对真实落地至关重要的问
+
+题：对于需要持续理解市场状态、形成条件判断并输出可审计结论的智能系统而言，其
+
+能力上限往往并不首先受模型复杂度约束，而首先受制于其所面对的市场世界是否足
+
+够宽、足够稳、足够诚实。围绕项目文档中提出的“多数 AI 交易系统失败，并非因为
+
+模型不够聪明，而是因为喂给模型的市场世界观过于单薄”这一核心命题，本文不将
+
+当前项目视为收益预测器或自动交易引擎，而将其界定为一种面向 AI 市场分析的数
+
+据世界模型基础设施。本文结合项目文档、代码结构、数据库语义与逻辑层 bundle 机
+
+制，构建了一个从潜在市场状态到 AI 可见世界对象的理论框架；进一步从宽度、稳定
+
+性与诚实性三个维度定义世界模型质量，并引入世界模型质量指数、解释波动率、无
+
+支撑断言率、陈旧输入敏感度与证据归因率等评价对象。研究表明，当前项目的核心
+
+价值不在于直接给出交易答案，而在于通过 latest_* 快照、质量门控、主视图与诊断
+
+视图分离、八证据带 bundle 聚合和时间治理，降低世界模型误差、压缩解释空间的伪
+
+自由度，并提高 AI 结论的可审计性与制度可用性。本文的边际贡献在于把“市场世界
+
+模型”从工程叙事提升为可形式化、可识别、可评估的学术对象。
+
+关键词：AI 市场世界模型；加密货币；数据基础设施；市场微观结构；信息集；质量
+
+治理
+
+Abstract: This paper studies an overlooked but fundamental issue in AI-based finan-
+
+cial applications:
+
+for an intelligent system that continuously interprets market states
+
+and produces auditable judgments, its performance frontier is often constrained less by
+
+1作者姓名拼音：Li Guocong。作者邮箱：lmu151638@gmail.com。本文研究对象是当前项目所构建
+
+的数据层与逻辑聚合层系统，不将其误写为已经闭环完成的自动交易代理。
+
+1
+
+世界模型优先与 AI 市场分析
+
+model complexity than by whether the market world presented to it is suﬀiciently broad,
+
+stable, and honest. Motivated by the proposition that many so-called AI trading sys-
+
+tems fail not because the model is not smart enough, but because the market worldview
+
+fed into the model is too thin, this paper does not treat the current project as a re-
+
+turn predictor or an automated trading engine. Instead, it conceptualizes the project
+
+as a data world model infrastructure for AI-based market analysis. Combining project
+
+documentation, code structure, database semantics, and logic-layer bundle construction,
+
+the paper develops a formal framework that maps latent market states to AI-visible
+
+world objects.
+
+It then defines world model quality along three dimensions—breadth,
+
+stability, and honesty—and proposes evaluative objects such as the World Model Index,
+
+explanation volatility, unsupported claim rate, stale-input sensitivity, and evidence at-
+
+tribution rate. The analysis suggests that the core value of the project lies not in directly
+
+generating trading answers, but in reducing world-model error, compressing spurious ex-
+
+planatory degrees of freedom, and improving the auditability and institutional usability
+
+of AI conclusions through latest_* snapshots, quality gating, the separation of main
+
+and diagnostic views, bundle aggregation across eight evidence bands, and temporal gov-
+
+ernance. The paper contributes by elevating the notion of a “market world model” from
+
+an engineering narrative to a formal, identifiable, and evaluable academic object.
+
+Key words:AI market world model; cryptocurrency; data infrastructure; market mi-
+
+crostructure; information set; quality governance
+
+JEL 分类号：G10，G17，C55，C82，O33
+
+1 引言
+
+1.1 研究背景
+
+在公开叙事中，AI 交易系统的失败往往被归因于模型不够先进、参数调优不足或
+
+提示词设计不够精细。然而，这类解释在真实市场环境中经常抓错主要矛盾。对于一
+
+个承担市场分析任务的智能系统而言，真正决定其分析边界的，不只是模型函数逼近
+
+能力，更是其所面对的市场世界是否足够完整、足够及时、足够可信。
+
+这一问题在加密货币市场中尤为突出。加密市场并非由单一路径价格序列充分刻
+
+画。相同的价格走势，在不同交易所结构、不同杠杆拥挤状态、不同资金费率环境、不
+
+同期权墙位分布、不同解锁周期和不同宏观背景之下，往往对应完全不同的市场含义。
+
+因此，若 AI 仅观察 K 线，它看到的只是价格轨迹而非市场结构；若其仅读取新闻标
+
+题，它接触到的则是叙事噪声而非执行约束；若其仅面对一张历史大表，它也未必真
+
+2
+
+世界模型优先与 AI 市场分析
+
+正得到“此刻市场是什么样”的在线世界对象。
+
+本文据此提出一个更底层的问题：如何为 AI 构建一个足够宽、足够稳、足够诚
+
+实的市场世界模型，使其输入空间更接近真实市场的多层结构？
+
+1.2 研究对象与论文定位
+
+本文所研究的“当前项目”2并不是一个单纯的数据抓取脚本集合，也不是一个已
+经闭环完成的自动交易系统。基于项目文档与代码结构，本文更准确地将其定位为一
+
+个面向 AI 的加密市场数据基础设施项目。其目标不是直接替 AI 下单，而是：
+
+1. 从外部真实世界持续采集市场、宏观、链上、新闻、期权、供给与替代数据；
+
+2. 对异构数据进行标准化、落库、快照同步和质量治理；
+
+3. 在逻辑层将分散观测重组为 AI 可以直接消费的结构化市场上下文。
+
+基于这一定位，本文研究的不是“该代码库能否直接产生超额收益”，而是如下四
+
+个问题：
+
+1. 当前项目如何把真实市场映射为一个适合 AI 消费的数据世界模型？
+
+2. 相较于薄信息、单来源、单频率输入，这种世界模型理论上为 AI 带来哪些信息论
+
+与决策论优势？
+
+3. 项目中的分层架构、latest_* 快照、质量门控、主视图与诊断视图分离等设计分
+
+别解决了哪些方法论问题？
+
+4. 这一项目在 AI 市场分析系统中所扮演的角色，应如何被学术化地理解、度量与
+
+评估？
+
+1.3 研究贡献
+
+本文的研究贡献可概括为四点。第一，本文把 AI 交易系统的失败原因从通常被讨
+
+论的模型层前移到观测层和数据治理层，强调世界模型构造错误本身就是一类一等错
+
+误。第二，本文将“足够宽、足够稳、足够诚实的数据世界模型”形式化为可研究对象。
+
+第三，本文将当前项目的模块化采集、数据库快照、质量门控、bundle 聚合与调度矩
+
+阵系统映射到“世界模型生成器”的理论框架。第四，本文提出一套未来可执行的研究
+
+议程，用于比较薄世界模型与厚世界模型在 AI 市场分析任务中的差异。
+
+2本文所称“当前项目”，是指仓库及其配套文档所描述的数据层与逻辑聚合层系统，不包括尚未在
+
+仓库中实现的交易执行代理。
+
+3
+
+世界模型优先与 AI 市场分析
+
+1.4 文章结构
+
+全文安排如下：第二部分回顾相关文献并说明本文的理论位置；第三部分建立世
+
+界模型优先的形式化框架；第四部分将项目架构与数据库契约映射为世界模型生成系
+
+统；第五部分分析项目对 AI 市场分析的具体作用；第六部分提出可发表级的识别与评
+
+估框架；第七部分将本文与经典资产定价、机器学习、测量误差和 data-centric AI 文
+
+献对话；第八部分讨论局限性与外部有效性；第九部分给出结论。
+
+2 文献综述与理论定位
+
+2.1 资产定价文献中的条件信息集问题
+
+经典资产定价文献通常在某一条件信息集上讨论预期收益、风险补偿与贴现率变
+
+化。例如 Fama and French 的因子定价框架强调少量稳定因子的横截面解释能力，而
+
+Cochrane 的随机贴现因子框架强调条件信息集对贴现环境识别的重要性 [4, 5, 6, 3]。这
+
+些研究共同依赖一个隐含前提：研究者已经拥有一个相对稳定、结构清晰的信息世界。
+
+然而，在加密市场中，这一前提更容易失真。交易所分裂、执行摩擦、资金费率、
+
+basis、爆仓、期权拥挤、链上资本迁移与代币供给冲击，使得单一价格序列难以充分代
+
+表真实市场状态。若继续沿用狭义价格因子或低频特征近似该状态，则等于用一个过
+
+薄的信息集去逼近高维动态世界。
+
+2.2 机器学习金融文献中的高维特征扩张
+
+机器学习资产定价文献表明，更丰富的特征输入与非线性映射可在严格样本外设
+
+计下提高统计预测能力 [12, 8, 15]。但 Harvey, Liu and Zhu [10] 也提醒，高维扩张会显
+
+著加剧数据挖掘偏误、多重检验问题与伪显著性风险。因此，特征多样性只有在来源
+
+质量、语义契约与治理机制足够清晰时才真正有意义。
+
+本文与该文献的区别在于：本文不首先把“更多特征”理解为模型优势，而是把
+
+“特征系统如何被治理、如何被时间对齐、如何被质量门控”理解为研究对象本身。换
+
+言之，本文关注的不只是高维输入，而是高维输入背后的世界模型组织原则。
+
+2.3 市场微观结构、测量误差与鲁棒决策
+
+Makarov and Schoar [14] 强调了加密市场中跨交易所套利摩擦的重要性；Liu,
+
+Tsyvinski and Wu [13] 则表明加密资产存在可识别的共同风险因子。更广义地，测
+
+量误差文献指出，当观测值带有系统性噪声、延迟或错配时，估计与预测结果都会发
+
+生偏移 [7, 2]。鲁棒控制文献进一步强调，在面对不确定环境时，理性决策者应先识别
+
+4
+
+世界模型优先与 AI 市场分析
+
+自己所依赖的信息世界是否可靠 [9]。
+
+当前项目可以被理解为对这些问题的一种工程化回应。它不是直接估计经典的
+
+errors-in-variables 模型，而是在数据层显式管理观测延迟、质量降级、来源缺口和语义
+
+错位，从而为 AI 构造一个更可靠的信息表面。
+
+2.4 与 data-centric AI 的关系
+
+若将视野进一步扩展到 data-centric AI，本文也与其核心思想形成对话。data-
+
+centric AI 强调，模型表现的提升并不总依赖更复杂的网络结构，也可以通过改善数
+
+据质量、标签一致性与模式覆盖度获得。当前项目是这一思想在动态金融世界中的高
+
+维延伸：它所改善的不是静态数据集，而是一个持续更新、跨来源、跨频率的市场观测
+
+世界。
+
+3 理论框架：从潜在市场状态到 AI 可见世界
+
+3.1 潜在市场状态与观测层
+
+设真实但不可完全观测的市场状态为 St。它不仅包括价格，还包括订单流、库存
+约束、宏观风险偏好、链上供给、事件冲击、衍生品拥挤度以及执行摩擦等。对任何 AI
+系统而言，真正可用于判断的并不是 St 本身，而是若干观测算子作用后的结果：
+
+Xj,t = hj(St) + νj,t,
+
+j = 1, . . . , J,
+
+(3.1)
+
+其中 hj(·) 为第 j 个来源的观测函数，νj,t 为数值误差、延迟误差或定义误差。
+
+传统模型优先思路通常直接讨论如何用某个函数 f (·) 将若干 Xj,t 映射到下一步预
+
+测：
+
+ˆyt+1 = f (X1,t, . . . , XJ,t).
+
+(3.2)
+
+但式 (3.2) 略去了一个更重要的前提：不同观测是否完整、是否可比较、是否过期，以
+及是否适合进入 AI 主视图。当前项目的理论意义在于，在 f (·) 之前增加了一层“世
+界模型生成函数”：
+
+(cid:17)
+
+(cid:16)
+
+Wt = G
+
+{Xj,τ }j≤J,τ ≤t, Qt, Rt, At
+
+,
+
+(3.3)
+
+其中 Qt 为质量标记系统，Rt 为 AI-ready 门控，At 为时间对齐与聚合规则。AI 实际
+处理的对象不是未经治理的原始数据，而是 Wt。
+
+5
+
+世界模型优先与 AI 市场分析
+
+3.2 世界模型质量的三维定义
+
+定义 3.1 (宽度). 设系统在时点 t 的关键证据带数量为 K，若第 k 条证据带达到 AI
+可用门槛，则记 ak,t = 1，否则为 0。则宽度指标定义为：
+
+Bt =
+
+1
+K
+
+KX
+
+k=1
+
+ak,t.
+
+(3.4)
+
+定义 3.2 (稳定性). 令 dj,t 表示第 j 个来源的 freshness penalty 或时效性惩罚项，则稳
+定性可写为：
+
+!
+
+JX
+
+ωjdj,t
+
+,
+
+j=1
+
+(3.5)
+
+Ut = exp
+
+−
+
+其中 ωj 为来源重要性权重。
+
+定义 3.3 (诚实性). 设 mj,t = 1 表示第 j 路来源在质量或语义上不应进入 AI 主视图
+却被错误注入，则诚实性定义为：
+
+Ht = 1 −
+
+P
+
+J
+j=1 mj,t
+J
+
+.
+
+由此，世界模型质量指数定义为：
+
+WMIt = Bt × Ut × Ht.
+
+(3.6)
+
+(3.7)
+
+式 (3.7) 并非当前仓库中的现成字段，而是基于项目设计抽象出的研究指标。
+
+3.3 观测对象并非“更多特征”，而是“值 + 时间 + 质量 + 角色”
+
+对 AI 而言，一个有用的市场观测对象不应只是数值 xj,t，还应包括时间、质量、可
+
+用性和角色元数据：
+
+Oj,t = (xj,t, τj,t, qj,t, gj,t, rj,t).
+
+(3.8)
+
+其中 τj,t 为最新可用时间，qj,t 为质量状态，gj,t 为是否进入主视图的门控状态，rj,t 为
+该对象在世界模型中的语义角色。于是，AI 真正消费的是带认识论语义的状态对象集
+
+合，而非平面特征矩阵。
+
+3.4 异步观测状态空间与时滞误差
+
+加密市场数据天然具有异步观测特征。设潜在状态演化满足：
+
+St+1 = F (St, ηt+1),
+
+(3.9)
+
+6
+
+ 
+世界模型优先与 AI 市场分析
+
+其中 ηt+1 为状态扰动。第 j 个来源在时点 t 被系统看到的并非同步状态 St，而是带滞
+后的观测：
+
+X obs
+
+j,t = hj(St−ℓj,t) + νj,t,
+
+(3.10)
+
+其中 ℓj,t ≥ 0 为来源级时滞。若 hj(·) 满足 Lipschitz 条件，则有：
+
+(cid:13)
+(cid:13)hj(St) − hj(St−ℓj,t)
+
+(cid:13)
+(cid:13) ≤ Lj
+
+tX
+
+u=t−ℓj,t+1
+
+∥Su − Su−1∥.
+
+(3.11)
+
+因此，即便数值采集完全正确，只要时滞存在，AI 看到的也可能是“过去的世界”。
+令 ˜St 表示由项目生成的世界模型所恢复的可观测状态，则可将世界模型重建误差
+
+抽象写为：
+
+∥ ˜St − St∥ ≤ C1
+
+JX
+
+j=1
+
+ωjℓj,t + C2
+
+JX
+
+j=1
+
+ωj∥νj,t∥ + C3
+
+JX
+
+j=1
+
+ωj(1 − zj,t),
+
+(3.12)
+
+其中三项分别对应时滞误差、观测噪声与缺失/门控信息损失。项目中的 latest_* 机
+
+制、freshness/TTL 规则和 is_ready_for_ai 门控，正分别针对这些项进行控制。
+
+左侧展示仅含价格、成交量、基础技术指标和少量新闻的薄世界模型；右侧展示加
+
+入执行层、衍生品、宏观、链上、供给侧、期权、替代数据及质量元数据的厚世界
+
+模型；底部连接至 AI 分析质量、解释连续性、置信校准与可审计性。
+
+图 1 薄世界模型与厚世界模型的理论对照框架
+
+7
+
+世界模型优先与 AI 市场分析
+
+上层展示潜在状态 St 的连续演化，中层展示不同来源在不同时滞下形成的异步观
+测，下层展示 latest_*、质量门控和 bundle 聚合后生成的 W AI
+
+t 。
+
+图 2 异步观测、时滞误差与世界编译算子示意图
+
+3.5 信息滤子与世界编译算子
+
+从概率论角度，可以把项目看作在构造从“原始信息滤子”到“AI 可见滤子”的
+
+映射。定义：
+
+(cid:16)
+
+(cid:17)
+
+F raw
+
+t = σ
+
+{X obs
+j,τ
+
+}j≤J,τ ≤t
+
+,
+
+表示系统在时点 t 之前理论上可接触到的全部原始信息；再定义：
+
+F AI
+
+t = σ
+
+(cid:0)
+
+W AI
+t
+
+, Dt
+
+(cid:1)
+
+,
+
+(3.13)
+
+(3.14)
+
+表示最终供 AI 使用的主视图与诊断视图共同张成的信息集。当前项目的关键贡献，不
+只是扩大 F raw
+
+t ，而是定义了从 F raw
+
+t 的编译算子：
+
+t 到 F AI
+
+Πt = Bt ◦ Mt ◦ At,
+
+(3.15)
+
+其中 At 表示时序对齐与快照同步，Mt 表示质量门控与可用性筛选，Bt 表示 bundle
+聚合与语义重组。于是：
+
+W AI
+
+t = Πt(F raw
+
+t
+
+).
+
+(3.16)
+
+3.6 世界模型质量与 AI 置信校准
+
+设 AI 在时点 t 针对某个市场机制或 regime 输出后验分布 p(rt | Wt)，并给出显式
+置信度 conft。若 WMIt 很低而 conft 却维持很高，则该系统本质上是在“高不确定世
+界中假装确定”。为刻画这一风险，定义示意性校准惩罚：
+
+ECPt = 1{conft > ¯c}1{WMIt < w}.
+
+(3.17)
+
+8
+
+世界模型优先与 AI 市场分析
+
+当前项目通过 quality_flag、is_ready_for_ai、risk_flags 与 evidence 等对象，为
+
+下游 AI 实现有边界的置信表达提供了底层语义。
+
+3.7 信息论视角：证据带的边际信息价值
+
+从信息论角度，项目的作用可理解为降低 AI 对潜在市场状态或机制标签的不确定
+性。设 Rt 为 AI 所关心的市场机制标签，则薄世界模型与厚世界模型之间的差异可写
+为：
+
+H(Rt | I thin
+
+t
+
+) − H(Rt | I thick
+
+t
+
+) = I(Rt; I thick
+
+t
+
+\ I thin
+t
+
+| I thin
+t
+
+).
+
+(3.18)
+
+进一步地，可将第 k 条证据带在任务 m 下的边际信息贡献定义为：
+
+(cid:0)
+
+MIG(m)
+
+k,t = I
+
+R(m)
+t
+
+; Ek,t | I (−k)
+
+t
+
+(cid:1)
+
+.
+
+(3.19)
+
+这意味着，世界模型“更厚”不应被理解为所有新增数据等价有用，而应被理解为不同
+
+证据带对不同任务存在异质的信息增益。
+
+3.8 因果图视角：世界模型效应为何不能被误当作普通特征扩展
+
+设 Wt 为世界模型质量，At 为 AI 分析质量，Mt 为真实市场复杂度，Ot 为系统
+可观测的来源可用性冲击，Ct 为研究者未充分观测到的环境配置，则一个概念性 DAG
+可写为：
+
+Ot → Wt → At,
+
+Mt → Wt,
+
+Mt → At,
+
+Ct → Wt, At.
+
+(3.20)
+
+式 (3.20) 表明：若不对 Mt 和 Ct 进行控制，仅观察“世界模型更厚时 AI 表现更好”，
+并不能直接推出因果结论。当前项目的重要优势之一，在于它保留了来源级状态、质量
+标记和运行日志，使研究者更可能围绕 Ot 这类接近外生的观测可得性冲击开展识别。
+
+以 DAG 形式展示真实市场复杂度、来源可用性冲击、系统配置、世界模型质量与
+
+AI 分析质量之间的路径关系，并标示潜在后门路径与可识别路径。
+
+图 3 世界模型效应的因果图与选择偏差路径
+
+9
+
+世界模型优先与 AI 市场分析
+
+3.9 拒绝判断的贝叶斯决策规则
+
+若承认世界模型质量本身是波动的，则成熟的 AI 分析系统不仅要学会“判断”，还
+
+要学会“何时不该判断”。设动作集合为：
+
+A = {bullish, bearish, neutral, abstain},
+
+(3.21)
+
+损失函数为 ℓ(a, Rt)，拒绝判断成本为 cabs，则最优动作满足：
+
+当
+
+a⋆
+t = arg min
+a∈A
+
+(cid:2)
+
+E
+
+ℓ(a, Rt) | Wt
+
+(cid:3)
+
+.
+
+(cid:2)
+
+E
+
+ℓ(a, Rt) | Wt
+
+(cid:3)
+
+> cabs,
+
+min
+a̸=abstain
+
+(3.22)
+
+(3.23)
+
+最优动作即为 abstain。项目中的质量暴露对象使这种规则具备可实现的状态条件。
+
+3.10 世界模型改善的是解释空间，而不仅是预测空间
+
+对承担市场分析任务的 AI 而言，更关键的对象往往不是单步数值预测，而是解释
+空间本身。设 Φt 表示时点 t 上 AI 可生成的机制解释集合，则薄世界模型和厚世界模
+型的差异不仅体现在点预测误差上，也体现在：
+
+Φthin
+t
+
+̸= Φthick
+t
+
+,
+
+以及
+
+Pr(ϕ⋆
+t
+
+∈ Φthick
+t
+
+) > Pr(ϕ⋆
+t
+
+∈ Φthin
+t
+
+),
+
+(3.24)
+
+(3.25)
+
+t 表示更符合真实市场状态的机制解释。换言之，当前项目的价值之一，不是提
+
+其中 ϕ⋆
+高 AI 的“答案速度”，而是扩大其“正确问题空间”。
+
+4 当前项目如何生成 AI 市场世界模型
+
+4.1 总体分层：从真实世界到 AI 上下文
+
+项目文档在顶层给出如下链路：
+
+真实世界 → 数据层采集与标准化 → 数据库与 latest_* 快照 → 逻辑层重组
+→ AI 分析 → 交易决策/执行
+
+这一链路表明，项目不直接负责最终交易，而是负责把真实世界压缩为 AI 可消费世
+
+10
+
+世界模型优先与 AI 市场分析
+
+界。因此，该项目在 AI 交易栈中的位置更接近“市场现实的操作系统层”而非“策略
+
+层”。
+
+建议正式绘制为横向流程图：真实市场事件、价格、链上、宏观与新闻输入，经由
+
+data layer 标准化和历史落库、latest_* 快照、质量门控与 logic layer 聚合后，形
+
+成 AI-ready bundle。
+
+图 4 从真实世界到 AI 世界对象的状态编译链
+
+4.2 模块化观测系统
+
+从项目主入口可识别出 8 个自动启动常驻数据模块与 3 个逻辑聚合模块。表 1 汇
+
+总了这些模块在世界模型中的角色。
+
+11
+
+世界模型优先与 AI 市场分析
+
+表 1 项目的世界模型模块映射
+
+层级
+
+模块
+
+在世界模型中的角色
+
+交易所观测层
+
+exchange_data
+
+提供现货、ticker、orderbook、funding、
+
+trade flow、open interest、liquidations、
+
+positioning、basis 等对象
+
+宏观观测层
+
+macro_data
+
+提供 DXY、利率、股指、VIX、信用利差、
+
+商品等跨资产背景
+
+新闻/事件层
+
+news_data，
+
+提供近期叙事、监管与未来催化剂结构
+
+event_calendar_data
+
+链上层
+
+onchain_data
+
+提供资本流、储备、桥流、TVL、网络使用
+
+与质押状态
+
+供给层
+
+tokenomics_data
+
+提供解锁、流通盘、国库钱包流、质押率等
+
+供给侧状态
+
+期权层
+
+options_data
+
+提供隐含波动率、墙位、Gamma、期权流量
+
+与到期结构
+
+替代层
+
+alternative_data 提供注意力、开发者活跃度、稳定币脉冲等
+
+技术与聚合层
+
+technical_indicators，
+
+将多层观测转化为 AI-ready 的结构化状态
+
+慢变量
+
+exchange_comparison，
+
+对象
+
+ai_market_context
+
+注：表中模块分类依据来自项目主调度入口与文档中的证据带定义。表格采用三线表格式，以便直
+
+接用于投稿排版。
+
+4.3 latest_* 快照：从历史仓库到在线世界
+
+项目反复强调大量使用 latest_* 表，这是其核心架构特征。数据库中存在的快
+
+照表包括 latest_tickers、latest_funding_rates、latest_orderbook_snapshots、
+
+latest_macro_timeseries、latest_onchain_timeseries、latest_tokenomics_timeseries、
+
+latest_options_timeseries、latest_alternative_timeseries 等。
+
+这一设计对应两层不同的数据哲学：历史层用于可追溯性、回算和研究；当前上下
+
+文层用于让 AI 在低延迟条件下读取“现在市场是什么样”。从统计角度看，这相当于
+
+把历史路径信息与时点状态信息解耦，从而降低版本不一致和时间错配风险。
+
+4.4 质量治理：从“采到”到“可供 AI 使用”
+
+项目至少区分三层质量语义：health_status 用于判断来源是否健康运行；quality_flag
+
+用于判断 latest 样本是 ok、partial、fallback、stale 还是 unknown；is_ready_for_ai
+
+12
+
+世界模型优先与 AI 市场分析
+
+用于判断某一路来源是否可以直接进入 AI 主视图。可定义：
+
+8
+<
+
+:
+
+zj,t =
+
+1, 若来源j 在时点t 达到 AI-ready 门槛,
+
+0, 否则.
+
+于是，AI 主视图真正看到的是：
+
+W AI
+
+t = {Xj,t : zj,t = 1},
+
+(4.1)
+
+(4.2)
+
+而不是所有已落库对象的并集。
+
+4.5 AI 主视图与原始诊断视图分离
+
+项目在 bundle 中同时保留 AI 直接消费字段、raw_* 字段、ai_excluded_sources、
+
+source_health 与 quality_notes。这一设计避免了“完整性幻觉”：真实存在的数据
+
+全部被保留，但哪些适合 AI 直接信任、哪些只能作为诊断证据，必须显式分层。该设
+
+计是诚实性在工程层面的具体实现。
+
+4.6 bundle：世界模型的对象化表达
+
+ai_market_context bundle 将世界对象组装为统一结构，至少包括：
+
+• market_microstructure
+
+• derivatives_structure
+
+• cross_exchange_execution
+
+• onchain_capital_flow
+
+• tokenomics_supply_pressure
+
+• macro_regime
+
+• news_and_events
+
+• attention_and_builder_activity
+
+同时，系统基于八证据带生成 coverage_score、data_quality_flag、risk_flags 与
+
+evidence。因此 bundle 不是静态 JSON，而是带有认识状态的对象。
+
+13
+
+世界模型优先与 AI 市场分析
+
+建议正式绘制为扇区或雷达图：中心为 ai_market_context bundle，外围八个扇
+
+区为证据带，外缘叠加 coverage_score、data_quality_flag、risk_flags 与
+
+evidence。
+
+图 5 AI bundle 的八证据带覆盖与质量暴露结构
+
+4.7 模块、失真风险与校正机制的对应关系
+
+若将项目视为一个世界模型生成器，则每个模块的价值并不只是“多采一类数据”，
+
+而是“校正某类系统性失真”。表 2 总结了这种映射。
+
+表 2 模块层与世界模型失真校正机制
+
+模块/证据带
+
+主要校正的市场失真
+
+对 AI 的直接意义
+
+exchange_data
+
+仅看收盘价而忽略执行摩擦、盘
+
+让 AI 区分价格变化与可执行
+
+口深度与拥挤方向
+
+市场结构
+
+macro_data
+
+将加密波动误读为纯内部叙事，
+
+让 AI 识别外生流动性环境与
+
+忽略全球风险偏好冲击
+
+风险偏好切换
+
+news_data +
+
+只看已发生价格而忽略叙事驱
+
+让 AI 识别信息冲击的前后顺
+
+event_calendar_data
+
+动与未来催化剂
+
+序与事件窗口
+
+onchain_data
+
+只看交易所内价格而忽略链上
+
+让 AI 识别资本流、桥流、
+
+资本迁移与储备变化
+
+TVL 与储备压力
+
+tokenomics_data 忽略解锁、供给释放和国库钱包
+
+让 AI 识别供给侧冲击而非只
+
+转移的卖压
+
+看需求侧价格
+
+options_data
+
+忽略隐含波动率、墙位、
+
+让 AI 识别凸性供需和衍生品
+
+Gamma 与到期结构约束
+
+主导状态
+
+alternative_data 忽略注意力、开发者活跃度与稳
+
+让 AI 识别叙事热度与基础设
+
+定币脉冲等慢变量
+
+施活跃度
+
+technical_indicators/exchange_comparison/ai_market_context
+
+原始观测分散、难对齐、难直接
+
+把多源观测压缩为统一
+
+供 AI 使用
+
+AI-ready 世界对象
+
+注：表中“主要校正的市场失真”列是该表的理论核心，建议在正式排版中以斜体或更窄列宽突出
+
+显示。
+
+14
+
+世界模型优先与 AI 市场分析
+
+4.8 数据库表族与认识论分层
+
+若从数据库本体观察当前项目，可以将其表结构理解为四类不同认识论对象。表 3
+
+汇总了这一分层。
+
+表 3 数据库表族与世界模型分层
+
+表族
+
+代表对象
+
+主要功能
+
+在世界模型中的角色
+
+catalog 表
+
+macro_factor_catalog，
+
+定义因子身份、实体
+
+决定“世界里有哪些
+
+options_factor_catalog
+
+范围、来源语义
+
+对象值得被命名”
+
+等
+
+history 表
+
+tickers，
+
+保留完整历史路径与
+
+决定“世界如何被长
+
+macro_timeseries，
+
+可追溯样本
+
+期记忆”
+
+onchain_timeseries 等
+
+latest 表
+
+latest_tickers，
+
+维护当前可读快照
+
+决定“世界现在是什
+
+latest_macro_timeseries
+
+么样”
+
+等
+
+context/snapshot
+
+exchange_comparison_snapshots，
+
+进行聚合、重写与
+
+决定“世界如何被解
+
+表
+
+macro_context_snapshots，
+
+AI-ready 压缩
+
+释性呈现给 AI”
+
+ai_market_context_snapshots
+
+注：该表的分类依据是数据库对象的语义角色而非物理存储结构，因此更适合作为论文中的本体层说
+
+明。
+
+4.9 版本化语义、概念漂移与诚实性契约
+
+长期数据系统的难点不在于第一次把世界编译出来，而在于在来源变化、定义变
+t ，则不同
+
+化和市场结构变化后仍维持语义稳定。设第 v 个版本的世界编译规则为 Π(v)
+时间上 AI 所消费的对象可能满足：
+
+W (v)
+
+t = Π(v)
+
+t (F raw
+
+t
+
+),
+
+W (v′)
+
+t′ = Π(v′)
+
+t′ (F raw
+t′
+
+).
+
+(4.3)
+
+若研究者忽略 v ̸= v′ 所代表的规则差异，则会将“市场变了”与“世界的编译方式变
+了”混为一谈。与此同时，若每个观测对象都附带来源证明元数据 ρj,t，则完整对象可
+写为：
+
+˜Oj,t = (xj,t, τj,t, qj,t, gj,t, rj,t, ρj,t),
+
+(4.4)
+
+其中 ρj,t 至少回答：数据来自哪里、何时抓取、进入 AI 主视图前经历了哪些变换。这
+一约束构成了世界模型的“诚实性契约”。
+
+15
+
+世界模型优先与 AI 市场分析
+
+沿时间轴展示 bundle 规则版本切换、来源增删、质量阈值变化与概念漂移事件，
+
+并标记回看偏差可能出现的位置。
+
+图 6 世界模型版本化、概念漂移与回看偏差控制框架
+
+5 这个项目对 AI 分析市场的作用
+
+5.1 扩大 AI 的可观测市场现实
+
+若一个 AI 系统只看到价格、成交量和少量新闻，它看到的只是市场表面的投影。
+
+当前项目通过多源结构化采集，使 AI 同时看到价格、执行、拥挤、供给、风险偏好与
+
+叙事，从而把 AI 从“价格模式识别器”提升为“市场状态解释器”。
+
+5.2 降低观测稀疏导致的伪结论
+
+在薄输入条件下，一段价格上升既可能代表趋势延续，也可能代表 short squeeze、
+
+期权墙位附近的被动推进，或仅仅是流动性极差环境下的短暂拉升。当前项目通过把
+
+资金费率、爆仓、未平仓量、Gamma、盘口深度和跨所离散度等对象纳入世界模型，压
+
+缩了“多种机制被误读为单一信号”的概率。
+
+5.3 把“当前世界”做成低延迟可读对象
+
+很多数据仓库适合做离线研究，却不适合做在线 AI 读取，因为它们只关心历史落
+
+库，不关心状态对象。当前项目通过 latest_* 与 bundle 机制，把“当前世界是什么
+
+样”做成数据库层和逻辑层的一等公民，从而降低 AI 读取复杂度和状态重算成本。
+
+5.4 让 AI 看到自己的证据边界
+
+系统不只是提供 state，还提供 state of observability。通过 quality_flag、is_ready_for_ai、
+
+ai_excluded_sources 与 risk_flags，项目使下游 AI 能够看到“自己看到世界的质
+
+16
+
+世界模型优先与 AI 市场分析
+
+量”，而不是错误地把所有输入等价对待。
+
+5.5 支持竞争性解释、拒绝判断与尾部风险前验诊断
+
+当前项目使 AI 在面对同一价格路径时，能够比较多种竞争性机制解释，而不是被
+
+迫选择单一路径叙事。进一步地，项目中的质量暴露对象为拒绝判断规则提供了条件
+
+状态；同时，funding 扭曲、basis 异常、爆仓堆积、跨所离散度、期权墙位、链上大额
+
+转账与供给解锁等对象，还使 AI 能够把尾部风险识别从价格后验反应前移到状态前验
+
+诊断。
+
+5.6 提高 AI 输出的可审计性与机构可用性
+
+在真实机构环境中，不可审计的 AI 结论很难进入研究、风控和执行流程。项目通
+
+过保留主视图和诊断视图、保留 evidence 与 risk_flags、保留历史层与 latest 层之
+
+间的映射关系，为 AI 结论的追溯、复核和审计提供了基础条件。
+
+5.7 建立跨模型、跨团队、跨阶段分析的共同语言
+
+机构内部真正的复杂性往往来自多人、多模型、多阶段协作。当前项目通过 bundle
+
+与 context/snapshot 表建立了共享的市场语义层，使不同团队讨论的更接近“我们是
+
+否同意当前的市场状态和证据边界”，而非“我们是否使用了不同口径的数据口袋”。
+
+6 如何实证评估“厚世界模型”的价值
+
+6.1 基本研究设计
+
+围绕厚世界模型相对于薄世界模型的增量价值，定义两类信息集：
+
+t = {price, volume, basic indicators, simple news},
+I thin
+
+(6.1)
+
+I thick
+t
+
+= {I thin
+t
+
+, microstructure, derivatives, macro, on-chain, tokenomics, options, alternative, quality metadata}.
+
+在相同预测器类 F 下，比较
+
+t+1 = f (I thin
+ˆythin
+
+t
+
+),
+
+t+1 = f (I thick
+ˆythick
+
+t
+
+).
+
+(6.2)
+
+(6.3)
+
+但本文强调，评价对象不应只限于收益预测损失，还应包括 regime 分类稳定性、解释
+
+连续性、证据归因率、无支撑断言率与陈旧输入敏感度。
+
+17
+
+世界模型优先与 AI 市场分析
+
+6.2 面向世界模型质量的回归框架
+
+设 Qi,t+h 表示资产 i 在时点 t 上由固定 AI 分析器产生的分析质量指标，则可估
+
+计：
+
+Qi,t+h = αi + λt + β1WMIi,t + β2Bi,t + β3Ui,t + β4Hi,t + Γ⊤Zi,t + εi,t+h,
+
+(6.4)
+
+其中 αi 为资产固定效应，λt 为时间固定效应，Zi,t 为控制变量。
+
+若要比较厚世界模型在高压市场中的边际作用，可进一步定义：
+
+∆Qi,t+h = Qthick
+i,t+h
+
+− Qthin
+
+i,t+h,
+
+(6.5)
+
+并估计：
+
+∆Qi,t+h = αi + λt + θ1WMIi,t + θ2Stresst + θ3WMIi,t × Stresst + ui,t+h.
+
+(6.6)
+
+左侧为 Bt、Ut、Ht 及 WMIt 的构成，中部为固定 AI 分析器与控制变量集合 Zi,t，
+右侧为 Qi,t+h、EAR、UCR、EV 等结果变量，并标出高压市场状态交互路径。
+
+图 7 世界模型质量指数与 AI 分析质量的计量识别框架
+
+6.3 事件研究：模块中断与来源降级
+
+当前项目的一个独特优势在于，其运行日志、质量标记与来源级状态使研究者可
+围绕“世界模型受损事件”开展准实验研究。若某关键来源在事件时点 T0 附近发生中
+断、严重陈旧或被 is_ready_for_ai 剔除，则可估计：
+
+Qi,τ = αi + λτ +
+
+X
+
+k̸=−1
+
+δkD(k)
+
+i,τ + ϵi,τ ,
+
+(6.7)
+
+其中 D(k)
+
+i,τ 为相对事件时点的 lead/lag 指示变量。
+
+18
+
+世界模型优先与 AI 市场分析
+
+上面板展示来源健康度或 is_ready_for_ai 状态变化，下面板展示解释连续性、
+
+证据冲突率和无支撑断言率在事件窗口内的动态响应。
+
+图 8 模块中断与来源降级的事件研究设计图
+
+6.4 解释质量的统计评价体系
+
+若研究对象是 AI 的市场分析能力，而非单纯数值预测，则需要专门的解释质量指
+
+标。定义证据归因率（EAR）：
+
+EARt =
+
+#{被明确绑定到 bundle/evidence 的判断}
+#{总判断}
+
+,
+
+无支撑断言率（UCR）为：
+
+UCRt = 1 − EARt,
+
+解释波动率（EV）可定义为：
+
+EVt =
+
+d(ϕt, ϕt−1)
+1 + d(Wt, Wt−1)
+
+,
+
+其中 d(·, ·) 为某种距离度量。
+
+6.5 多目标评价与 Pareto 前沿
+
+(6.8)
+
+(6.9)
+
+(6.10)
+
+若继续沿用单一预测损失作为世界模型优劣的判断标准，则容易低估项目最关键
+
+的制度价值。更合理的做法是把世界模型评估视为多目标优化问题，定义：
+
+(cid:0)
+
+(cid:1)
+Predictive Accuracy, Explanation Stability, Calibration, Auditability
+
+.
+
+Jt =
+
+(6.11)
+
+厚世界模型的优势未必总体现为单一维度最优，但可能体现为更优的 Pareto 前沿，即
+
+在不显著牺牲预测表现的同时，大幅提升解释稳定性、置信校准与可审计性。
+
+19
+
+世界模型优先与 AI 市场分析
+
+表 4 世界模型评估指标的多目标体系
+
+维度
+
+代表指标
+
+统计含义
+
+与当前项目的对应对象
+
+预测维度
+
+方向损失、分位数
+
+世界模型是否提升数
+
+多源输入、技术指标、上
+
+损失、尾部事件识
+
+值判断
+
+下文聚合
+
+别率
+
+解释维度
+
+EV、机制标签稳
+
+世界模型是否提升解
+
+bundle、evidence、
+
+定性、竞争性解释
+
+释连续性
+
+risk_flags
+
+覆盖率
+
+校准维度
+
+ECP、置信偏差、
+
+世界模型是否支持有
+
+quality_flag、
+
+stale sensitivity
+
+边界的置信表达
+
+is_ready_for_ai
+
+审计维度
+
+EAR、UCR、来源
+
+世界模型是否支持追
+
+raw/diagnostic 视图、历
+
+溯源完整率
+
+溯与复核
+
+史表、latest 表
+
+注：表中部分指标并非当前仓库中的既成字段，而是基于现有设计可直接构造的研究对象。正式投稿
+
+时建议与附录中的构造公式配套使用。
+
+6.6 蒙特卡洛与代理市场仿真
+
+由于真实市场中的来源中断和极端状态未必足够频繁，未来研究还可以引入蒙特
+
+卡洛或代理市场仿真。令潜在状态满足：
+
+(cid:0)
+
+St =
+
+Sliq
+t
+
+, Scrowd
+t
+
+, Smacro
+t
+
+, Ssupply
+t
+
+, Snarrative
+
+t
+
+(cid:1)
+
+,
+
+(6.12)
+
+并对不同来源的人为设置时滞、噪声、缺失率和门控规则。这样可分离现实数据中难
+
+以单独识别的几个维度：状态复杂度、来源异步性、门控强度与 AI 分析器本身的鲁棒
+
+性。
+
+6.7 发表级识别要求
+
+若要把本文真正推进为期刊级实证论文，至少需要满足以下要求：
+
+1. 对所有世界模型指标给出可重复构造的代码与冻结样本；
+
+2. 将 bundle 构造逻辑版本化，避免后续系统迭代引起回看偏差；
+
+3. 对不同市场阶段分别报告结果，避免把平稳阶段平均改善错误外推到压力阶段；
+
+4. 将来源中断、数据陈旧、质量降级与市场本身的剧烈波动做清晰区分；
+
+5. 在任何涉及收益或方向预测的扩展研究中，严格区分“改善了 AI 的世界理解”与
+
+“改善了可交易经济价值”。
+
+20
+
+世界模型优先与 AI 市场分析
+
+7 与经典文献的对话
+
+7.1 与 Fama–French、Cochrane 和机器学习资产定价的关系
+
+Fama–French 框架擅长用少量低频因子总结风险补偿结构，而 Cochrane 的贴现率
+
+框架强调条件信息集的变化 [5, 3]。若说 Fama–French 研究的是“给定世界之后哪些因
+
+子解释收益”，那么本文与当前项目所研究的是“AI 所看到的世界应如何被构造，才能
+
+让这些因子解释有意义”。
+
+相对于机器学习资产定价文献，本文并不把边际贡献理解为“再加入一组特征”或
+
+“换一个更强模型”，而是把其理解为“如何治理一个高维、异步、跨制度来源的信息世
+
+界”。因此，当前项目更接近 market ontology engineering，而不仅是 feature engineering。
+
+7.2 与测量误差、鲁棒控制和统计学习理论的进一步对话
+
+测量误差文献关注观测变量受噪声污染后对估计和预测的影响 [7, 2]；鲁棒控制文
+
+献关注决策者在不确定模型下的保守最优化 [9]；统计学习理论与表示学习文献关注表
+
+示质量与下游任务性能的关系。本文的边际位置在于：将这些思想推进到多源、异步、
+
+分层和门控环境中，研究“一个市场世界被多种不同方式不完整地观测时，如何仍然
+
+为 AI 构造可靠的信息表面”。
+
+7.3 与 data-centric AI 的关系
+
+data-centric AI 强调通过改善数据质量、标签一致性和覆盖度提升模型表现。本文
+
+则表明，在金融市场中，真正需要被治理的不是静态数据集，而是一个持续变化的观
+
+测世界。项目中的 latest_*、quality_flag、is_ready_for_ai、bundle 和版本治理，
+
+正是 data-centric AI 在动态金融环境中的制度化延伸。
+
+8 局限性、内生性与外部有效性
+
+8.1 内生性与识别风险
+
+即使未来围绕该世界模型开展实证评估，也会面临若干内生性问题：来源选择内
+
+生性、反向因果、异步采样偏差以及部署状态依赖。尤其是在高波动阶段，世界模型更
+
+“厚”与市场更“异常”可能同时发生，因此必须严肃处理式 (3.20) 所揭示的后门路径。
+
+21
+
+世界模型优先与 AI 市场分析
+
+8.2 规范性命题与实证命题的区分
+
+本文应被理解为一篇理论与架构研究论文，而不是一篇已经完成发表级样本构造
+
+的策略论文。它对于第一类命题——“面向 AI 的市场数据系统应具备什么性质”——
+
+给出了强规范性案例；但对于第二类命题——“这些设计究竟在多大程度上改善了 AI
+
+判断能力”——仍需未来实证工作回答。
+
+8.3 外部有效性与模型–世界交互偏差
+
+加密市场具有 24/7 交易、跨交易所分裂、链上透明但解释噪声大、代币供给制度
+
+多样等特征，这使本文的理论和项目设计在该场景中特别自然。若将其平移到股票、债
+
+券或商品市场，则证据带重要性、时间结构与质量门槛都可能不同。
+
+此外，还存在一个更细的风险：即便世界模型质量较高，AI 分析器也可能系统性
+
+误读某些世界对象，从而形成“二阶误差”。换言之，世界模型质量的提升并不能替代
+
+对下游 AI 行为的独立审查。
+
+9 结论
+
+本文围绕一个被多数 AI 交易叙事忽略的问题展开：在真实金融市场中，AI 失败
+
+往往首先不是模型层失败，而是世界模型层失败。当前项目的独特价值，不在于它已
+
+经证明某个策略必然赚钱，而在于它把“面向 AI 的市场世界模型”从一个口号推进为
+
+一套可实现、可审计、可扩展的分层系统。
+
+综合项目文档与代码结构，可以得出如下结论。第一，当前系统已经形成一个覆盖
+
+微观结构、衍生品拥挤、宏观背景、链上资本流、供给压力、期权结构、新闻事件与替
+
+代数据的高维观测体系。第二，项目通过 latest_* 快照、质量门控、主视图与诊断视
+
+图分离、bundle 聚合和调度矩阵，把“当前市场世界”编译为 AI 可直接消费的状态对
+
+象。第三，项目对 AI 市场分析的最大贡献并不是告诉 AI 明天会涨还是会跌，而是先
+
+让 AI 看到一个更接近真实市场、并且知道自己看到世界质量边界的市场现实。
+
+因此，若用一句话概括本文的研究结论，那就是：对于长期可用的 AI 市场分析
+
+系统而言，最昂贵、最难复制、最容易形成壁垒的，不是 prompt，也不是单一模型，
+而是稳定的数据世界模型。
+
+A 核心符号表
+
+22
+
+符号
+
+St
+Xj,t
+X obs
+j,t
+ℓj,t
+νj,t
+Wt
+W AI
+t
+Dt
+Bt
+Ut
+Ht
+WMIt
+Πt
+Φt
+Qi,t+h
+EARt
+UCRt
+EVt
+ECPt
+MIG(m)
+k,t
+
+世界模型优先与 AI 市场分析
+
+含义
+
+潜在真实市场状态
+
+第 j 个来源对市场状态的观测值
+
+带时滞和噪声的实际可观测值
+
+来源级时滞
+
+观测噪声或定义误差
+
+项目生成的世界模型对象
+
+进入 AI 主视图的世界对象
+
+诊断与审计辅助对象集合
+
+世界模型宽度指标
+
+世界模型稳定性指标
+
+世界模型诚实性指标
+
+世界模型质量指数
+
+从原始信息滤子到 AI 可见信息滤子的编译算子
+
+AI 可生成的机制解释集合
+
+面向 AI 分析任务的质量指标
+
+证据归因率
+
+无支撑断言率
+
+解释波动率
+
+置信校准惩罚
+
+第 k 条证据带在任务 m 下的边际信息增益
+
+B 项目代码事实摘要
+
+基于项目文档与代码结构，当前系统至少具有如下可验证事实：
+
+1. 自动启动常驻数据模块 8 个，逻辑聚合模块 3 个；
+
+2. SQLite 应用表 42 张；
+
+3. 技术指标输出列 181 个，市场上下文增强列 21 个，跨所执行状态列 90 个；
+
+4. 宏观因子 15 个、链上因子 17 个、tokenomics 因子 12 个、期权因子 55 个、替代
+
+因子 28 个；
+
+5. 默认交易对包括 BTC/USDT、ETH/USDT、SOL/USDT、SUI/USDT；
+
+6. 默认交易所包括 binance、okx、bybit；
+
+7. 默认 K 线周期包括 1m、5m、15m、1h、4h、1d。
+
+23
+
+世界模型优先与 AI 市场分析
+
+C 面向发表级研究的经验研究协议
+
+C.1 最小实验单元
+
+一个最小实验单元可定义为：一个资产或交易对、一个时间窗口、一个固定 AI 分
+
+析器、一种信息世界配置和一组统一评估指标。
+
+C.2 推荐比较组
+
+1. 薄世界模型：价格、成交量、基础技术指标；
+
+2. 中等世界模型：在薄世界模型上加入微观结构和衍生品拥挤；
+
+3. 厚世界模型：加入宏观、链上、tokenomics、期权、替代数据；
+
+4. 厚世界模型加门控：进一步启用 quality_flag 和 is_ready_for_ai。
+
+C.3 最低报告标准
+
+1. 报告所有信息集配置下的样本内与样本外区分；
+
+2. 报告模块不可用或质量降级时的鲁棒性结果；
+
+3. 报告不同市场压力阶段的异质性结果；
+
+4. 报告世界模型版本号与 bundle 构造规则版本号；
+
+5. 明确区分“提升了分析质量”和“提升了可交易经济价值”。
+
+参考文献
+
+[1] Asness C S, Moskowitz T J, Pedersen L H. Value and Momentum Everywhere[J].
+
+Journal of Finance, 2013, 68(3): 929–985.
+
+[2] Carroll R J, Ruppert D, Stefanski L A, Crainiceanu C M. Measurement Error in
+
+Nonlinear Models: A Modern Perspective[M]. 2nd ed. Boca Raton: Chapman and
+
+Hall/CRC, 2006.
+
+[3] Cochrane J H. Asset Pricing[M]. Revised Edition. Princeton: Princeton University
+
+Press, 2005.
+
+24
+
+世界模型优先与 AI 市场分析
+
+[4] Fama E F, French K R. The Cross-Section of Expected Stock Returns[J]. Journal
+
+of Finance, 1992, 47(2): 427–465.
+
+[5] Fama E F, French K R. Common Risk Factors in the Returns on Stocks and
+
+Bonds[J]. Journal of Financial Economics, 1993, 33(1): 3–56.
+
+[6] Fama E F, French K R. A Five-Factor Asset Pricing Model[J]. Journal of Financial
+
+Economics, 2015, 116(1): 1–22.
+
+[7] Fuller W A. Measurement Error Models[M]. New York: Wiley, 1987.
+
+[8] Gu S, Kelly B, Xiu D. Empirical Asset Pricing via Machine Learning[J]. Review of
+
+Financial Studies, 2020, 33(5): 2223–2273.
+
+[9] Hansen L P, Sargent T J. Robustness[M]. Princeton: Princeton University Press,
+
+2008.
+
+[10] Harvey C R, Liu Y, Zhu H. …and the Cross-Section of Expected Returns[J]. Review
+
+of Financial Studies, 2016, 29(1): 5–68.
+
+[11] Jegadeesh N, Titman S. Returns to Buying Winners and Selling Losers: Implications
+
+for Stock Market Eﬀiciency[J]. Journal of Finance, 1993, 48(1): 65–91.
+
+[12] Kelly B T, Pruitt S, Su Y. Characteristics Are Covariances: A Unified Model of
+
+Risk and Return[J]. Journal of Financial Economics, 2019, 134(3): 501–524.
+
+[13] Liu Y, Tsyvinski A, Wu X. Common Risk Factors in Cryptocurrency[J]. Journal of
+
+Finance, 2022, 77(2): 1133–1177.
+
+[14] Makarov I, Schoar A. Trading and Arbitrage in Cryptocurrency Markets[J]. Journal
+
+of Financial Economics, 2020, 135(2): 293–319.
+
+[15] Nagel S. Machine Learning in Asset Pricing[M]. Princeton: Princeton University
+
+Press, 2021.
+
+[16] Shmueli G. To Explain or to Predict?[J]. Statistical Science, 2010, 25(3): 289–310.
+
+25
+
+

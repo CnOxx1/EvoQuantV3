@@ -1,0 +1,827 @@
+=== PAGE 1 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+Ֆoଆ྘Ⴊ༵p֞oൗࢸଆ྘Ⴊ༵p ğ૫ཟ AI
+൧ӆٳ༅֥
+ࡆૡࠊлඔऌൗࢸଆ྘ࠎԤഡീ࿹࣮
+৙ݓՒ1
+č๧۠ϱଆϰđರ௹ğ 2026୍ 5ᄅ 18ರĎ
+ႇ໓ี଀ğ F rom “Model-First” to “W orld-Model-First”: A Study of Cryptocurrency
+Data W orld Model Infrastructure for AI-Based Market Analysis
+ࣁࠎཛଢğ Վԩแཿࣁࠎཛଢ଀ӫაщݼčೂ໭đॖᄝᆞൔ๧۠భ೷ԢĎ b
+ቔᆀࢺࡥğ ৙ݓՒđ࿹࣮ٚཟູ AI൧ӆٳ༅aਈ߄ඔऌࠎԤഡീაࣁವ๤ࡹ࠹ଆb
+ᇏ๭ٳোݼğ F830.9ĠTP18 ໓ངѓ്઒ğ A໓ᅣщݼğ րק
+ᅋေğЧ໓࿹࣮၂۱ᄝ AIࣁವႋႨษંᇏࣜӈФޭ൪a֌ؓᆇൌઋֹᇀܱᇗေ֥໙
+ีğؓႿླေӻ࿃৘ࢳ൧ӆሑ෿aྙӮ่ࡱ஑؎ѩൻԛॖബࢲ࠹ં֥ᇆି༢๤ط࿽đః
+ି৯ഈཋສສѩ҂൮༵൳ଆ྘گᄖ؇ჿඏđط൮༵൳ᇅႿః෮૫֥ؓ൧ӆൗࢸ൞ڎቀ
+ܔॺaቀܔ໗aቀܔӴൌbຶಡཛଢ໓֖ᇏิԛ֥o؟ඔ AIࢌၞ༢๤ാϧđѩ٤ၹູ
+ଆ྘҂ܔՒૼđط൞ၹູ່۳ଆ྘֥൧ӆൗݖܴࢸႿֆЊpᆃ၂ނྏଁีđЧ໓҂ࡼ
+֒భཛଢ൪ູ൬ၭყҩఖࠇሱࢌ׮ၞႄౣđࡼطఃקࢸູ၂ᇕ૫ཟ AI൧ӆٳ༅֥ඔ
+ऌൗࢸଆ྘ࠎԤഡീbЧ໓ކࢲཛଢ໓֖aս઒ܒࢲaඔऌ९ეၬაઆࠠҪ bundleࠏ
+ᇅđࡹܒਔ၂۱Ֆమᄝ൧ӆሑ෿֞ AIॖ࡮ൗؓࢸའ֥৘ંॿࡏĠࣉ၂҄Ֆॺ؇a໗ק
+ྟაӴൌྟ೘۱ົק؇ၬൗࢸଆ྘ᇉਈđѩႄೆൗࢸଆ྘ᇉਈᆷඔaࢳ൤ѯ׮ੱa໭
+ᆦӪ؎࿽ੱaӧࣸൻೆૹ؇ۋაᆣऌ݂ၹੱ֩௟ؓࡎའb࿹࣮іૼđ֒భཛଢނ֥ྏ
+ࡎᆴ҂ᄝႿᆰ۳ࢤԛࢌၞճσđطᄝႿ๙ݖ latest_* ॹᅶaᇉਈ૊॥aᇶ൪๭აᆐ؎
+൪๭ٳ৖aϖᆣऌջ bundleऊބކൈࡗᇍ৘đ֮ࢆൗࢸଆ྘༂ҵa࿢෪ࢳ൤ॢ֥ࡗເ
+ሱႮ؇đѩิۚ AIࢲં֥ॖബ࠹ྟაᇅ؇ॖႨྟbЧ໓֥ш܊࠽ངᄝႿϜo൧ӆൗࢸ
+ଆ྘pՖ۽ӱྻ൙ิശູॖྙൔ߄aॖ്љaॖ௟֥ܙ࿐ඌؓའb
+࡯ܱՍğ AI൧ӆൗࢸଆ྘ĠࡆૡࠊлĠඔऌࠎԤഡീĠ൧ӆັܒࢲܴĠྐ༏ࠢĠᇉਈ
+ᇍ৘
+Abstract: This paper studies an overlooked but fundamental issue in AI-based finan-
+cial applications: for an intelligent system that continuously interprets market states
+and produces auditable judgments, its performance frontier is often constrained less by
+1ቔᆀྠ଀௓ၻğ Li Guocong bቔᆀႯདğ lmu151638@gmail.com bЧ໓࿹࣮ؓའ൞֒భཛଢ෮ࡹܒ
+֥ඔऌҪაઆࠠऊކҪ༢๤đ҂ࡼః༂ཿູၘࣜоߌປӮ֥ሱࢌ׮ၞս৘b
+1
+
+=== PAGE 2 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+model complexity than by whether the market world presented to it is suﬀiciently broad,
+stable, and honest. Motivated by the proposition that many so-called AI trading sys-
+tems fail not because the model is not smart enough, but because the market worldview
+fed into the model is too thin, this paper does not treat the current project as a re-
+turn predictor or an automated trading engine. Instead, it conceptualizes the project
+as a data world model infrastructure for AI-based market analysis. Combining project
+documentation, code structure, database semantics, and logic-layer bundle construction,
+the paper develops a formal framework that maps latent market states to AI-visible
+world objects. It then defines world model quality along three dimensions—breadth,
+stability , and honesty—and proposes evaluative objects such as the W orld Model Index,
+explanation volatility , unsupported claim rate, stale-input sensitivity , and evidence at-
+tribution rate. The analysis suggests that the core value of the project lies not in directly
+generating trading answers, but in reducing world-model error, compressing spurious ex-
+planatory degrees of freedom, and improving the auditability and institutional usability
+of AI conclusions through latest_* snapshots, quality gating, the separation of main
+and diagnostic views, bundle aggregation across eight evidence bands, and temporal gov-
+ernance. The paper contributes by elevating the notion of a “market world model” from
+an engineering narrative to a formal, identifiable, and evaluable academic object.
+Key words: AI market world model; cryptocurrency; data infrastructure; market mi-
+crostructure; information set; quality governance
+JELٳোݼğ G10đG17đC55đC82đO33
+1ႄ࿽
+1.1࿹࣮Мࣟ
+ᄝ܄षྻ൙ᇏđ AIࢌၞ༢๤֥ാϧສສФ݂ၹႿଆ྘҂ܔ༵ࣉaҕඔטႪ҂ቀࠇ
+ิൕՍഡ࠹҂ࣚܔ༥bಖطđᆃোࢳ൤ᄝᆇൌ൧ӆ࣢ߌᇏࣜӈሂհᇶေ઱؛bؓႿ၂
+۱ӵք൧ӆٳ༅಩ༀ֥ᇆି༢๤ط࿽đᆇᆞथקఃٳ༅ш֥ࢸđ҂ᆺ൞ଆ྘ݦඔЯ࣍
+ି৯đ۷൞ః෮૫֥ؓ൧ӆൗࢸ൞ڎቀܔປᆜaቀࠣܔൈaቀܔॖྐb
+ᆃ၂໙ีᄝࡆૡࠊл൧ӆᇏႭູ๬ԛbࡆૡ൧ӆѩ٤Ⴎֆ၂ਫ਼۬ࡎࣥ྽ਙԉٳख़
+߂bཌྷ๝۬ࡎ֥ሼ൝đᄝ҂๝ࢌၞ෮ܒࢲa҂๝ۆۗႚࠪሑ෿a҂๝ሧٮࣁੱ࣢ߌa҂
+๝௹ಃ఺໊ٳ҃a҂๝ࢳ෭ᇛ௹ބ҂๝ܴޡМࣟᆭ༯đສສؓႋປಆ҂๝֥൧ӆݣၬb
+ၹՎđ೏ AIܴࣇҳ Kཌđ෱ु֥֞ᆺ൞٤طࠖ݅۬ࡎ൧ӆܒࢲĠ೏ః؀ࣇ౼ྍ໔ѓ
+ีđ෱ࢤԨ֥֞ᄵ൞ྻ൙ᄮല٤طᆳྛჿඏĠ೏ఃࣇ૫ؓ၂ᅦ৥ൎնіđ෱္ໃсᆇ
+2
+
+=== PAGE 3 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ᆞ֤֞oՎख़൧ӆ൞൉હဢp֥ᄝཌൗؓࢸའb
+Ч໓ऌՎิԛ၂ָ۷۱Ҫ֥໙ีğ ೂޅູ AIࡹܒ၂۱ቀܔॺaቀܔ໗aቀܔӴ
+ൌ֥൧ӆൗࢸଆ྘đ൐ఃൻೆॢ࣍ࢤ۷ࡗᆇൌ൧ӆ؟֥ҪܒࢲĤ
+1.2࿹࣮ؓའაં໓ק໊
+Ч໓෮࿹֥࣮o֒భཛଢp2ѩ҂൞၂۱ֆՂ֥ඔऌሂ౼࢖Чކࠢđ္҂൞၂۱ၘ
+ࣜоߌປӮ֥ሱࢌ׮ၞ༢๤bࠎႿཛଢ໓֖აս઒ܒࢲđЧ໓۷ሙಒࡼֹఃקູ໊၂
+۱૫ཟ AIࡆ֥ૡ൧ӆඔऌࠎԤഡീཛଢbఃଢѓ҂൞ᆰࢤู AI༯ֆđط൞ğ
+1.Ֆຓ҆ᆇൌൗࢸӻ࿃Ґࠢ൧ӆaܴޡa৽ഈaྍ໔a௹ಃa۳܂აูսඔऌĠ
+2.ؓၳܒඔऌࣉྛѓሙ߄aઋ९aॹᅶ๝҄ބᇉਈᇍ৘Ġ
+3.ᄝઆࠠҪٳࡼ೛ܴҩᇗቆູ AIॖၛᆰࢤཨ߄ܒࢲ֥ٮ൧ӆഈ༯໓b
+ࠎႿᆃ၂ק໊đЧ໓࿹֥࣮҂൞oھս઒९ିڎᆰࢤӁളӑح൬ၭp đط൞ೂ༯ඹ
+۱໙ีğ
+1.֒భཛଢೂޅϜᆇൌ൧ӆ႘ഝູ၂۱ൡކ AIཨ֥ٮඔऌൗࢸଆ྘Ĥ
+2.ཌྷࢠႿЊྐ༏aֆটჷaֆ௔ੱൻೆđᆃᇕൗࢸଆ྘৘ંഈູ AIջটଧུྐ༏ં
+აथҦંႪ൝Ĥ
+3.ཛଢᇏٳ֥Ҫܒࡏa latest_* ॹᅶaᇉਈ૊॥aᇶ൪๭აᆐ؎൪๭ٳ৖֩ഡٳ࠹
+љࢳथਔଧུمٚં໙ีĤ
+4.ᆃ၂ཛଢᄝ AI൧ӆٳ༅༢๤ᇏ෮ϲဆ֥࢘೤đႋೂޅФ࿐ඌֹ߄৘ࢳa؇ਈა
+௟ܙĤ
+1.3࿹܊࣮ང
+Ч໓֥࿹܊࣮ངॖۀওູඹׄbֻ၂đЧ໓Ϝ AIࢌၞ༢๤֥ാϧჰၹՖ๙ӈФษ
+ં֥ଆ྘Ҫభ၍ܴ֞ҩҪބඔऌᇍ৘Ҫđ఼טൗࢸଆ྘ܒᄯհ༂Чദࣼ൞၂ো၂֩հ
+༂bؽֻđЧ໓ࡼoቀܔॺaቀܔ໗aቀܔӴൌ֥ඔऌൗࢸଆ྘pྙൔ߄ູॖ࿹࣮ؓའb
+ֻ೘đЧ໓֒ࡼభཛଢ֥ଆॶ߄Ґࠢaඔऌ९ॹᅶaᇉਈ૊॥a bundleऊކა؇טइ
+ᆔ༢๤႘ഝ֞oൗࢸଆ྘ളӮఖp֥৘ંॿࡏbֻඹđЧ໓ิԛ၂สໃটॖᆳྛ֥࿹࣮
+ၰӱđႨႿбࢠЊൗࢸଆ྘აިൗࢸଆ྘ᄝ AI൧ӆٳ༅಩ༀᇏ֥ҵၳb
+2Ч໓෮ӫo֒భཛଢp đ൞ᆷҝ९ࠣః஥ส໓֖෮૭ඍ֥ඔऌҪაઆࠠऊކҪ༢๤đ҂Їওഉໃᄝ
+ҝ९ᇏൌགྷࢌ֥ၞᆳྛս৘b
+3
+
+=== PAGE 4 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+1.4໓ᅣܒࢲ
+ಆ໓νஆೂ༯ğؽֻ҆ܤ߭ٳཌྷܱ໓ངѩඪૼЧ໓֥৘ં໊ᇂĠֻ೘҆ࡹٳ৫ൗ
+ࢸଆ྘Ⴊ༵֥ྙൔ߄ॿࡏĠֻඹ҆ࡼٳཛଢܒࡏაඔऌ९ఔჿ႘ഝູൗࢸଆ྘ളӮ༢
+๤Ġֻ໴҆ٳٳ༅ཛଢؓ AI൧ӆٳ༅֥ऎุቔႨĠֻੂ҆ٳิԛॖؿі്֥ࠩљა௟
+ܙॿࡏĠֻ௾҆ࡼٳЧ໓აׅࣜሧӁࡎקaࠏఖ࿐༝aҩਈ༂ҵބ data-centric AI ໓
+ང߅ؓĠֻϖ҆ٳษંअཋྟაຓ҆ႵིྟĠֻࣴ҆۳ٳԛࢲંb
+2໓ངሸඍა৘ંק໊
+2.1ሧӁࡎק໓ངᇏ่֥ࡱྐ༏ࠢ໙ี
+ׅࣜሧӁࡎק໓ང๙ӈᄝଖ၂่ࡱྐ༏ࠢഈษંყ௹൬ၭaڄགҀӊა์གྷੱэ
+߄b২ೂ F ama and F rench ֥ၹሰࡎקॿࡏ఼טഒਈ໗קၹሰࢩޘ֥૫ࢳ൤ି৯đط
+Cochrane ֥ෛࠏ์གྷၹሰॿࡏ఼ט่ࡱྐ༏ؓࠢ์གྷ࣢ߌ്љ֥ᇗေྟ [4,5,6,3]bᆃ
+ུ࿹܋࣮๝၇ঠ၂۱ႅݣభิğ࿹࣮ᆀၘࣜႚႵ၂۱ཌྷؓ໗קaܒࢲౢ༉֥ྐ༏ൗࢸb
+ಖطđᄝࡆૡ൧ӆᇏđᆃ၂భิ۷ಸၞാᆇbࢌၞ෮ٳਚaᆳྛଉ҈aሧٮࣁੱa
+basisaЕҝa௹ಃႚࠪa৽ഈሧЧథ၍აսл۳܂Ԋࠌđ൐֤ֆ၂۬ࡎ྽ਙ଴ၛԉٳս
+іᆇൌ൧ӆሑ෿b೏࠿࿃ခႨ༮ၬ۬ࡎၹሰ֮ࠇ௔หᆘ࣍රھሑ෿đᄵ֩ႿႨ၂ݖ۱
+Њ֥ྐ༏ࠢಀЯۚ࣍ົ׮෿ൗࢸb
+2.2ࠏఖ࿐༝ࣁವ໓ངᇏ֥ۚົหᆘঔᅦ
+ࠏఖ࿐༝ሧӁࡎק໓ངіૼđ֥ڶپ۷หᆘൻೆა٤ཌྟ႘ഝॖᄝ࿸۬ဢЧຓഡ
+࠹༯ิۚ๤࠹ყҩି৯ [12,8,15]b֌ Harvey , Liu and Zhu [ 10]္ิྜđۚົঔᅦ߶ཁ
+ᇷࡆखඔऌ຋डொ༂a؟ᇗ࡟ဒ໙ีაເཁᇷྟڄགbၹՎđหᆘ؟ဢྟᆺႵᄝটჷ
+ᇉਈaეၬఔჿაᇍ৘ࠏᇅቀܔౢ༉ൈҌᆇᆞႵၩၬb
+Ч໓აھ໓ང֥౵љᄝႿğЧ໓҂൮༵Ϝo؟۷หᆘp৘ࢳູଆ྘Ⴊ൝đط൞Ϝ
+oหᆘ༢๤ೂޅФᇍ৘aೂޅФൈؓࡗఊaೂޅФᇉਈ૊॥p৘ࢳູ࿹࣮ؓའЧദbߐ
+࿽ᆭđЧ໓ܱᇿ֥҂ᆺ൞ۚົൻೆđط൞ۚົൻೆМ֥ުൗࢸଆ྘ቆᆮჰᄵb
+2.3൧ӆັܒࢲܴaҩਈ༂ҵაਗ਼ϿथҦ
+Makarov and Schoar [ 14]఼טਔࡆૡ൧ӆᇏॴࢌၞ෮ส০ଉ҈֥ᇗေྟĠ Liu,
+T syvinski and W u [ 13]ᄵіૼࡆૡሧӁթᄝॖ്љ܋֥๝ڄགၹሰbܼ۷ၬֹđҩ
+ਈ༂ҵ໓ངᆷԛđܴ֒ҩᆴջႵ༢๤ྟᄮലa࿼Ӿࠇհ஥ൈđ࠹ܙაყҩؿ߶׻ݔࢲ
+ളொ၍ [7,2]bਗ਼Ͽ॥ᇅ໓ངࣉ၂఼҄טđᄝ૫ؓ҂ಒ࣢ߌקൈđ৘ྟथҦᆀႋ്༵љ
+4
+
+=== PAGE 5 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ሱ࠭෮၇ঠ֥ྐ༏ൗࢸ൞ڎॖौ [9]b
+֒భཛଢॖၛФ৘ࢳູؓᆃུ໙ี֥၂ᇕ۽ӱ߭߄ႋb෱҂൞ᆰ֥ׅࣜ࠹ܙࢤ
+errors-in-variables ଆ྘đط൞ᄝඔऌҪཁൔܵ৘ܴҩ࿼Ӿaᇉਈࠩࢆaটჷಌ१ބეၬ
+հ໊đՖطູ AIܒᄯ၂۷۱ॖौ֥ྐ༏і૫b
+2.4ა data-centric AI ܱ֥༢
+೏ࡼ൪့ࣉ၂҄ঔᅚ֞ data-centric AI đЧ໓္აఃނྏනམྙӮ߅ؓb data-
+centric AI ఼טđଆ྘іགྷ֥ิശѩ҂ሹ၇ঠگ۷ᄖ֥ຩ઎ܒࢲđ္ॖၛ๙ڿݖ೿ඔ
+ऌᇉਈaѓద၂ᇁྟაଆൔ֤ࠆ؇ۂڭb֒భཛଢ൞ᆃ၂නམᄝ׮෿ࣁವൗࢸᇏ֥ۚ
+ົ࿼ഥğ෱෮ڿ೿֥҂൞࣡෿ඔऌࠢđط൞၂۱ӻ࿃۷ྍaॴটჷaॴ௔ੱ֥൧ӆܴҩ
+ൗࢸb
+3৘ંॿࡏğՖమᄝ൧ӆሑ෿֞ AIॖ࡮ൗࢸ
+3.1మᄝ൧ӆሑ෿აܴҩҪ
+ഡᆇൌ֌҂ॖປಆܴҩ֥൧ӆሑ෿ູ Stb෱҂ࣇЇও۬ࡎđߎЇওרֆੀa९թ
+ჿඏaڄܴޡགொݺa৽ഈ۳܂a൙ࡱԊࠌaစള௖ႚ؇ࠪၛࠣᆳྛଉ҈֩bؓ಩ޅ AI
+༢๤ط࿽đᆇᆞॖႨႿ஑֥؎ѩ҂൞ StЧദđط൞೏ܴۄҩෘሰቔႨݔࢲ֥ުğ
+Xj,t=hj(St) +νj,t, j = 1, . . . , J, (3.1)
+ఃᇏ hj(·)ֻູ j۱টჷܴ֥ҩݦඔđ νj,tູඔᆴ༂ҵa࿼Ӿ༂ҵקࠇၬ༂ҵb
+Ԯ๤ଆ྘Ⴊ༵නਫ਼๙ӈᆰࢤษંೂޅႨଖݦ۱ඔ f(·)ࡼ೏ۄ Xj,t႘ഝ֞༯၂҄ყ
+ҩğ
+ˆyt+1=f(X1,t, . . . , X J,t). (3.2)
+֌ൔ (3.2 )੻ಀਔ၂۷۱ᇗေ֥భิğ҂๝ܴҩ൞ڎປᆜa൞ڎॖбࢠa൞ݖڎ௹đၛ
+ࠣ൞ڎൡࣉކೆ AIᇶ൪๭b֒భཛଢ֥৘ંၩၬᄝႿđᄝ f(·)ᆭభᄹࡆਔ၂Ҫoൗ
+ࢸଆ྘ളӮݦඔp ğ
+Wt=G
+{Xj,τ}j≤J,τ≤t, Qt, Rt, At
+, (3.3)
+ఃᇏ Qtູᇉਈѓ࠺༢๤đ Rtູ AI-ready ૊॥đ Atູൈؓࡗఊაऊܿކᄵb AIൌ࠽
+ԩ৘֥ؓའ҂൞ໃࣜᇍ৘֥ჰ൓ඔऌđط൞ Wtb
+5
+
+=== PAGE 6 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+3.2ൗࢸଆ྘ᇉਈ֥೘ົקၬ
+קၬ 3.1 (ॺ؇) .ഡ༢๤ᄝൈׄ t࡯ܱ֥ᆣऌջඔਈູ Kđ೏ֻ k่ᆣऌջղ֞ AI
+ॖႨ૊ࡪđᄵ࠺ ak,t= 1đڎᄵູ 0bᄵॺ؇ᆷѓקၬູğ
+Bt=1
+KKX
+k=1ak,t. (3.4)
+קၬ 3.2 (໗קྟ ).਷dj,tіൕֻ j۱টჷ֥ freshness penalty ࠇൈིྟӲـཛđᄵ໗
+קྟॖཿູğ
+Ut=exp 
+−JX
+j=1ωjdj,t!
+, (3.5)
+ఃᇏ ωjູটჷᇗေྟಃᇗb
+קၬ 3.3 (Ӵൌྟ ).ഡmj,t= 1іൕֻ jਫ਼টჷᄝᇉਈࠇეၬഈ҂ႋࣉೆ AIᇶ൪๭
+ಏФհ༂ᇿೆđᄵӴൌྟקၬູğ
+Ht= 1−PJ
+j=1mj,t
+J. (3.6)
+ႮՎđൗࢸଆ྘ᇉਈᆷඔקၬູğ
+WMI t=Bt×Ut×Ht. (3.7)
+ൔ (3.7 )ѩ֒٤భҝ९ᇏ֥གྷӮሳ؍đط൞ࠎႿཛଢഡ࠹Ԏའԛ֥࿹࣮ᆷѓb
+3.3ܴҩؓའѩ٤o؟۷หᆘp đط൞oᆴ +ൈࡗ+ ᇉਈ +࢘೤p
+ؓ AIط࿽đ၂۱ႵႨ֥൧ӆܴҩؓའ҂ႋᆺ൞ඔᆴ xj,tđߎႋЇওൈࡗaᇉਈaॖ
+Ⴈྟ࢘ބ೤ჭඔऌğ
+Oj,t= (xj,t, τj,t, qj,t, gj,t, rj,t). (3.8)
+ఃᇏ τj,tູቋྍॖႨൈࡗđ qj,tູᇉਈሑ෿đ gj,tູ൞ࣉڎೆᇶ൪๭֥૊॥ሑ෿đ rj,tູ
+ؓھའᄝൗࢸଆ྘ᇏ֥ეၬ࢘೤bႿ൞đ AIᆇᆞཨ֥ٮ൞ջಪ്ંეၬ֥ሑ෿ؓའࠢ
+ކđ٤ط௜૫หᆘइᆔb
+3.4ၳܴ҄ҩሑ෿ॢࡗაൈᇌ༂ҵ
+ࡆૡ൧ӆඔऌ฿ಖऎႵၳܴ҄ҩหᆘbഡమᄝሑ෿ဆ߄ડቀğ
+St+1=F(St, ηt+1), (3.9)
+6
+
+=== PAGE 7 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ఃᇏ ηt+1ູሑ෿ಠ׮bֻ j۱টჷᄝൈׄ tФ༢๤ु֥֞ѩ٤๝҄ሑ෿ Stđط൞ջᇌ
+ܴ֥ުҩğ
+Xobs
+j,t=hj(St−ℓj,t) +νj,t, (3.10)
+ఃᇏ ℓj,t≥0ູটჷࠩൈᇌb೏ hj(·)ડቀ Lipschitz ่ࡱđᄵႵğ
+hj(St)−hj(St−ℓj,t)≤LjtX
+u=t−ℓj,t+1∥Su−Su−1∥. (3.11)
+ၹՎđࠧьඔᆴҐࠢປಆᆞಒđᆺေൈᇌթᄝđ AIु္֥֞ॖି൞oݖಀ֥ൗࢸp b
+਷˜StіൕႮཛଢളӮ֥ൗࢸଆ྘෮֥گ߫ॖܴҩሑ෿đᄵॖࡼൗࢸଆ྘ᇗࡹ༂ҵ
+Ԏའཿູğ
+∥˜St−St∥ ≤C1JX
+j=1ωjℓj,t+C2JX
+j=1ωj∥νj,t∥+C3JX
+j=1ωj(1−zj,t), (3.12)
+ఃᇏ೘ཛٳљؓႋൈᇌ༂ҵaܴҩᄮലაಌാ /૊॥ྐ༏෥ാbཛଢᇏ֥ latest_* ࠏ
+ᇅa freshness/TTL ܿᄵބis_ready_for_ai ૊॥đᆞٳљᆌؓᆃུཛࣉྛ॥ᇅb
+ቐҧᅚൕ۬ࡎݣࣇaӮࢌਈaࠎԤ࠯ඌᆷѓބഒਈྍ໔֥Њൗࢸଆ྘ĠႷҧᅚൕࡆ
+ೆᆳྛҪaစള௖aܴޡa৽ഈa۳܂ҧa௹ಃaูսඔऌࠣᇉਈჭඔऌި֥ൗࢸ
+ଆ྘Ġָ҆৵ࢤᇀ AIٳ༅ᇉਈaࢳ൤৵࿃ྟaᇂྐ཮ሙაॖബ࠹ྟb
+๭ 1Њൗࢸଆ྘აިൗࢸଆ྘֥৘ંؓᅶॿࡏ
+7
+
+=== PAGE 8 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ഈҪᅚൕమᄝሑ෿ St֥৵࿃ဆ߄đᇏҪᅚൕ҂๝টჷᄝ҂๝ൈᇌ༯ྙӮ֥ၳܴ҄
+ҩđ༯Ҫᅚൕ latest_* aᇉਈ૊॥ބ bundleऊުކളӮ֥ WAI
+tb
+๭ 2ၳܴ҄ҩaൈᇌ༂ҵაൗࢸщၲෘሰൕၩ๭
+3.5ྐ༏ੲሰაൗࢸщၲෘሰ
+Ֆۀੱં؇࢘đॖၛϜཛଢुቔᄝܒᄯՖoჰ൓ྐ༏ੲሰp֞o AIॖ࡮ੲሰp֥
+႘ഝbקၬğ
+Fraw
+t=σ
+{Xobs
+j,τ}j≤J,τ≤t
+, (3.13)
+іൕ༢๤ᄝൈׄ tᆭభ৘ંഈॖࢤԨ֥֞ಆ҆ჰ൓ྐ༏Ġᄜקၬğ
+FAI
+t=σ 
+WAI
+t,Dt
+, (3.14)
+іൕቋᇔ܂ AI൐Ⴈ֥ᇶ൪๭აᆐ؎൪๭܋๝ᅦӮ֥ྐ༏ࠢb֒భཛଢ܊࡯ܱ֥ངđ҂
+ᆺ൞ঔն Fraw
+tđط൞קၬਔՖ Fraw
+t֞FAI
+t֥щၲෘሰğ
+Πt=Bt◦ M t◦ A t, (3.15)
+ఃᇏAtіൕൈ྽ؓఊაॹᅶ๝҄đ Mtіൕᇉਈ૊॥აॖႨྟೱ࿊đ Btіൕ bundle
+ऊކაეၬᇗቆbႿ൞ğ
+WAI
+t= Π t(Fraw
+t). (3.16)
+3.6ൗࢸଆ྘ᇉਈა AIᇂྐ཮ሙ
+ഡ AIᄝൈׄ tᆌؓଖ۱൧ӆࠏᇅࠇ regimeൻԛުဒٳ҃ p(rt| W t)đѩ۳ԛཁൔ
+ᇂྐ؇ conf tb೏ WMI tط֮ޓ conf tಏົӻۚޓđᄵھ༢๤Чᇉഈ൞ᄝoۚ҂ಒקൗ
+ࢸᇏࡌልಒקp bູख़߂ᆃ၂ڄགđקၬൕၩྟ཮ሙӲـğ
+ECP t=1{conf t>¯c}1{WMI t< w}. (3.17)
+8
+
+=== PAGE 9 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+֒భཛଢ๙ݖ quality_flag ais_ready_for_ai arisk_flags აevidence ؓ֩འđ ູ
+༯Ⴓ AIൌགྷႵш֥ࢸᇂྐіղิ܂ਔָҪეၬb
+3.7ྐ༏ં൪࢘ğᆣऌջ֥ш࠽ྐ༏ࡎᆴ
+Ֆྐ༏ં؇࢘đཛଢ֥ቔႨॖ৘ࢳູ֮ࢆ AIؓమᄝ൧ӆሑ෿ࠏࠇᇅѓద֥҂ಒק
+ྟbഡ Rtູ AI෮ܱྏ֥൧ӆࠏᇅѓదđᄵЊൗࢸଆ྘აިൗࢸଆ྘ᆭ֥ࡗҵၳॖཿ
+ູğ
+H(Rt| Ithin
+t)−H(Rt| Ithick
+t) =I(Rt;Ithick
+t\ Ithin
+t| Ithin
+t). (3.18)
+ࣉ၂ֹ҄đॖֻࡼ k่ᆣऌջᄝ಩ༀ m༯֥ш࠽ྐ༏܊ངקၬູğ
+MIG(m)
+k,t=I 
+R(m)
+t;Ek,t| I(−k)
+t
+. (3.19)
+ᆃၩ໅ሢđൗࢸଆ྘oި۷p҂ႋФ৘ࢳູ෮Ⴕྍᄹඔऌࡎ֩ႵႨđطႋФ৘ࢳູ҂๝
+ᆣऌջؓ҂๝಩ༀթᄝၳᇉ֥ྐ༏ᄹၭb
+3.8ၹݔ๭൪࢘ğൗࢸଆ྘ིႋູޅ҂ିФ༂֒ቔ௴๙หᆘঔᅚ
+ഡWtູൗࢸଆ྘ᇉਈđ Atູ AIٳ༅ᇉਈđ Mtູᆇൌ൧ӆگᄖ؇đ Otູ༢๤
+ॖܴҩ֥টჷॖႨྟԊࠌđ Ctູ࿹࣮ᆀໃԉܴٳҩ࣢ߌ֥֞஥ᇂđᄵ၂ۀ۱୑ྟ DAG
+ॖཿູğ
+Ot→ W t→At, M t→ W t, M t→At, C t→ W t, A t. (3.20)
+ൔ (3.20 )іૼğ೏҂ؓ MtބCtࣉྛ॥ᇅđܴࣇҳoൗࢸଆ྘ި۷ൈ AIіགྷݺ۷p đ
+ѩ҂ିᆰࢤ๷ԛၹࢲݔંb֒భཛଢ֥ᇗေႪ൝ᆭ၂đᄝႿ෱Ќ਽ਔটჷࠩሑ෿aᇉਈ
+ѓބ࠺ᄎྛರᆽđ൐࿹࣮ᆀ۷ॖିຶಡ Otᆃো࣍ࢤຓളܴ֥ҩॖ֤ྟԊࠌषᅚ്љb
+ၛ DAGྙൔᅚൕᆇൌ൧ӆگᄖ؇aটჷॖႨྟԊࠌa༢๤஥ᇂaൗࢸଆ྘ᇉਈა
+AIٳ༅ᇉਈᆭ֥ࡗਫ਼ܱࣥ༢đѩѓൕమᄝު૊ਫ਼ࣥაॖ്љਫ਼ࣥb
+๭ 3ൗࢸଆ྘ིႋ֥ၹݔ๭ა࿊ᄴொҵਫ਼ࣥ
+9
+
+=== PAGE 10 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+3.9ऋध஑֥؎НွථथҦܿᄵ
+೏ӵಪൗࢸଆ྘ᇉਈЧദ൞ѯ֥׮đᄵӮඃ֥ AIٳ༅༢๤҂ࣇေ࿐߶o஑؎p đߎ
+ေ࿐߶oޅൈ҂ھ஑؎p bഡ׮ቔކູࠢğ
+A={bullish ,bearish ,neutral ,abstain }, (3.21)
+෥ാݦඔູ ℓ(a, R t)đऋध஑؎ӮЧູ cabsđᄵቋႪ׮ቔડቀğ
+a⋆
+t=arg min
+a∈AE
+ℓ(a, R t)| W t
+. (3.22)
+֒
+min
+a̸=abstainE
+ℓ(a, R t)| W t
+> c abs, (3.23)
+ቋႪ׮ቔູࠧ abstainbཛଢᇏ֥ᇉਈВ੝ؓའ൐ᆃᇕܿᄵऎСॖൌགྷ֥ሑ෿่ࡱb
+3.10ൗࢸଆ྘ڿ೿֥൞ࢳ൤ॢࡗđط҂ࣇ൞ყҩॢࡗ
+ؓӵք൧ӆٳ༅಩ༀ֥ AIط࿽đ֥ؓ࡯ܱ۷འສສ҂൞ֆ҄ඔᆴყҩđط൞ࢳ൤
+ॢࡗЧദbഡ Φtіൕൈׄ tഈ AIॖളӮࠏ֥ᇅࢳ൤ކࠢđᄵЊൗࢸଆ྘ިބൗࢸଆ
+྘֥ҵၳ҂ࣇุགྷᄝׄყҩ༂ҵഈđ္ุགྷᄝğ
+Φthin
+t̸= Φthick
+t, (3.24)
+ၛࠣ
+Pr(ϕ⋆
+t∈Φthick
+t)>Pr(ϕ⋆
+t∈Φthin
+t), (3.25)
+ఃᇏ ϕ⋆
+tіൕކژ۷ᆇൌ൧ӆሑ෿ࠏ֥ᇅࢳ൤bߐ࿽ᆭđ֒భཛଢࡎ֥ᆴᆭ၂đ҂൞ิ
+ۚ AI֥oճσ෎؇p đط൞ঔնఃoᆞಒ໙ีॢࡗp b
+4֒భཛଢೂޅളӮ AI൧ӆൗࢸଆ྘
+4.1ሹุٳҪğՖᆇൌൗ֞ࢸ AIഈ༯໓
+ཛଢ໓֖ᄝפҪ۳ԛೂ༯৽ਫ਼ğ
+ᆇൌൗࢸ→ ඔऌҪҐࠢაѓሙ߄→ ඔऌ९ა latest_* ॹᅶ→આࠠҪᇗቆ
+→ AIٳ༅→ࢌၞथҦ /ᆳྛ
+ᆃ၂৽ਫ਼іૼđཛଢ҂ᆰڵࢤᄳቋᇔࢌၞđط൞ڵᄳϜᆇൌൗࢸ࿢෪ູ AIॖཨٮൗ
+10
+
+=== PAGE 11 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ࢸbၹՎđھཛଢᄝ AIࢌၞᅜᇏ໊֥ᇂ࣍ࢤ۷o൧ӆགྷൌ֥Ҡቔ༢๤Ҫp٤طoҦ੻
+Ҫp b
+ࡹၰᆞൔ߻ᇅູޘཟੀӱ๭ğᆇൌ൧ӆ൙ࡱa۬ࡎa৽ഈaܴޡაྍ໔ൻೆđࣜႮ
+data layer ѓሙބ߄৥ൎઋ९a latest_* ॹᅶaᇉਈ૊॥ა logic layer ऊުކđྙ
+Ӯ AI-ready bundle b
+๭ 4Ֆᆇൌൗ֞ࢸ AIൗؓࢸའ֥ሑ෿щၲ৽
+4.2ଆॶܴ߄ҩ༢๤
+Ֆཛଢᇶೆ१ॖ്љԛ 8۱ሱ׮ఓ׮ӈሁඔऌଆॶა 3۱આࠠऊކଆॶbі 1߸
+ሹਔᆃུଆॶᄝൗࢸଆ྘ᇏ֥࢘೤b
+11
+
+=== PAGE 12 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+і 1ཛଢ֥ൗࢸଆ྘ଆॶ႘ഝ
+Ҫࠩ ଆॶ ᄝൗࢸଆ྘ᇏ֥࢘೤
+ࢌၞ෮ܴҩҪ exchange_data ิ܂གྷࠊa tickeraorderbook afundinga
+trade flow aopen interest aliquidations a
+positioning abasisؓ֩འ
+ܴܴޡҩҪ macro_data ิ܂ DXYa০ੱaܢᆷa VIXaྐႨ০ҵa
+അ௖֩ॴሧӁМࣟ
+ྍ໔ /൙ࡱҪ news_data đ
+event_calendar_dataิ࣍܂௹ྻ൙aܵࡓაໃটբܒࢲ࠴߄
+৽ഈҪ onchain_data ิ܂ሧЧੀaԥСaూੀa TVLaຩ઎൐Ⴈ
+აᇉ࿣ሑ෿
+۳܂Ҫ tokenomics_data ิࢳ܂෭aੀ๙஍aݓ९ఫЇੀaᇉ࿣ੱ֩
+۳܂ҧሑ෿
+௹ಃҪ options_data ิ܂ႅݣѯ׮ੱa఺໊a Gammaa௹ಃੀਈ
+ა֞௹ܒࢲ
+ูսҪ alternative_data ิ܂ᇿၩ৯aषؿᆀࠃᄁ؇a໗קлઝԊ֩
+તэਈ
+࠯ඌაऊކҪ technical_indicators đ
+exchange_comparison đ
+ai_market_context؟ࡼҪܴҩሇ߄ູ AI-ready ߄ܒࢲ֥ሑ෿
+ؓའ
+ᇿğіᇏଆॶٳো၇ऌটሱཛଢᇶ؇טೆ१ა໓֖ᇏ֥ᆣऌջקၬbі۬ҐႨ೘ཌі۬ൔđၛьᆰ
+ࢤႨႿ๧۠ஆϱb
+4.3latest_* ॹᅶğՖ৥ൎҝ९֞ᄝཌൗࢸ
+ཛଢگ఼ّטնਈ൐Ⴈ latest_* іđᆃ൞ఃނྏܒࡏหᆘbඔऌ९ᇏթᄝ֥ॹ
+ᅶіЇও latest_tickers alatest_funding_rates alatest_orderbook_snapshots a
+latest_macro_timeseries alatest_onchain_timeseries alatest_tokenomics_timeseries a
+latest_options_timeseries alatest_alternative_timeseries ֩b
+ᆃ၂ഡؓ࠹ႋਆҪ҂๝֥ඔऌᅽ࿐ğ৥ൎҪႨႿॖሔිྟa߭ෘބ࿹࣮Ġ֒భഈ༯
+໓ҪႨႿಞ AIᄝ֮࿼Ӿ่ࡱ༯؀౼oགྷᄝ൧ӆ൞൉હဢp bՖ๤؇࢘࠹ुđᆃཌྷ֒Ⴟ
+Ϝ৥ൎਫ਼ࣥྐ༏აൈׄሑ෿ྐ༏ࢳᯒđՖ֮ࢆطϱЧ҂၂ᇁބൈࡗհ஥ڄགb
+4.4ᇉਈᇍ৘ğՖoҐ֞p֞oॖ܂ AI൐Ⴈp
+ཛଢᇀഒ౵ٳ೘Ҫᇉਈეၬğ health_status ႨႿ஑؎টჷ൞ࡲڎूᄎྛĠ quality_flag
+ႨႿ஑؎ latestဢЧ൞okapartialafallback astaleߎ൞unknownĠis_ready_for_ai
+12
+
+=== PAGE 13 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ႨႿ஑؎ଖ၂ਫ਼টჷ൞ڎॖၛᆰࣉࢤೆ AIᇶ൪๭bॖקၬğ
+zj,t=8
+<
+:1,೏টჷ jᄝൈׄ tղ֞ AI-ready ૊ࡪ,
+0,ڎᄵ.(4.1)
+Ⴟ൞đ AIᇶ൪๭ᆇᆞु֥֞൞ğ
+WAI
+t={Xj,t:zj,t= 1}, (4.2)
+ط҂൞෮Ⴕၘઋ९ؓའ֥ѩࠢb
+4.5 AI ᇶ൪๭აჰ൓ᆐ؎൪๭ٳ৖
+ཛଢᄝ bundleᇏ๝ൈЌ਽ AIᆰࢤཨٮሳ؍a raw_*ሳ؍aai_excluded_sources a
+source_health აquality_notes bᆃ၂ഡ࠹х૧ਔoປᆜྟߘतp ğᆇൌթᄝ֥ඔऌ
+ಆ҆ФЌ਽đ֌ଧུൡކ AIᆰࢤྐ಩aଧུᆺିቔູᆐ؎ᆣऌđсྶཁൔٳҪbھഡ
+࠹൞Ӵൌྟᄝ۽ӱҪ૫֥ऎุൌགྷb
+4.6 bundle ğൗࢸଆ྘֥ؓའ߄іղ
+ai_market_context bundleࡼൗؓࢸའቆልູ๤၂ܒࢲđᇀഒЇওğ
+•market_microstructure
+•derivatives_structure
+•cross_exchange_execution
+•onchain_capital_flow
+•tokenomics_supply_pressure
+•macro_regime
+•news_and_events
+•attention_and_builder_activity
+๝ൈđ༢๤ࠎႿϖᆣऌջളӮ coverage_score adata_quality_flag arisk_flags ა
+evidence bၹՎ bundle҂൞࣡෿ JSONđط൞ջႵಪ്ሑ෿֥ؓའb
+13
+
+=== PAGE 14 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ࡹၰᆞൔ߻ᇅູഁ౵ࠇূղ๭ğᇏྏູ ai_market_context bundleđຓຶϖ۱ഁ
+౵ູᆣऌջđຓჸࡆן coverage_score adata_quality_flag arisk_flags ა
+evidence b
+๭ 5 AI bundle ֥ϖᆣऌջۂڭაᇉਈВ੝ܒࢲ
+4.7ଆॶaാᆇڄགა཮ᆞࠏᇅ֥ؓႋܱ༢
+೏ࡼཛଢ൪ູ၂۱ൗࢸଆ྘ളӮఖđᄵૄ۱ଆॶࡎ֥ᆴѩ҂ᆺ൞o؟Ґ၂োඔऌp đ
+ط൞o཮ᆞଖো༢๤ྟാᆇp bі 2ሹࢲਔᆃᇕ႘ഝb
+і 2ଆॶҪაൗࢸଆ྘ാᆇ཮ᆞࠏᇅ
+ଆॶ /ᆣऌջ ᇶေ཮ᆞ֥൧ӆാᆇ ؓ AI֥ᆰࢤၩၬ
+exchange_data ࣇु൬஍ޭطࡎ੻ᆳྛଉ҈a஍
+१ധ؇აႚٚࠪཟಞ AI౵۬ࡎٳэ߄აॖᆳྛ
+൧ӆܒࢲ
+macro_data ࡆࡼૡѯ׮༂؀ູՂଽ҆ྻ൙đ
+ޭ੻ಆ౯ڄགொݺԊࠌಞ AI്љຓളੀ׮ྟ࣢ߌა
+ڄགொݺ్ߐ
+news_data +
+event_calendar_dataᆺुၘؿളޭط۬ࡎ੻ྻ൙౺
+׮აໃটբ࠴߄ಞ AI്љྐ༏Ԋ֥ࠌభުඨ
+྽ა൙ࡱԳ१
+onchain_data ᆺुࢌၞ෮ଽޭط۬ࡎ੻৽ഈ
+ሧЧథ၍აԥСэ߄ಞ AI്љሧЧੀaూੀa
+TVLაԥС࿢৯
+tokenomics_data ޭ੻ࢳ෭a۳܂൤ݓބ٢९ఫЇ
+ሇ၍֥છ࿢ಞ AI്љ۳܂ҧԊ٤طࠌᆺ
+ुླ౰ҧ۬ࡎ
+options_data ޭ੻ႅݣѯ׮ੱa఺໊a
+Gamma ა֞௹ܒࢲჿඏಞ AI്љ๪ྟ܂ླބစള௖
+ᇶ֝ሑ෿
+alternative_data ޭ੻ᇿၩ৯aषؿᆀࠃᄁ؇ა໗
+קлઝԊ֩તэਈಞ AI്љྻ൙ಣ؇აࠎԤഡ
+ീࠃᄁ؇
+technical_indicators /exchange_comparison /ai_market_context ჰ൓ܴҩٳ೛a଴ؓఊa଴ᆰࢤ
+܂ AI൐ႨϜ؟ჷܴҩ࿢෪ູ๤၂
+AI-ready ൗؓࢸའ
+ᇿğіᇏoᇶေ཮ᆞ֥൧ӆാᆇpਙ൞ھі֥৘ંނྏđࡹၰᄝᆞൔஆϱᇏၛุོ۷ࠇᅎਙॺ๬ԛ
+ཁൕb
+14
+
+=== PAGE 15 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+4.8ඔऌ९іቂაಪ്ંٳҪ
+೏Ֆඔऌ९Чุܴҳ֒భཛଢđॖၛࡼఃіܒࢲ৘ࢳູඹো҂๝ಪ്ંؓའbі 3
+߸ሹਔᆃ၂ٳҪb
+і 3ඔऌ९іቂაൗࢸଆ྘ٳҪ
+іቂ սіؓའ ᇶေۿି ᄝൗࢸଆ྘ᇏ֥࢘೤
+catalogі macro_factor_catalog đ
+options_factor_catalog
+ק֩ၬၹሰദٺaൌุ
+ٓຶaটჷეၬथקoൗࢸ৚Ⴕଧུ
+ؓའᆴ֤Фଁ଀p
+historyі tickersđ
+macro_timeseries đ
+onchain_timeseries ֩Ќ਽ປᆜ৥ൎਫ਼ࣥა
+ॖሔිဢЧथקoൗࢸೂޅФӉ
+௹࠺ၫp
+latestі latest_tickers đ
+latest_macro_timeseries
+֩ົ֒޹భॖ؀ॹᅶ थקoൗࢸགྷᄝ൞൉
+હဢp
+context/snapshot
+іexchange_comparison_snapshots đ
+macro_context_snapshots đ
+ai_market_context_snapshotsࣉྛऊކaᇗཿა
+AI-ready ࿢෪थקoൗࢸೂޅФࢳ
+൤ྟӯགྷ۳ AIp
+ᇿğھіٳ֥ো၇ऌ൞ඔऌ९ؓའ֥ეၬ࢘೤٤ط໾৘թԥܒࢲđၹՎ۷ൡކቔູં໓ᇏ֥ЧุҪඪ
+ૼb
+4.9ϱЧ߄ეၬaۀ୑௎၍აӴൌྟఔჿ
+Ӊ௹ඔऌ༢๤֥଴ׄ҂ᄝႿֻ၂ՑϜൗࢸщၲԛটđطᄝႿᄝটჷэ߄aקၬэ
+ބ߄൧ӆܒࢲэު߄ಯົӻეၬ໗קbഡֻ v۱ϱЧ֥ൗࢸщၲܿᄵູ Π(v)
+tđᄵ҂๝
+ൈࡗഈ AI෮ཨ֥ؓٮའॖିડቀğ
+W(v)
+t= Π(v)
+t(Fraw
+t),W(v′)
+t′= Π(v′)
+t′(Fraw
+t′). (4.3)
+೏࿹࣮ᆀޭ੻ v̸=v′෮սі֥ܿᄵҵၳđᄵࡼ߶o൧ӆэਔpაoൗ֥ࢸщၲٚൔэ
+ਔpࠁູ၂ซbაՎ๝ൈđ೏ૄܴ۱ҩؓའڸ׻ջটჷᆣૼჭඔऌ ρj,tđᄵປᆜؓའॖ
+ཿູğ
+˜Oj,t= (xj,t, τj,t, qj,t, gj,t, rj,t, ρj,t), (4.4)
+ఃᇏ ρj,tᇀഒ߭ճğඔऌটሱଧ৚aޅൈሂ౼aࣉೆ AIᇶ൪๭భࣜ৥ਔଧུэߐbᆃ
+၂ჿඏܒӮਔൗࢸଆ྘֥oӴൌྟఔჿp b
+15
+
+=== PAGE 16 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ခൈࡗᇠᅚൕ bundleܿᄵϱЧ్ߐaটჷᄹ೷aᇉਈᚐᆴэ߄აۀ୑௎၍൙ࡱđ
+ѩѓ߭࠺ुொҵॖିԛགྷ໊֥ᇂb
+๭ 6ൗࢸଆ྘ϱЧ߄aۀ୑௎၍ა߭ुொҵ॥ᇅॿࡏ
+5ᆃ۱ཛଢؓ AIٳ༅൧ӆ֥ቔႨ
+5.1ঔն AI֥ॖܴҩ൧ӆགྷൌ
+೏၂۱ AI༢๤ᆺु۬ࡎ֞aӮࢌਈބഒਈྍ໔đ෱ु֥֞ᆺ൞൧ӆі૫֥๧႕b
+֒భཛଢ๙؟ݖჷ߄ܒࢲҐࠢđ൐ AI๝ൈु۬ࡎ֞aᆳྛaႚࠪa۳܂aڄགொݺა
+ྻ൙đՖطϜ AIՖo۬ࡎଆൔ്љఖpิശູo൧ӆሑ෿ࢳ൤ఖp b
+5.2ܴ֮ࢆҩ༎ൿ֝ᇁ֥ເࢲં
+ᄝЊൻೆ่ࡱ༯đ၂۬ࡎ؍ഈശ࠻ॖିսі౴൝࿼࿃đ္ॖିսі short squeeze a
+௹ಃ఺໊֥࣍ڸФ׮๷ࣉđࣇࣇࠇ൞ੀ׮ྟࠞҵ࣢ߌ༯؋֥ᄠঘശb֒భཛଢ๙ݖϜ
+ሧٮࣁੱaЕҝaໃ௜ҝਈa Gammaa஍१ധބ؇ॴ෮৖೛ؓ֩؇འବೆൗࢸଆ྘đ࿢
+෪ਔo؟ᇕࠏᇅФ༂؀ູֆ၂ྐݼpۀ֥ੱb
+5.3Ϝo֒భൗࢸpቓӮ֮࿼Ӿॖؓ؀འ
+؟ޓඔऌҝ९ൡކቓ৖ཌ࿹࣮đಏ҂ൡކቓᄝཌ AI؀౼đၹູ෱ૌᆺܱྏ৥ൎઋ
+९đ҂ܱྏሑ෿ؓའb֒భཛଢ๙ݖ latest_* ა bundleࠏᇅđϜo֒భൗࢸ൞൉હ
+ဢpቓӮඔऌ९ҪބઆࠠҪ֥၂܄֩૶đՖ֮ࢆط AI؀౼گᄖބ؇ሑ෿ᇗෘӮЧb
+5.4ಞ AIु֞ሱ֥࠭ᆣऌшࢸ
+༢๤҂ᆺ൞ิ܂ stateđ ߎิ܂ state of observability b ๙ݖquality_flag ais_ready_for_ai a
+ai_excluded_sources აrisk_flags đཛଢ൐༯Ⴓ AIିܔु֞oሱ࠭ु֞ൗ֥ࢸᇉ
+16
+
+=== PAGE 17 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ਈp đط҂൞հ༂ֹϜ෮Ⴕൻೆؓࡎ֩րb
+5.5ᆦӻࣩᆚྟࢳ൤aऋध஑؎აແ҆ڄགభဒᆐ؎
+֒భཛଢ൐ AIᄝ૫ؓ๝၂۬ࡎਫ਼ࣥൈđିܔб؟ࢠᇕࣩᆚྟࠏᇅࢳ൤đط҂൞Ф
+௧࿊ᄴֆ၂ਫ਼ࣥྻ൙bࣉ၂ֹ҄đཛଢᇏ֥ᇉਈВ੝ؓའູऋध஑ܿ؎ᄵิ܂ਔ่ࡱ
+ሑ෿Ġ๝ൈđ funding୥౷a basisၳӈaЕҝࠒؐaॴ෮৖೛؇a௹ಃ఺໊a৽ഈնح
+ሇᅬაࢳ۳܂෭ؓ֩འđߎ൐ AIିܔϜແ҆ڄག്љՖު۬ࡎဒّႋభ၍֞ሑ෿భဒ
+ᆐ؎b
+5.6ิۚ AIൻԛ֥ॖബ࠹ྟაܒࠏॖႨྟ
+ᄝᆇൌ࣢ߌܒࠏᇏđ҂ॖബ֥࠹ AIࢲંޓ଴ࣉೆ࿹࣮aڄ॥ބᆳྛੀӱbཛଢ๙
+ݖЌ਽ᇶ൪๭ބᆐ؎൪๭aЌ਽ evidence აrisk_flags aЌ਽৥ൎҪა latestҪᆭ
+֥ࡗ႘ഝܱ༢đູ AIࢲં֥ሔිaބނگബ࠹ิ܂ਔࠎԤ่ࡱb
+5.7ࡹ৫ॴଆ྘aॴ๶ؒaॴٳ؍ࢨ༅܋֥๝ე࿽
+ܒࠏଽ҆ᆇᆞگ֥ᄖྟສສটሱ؟ದa؟ଆ྘a؍ࢨ؟ླྀቔb֒భཛଢ๙ݖ bundle
+ა context/snapshot іࡹ৫ਔ܋ཚ֥൧ӆეၬҪđ൐҂๝๶ؒษં࣍ࢤ۷֥o໡ૌ൞
+ڎ๝ၩ֒భ֥൧ӆሑ෿ބᆣऌшࢸp đ٤طo໡ૌ൞ڎ൐Ⴈਔ҂๝१֥ࣥඔऌ१տp b
+6ೂޅൌᆣ௟ܙoިൗࢸଆ྘pࡎ֥ᆴ
+6.1ࠎЧ࿹࣮ഡ࠹
+ຶಡިൗࢸଆ྘ཌྷؓႿЊൗࢸଆ྘֥ᄹਈࡎᆴđקၬਆোྐ༏ࠢğ
+Ithin
+t={price,volume ,basic indicators ,simple news }, (6.1)
+Ithick
+t={Ithin
+t,microstructure ,derivatives ,macro ,on-chain ,tokenomics ,options ,alternative ,quality metadata }.
+(6.2)
+ᄝཌྷ๝ყҩఖো F༯đбࢠ
+ˆythin
+t+1=f(Ithin
+t), ˆythick
+t+1=f(Ithick
+t). (6.3)
+֌Ч໓఼טđ௟ؓࡎའ҂ႋᆺཋႿ൬ၭყҩ෥ാđߎႋЇও regimeٳো໗קྟaࢳ൤
+৵࿃ྟaᆣऌ݂ၹੱa໭ᆦӪ؎࿽ੱაӧࣸൻೆૹ؇ۋb
+17
+
+=== PAGE 18 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+6.2૫ཟൗࢸଆ྘ᇉਈ݂֥߭ॿࡏ
+ഡQi,t+hіൕሧӁ iᄝൈׄ tഈႮקܥ AIٳ༅ఖӁളٳ֥༅ᇉਈᆷѓđᄵॖܙ
+࠹ğ
+Qi,t+h=αi+λt+β1WMI i,t+β2Bi,t+β3Ui,t+β4Hi,t+ Γ⊤Zi,t+εi,t+h, (6.4)
+ఃᇏ αiູሧӁקܥིႋđ λtູൈקܥࡗིႋđ Zi,tູ॥ᇅэਈb
+೏ေбިࢠൗࢸଆ྘ᄝۚ࿢൧ӆᇏ֥ш࠽ቔႨđॖࣉ၂҄קၬğ
+∆Qi,t+h=Qthick
+i,t+h−Qthin
+i,t+h, (6.5)
+ѩ࠹ܙğ
+∆Qi,t+h=αi+λt+θ1WMI i,t+θ2Stress t+θ3WMI i,t×Stress t+ui,t+h. (6.6)
+ቐҧູ BtaUtaHtࠣ WMI tܒ֥Ӯđᇏູ҆קܥ AIٳ༅ఖა॥ᇅэਈކࠢ Zi,tđ
+Ⴗҧູ Qi,t+haEARaUCRaEVݔࢲ֩эਈđѩѓԛۚ࿢൧ӆሑ෿޺ࢌਫ਼ࣥb
+๭ 7ൗࢸଆ྘ᇉਈᆷඔა AIٳ༅ᇉਈ࠹֥ਈ്љॿࡏ
+6.3൙ࡱ࿹࣮ğଆॶᇏ؎აটჷࠩࢆ
+֒భཛଢ֥၂׿۱หႪ൝ᄝႿđఃᄎྛರᆽaᇉਈѓ࠺აটჷࠩሑ෿൐࿹࣮ᆀॖ
+ຶಡoൗࢸଆ྘൳෥൙ࡱpषᅚሙൌဒ࿹࣮b೏ଖ࡯ܱটჷᄝ൙ࡱൈׄ T0ؿ࣍ڸളᇏ
+؎a࿸ᇗӧࠇࣸФ is_ready_for_ai ัԢđᄵॖ࠹ܙğ
+Qi,τ=αi+λτ+X
+k̸=−1δkD(k)
+i,τ+ϵi,τ, (6.7)
+ఃᇏ D(k)
+i,τູཌྷؓ൙ࡱൈ֥ׄ lead/lag ᆷൕэਈb
+18
+
+=== PAGE 19 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ഈ૫ϰᅚൕটჷࡲूࠇ؇ is_ready_for_ai ሑ෿э߄đ༯૫ϰᅚൕࢳ൤৵࿃ྟa
+ᆣऌԊ๬ੱބ໭ᆦӪ؎࿽ੱᄝ൙ࡱԳ१ଽ׮֥෿ཙႋb
+๭ 8ଆॶᇏ؎აটჷ֥ࠩࢆ൙ࡱ࿹࣮ഡ࠹๭
+6.4ࢳ൤ᇉਈ֥๤࠹௟ࡎุ༢
+೏࿹࣮ؓའ൞ AI֥൧ӆٳ༅ି৯đ٤طֆՂඔᆴყҩđᄵླေህ૊ࢳ֥൤ᇉਈᆷ
+ѓbקၬᆣऌ݂ၹੱč EARĎ ğ
+EAR t=#{ФૼಒϾ֞ק bundle/evidence ֥஑؎ }
+#{ሹ஑؎ }, (6.8)
+໭ᆦӪ؎࿽ੱč UCRĎູğ
+UCR t= 1−EAR t, (6.9)
+ࢳ൤ѯ׮ੱč EVĎॖקၬູğ
+EV t=d(ϕt, ϕt−1)
+1 +d(Wt,Wt−1), (6.10)
+ఃᇏ d(·,·)ູଖᇕए৖؇ਈb
+6.5؟ଢѓ௟ࡎა Paretoభခ
+೏࠿࿃ခႨֆ၂ყҩ෥ാቔູൗࢸଆ྘Ⴊਜ֥஑؎ѓሙđᄵಸၞܙ֮ཛଢቋ࡯ܱ
+֥ᇅࡎ؇ᆴbކ۷৘֥ቓم൞Ϝൗࢸଆ྘௟ܙ൪ູ؟ଢѓႪ߄໙ีđקၬğ
+Jt= 
+Predictive Accuracy ,Explanation Stability ,Calibration ,Auditability
+. (6.11)
+ިൗࢸଆ྘֥Ⴊ൝ໃсሹุགྷູֆ၂ົ؇ቋႪđ֌ॖିุགྷູ۷Ⴊ֥ Paretoభခđࠧ
+ᄝ҂ཁᇷ།വყҩіགྷ֥๝ൈđնږิശࢳ൤໗קྟaᇂྐ཮ሙაॖബ࠹ྟb
+19
+
+=== PAGE 20 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+і 4ൗࢸଆ྘௟ܙᆷѓ؟֥ଢѓุ༢
+ົ؇ սіᆷѓ ๤ݣ࠹ၬ ა֒భཛଢ֥ؓႋؓའ
+ყҩົٚ؇ ཟ෥ാaٳ໊ඔ
+෥ാaແ҆൙ࡱ്
+љੱൗࢸଆ྘൞ڎิശඔ
+ᆴ஑؟؎ჷൻೆa࠯ඌᆷѓaഈ
+༯໓ऊކ
+ࢳ൤ົ؇ EVaࠏᇅѓద໗
+קྟaࣩᆚྟࢳ൤
+ۂڭੱൗࢸଆ྘൞ڎิശࢳ
+൤৵࿃ྟbundleaevidence a
+risk_flags
+཮ሙົ؇ ECPaᇂྐொҵa
+stale sensitivityൗࢸଆ྘൞ڎᆦӻႵ
+ш֥ࢸᇂྐіղquality_flag a
+is_ready_for_ai
+ബ࠹ົ؇ EARaUCRaটჷ
+ිჷປᆜੱൗࢸଆ྘൞ڎᆦӻሔ
+ිაނگraw/diagnostic ൪๭a৥
+ൎіa latestі
+ᇿğіᇏ҆ٳᆷѓѩ֒٤భҝ९ᇏ࠻֥Ӯሳ؍đط൞ࠎႿགྷႵഡ࠹ॖᆰܒࢤᄯ֥࿹࣮ؓའbᆞൔ๧۠
+ൈࡹၰაڸ੣ᇏܒ֥ᄯ܄ൔ஥ส൐Ⴈb
+6.6૎หवઌაս৘൧ӆٟᆇ
+ႮႿᆇൌ൧ӆᇏ֥টჷᇏ؊ࠞބ؎ሑ෿ໃсቀܔ௔َđໃট࿹ߎ࣮ॖၛႄೆ૎ห
+वઌࠇս৘൧ӆٟᆇb਷మᄝሑ෿ડቀğ
+St= 
+Sliq
+t, Scrowd
+t, Smacro
+t, Ssupply
+t, Snarrative
+t
+, (6.12)
+ѩؓ҂๝টჷ֥ದູഡᇂൈᇌaᄮലaಌാੱބ૊॥ܿᄵbᆃဢॖٳ৖གྷൌඔऌᇏ଴
+ၛֆ׿്љ۱֥ࠫົ؇ğሑ෿گᄖ؇aটჷၳ҄ྟa૊॥఼؇ა AIٳ༅ఖЧദ֥ਗ਼Ͽ
+ྟb
+6.7ؿі്ࠩљေ౰
+೏ေϜЧ໓ᆇᆞ๷ࣉູ௹़ࠩൌᆣં໓đᇀഒླေડቀၛ༯ေ౰ğ
+1.ؓ෮Ⴕൗࢸଆ྘ᆷѓ۳ԛॖᇗܒگᄯ֥ս઒აࢲײဢЧĠ
+2.ࡼ bundleܒᄯઆࠠϱЧ߄đх૧ު࿃༢๤םսႄఏ߭ुொҵĠ
+3.ؓ҂๝൧ӆٳ؍ࢨљБݔࢲۡđх૧Ϝ௜໗؍ࢨ௜नڿ೿հ༂ຓ๷֞࿢৯؍ࢨĠ
+4.ࡼটჷᇏ؎aඔऌӧࣸaᇉਈࠩࢆა൧ӆЧദ֥खਛѯ׮ቓౢ༉౵ٳĠ
+5.ᄝ಩ޅടࠣ൬ၭٚࠇཟყҩ֥ঔᅚ࿹࣮ᇏđ࿸۬౵ٳoڿ೿ਔ AI֥ൗࢸ৘ࢳpა
+oڿ೿ਔॖࢌၞࡎ࠶ࣜᆴp b
+20
+
+=== PAGE 21 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+7აׅࣜ໓ང߅֥ؓ
+7.1ა F ama–F rench aCochrane ࠏބఖ࿐༝ሧӁܱ֥ࡎק༢
+F ama–F rench ॿࡏ೼ӉႨഒਈ֮௔ၹሰሹڄࢲགҀӊܒࢲđط Cochrane ֥์གྷੱ
+ॿࡏ఼ט่ࡱྐ༏֥ࠢэ߄ [5,3]b೏ඪ F ama–F rench ࿹֥࣮൞oק۳ൗࢸᆭުଧུၹ
+ሰࢳ൤൬ၭp đପહЧ໓ა֒భཛଢ෮࿹֥࣮൞o AI෮ु֥֞ൗࢸႋೂޅФܒᄯđҌି
+ಞᆃུၹሰࢳ൤Ⴕၩၬp b
+ཌྷؓႿࠏఖ࿐༝ሧӁࡎק໓ངđЧ໓ѩ҂Ϝш܊࠽ང৘ࢳູoᄜࡆೆ၂ቆหᆘpࠇ
+oߐ၂۷۱఼ଆ྘p đط൞Ϝః৘ࢳູoೂޅᇍ৘၂ۚ۱ົaၳ҄aॴᇅ؇টჷ֥ྐ༏ൗ
+ࢸp b ၹՎđ ֒భཛଢ࣍ࢤ۷ market ontology engineering đ ط҂ࣇ൞ feature engineering b
+7.2აҩਈ༂ҵaਗ਼Ͽ॥ᇅބ๤࠹࿐༝৘ંࣉ֥၂҄߅ؓ
+ҩਈ༂ҵ໓ངܱᇿܴҩэਈ൳ᄮല໪ಙބ࠹ܙؓުყҩ֥႕ཙ [7,2]Ġਗ਼Ͽ॥ᇅ໓
+ངܱᇿथҦᆀᄝ҂ಒקଆ྘༯֥Ќ൯ቋႪ߄ [9]Ġ๤࠹࿐༝৘ંაіൕ࿐༝໓ངܱᇿі
+ൕᇉਈა༯Ⴓ಩ༀྟିܱ֥༢bЧ໓֥ш࠽໊ᇂᄝႿğࡼᆃུනམ๷؟֞ࣉჷaၳ҄a
+ٳҪބ૊॥࣢ߌᇏđ࿹࣮o၂۱൧ӆൗࢸФ؟ᇕ҂๝ٚൔ҂ປᆜֹܴҩൈđೂޅಯಖ
+ູ AIܒᄯॖौ֥ྐ༏і૫p b
+7.3ა data-centric AI ܱ֥༢
+data-centric AI ఼ט๙ڿݖ೿ඔऌᇉਈaѓద၂ᇁྟ؇ۂڭބิശଆ྘іགྷbЧ໓
+ᄵіૼđᄝࣁವ൧ӆᇏđᆇᆞླေФᇍ৘֥҂൞࣡෿ඔऌࠢđط൞၂۱ӻ࿃эܴ֥߄
+ҩൗࢸbཛଢᇏ֥ latest_* aquality_flag ais_ready_for_ai abundleބϱЧᇍ৘đ
+ᆞ൞ data-centric AI ᄝ׮෿ࣁವ࣢ߌᇏ֥ᇅ߄؇࿼ഥb
+8अཋྟaଽളྟაຓ҆Ⴕིྟ
+8.1ଽളྟა്љڄག
+ࠧ൐ໃটຶಡھൗࢸଆ྘षᅚൌᆣ௟ܙđ္߶૫ਢ೏ۄଽളྟ໙ีğটჷ࿊ᄴଽ
+ളྟaّཟၹݔaၳ҄Ґဢொҵၛࠣ҆ඇሑ෿၇ঠbႭః൞ᄝۚѯ؍ࢨ׮đൗࢸଆ྘۷
+oިpა൧ӆ۷oၳӈpॖି๝ൈؿളđၹՎсྶ࿸෕ԩ৘ൔ (3.20 )෮ࢣൕު֥૊ਫ਼ࣥb
+21
+
+=== PAGE 22 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+8.2ٓܿྟଁีაൌᆣଁี֥౵ٳ
+Ч໓ႋФ৘ࢳູ၂௉৘ંაܒࡏ࿹࣮ં໓đط҂൞၂௉ၘࣜປӮؿіࠩဢЧܒᄯ
+֥Ҧ੻ં໓b෱ؓႿֻ၂োଁีiio૫ཟ AI֥൧ӆඔऌ༢๤ႋऎС൉હྟᇉpii
+۳ԛਔ఼ٓܿྟσ২Ġ֌ؓႿؽֻোଁีiioᆃུഡ࣮ࣨ࠹ᄝ؟նӱ؇ഈڿ೿ਔ AI
+஑؎ି৯piiಯླໃটൌᆣ۽ቔ߭ճb
+8.3ຓ҆Ⴕིྟაଆ྘ –ൗ޺ࢌࢸொҵ
+ࡆૡ൧ӆऎႵ 24/7ࢌၞaॴࢌၞ෮ٳਚa৽ഈ๩ૼ֌ࢳ൤ᄮലնaսл۳܂ᇅ؇
+؟ဢ֩หᆘđᆃ൐Ч໓֥৘ંބཛଢഡ࠹ᄝھӆࣟᇏหљሱಖb೏ࡼః௜၍ܢ֞ௐaᅏ
+ಊࠇഅ௖൧ӆđᄵᆣऌջᇗေྟaൈܒࢲࡗაᇉਈ૊׻ࡪॖି҂๝b
+Վຓđߎթᄝ၂۷۱༥ڄ֥གğࠧьൗࢸଆ྘ᇉਈۚࢠđ AIٳ༅ఖ္ॖି༢๤ྟ
+༂؀ଖུൗؓࢸའđՖطྙӮoࢨؽ༂ҵp bߐ࿽ᆭđൗࢸଆ྘ᇉਈ֥ิശѩ҂ିูս
+ؓ༯Ⴓ AIྛູ׿֥৫ബҰb
+9ࢲં
+Ч໓ຶಡ၂۱Ф؟ඔ AIࢌၞྻ൙ޭ੻֥໙ีᅚषğᄝᆇൌࣁವ൧ӆᇏđ AIാϧ
+ສສ൮༵҂൞ଆ྘Ҫാϧđط൞ൗࢸଆ྘Ҫാϧb֒భཛଢ׿֥หࡎᆴđ҂ᄝႿ෱ၘ
+ࣜᆣૼଖ۱Ҧ੻сಖሉఫđطᄝႿ෱Ϝo૫ཟ AI֥൧ӆൗࢸଆ྘pՖ၂۱१ݼ๷ࣉູ
+၂สॖൌགྷaॖബ࠹aॖঔᅚٳ֥Ҫ༢๤b
+ሸކཛଢ໓֖აս઒ܒࢲđॖၛ֤ԛೂ༯ࢲંbֻ၂đ֒భ༢๤ၘࣜྙӮ၂ۂڭ۱
+ັܒࢲܴaစള௖ႚࠪaܴޡМࣟa৽ഈሧЧੀa۳܂࿢৯a௹ಃܒࢲaྍ໔൙ࡱაู
+սඔऌ֥ۚົܴҩุ༢bؽֻđཛଢ๙ݖ latest_* ॹᅶaᇉਈ૊॥aᇶ൪๭აᆐ؎൪
+๭ٳ৖a bundleऊ؇טބކइᆔđϜo֒భ൧ӆൗࢸpщၲູ AIॖᆰࢤཨ֥ٮሑ෿ؓ
+འbֻ೘đཛଢؓ AI൧ӆٳ༅֥ቋն܊ངѩ҂൞ۡු AIૼ฿߶ᅨߎ൞י߶đط൞༵
+ಞ AIु֞၂࣍ࢤ۷۱ᆇൌ൧ӆaѩ౏ᆩ֡ሱ࠭ु֞ൗࢸᇉਈш֥ࢸ൧ӆགྷൌb
+ၹՎđ೏Ⴈ၂ओۀ߅ওЧ໓֥࿹ࢲ࣮ંđପࣼ൞ğ ؓႿӉ௹ॖႨ֥ AI൧ӆٳ༅
+༢๤ط࿽đቋυ݌aቋ଴گᇅaቋಸၞྙӮуৈ֥đ҂൞ promptđ္҂൞ֆ၂ଆ྘đ
+ط൞໗֥קඔऌൗࢸଆ྘b
+Aނྏݼژі
+22
+
+=== PAGE 23 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+ݣݼژ ၬ
+St మᄝᆇൌ൧ӆሑ෿
+Xj,t ֻj۱টჷؓ൧ӆሑ෿ܴ֥ҩᆴ
+Xobs
+j,t ջൈᇌބᄮല֥ൌ࠽ॖܴҩᆴ
+ℓj,t টჷࠩൈᇌ
+νj,t ܴҩᄮലקࠇၬ༂ҵ
+Wt ཛଢളӮ֥ൗࢸଆ྘ؓའ
+WAI
+t ࣉೆ AIᇶ൪๭֥ൗؓࢸའ
+Dt ᆐ؎აബڣ࠹ᇹؓའކࠢ
+Bt ൗࢸଆ྘ॺ؇ᆷѓ
+Ut ൗࢸଆ྘໗קྟᆷѓ
+Ht ൗࢸଆ྘Ӵൌྟᆷѓ
+WMI t ൗࢸଆ྘ᇉਈᆷඔ
+Πt Ֆჰ൓ྐ༏ੲሰ֞ AIॖ࡮ྐ༏ੲሰ֥щၲෘሰ
+Φt AIॖളӮࠏ֥ᇅࢳ൤ކࠢ
+Qi,t+h ૫ཟ AIٳ༅಩ༀ֥ᇉਈᆷѓ
+EAR t ᆣऌ݂ၹੱ
+UCR t ໭ᆦӪ؎࿽ੱ
+EV t ࢳ൤ѯ׮ੱ
+ECP t ᇂྐ཮ሙӲـ
+MIG(m)
+k,t ֻk่ᆣऌջᄝ಩ༀ m༯֥ш࠽ྐ༏ᄹၭ
+Bཛଢս઒൙ൌᅋေ
+ࠎႿཛଢ໓֖აս઒ܒࢲđ֒భ༢๤ᇀഒऎႵೂ༯ॖဒᆣ൙ൌğ
+1.ሱ׮ఓ׮ӈሁඔऌଆॶ 8۱đઆࠠऊކଆॶ 3۱Ġ
+2. SQLiteႋႨі 42ᅦĠ
+3.࠯ඌᆷѓൻԛਙ 181۱đ൧ӆഈ༯໓ᄹ఼ਙ 21۱đॴ෮ᆳྛሑ෿ਙ 90۱Ġ
+4.ܴޡၹሰ 15۱a৽ഈၹሰ 17۱a tokenomics ၹሰ 12۱a௹ಃၹሰ 55۱aูս
+ၹሰ 28۱Ġ
+5.ଏಪࢌၞؓЇও BTC/USDT aETH/USDT aSOL/USDT aSUI/USDT Ġ
+6.ଏಪࢌၞ෮Їও binanceaokxabybitĠ
+7.ଏಪ Kཌᇛ௹Їও 1ma5ma15ma1ha4ha1db
+23
+
+=== PAGE 24 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+C૫ཟؿіࠩ࿹֥࣮ࣜဒ࿹࣮ླྀၰ
+C.1ቋཬൌဒֆჭ
+၂۱ቋཬൌဒֆჭॖקၬູğ၂۱ሧӁࢌࠇၞؓa၂۱ൈࡗԳ१a၂קܥ۱ AIٳ
+༅ఖa၂ᇕྐ༏ൗࢸ஥ᇂބ၂ቆ๤၂௟ܙᆷѓb
+C.2๷ࡩбࢠቆ
+1.Њൗࢸଆ྘ğ۬ࡎaӮࢌਈaࠎԤ࠯ඌᆷѓĠ
+2.ᇏ֩ൗࢸଆ྘ğᄝЊൗࢸଆ྘ഈࡆೆັބܒࢲܴစള௖ႚࠪĠ
+3.ިൗࢸଆ྘ğࡆೆܴޡa৽ഈa tokenomics a௹ಃaูսඔऌĠ
+4.ިൗࢸଆ྘ࡆ૊॥ğࣉ၂҄ఓႨ quality_flag ބis_ready_for_ai b
+C.3ቋ֮Бۡѓሙ
+1.Бۡ෮Ⴕྐ༏ࠢ஥ᇂ༯֥ဢЧଽაဢЧຓ౵ٳĠ
+2.Бۡଆॶ҂ॖႨࠇᇉਈࠩࢆൈ֥ਗ਼ϿྟݔࢲĠ
+3.Бۡ҂๝൧ӆ࿢৯֥؍ࢨၳᇉྟݔࢲĠ
+4.Бۡൗࢸଆ྘ϱЧݼა bundleܒᄯܿᄵϱЧݼĠ
+5.ૼಒ౵ٳoิശਔٳ༅ᇉਈpބoิശਔॖࢌၞࡎ࠶ࣜᆴp b
+ҕॉ໓ང
+[1] Asness C S, Moskowitz T J, Pedersen L H. V alue and Momentum Everywhere[J].
+Journal of Finance, 2013, 68(3): 929–985.
+[2] Carroll R J, Ruppert D, Stefanski L A, Crainiceanu C M. Measurement Error in
+Nonlinear Models: A Modern Perspective[M]. 2nd ed. Boca Raton: Chapman and
+Hall/CRC, 2006.
+[3] Cochrane J H. Asset Pricing[M]. Revised Edition. Princeton: Princeton University
+Press, 2005.
+24
+
+=== PAGE 25 ===
+ൗࢸଆ྘Ⴊ༵ა AI൧ӆٳ༅
+[4] F ama E F, F rench K R. The Cross-Section of Expected Stock Returns[J]. Journal
+of Finance, 1992, 47(2): 427–465.
+[5] F ama E F, F rench K R. Common Risk F actors in the Returns on Stocks and
+Bonds[J]. Journal of Financial Economics, 1993, 33(1): 3–56.
+[6] F ama E F, F rench K R. A Five-F actor Asset Pricing Model[J]. Journal of Financial
+Economics, 2015, 116(1): 1–22.
+[7] F uller W A. Measurement Error Models[M]. New Y ork: Wiley , 1987.
+[8] Gu S, Kelly B, Xiu D. Empirical Asset Pricing via Machine Learning[J]. Review of
+Financial Studies, 2020, 33(5): 2223–2273.
+[9] Hansen L P , Sargent T J. Robustness[M]. Princeton: Princeton University Press,
+2008.
+[10] Harvey C R, Liu Y, Zhu H. …and the Cross-Section of Expected Returns[J]. Review
+of Financial Studies, 2016, 29(1): 5–68.
+[11] Jegadeesh N, Titman S. Returns to Buying Winners and Selling Losers: Implications
+for Stock Market Eﬀiciency[J]. Journal of Finance, 1993, 48(1): 65–91.
+[12] Kelly B T, Pruitt S, Su Y. Characteristics Are Covariances: A Unified Model of
+Risk and Return[J]. Journal of Financial Economics, 2019, 134(3): 501–524.
+[13] Liu Y, T syvinski A, W u X. Common Risk F actors in Cryptocurrency[J]. Journal of
+Finance, 2022, 77(2): 1133–1177.
+[14] Makarov I, Schoar A. T rading and Arbitrage in Cryptocurrency Markets[J]. Journal
+of Financial Economics, 2020, 135(2): 293–319.
+[15] Nagel S. Machine Learning in Asset Pricing[M]. Princeton: Princeton University
+Press, 2021.
+[16] Shmueli G. T o Explain or to Predict?[J]. Statistical Science, 2010, 25(3): 289–310.
+25
+
