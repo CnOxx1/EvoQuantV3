@@ -1,15 +1,12 @@
-# Theory-first SCI manuscript
+# JF/RFS-oriented manuscript
 
-**Theory first, project second.**
-
-- Theory: RCA-WM / ACWMI, absorbing World-Model-First objects (epistemic observations, lag bounds, filters, ECP/MIG, DAG, Φ, EAR/UCR/EV)
-- Proof system: EvoQuant (43 domains / 13 bands / 39 logic modules / baseline WMI)
-- Source epistemology: `pdf/original/`
-- EvoQuant is **not** the source of the theory
-
-## Reproduce
+**Object:** information-set compilation (not alpha discovery).  
+**Lab:** EvoQuant calculators + readiness/WMI code.  
+**Data:** real Yahoo daily crypto returns with chronological IS/OOS freeze.
 
 ```bash
-PYTHONPATH=. python3 pdf/sci/run_paper_experiments.py
+PYTHONPATH=. python3 pdf/sci/run_jf_experiments.py
 PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
 ```
+
+Honest finding in current sample: thick ungated beats IS-frozen ACWMI on OOS CE; thin worlds and exchange-band dropout hurt; availability shocks identify WMI/ACWMI drops.

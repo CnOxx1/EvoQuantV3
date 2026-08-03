@@ -1,41 +1,58 @@
-# Experiment outputs (project-grounded)
+# JF/RFS-oriented experiment results
 
-- Python files: **784**, LOC ≈ **134039**
-- Data domains: **43**, logic modules: **39**, audit bands: **13**
-- Panel: **180** days × **10** assets
+- Real returns: **2024-08-24 → 2026-08-03**, 10 assets, 7100 asset-days
+- IS/OOS cut: **2025-08-14** (thresholds frozen on IS only)
+- Frozen params: `{'ac_thr': 0.55, 'c_thr': 0.25, 'is_ce': -0.35889939395545356, 'is_abstain': 0.4546478873239437, 'is_sharpe': -0.13111572641996067, 'casc_only_thr': 0.7, 'wmi_thr': 0.2}`
 
-## Regime summary
+## OOS economic value
 
-| regime   |    N |   WMI_mean |   ACWMI_mean |   abstain_wmi |   abstain_ac |   unsafe_wmi |   unsafe_ac |   cascade_p |   C_mean |   S_mean |
-|:---------|-----:|-----------:|-------------:|--------------:|-------------:|-------------:|------------:|------------:|---------:|---------:|
-| crisis   | 1000 |     0.5041 |       0.5459 |        0.19   |       1      |         0.81 |           0 |      0.8591 |   0.8816 |   0.0745 |
-| range    |  430 |     0.6851 |       0.4697 |        0.0465 |       0.0465 |         0    |           0 |      0.2705 |   0.4419 |   0.0547 |
-| trend    |  370 |     0.681  |       0.4254 |        0.0541 |       0.2703 |         0    |           0 |      0.3662 |   0.4751 |   0.0604 |
+| policy              |   ann_return |   ann_vol |   Sharpe |      CE |   max_DD |   abstain_rate |   N_days |
+|:--------------------|-------------:|----------:|---------:|--------:|---------:|---------------:|---------:|
+| Always long         |      -0.7963 |    0.6299 |   -1.264 | -1.1984 |  -0.6758 |          0     |      355 |
+| Momentum always     |      -0.3918 |    0.5228 |   -0.749 | -0.6667 |  -0.5504 |          0     |      355 |
+| Thick ungated       |       0.7963 |    0.6299 |    1.264 |  0.4014 |  -0.2792 |          0     |      355 |
+| Simple outage rule  |       0.5436 |    0.6192 |    0.878 |  0.1623 |  -0.3427 |          0.085 |      355 |
+| Simple cascade rule |       0.2527 |    0.119  |    2.123 |  0.2389 |  -0.0452 |          0.915 |      355 |
+| WMI threshold (0.2) |       0.7963 |    0.6299 |    1.264 |  0.4014 |  -0.2792 |          0     |      355 |
+| ACWMI (IS-frozen)   |       0.3256 |    0.5621 |    0.579 |  0.011  |  -0.3616 |          0.217 |      355 |
 
-## Detection metrics (planted events)
+## Leave-one-band-out
 
-| task              |   accuracy |   precision |   recall |     f1 |   support_pos |
-|:------------------|-----------:|------------:|---------:|-------:|--------------:|
-| crisis_detection  |     0.7161 |      0.6664 |   0.979  | 0.793  |          1000 |
-| cascade_detection |     0.8944 |      0.81   |   1      | 0.895  |           810 |
-| regime_match      |     0.7156 |      0.7156 |   0.7156 | 0.7156 |          1800 |
+| band_dropped   |   Sharpe |      CE |   abstain_rate |     dCE |
+|:---------------|---------:|--------:|---------------:|--------:|
+| (none)         |    0.579 |  0.011  |          0.217 |  0      |
+| exchange       |    0.354 | -0.0739 |          0.347 | -0.0849 |
+| news           |    0.401 | -0.0631 |          0.284 | -0.0741 |
+| event_calendar |    0.493 | -0.0186 |          0.273 | -0.0297 |
+| onchain        |    0.401 | -0.0631 |          0.284 | -0.0741 |
+| tokenomics     |    0.493 | -0.0186 |          0.273 | -0.0297 |
+| options        |    0.506 | -0.0118 |          0.269 | -0.0228 |
+| alternative    |    0.603 |  0.028  |          0.234 |  0.017  |
+| macro          |    0.52  | -0.0104 |          0.254 | -0.0214 |
 
-## Outage contrasts
+## Thin vs thick
 
-| regime   |   outage |   N |    WMI |   ACWMI |   cascade_p |   detect_cascade |   abstain_ac |   unsafe_ac |   unsafe_wmi |
-|:---------|---------:|----:|-------:|--------:|------------:|-----------------:|-------------:|------------:|-------------:|
-| crisis   |        0 | 810 | 0.5995 |  0.5789 |      0.9275 |                1 |       1      |           0 |            1 |
-| crisis   |        1 | 190 | 0.0975 |  0.4055 |      0.5675 |                1 |       1      |           0 |            0 |
-| range    |        0 | 410 | 0.7104 |  0.4764 |      0.2738 |                0 |       0      |           0 |            0 |
-| range    |        1 |  20 | 0.166  |  0.3334 |      0.2038 |                0 |       1      |           0 |            0 |
-| trend    |        0 | 350 | 0.7104 |  0.4294 |      0.3738 |                0 |       0.2286 |           0 |            0 |
-| trend    |        1 |  20 | 0.166  |  0.3555 |      0.2338 |                0 |       1      |           0 |            0 |
+| world                |   mean_B |   mean_H |   mean_ACWMI |   Sharpe |      CE |   abstain_rate |
+|:---------------------|---------:|---------:|-------------:|---------:|--------:|---------------:|
+| Thin (exchange only) |    0.269 |    0.877 |        0.514 |   -0.24  | -0.1918 |          0.721 |
+| Thick ungated        |    0.914 |    0.364 |        0.502 |    1.264 |  0.4014 |          0     |
+| Thick gated (AC)     |    0.914 |    0.798 |        0.607 |    0.579 |  0.011  |          0.217 |
 
-## Explanation-quality suite (EAR/UCR/EV/ECP)
+## Conditional signal value (OOS)
 
-| policy            |    N |   EAR |   UCR |    EV |   ECP_rate |
-|:------------------|-----:|------:|------:|------:|-----------:|
-| baseline / all    | 1800 | 0.677 | 0.323 | 0.032 |      0.101 |
-| baseline / crisis | 1000 | 0.962 | 0.038 | 0.027 |      0.181 |
-| AC-gated / all    | 1800 | 0.742 | 0.258 | 0.032 |      0.001 |
-| AC-gated / crisis | 1000 | 1     | 0     | 0.027 |      0.002 |
+| sample    | ACWMI_tercile   |    N |   mean_ACWMI |   signal_IC |   hit_rate |   ann_active_ret |   outage_rate |
+|:----------|:----------------|-----:|-------------:|------------:|-----------:|-----------------:|--------------:|
+| all       | low             | 1184 |        0.518 |     0.00515 |      0.575 |           1.8812 |         0.247 |
+| all       | mid             | 1183 |        0.597 |     0.00281 |      0.568 |           1.025  |         0.006 |
+| all       | high            | 1183 |        0.706 |    -0.00142 |      0.495 |          -0.5182 |         0     |
+| no_outage | low             | 1084 |        0.545 |     0.00367 |      0.534 |           1.3408 |         0     |
+| no_outage | mid             | 1082 |        0.606 |     0.00227 |      0.571 |           0.8288 |         0     |
+| no_outage | high            | 1084 |        0.712 |    -0.00106 |      0.504 |          -0.3878 |         0     |
+
+## Notes
+
+- Returns are real Yahoo daily crypto returns; signals use only pre-t history (PIT).
+- Thresholds frozen on IS (Sharpe max, abstain rate in [5%, 55%]).
+- Availability shocks O_t are Bernoulli and constructed return-orthogonal for identification.
+- Multi-band historical archives are not in-repo; readiness layers use production band weights/WMI code.
+- Stepping-stone toward full vintaged multi-source PIT via `logic_layer/time_slice`.
