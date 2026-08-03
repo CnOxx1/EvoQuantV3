@@ -19,7 +19,9 @@ FIG = ROOT / "figures"
 TAB = ROOT / "tables"
 DATA = ROOT / "data"
 OUT_EN = Path(__file__).resolve().parent / "main_acwmi_sci.pdf"
-OUT = ROOT / "main_cn_acwmi_sci.pdf"
+CN = ROOT / "cn"
+OUT_CN_MIRROR = CN / "main_cn_acwmi_sci.pdf"
+OUT_LEGACY = ROOT / "main_cn_acwmi_sci.pdf"  # legacy path until pdf/cn package lands
 
 
 def styles():
@@ -115,13 +117,79 @@ def build():
     story.append(P("1. Introduction", S["h1"]))
     story.append(P(
         "Asset pricing conditions on an information set I<sub>t</sub>. The literature’s discipline has focused on how I<sub>t</sub> is used, "
-        "not how it is compiled from asynchronous evidence. This paper formalizes Regime-Conditional Adaptive World Models / ACWMI, "
-        "populates a real multi-band archive with the project’s collectors, builds a PIT panel from history tables, and evaluates OOS "
-        "economic value with frozen thresholds and leave-one-band-out identification.",
+        "not how it is compiled from asynchronous evidence. This paper restores the World-Model-First / RCA-WM formal objects "
+        "(definitions, lag bounds, compilation operator, ECP/MIG, DAG, abstention, ACWMI, EAR/UCR/EV), then instantiates them on a "
+        "real multi-band PIT archive with frozen thresholds and leave-one-band-out identification. EvoQuant is the empirical laboratory, "
+        "not the source of the theory. Formal LaTeX source with displayed equations: pdf/sci/main_acwmi_sci.tex; Chinese theory: pdf/cn/.",
         S["body"],
     ))
 
-    story.append(P("2. Real multi-band PIT archive", S["h1"]))
+    story.append(P("2. Theory (restored from original paper)", S["h1"]))
+    story.append(P(
+        "<b>2.1 WMI triad.</b> Breadth, stability, and honesty:",
+        S["body"],
+    ))
+    story.append(P(
+        "B<sub>t</sub> = (1/K) Σ<sub>k</sub> a<sub>k,t</sub>, &nbsp; "
+        "U<sub>t</sub> = exp(−Σ<sub>j</sub> ω<sub>j</sub> d<sub>j,t</sub>), &nbsp; "
+        "H<sub>t</sub> = 1 − (1/J) Σ<sub>j</sub> m<sub>j,t</sub>, &nbsp; "
+        "WMI<sub>t</sub> = B<sub>t</sub> × U<sub>t</sub> × H<sub>t</sub>.",
+        S["note"],
+    ))
+    story.append(P(
+        "Hierarchical breadth and continuous honesty used in the PIT panel: "
+        "B<sup>hier</sup><sub>t</sub> = 0.25 B<sup>dom</sup><sub>t</sub> + 0.35 B<sup>band</sup><sub>t</sub> + 0.40 B<sup>asset</sup><sub>t</sub>; "
+        "H<sup>cont</sup><sub>t</sub> = exp(−2c<sub>t</sub>) max(0, 1 − 0.5(1−e<sub>t</sub>)).",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>2.2 Epistemic observations.</b> "
+        "O<sub>j,t</sub> = (x<sub>j,t</sub>, τ<sub>j,t</sub>, q<sub>j,t</sub>, g<sub>j,t</sub>, r<sub>j,t</sub>) "
+        "carries value, time, quality, gate, and role — not a bare feature.",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>2.3 Lag bound.</b> With lagged observation X<sup>obs</sup><sub>j,t</sub> = h<sub>j</sub>(S<sub>t−ℓ</sub>) + ν<sub>j,t</sub> "
+        "and Lipschitz h<sub>j</sub>, reconstruction error decomposes into delay, noise, and missingness terms "
+        "(latest_* / TTL / is_ready_for_ai target these terms).",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>2.4 Compilation operator.</b> "
+        "F<sup>raw</sup><sub>t</sub> = σ({X<sup>obs</sup><sub>j,τ</sub>}), "
+        "F<sup>AI</sup><sub>t</sub> = σ(W<sup>AI</sup><sub>t</sub>, D<sub>t</sub>), "
+        "Π<sub>t</sub> = B<sub>t</sub> ∘ M<sub>t</sub> ∘ A<sub>t</sub>, "
+        "W<sup>AI</sup><sub>t</sub> = Π<sub>t</sub>(F<sup>raw</sup><sub>t</sub>).",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>2.5 ECP, MIG, DAG.</b> "
+        "ECP<sub>t</sub> = 1{conf<sub>t</sub> &gt; c̄} 1{WMI<sub>t</sub> &lt; w}; "
+        "MIG<sup>(m)</sup><sub>k,t</sub> = I(R<sup>(m)</sup><sub>t</sub>; E<sub>k,t</sub> | I<sup>(−k)</sup><sub>t</sub>); "
+        "identification DAG: O<sub>t</sub> → W<sub>t</sub> → A<sub>t</sub> (with M<sub>t</sub>, C<sub>t</sub> confounders).",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>2.6 Bayesian abstention.</b> "
+        "a*<sub>t</sub> = arg min<sub>a</sub> E[ℓ(a,R<sub>t</sub>) | W<sub>t</sub>]; abstain when every non-abstain action "
+        "has expected loss above c<sub>abs</sub>(W<sub>t</sub>).",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>2.7 ACWMI and explanation metrics.</b> "
+        "ACWMI<sub>t</sub> = exp( Σ γ<sub>i</sub>(r<sub>t</sub>) log x<sub>i,t</sub> / Σ γ<sub>i</sub> ) with "
+        "x = (B<sup>hier</sup>, U, H<sup>cont</sup>, S, C). "
+        "EAR<sub>t</sub> = (# evidence-bound claims)/(# claims), UCR<sub>t</sub> = 1 − EAR<sub>t</sub>, "
+        "EV<sub>t</sub> = d(Φ<sub>t</sub>, Φ<sub>t−1</sub>) / (1 + d(W<sub>t</sub>, W<sub>t−1</sub>)).",
+        S["body"],
+    ))
+    story.append(P(
+        "<i>Note on length:</i> a five-page empirics-only sketch is not a JF/RFS submission. "
+        "The displayed-equation theory lives in main_acwmi_sci.tex; this PDF keeps the formal core readable while reporting real-PIT results.",
+        S["note"],
+    ))
+
+    story.append(P("3. Real multi-band PIT archive", S["h1"]))
     story.append(P(
         f"Exchange (OKX): ~{arch['exchange']['klines']} klines/merged bars, daily {arch['exchange']['range_1d'][0]}→{arch['exchange']['range_1d'][1]}. "
         f"Macro: {arch['market']['macro_timeseries']} vintaged points. Alternative: {arch['market']['alternative_timeseries']} points. "
@@ -132,15 +200,15 @@ def build():
         S["body"],
     ))
 
-    story.append(P("3. Design", S["h1"]))
+    story.append(P("4. Design", S["h1"]))
     story.append(P(
         f"IS/OOS cut {inv.get('is_oos_cut')}. Frozen AC rule: ACWMI&lt;{thr.get('ac_thr', 0.35)} or C&lt;{thr.get('c_thr', 0.35)}. "
         "Production WMI threshold 0.2 never tuned. Engines use only pre-t returns. Durable LOBO bands: exchange, macro, alternative.",
         S["body"],
     ))
 
-    story.append(P("4. Results", S["h1"]))
-    story.append(P("4.1 Thick real PIT dominates thin", S["h2"]))
+    story.append(P("5. Results", S["h1"]))
+    story.append(P("5.1 Thick real PIT dominates thin", S["h2"]))
     story.append(P(
         "Exchange-only thin worlds deliver OOS Sharpe ≈ 0 and CE −0.01. Thick real PIT worlds deliver Sharpe 1.40 and CE 0.47. "
         "IS-frozen AC gating keeps Sharpe 0.90 / CE 0.20 while abstaining 29.7%.",
@@ -151,7 +219,7 @@ def build():
     story.append(P("Table 1. Thin vs thick on the real PIT archive (OOS).", S["caption"]))
     story.append(KeepTogether([fig("fig6_event_study.png", 5.8*inch, 0.48), P("Fig. 1. Thin vs thick-gated worlds (real PIT).", S["caption"])]))
 
-    story.append(P("4.2 Leave-one-band-out identification", S["h2"]))
+    story.append(P("5.2 Leave-one-band-out identification", S["h2"]))
     story.append(P(
         "Dropping durable bands destroys OOS CE: macro −0.53, alternative −0.53, exchange −0.34. Thickness has direct economic MIG content.",
         S["body"],
@@ -161,7 +229,7 @@ def build():
     story.append(P("Table 2. Leave-one-band-out on durable PIT bands.", S["caption"]))
     story.append(KeepTogether([fig("fig4_regime_box.png", 6.2*inch, 0.42), P("Fig. 2. LOBO marginal CE on durable bands.", S["caption"])]))
 
-    story.append(P("4.3 OOS policy horse-race", S["h2"]))
+    story.append(P("5.3 OOS policy horse-race", S["h2"]))
     story.append(P(
         "Always-long loses; momentum is near zero; thick ungated mechanism signals win on CE. IS-frozen ACWMI is a strong selective rule "
         "(Sharpe 0.90). Production WMI&lt;0.2 abstains 100% because sparse-archive WMI levels sit below a denser-world threshold—evidence that "
@@ -174,18 +242,21 @@ def build():
     story.append(KeepTogether([fig("fig1_architecture.png", 6.4*inch, 0.48), P("Fig. 3. OOS cumulative wealth.", S["caption"])]))
     story.append(KeepTogether([fig("fig2_coverage_compare.png", 6.4*inch, 0.42), P("Fig. 4. OOS Sharpe and CE by policy.", S["caption"])]))
 
-    story.append(P("5. Path to JF/RFS", S["h1"]))
+    story.append(P("6. Path to JF/RFS", S["h1"]))
     story.append(P(
-        "Keep collecting so news/on-chain/options/tokenomics cease to be right-censored; persist daily readiness/AI-context snapshots for "
-        "pure time_slice replay; replace scarce-world proxies with logged institutional outages; recalibrate WMI thresholds on archive support.",
+        "A short empirics sketch is not enough for JF/RFS. Required next steps: multi-year continuous collection so news/on-chain/options/"
+        "tokenomics cease to be right-censored; persist daily readiness/AI-context snapshots for pure time_slice replay; replace scarce-world "
+        "proxies with logged institutional outages; expand external validity; and keep the full equation apparatus in the submission PDF "
+        "(see main_acwmi_sci.tex).",
         S["body"],
     ))
 
-    story.append(P("6. Conclusion", S["h1"]))
+    story.append(P("7. Conclusion", S["h1"]))
     story.append(P(
-        "On a real multi-band PIT archive, thick worlds dominate thin worlds and durable bands have large leave-one-out economic value. "
-        "ACWMI gating is implementable under frozen thresholds but not CE-dominant versus ungated thick signals here. The laboratory path "
-        "is concrete: collect continuously, snapshot daily, and deepen vintaged histories.",
+        "Theory first: RCA-WM / ACWMI and the World-Model-First objects define what a compiled information set is. Empirically, on a real "
+        "multi-band PIT archive, thick worlds dominate thin worlds and durable bands have large leave-one-out economic value. Selective "
+        "ACWMI gating is implementable under frozen thresholds but is not CE-dominant versus ungated thick signals here. EvoQuant remains "
+        "the laboratory, not the theory source.",
         S["body"],
     ))
 
@@ -218,8 +289,11 @@ def build():
         author="Guocong Li",
     )
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
-    OUT.write_bytes(OUT_EN.read_bytes())
+    CN.mkdir(parents=True, exist_ok=True)
+    OUT_CN_MIRROR.write_bytes(OUT_EN.read_bytes())
+    OUT_LEGACY.write_bytes(OUT_EN.read_bytes())
     print("Wrote", OUT_EN, OUT_EN.stat().st_size)
+    print("Mirrored", OUT_CN_MIRROR)
 
 
 if __name__ == "__main__":
