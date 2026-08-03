@@ -1,0 +1,15 @@
+{
+  "benchmark": "Always long",
+  "best_strategy": "Thick ungated",
+  "max_dCE": 1.2887,
+  "p_reality_check": 0.144,
+  "n_boot": 999,
+  "block": 5,
+  "n_days": 200,
+  "deltas": {
+    "Momentum always": 0.9549,
+    "Thick ungated": 1.2887,
+    "WMI threshold (0.2)": 1.1568,
+    "ACWMI (IS-frozen)": 1.2887
+  }
+}

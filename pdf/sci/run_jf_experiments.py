@@ -142,6 +142,7 @@ def consistency_from_signs(signs: list[float]) -> float:
 def run_engines(asset: str, hist: np.ndarray) -> dict:
     hist = hist[~np.isnan(hist)]
     if len(hist) < 25:
+        mom5 = float(np.sign(np.mean(hist[-5:])) if len(hist) >= 5 else 0.0)
         return {
             "cascade_p": 0.2,
             "systemic": 20.0,
@@ -150,25 +151,38 @@ def run_engines(asset: str, hist: np.ndarray) -> dict:
             "detected_regime": "range",
             "detect_conf": 0.4,
             "vpin": 0.3,
-            "mom5": float(np.sign(np.mean(hist[-5:])) if len(hist) >= 5 else 0.0),
+            "mom5": mom5,
             "vol_regime": "normal",
+            "signs": [mom5] if mom5 != 0 else [],
         }
+    # Bounded information window: regime/tail measurements must be local, not
+    # full-history. (Full-history max-drawdown makes `crisis` an absorbing
+    # state and saturates cascade_p — the failure mode exposed by the
+    # long-span calibration audit.)
+    win = hist[-60:]
     vol_calc = VolatilityCalculator()
     classifier = RegimeClassifier()
-    rv = vol_calc.compute_realized_vol(hist.tolist()) or 0.2
+    rv = vol_calc.compute_realized_vol(win.tolist()) or 0.2
     vol_regime = vol_calc.classify_vol_regime(float(rv))
-    peer = hist * 0.7 + RNG.normal(0, np.std(hist) * 0.5 + 1e-6, size=len(hist))
-    covar = ContagionRiskCalculator.compute_covar(hist.tolist(), peer.tolist()) or 0.0
-    tail_b = ContagionRiskCalculator.compute_tail_beta(hist.tolist(), peer.tolist()) or 0.0
+    peer = win * 0.7 + RNG.normal(0, np.std(win) * 0.5 + 1e-6, size=len(win))
+    covar = ContagionRiskCalculator.compute_covar(win.tolist(), peer.tolist()) or 0.0
+    tail_b = ContagionRiskCalculator.compute_tail_beta(win.tolist(), peer.tolist()) or 0.0
     systemic = ContagionRiskCalculator.compute_systemic_risk_score(
         [{"covar_95": float(covar), "conditional_correlation": 0.5, "tail_beta": float(tail_b)}]
     )
-    # leverage intensity proxy from left-tail clustering of real returns
-    left = hist[hist < np.quantile(hist, 0.1)]
-    cluster = float(min(2e7, 1e6 + 8e6 * abs(left.mean()) * 50)) if len(left) else 1e6
+    # Left-tail clustering intensity, standardized by local volatility.
+    # For thin-tailed returns the bottom-decile mean sits near -1.75σ; excess
+    # beyond that indicates clustered liquidation pressure. intensity ∈ [0,1]
+    # maps to a cluster of at most 10% of daily capacity (the size_factor
+    # saturation point in compute_cascade_probability).
+    sigma = float(np.std(win) + 1e-9)
+    left = win[win < np.quantile(win, 0.1)]
+    z_tail = float(abs(left.mean()) / sigma) if len(left) else 0.0
+    intensity = float(np.clip((z_tail - 1.75) / 1.5, 0.0, 1.0))
+    cluster = 6e6 * intensity
     distance = 0.7 if vol_regime in {"high", "extreme"} else 2.2
     casc_p = LiquidationCascadeCalculator.compute_cascade_probability(cluster, 6e7, distance)
-    signal = np.cumsum(hist)
+    signal = np.cumsum(hist[-120:])
     half_life = AlphaDecayCalculator.compute_half_life(signal.tolist()) or 24.0
     crowd = AlphaDecayCalculator.compute_crowding_score(
         [
@@ -188,13 +202,22 @@ def run_engines(asset: str, hist: np.ndarray) -> dict:
         trades.append({"volume": float(abs(r) * 1000 + 10), "side": "buy" if r >= 0 else "sell", "price": px})
     vpin = FlowDecompositionCalculator.compute_vpin(trades, bucket_size=20) if trades else 0.0
     flow = FlowDecompositionCalculator.classify_flow(trades) if trades else {"smart_money_direction": "neutral"}
-    vol_series = pd.Series(hist).rolling(10).std().fillna(float(np.std(hist))).tolist()
+    vol_series = pd.Series(win).rolling(10).std().fillna(sigma).tolist()
+    # Real RSI-14 and a trend-strength ADX proxy from the local window (the
+    # previous constant placeholders froze the classifier out of trend states).
+    r14 = win[-14:]
+    gains = float(np.sum(r14[r14 > 0]))
+    losses = float(abs(np.sum(r14[r14 < 0])))
+    rsi = 100.0 * gains / (gains + losses) if (gains + losses) > 0 else 50.0
+    r20 = win[-20:]
+    t20 = float(abs(np.mean(r20)) * np.sqrt(len(r20)) / (np.std(r20) + 1e-9))
+    adx = float(15.0 + 12.0 * min(t20, 2.5))
     feats = RegimeFeatures(
-        returns=hist.tolist(),
+        returns=win.tolist(),
         volatility=vol_series,
         volume_ratio=1.3 if vol_regime in {"high", "extreme"} else 1.0,
-        rsi=40 if casc_p > 0.55 else 55,
-        adx=22,
+        rsi=rsi,
+        adx=adx,
         correlation_to_btc=0.85 if asset != "BTC" else 1.0,
     )
     price_regime, conf = classifier.classify_price_regime(feats)
@@ -223,6 +246,7 @@ def run_engines(asset: str, hist: np.ndarray) -> dict:
         "vpin": float(vpin or 0),
         "mom5": float(np.sign(np.mean(hist[-5:]))),
         "vol_regime": vol_regime,
+        "signs": signs,
     }
 
 
@@ -262,18 +286,48 @@ def build_world_factors(outage: bool, drop_band: str | None = None, ungated: boo
 def directional_signal(eng: dict) -> float:
     """Deterministic mechanism action in {-1,0,+1} when the agent chooses to act.
 
-    Transparent rule (no latent NN):
-      (R1) crisis regime OR cascade_p >= 0.60           → short (−1)
-      (R2) trend regime AND mom5 > 0 AND cascade_p < 0.45 → long (+1)
-      (R3) else sign(mom5) if nonzero, else 0
-    Inputs come from production calculators on pre-t returns only (see run_engines).
+    Transparent rule (no latent NN). Band content enters directly:
+      macro_tilt ∈ {-1,0,+1}: PIT-safe macro risk-on/off from vintaged VIX/DXY 5d changes
+      alt_tilt   ∈ {-1,0,+1}: stablecoin 7d net-supply sign (liquidity in/outflow)
+    Both are 0 (uninformative) whenever the corresponding band is not `ready`
+    at t, so leave-one-band-out deletes *content*, not only gating.
+
+      (R1)  crisis regime ∧ cascade_p >= 0.60                        → short (−1)
+            (evidence conjunction: a drawdown-only or cascade-only trigger is
+            not actionable — the same logic as the consistency factor C)
+      (R2)  trend ∧ mom5 > 0 ∧ cascade_p < 0.45 ∧ macro_tilt ≥ 0     → long (+1)
+      (R2b) range ∧ macro_tilt > 0 ∧ alt_tilt > 0 ∧ mom5 ≥ 0         → long (+1)
+      (R3)  sign(mom5), but a long is vetoed to 0 when both tilts are
+            risk-off (macro_tilt < 0 ∧ alt_tilt < 0); ties broken by
+            sign(macro_tilt + alt_tilt)
+    Return-based inputs come from production calculators on pre-t returns only
+    (see run_engines); band tilts come from vintaged macro / alternative history.
     """
-    if eng["detected_regime"] == "crisis" or eng["cascade_p"] >= 0.60:
+    macro_tilt = float(eng.get("macro_tilt", 0.0))
+    alt_tilt = float(eng.get("alt_tilt", 0.0))
+    if eng["detected_regime"] == "crisis" and eng["cascade_p"] >= 0.60:
         return -1.0
-    if eng["detected_regime"] == "trend" and eng["mom5"] > 0 and eng["cascade_p"] < 0.45:
+    if (
+        eng["detected_regime"] == "trend"
+        and eng["mom5"] > 0
+        and eng["cascade_p"] < 0.45
+        and macro_tilt >= 0
+    ):
+        return 1.0
+    if (
+        eng["detected_regime"] == "range"
+        and macro_tilt > 0
+        and alt_tilt > 0
+        and eng["mom5"] >= 0
+    ):
         return 1.0
     if eng["mom5"] != 0:
+        if eng["mom5"] > 0 and macro_tilt < 0 and alt_tilt < 0:
+            return 0.0
         return float(eng["mom5"])
+    tie = macro_tilt + alt_tilt
+    if tie != 0:
+        return float(np.sign(tie))
     return 0.0
 
 
@@ -317,10 +371,22 @@ def mechanism_component_definitions() -> list[dict]:
             "role": "R2/R3 directional fallback",
         },
         {
+            "component": "macro_tilt",
+            "formula": "+1 if VIX_5d_chg<0 and DXY_5d_chg<0; -1 if both>0; else 0; forced 0 when macro band not ready",
+            "inputs": "vintaged macro_timeseries (available_at <= t): VIX, DXY",
+            "role": "macro-band content: veto in R2, band-long in R2b, tie-break in R3, sign in C",
+        },
+        {
+            "component": "alt_tilt",
+            "formula": "sign(stablecoin_net_supply_change_7d at latest obs < t); forced 0 when alternative band not ready",
+            "inputs": "alternative_timeseries stablecoin 7d net supply (pre-t)",
+            "role": "alternative-band content: band-long in R2b, tie-break in R3, sign in C",
+        },
+        {
             "component": "signal",
-            "formula": "R1→-1; R2→+1; else sign(mom5) or 0",
-            "inputs": "detected_regime, cascade_p, mom5",
-            "role": "position when not abstaining",
+            "formula": "R1 (crisis AND casc>=0.60)→-1; R2→+1 (macro veto); R2b→+1 (band-driven); R3 sign(mom5) with double-risk-off long veto; ties sign(macro_tilt+alt_tilt)",
+            "inputs": "detected_regime, cascade_p, mom5, macro_tilt, alt_tilt",
+            "role": "position when not abstaining; R1 requires evidence conjunction",
         },
     ]
 
@@ -420,6 +486,61 @@ def bootstrap_delta_pvalues(
         "ci_dCE_95": round(float(np.quantile(boot_ce, 0.975)), 4),
         "ci95_excludes_0_CE": bool(np.quantile(boot_ce, 0.025) > 0 or np.quantile(boot_ce, 0.975) < 0),
         "ci95_excludes_0_Sharpe": bool(np.quantile(boot_sh, 0.025) > 0 or np.quantile(boot_sh, 0.975) < 0),
+    }
+
+
+def white_reality_check(
+    curves: dict[str, pd.Series],
+    benchmark: str,
+    *,
+    n_boot: int = 999,
+    block: int = 5,
+    seed: int = 20260803,
+) -> dict:
+    """White (2000) reality check on ΔCE across candidate strategies vs a benchmark.
+
+    H0: max_k E[CE_k − CE_bench] ≤ 0. Uses circular block bootstrap of the joint
+    daily curves so cross-strategy dependence is preserved. Returns the max-ΔCE
+    statistic and its bootstrap p-value under the recentred null.
+    """
+    bench = curves[benchmark].astype(float).sort_index()
+    names = [k for k in curves if k != benchmark]
+    idx = bench.index
+    for k in names:
+        idx = idx.intersection(curves[k].index)
+    bench = bench.loc[idx]
+    mat = {k: curves[k].astype(float).loc[idx].to_numpy() for k in names}
+    bvals = bench.to_numpy()
+    n = len(idx)
+    deltas = {}
+    for k in names:
+        _, ce_k = _sharpe_ce_from_daily(pd.Series(mat[k]))
+        _, ce_b = _sharpe_ce_from_daily(pd.Series(bvals))
+        deltas[k] = ce_k - ce_b
+    t_stat = max(deltas.values())
+    best = max(deltas, key=deltas.get)
+    rng = np.random.default_rng(seed)
+    boots = block_bootstrap_indices(n, block, n_boot, rng)
+    count = 0
+    for i in range(n_boot):
+        ii = boots[i]
+        m = -np.inf
+        for k in names:
+            _, ce_k = _sharpe_ce_from_daily(pd.Series(mat[k][ii]))
+            _, ce_b = _sharpe_ce_from_daily(pd.Series(bvals[ii]))
+            # recentre under H0 (subtract observed delta)
+            m = max(m, (ce_k - ce_b) - deltas[k])
+        if m >= t_stat:
+            count += 1
+    return {
+        "benchmark": benchmark,
+        "best_strategy": best,
+        "max_dCE": round(t_stat, 4),
+        "p_reality_check": round((count + 1) / (n_boot + 1), 4),
+        "n_boot": n_boot,
+        "block": block,
+        "n_days": n,
+        "deltas": {k: round(v, 4) for k, v in deltas.items()},
     }
 
 
@@ -523,8 +644,10 @@ def calibrate_thresholds(is_df: pd.DataFrame) -> dict:
 def strategy_positions(df: pd.DataFrame, policy: str, params: dict) -> pd.Series:
     sig = df["signal"].astype(float).to_numpy()
     mom = df["mom5"].astype(float).to_numpy()
-    act_sig = np.where(sig != 0, sig, mom)
-    act_sig = np.where(act_sig == 0, 1.0, act_sig)  # default long if no signal
+    # signal == 0 is an intentional stand-aside (e.g. the R3 double-risk-off
+    # long veto or a genuine tie): it must map to a flat position, not to a
+    # momentum/long fallback that would erase band content from actions.
+    act_sig = sig
     if policy == "always_long":
         abstain = np.zeros(len(df), dtype=bool)
         act_sig = np.ones(len(df))
@@ -552,10 +675,31 @@ def strategy_positions(df: pd.DataFrame, policy: str, params: dict) -> pd.Series
     return pd.Series(pos, index=df.index, dtype=float)
 
 
-def portfolio_stats(df: pd.DataFrame, pos: pd.Series) -> dict:
-    tmp = df[["date", "ret"]].copy()
+def portfolio_stats(
+    df: pd.DataFrame,
+    pos: pd.Series,
+    cost_bps: float = 0.0,
+    funding_daily: pd.DataFrame | None = None,
+) -> dict:
+    """Equal-weight portfolio stats with optional turnover costs and funding.
+
+    cost_bps: one-way proportional cost in basis points applied to |Δposition|
+    per asset per day (positions in {-1,0,+1}, so a flip costs 2×cost).
+    funding_daily: optional DataFrame [date, asset, funding_rate_daily]; longs
+    pay positive funding, shorts receive it (perp convention): pnl -= pos*funding.
+    """
+    tmp = df[["date", "asset", "ret"]].copy() if "asset" in df.columns else df[["date", "ret"]].copy()
     tmp["pos"] = pos.values
     tmp["pnl"] = tmp["pos"] * tmp["ret"]
+    if cost_bps > 0 and "asset" in tmp.columns:
+        tmp = tmp.sort_values(["asset", "date"])
+        dpos = tmp.groupby("asset")["pos"].diff().abs().fillna(tmp["pos"].abs())
+        tmp["pnl"] = tmp["pnl"] - (cost_bps / 1e4) * dpos
+    if funding_daily is not None and "asset" in tmp.columns:
+        f = funding_daily.rename(columns={"funding_rate_daily": "_fr"})
+        tmp = tmp.merge(f[["date", "asset", "_fr"]], on=["date", "asset"], how="left")
+        tmp["_fr"] = tmp["_fr"].fillna(0.0)
+        tmp["pnl"] = tmp["pnl"] - tmp["pos"] * tmp["_fr"]
     daily = tmp.groupby("date")["pnl"].mean().sort_index()
     mu = float(daily.mean())
     sig = float(daily.std(ddof=1) + 1e-12)

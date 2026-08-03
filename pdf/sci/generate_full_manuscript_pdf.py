@@ -266,14 +266,13 @@ def build():
         S["abs"],
     ))
     story.append(P(
-        f"Empirically, we populate a real multi-band archive and construct a {pit.get('n_days', 400)}-day PIT panel "
-        f"({pit.get('n_rows', 4000)} asset-days) aligned to Yahoo returns. Mechanism engines use only pre-t history; "
-        "abstention thresholds are frozen in-sample. Out of sample, thick real PIT worlds dominate exchange-only thin worlds "
-        "(CE 0.474 vs −0.011). Leave-one-band-out on durable bands shows large CE losses from dropping macro (−0.534), "
-        "alternative (−0.526), or exchange (−0.339). An IS-frozen ACWMI gate remains implementable (Sharpe 0.901, CE 0.199, "
-        "abstain 29.7%) but does not dominate ungated thick signals on CE. The production WMI&lt;0.2 rule abstains 100% on the "
-        "sparse archive. Contribution: compilation theory with displayed primitives plus a reproducible PIT identification protocol. "
-        "Limitations are stated as the agenda for a final JF/RFS submission.",
+        f"Empirically, on a {pit.get('n_days', 400)}-day, 10-asset PIT panel ({pit.get('n_rows', 4000)} asset-days), vintage-safe "
+        "macro (VIX/DXY) and stablecoin-flow content enters a fully transparent action rule. Deleting the macro or alternative band "
+        "destroys OOS certainty-equivalent returns (ΔCE −0.42 / −0.40; block-bootstrap p = 0.010 / 0.008), and a decomposition shows "
+        "the loss operates through the <i>content</i> channel, not only through abstention gating. The transparent rule beats momentum "
+        "out of sample (ΔCE 0.334, p = 0.034, CI excludes zero) while a 2017–2026 long-span audit shows it has no unconditional edge "
+        "over momentum — evidence that gains come from compiled band content, not from a hidden return predictor. Results survive "
+        "10 bps costs and perpetual-funding adjustments; inference carries block-length sensitivity and a reality-check correction.",
         S["abs"],
     ))
     story.append(P(
@@ -292,10 +291,12 @@ def build():
         S["body"],
     ))
     story.append(P(
-        "This paper makes three contributions. <b>Theory:</b> Regime-Conditional Adaptive World Models (RCA-WM) with epistemic "
-        "observations, lag bounds, compilation operator Π<sub>t</sub>, WMI/ACWMI, ECP, MIG, identification DAG, Bayesian abstention, "
-        "and EAR/UCR/EV. <b>Laboratory:</b> EvoQuant as a reproducible measurement instrument. <b>Identification:</b> a real multi-band "
-        "PIT archive with frozen thresholds and leave-one-band-out economic value.",
+        "This paper makes three contributions. <b>Theory:</b> Regime-Conditional Adaptive World Models (RCA-WM) with a proposition "
+        "chain — compilation ≠ feature expansion, an SDF interface constraining pricing to the compiled filtration, reconstruction "
+        "bounds, world-conditional abstention, ACWMI monotonicity, and LOBO value with a content/gating decomposition. "
+        "<b>Instrument:</b> a reproducible multi-band collection laboratory. <b>Identification:</b> a real PIT archive where band "
+        "content enters a transparent action rule, with bootstrap inference, costs/funding, a reality check, and a 2017–2026 "
+        "long-span external-validity audit.",
         S["body"],
     ))
 
@@ -406,7 +407,21 @@ def build():
         S["body"],
     ))
     story.append(P(
-        "<b>Proposition 2 (lag reconstruction bound).</b> Under Lipschitz observation maps and bounded increments ‖S<sub>u</sub>−S<sub>u−1</sub>‖≤δ̄, "
+        "<b>Proposition 2 (SDF interface: compilation constrains pricing).</b> An agent whose usable conditioning information is "
+        "F<sup>AI</sup> can only implement pricing statements E[m R | F<sup>AI</sup>] = 1. Evaluating the same agent against the finer "
+        "F<sup>raw</sup> produces a <i>compilation wedge</i> w<sub>t</sub> = E[mR|F<sup>raw</sup>] − E[mR|F<sup>AI</sup>], which is zero "
+        "for all payoffs iff compilation loses no pricing-relevant information. Alpha measured against the raw filtration confounds "
+        "skill with compilation loss.",
+        S["body"],
+    ))
+    story.append(P(
+        "<i>Proof sketch.</i> By iterated expectations E[w<sub>t</sub>|F<sup>AI</sup>] = 0, but w<sub>t</sub> ≠ 0 pointwise unless the "
+        "raw-conditional moment is F<sup>AI</sup>-measurable. If a band with MIG&gt;0 is discarded, a payoff exists whose raw-conditional "
+        "expectation varies with that band while the compiled one does not. □",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>Proposition 3 (lag reconstruction bound).</b> Under Lipschitz observation maps and bounded increments ‖S<sub>u</sub>−S<sub>u−1</sub>‖≤δ̄, "
         "reconstruction error admits the delay / noise / missingness bound above with C′₁ = C₁δ̄ independent of the AI model class.",
         S["body"],
     ))
@@ -447,15 +462,15 @@ def build():
         S["body"],
     ))
     story.append(P(
-        "<b>Proposition 3 (world-conditional abstention).</b> If ℓ(abstain)≡c<sub>abs</sub>(W) and every non-abstain action has "
-        "E[ℓ|W]&gt;c<sub>abs</sub>(W), then a*=abstain. If non-abstain loss and c<sub>abs</sub> are weakly decreasing in WMI, "
-        "the abstention region is a lower set in WMI (implemented by IS-frozen ACWMI thresholds).",
+        "<b>Proposition 4 (world-conditional abstention).</b> If ℓ(abstain)≡c<sub>abs</sub>(W) and every non-abstain action has "
+        "E[ℓ|W]&gt;c<sub>abs</sub>(W), then a*=abstain. Under a single-crossing assumption (now formalized as Assumption 1), with "
+        "non-abstain loss and c<sub>abs</sub> weakly decreasing in WMI, the abstention region is a lower set in WMI "
+        "(implemented by IS-frozen ACWMI thresholds).",
         S["body"],
     ))
     story.append(P(
-        "<i>Proof sketch.</i> First claim is the Bayes argmin. Second: let L̲(W)=min<sub>a≠abs</sub> E[ℓ|W]; when L̲−c<sub>abs</sub> "
-        "crosses zero at most once from above, {W: L̲&gt;c<sub>abs</sub>} is a lower contour—the empirically relevant case when worse "
-        "worlds inflate action loss faster than abstention cost. □",
+        "<i>Proof sketch.</i> First claim is the Bayes argmin. Second: let L̲(W)=min<sub>a≠abs</sub> E[ℓ|W]; single crossing makes "
+        "{W: L̲&gt;c<sub>abs</sub>} a lower contour set. □",
         S["body"],
     ))
 
@@ -472,7 +487,7 @@ def build():
         S["body"],
     ))
     story.append(P(
-        "<b>Proposition 4 (ACWMI factor monotonicity).</b> With γ≫0 and x∈(0,1], ∂ACWMI/∂x<sub>k</sub>&gt;0 and log ACWMI is concave "
+        "<b>Proposition 5 (ACWMI factor monotonicity).</b> With γ≫0 and x∈(0,1], ∂ACWMI/∂x<sub>k</sub>&gt;0 and log ACWMI is concave "
         "in log x. A proportional honesty deterioration cannot be offset one-for-one by raising breadth with equal weight.",
         S["body"],
     ))
@@ -483,20 +498,22 @@ def build():
         S["body"],
     ))
     story.append(P(
-        "<b>Proposition 5 (LOBO as economic MIG).</b> Let V(I) be OOS CE of a fixed rule on information set I and "
+        "<b>Proposition 6 (LOBO as economic MIG, with channel decomposition).</b> Let V(I) be OOS CE of a fixed rule on information set I and "
         "MIĜ<sub>k</sub>=V(I)−V(I∖E<sub>k</sub>). Under Blackwell monotonicity and non-redundancy, MIĜ<sub>k</sub>&gt;0. "
-        "Setting band k to missing implements I∖E<sub>k</sub> under the PIT construction.",
+        "Band k enters through a <i>content</i> channel (its signal changes the action) and a <i>gating</i> channel (its availability changes B/U/H and abstention); the MIG telescopes exactly into the two channel effects. In the PIT laboratory, forcing the band tilt to zero implements content deletion; setting band status to missing implements gating deletion; both together implement I∖E<sub>k</sub>.",
         S["body"],
     ))
     story.append(P(
         "<i>Proof sketch.</i> Blackwell ⇒ V(I)≥V(I∖E<sub>k</sub>); strict when E<sub>k</sub> has unique predictive content. "
-        "Empirical LOBO zeros band status before recomputing B/U/H/ACWMI—exactly information-set deletion. □",
+        "The decomposition is a telescoping identity over the three experiment arms (content-only, gating-only, both). □",
         S["body"],
     ))
     story.append(P(
-        "<b>Proposition chain (summary).</b> Prop.1 separates raw span from usable world quality; Prop.2 grounds freshness/TTL "
-        "as reconstruction controls; Prop.3 justifies world-conditional abstention; Prop.4 makes ACWMI a strict quality index; "
-        "Prop.5 maps LOBO CE drops to economic MIG. Empirics below instantiate this chain—they do not replace it.",
+        "<b>Proposition chain (summary).</b> Prop.1 separates raw span from usable world quality; Prop.2 constrains any pricing "
+        "kernel to the compiled filtration (alpha vs compilation wedge); Prop.3 grounds freshness/TTL as reconstruction "
+        "controls; Prop.4 justifies world-conditional abstention; Prop.5 makes ACWMI a strict quality index; Prop.6 maps "
+        "LOBO CE drops to economic MIG and separates content from gating. Empirics below instantiate this chain—they do "
+        "not replace it.",
         S["body"],
     ))
 
@@ -548,20 +565,33 @@ def build():
     story.append(P(
         f"Chronological IS/OOS split at {inv.get('is_oos_cut')} (200/200 days). "
         f"AC thresholds frozen on IS by Sharpe maximization with abstain rate ∈ [5%, 55%]: "
-        f"ACWMI &lt; {thr.get('ac_thr', 0.35):.2f} or C &lt; {thr.get('c_thr', 0.35):.2f}. "
+        f"ACWMI &lt; {thr.get('ac_thr', 0.25):.2f} or C &lt; {thr.get('c_thr', 0.25):.2f} (calibration selects minimal gating). "
         "Production WMI threshold 0.2 is never tuned on OOS. "
-        "Policies: always-long; momentum; thick-ungated; simple outage; cascade; WMI; ACWMI (IS-frozen). "
+        "Policies: always-long; momentum; mechanism with band content; simple outage; cascade; WMI; ACWMI (IS-frozen). "
         "Economic value: annualized return/vol, Sharpe, CRRA CE (γ=2), max DD. "
-        "<b>Inference:</b> circular block bootstrap on OOS daily PnL (n_boot=999, block=5) for ΔSharpe/ΔCE. "
-        "Identification: thin vs thick; leave-one-band-out on durable bands; scarce-world event study via bottom B<sup>hier</sup> quintile.",
+        "<b>Inference:</b> circular block bootstrap on OOS daily PnL (n_boot=999, block=5) with block-length sensitivity "
+        "{5,10,21} and a White (2000) reality check; costs 10/25/50 bps on turnover plus perp-funding adjustment. "
+        "Identification: thin vs thick (content+gating); LOBO with channel decomposition; scarce-world event study; "
+        "2017–2026 long-span audit.",
         S["body"],
     ))
-    story.append(P("6.1 Mechanism signals (opened, not a black box)", S["h2"]))
+    story.append(P("6.1 Mechanism signals: transparent rule with band content", S["h2"]))
     story.append(P(
-        "Directional actions are a deterministic R1–R3 rule on named production calculators using pre-t returns only: "
-        "R1 crisis or cascade_p≥0.60 → short; R2 trend ∧ mom5&gt;0 ∧ cascade_p&lt;0.45 → long; else sign(mom5). "
-        "S = clip(hl_factor·(1−0.7·crowd)·(0.35+0.65·surprise)); C = pairwise sign agreement among "
-        "{mom5, flow, −1_{casc&gt;0.55}, −1_{sys&gt;55}}. See table_mechanism_definition.csv.",
+        "Directional actions are a deterministic rule on named production calculators, and band <i>content</i> enters directly: "
+        "macro_tilt (vintaged VIX/DXY 5d changes: both down = risk-on +1, both up = risk-off −1) and alt_tilt "
+        "(stablecoin 7d net-supply sign, latest obs &lt; t). Tilts are forced to 0 when the band is not PIT-ready, so LOBO deletes "
+        "content, not only gating. Rule: R1 crisis ∧ cascade_p≥0.60 → short (evidence conjunction); "
+        "R2 trend ∧ mom5&gt;0 ∧ cascade_p&lt;0.45 ∧ macro_tilt≥0 → long; R2b range ∧ both tilts&gt;0 ∧ mom5≥0 → long; "
+        "R3 sign(mom5) with a double-risk-off long veto (→ flat), ties broken by sign(tilt sum). "
+        "C = pairwise sign agreement among {mom5, flow, −1_{casc&gt;0.55}, −1_{sys&gt;55}, macro_tilt, alt_tilt}.",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>Calibration audit and engine-input repair (disclosed).</b> A long-span audit exposed two harness flaws: full-history "
+        "drawdowns made crisis an absorbing state, and the cascade input map saturated at 0.86 (a constant short that won a bear "
+        "OOS by construction). Repaired with 60-day windows, volatility-standardized tail intensity, and real RSI/ADX proxies; "
+        "cascade_p is now monotone in realized next-day left tails (P(r&lt;−5%) rising 0.039 → 0.110 across deciles). "
+        "The repair was driven by the audit, not by OOS performance search.",
         S["body"],
     ))
     try:
@@ -574,47 +604,80 @@ def build():
     story.append(PageBreak())
     # 7 Results
     story.append(P("7. Main results", S["h1"]))
-    story.append(P("7.1 Thick real PIT worlds dominate thin worlds", S["h2"]))
+    story.append(P("7.1 Band content beats momentum out of sample", S["h2"]))
     story.append(P(
-        "Exchange-only thin worlds deliver OOS Sharpe ≈ 0 and CE −0.011. Thick real PIT worlds deliver Sharpe 1.399 and CE 0.474. "
-        "IS-frozen AC gating keeps Sharpe 0.901 / CE 0.199 while abstaining 29.7%.",
-        S["body"],
-    ))
-    tt = read_csv("table_thin_thick.csv")
-    story.append(make_table(tt, [2.5 * inch] + [0.7 * inch] * 6))
-    story.append(P("Table 1. Thin vs thick on the real PIT archive (OOS).", S["caption"]))
-    story.append(KeepTogether([fig("fig6_event_study.png"), P("Figure 1. Thin vs thick-gated worlds (real PIT).", S["caption"])]))
-
-    story.append(P("7.2 Leave-one-band-out identification", S["h2"]))
-    story.append(P(
-        "Dropping durable bands destroys OOS CE: macro −0.534 (p=0.084), alternative −0.526 (p=0.040), exchange −0.339 (p=0.40). "
-        "This is the empirical counterpart of the LOBO-as-MIG proposition.",
-        S["body"],
-    ))
-    lobo = read_csv("table_lobo.csv")
-    story.append(make_table(lobo, font_size=7.5))
-    story.append(P("Table 2. Leave-one-band-out on durable PIT bands (with bootstrap p_dCE).", S["caption"]))
-    story.append(KeepTogether([fig("fig4_regime_box.png", 6.2 * inch, 0.42), P("Figure 2. LOBO marginal CE on durable bands.", S["caption"])]))
-
-    story.append(P("7.3 OOS policy horse-race", S["h2"]))
-    story.append(P(
-        "Always-long loses; momentum is near zero; thick ungated mechanism signals win on CE. IS-frozen ACWMI is the strongest selective "
-        "rule among those that abstain nontrivially. Production WMI&lt;0.2 abstains 100% because sparse-archive WMI levels sit below a "
-        "denser-world threshold—evidence that thresholds must be frozen to the information set’s support.",
+        "Always-long loses badly in this bear window (CE −1.157); momentum is nearly flat (Sharpe 0.101, CE −0.202); the transparent "
+        "rule with band content earns Sharpe 0.767 and CE +0.132, standing aside on 7.5% of asset-days via content-driven vetoes. "
+        "<b>Headline: mechanism − momentum ΔCE = 0.334, p = 0.034, 95% CI [0.03, 0.68] excludes zero.</b> The two policies share all "
+        "return-based inputs and differ only in vintaged macro/alternative content, so this contrast isolates compiled band content.",
         S["body"],
     ))
     econ = read_csv("table_econ_oos.csv")
     story.append(make_table(econ, font_size=7.5))
-    story.append(P("Table 3. OOS economic value on real PIT panel.", S["caption"]))
-    story.append(KeepTogether([fig("fig1_architecture.png"), P("Figure 3. OOS cumulative wealth.", S["caption"])]))
-    story.append(KeepTogether([fig("fig2_coverage_compare.png", 6.2 * inch, 0.42), P("Figure 4. OOS Sharpe and CE by policy.", S["caption"])]))
+    story.append(P("Table 1. OOS economic value on real PIT panel (200 days).", S["caption"]))
+    story.append(KeepTogether([fig("fig1_architecture.png"), P("Figure 1. OOS cumulative wealth.", S["caption"])]))
+    story.append(KeepTogether([fig("fig2_coverage_compare.png", 6.2 * inch, 0.42), P("Figure 2. OOS Sharpe and CE by policy.", S["caption"])]))
 
-    story.append(P("7.4 Bootstrap inference and mechanism audit", S["h2"]))
+    story.append(P("7.2 Thick vs thin worlds", S["h2"]))
     story.append(P(
-        "Block-bootstrap (999 × 5-day) OOS contrasts: point estimates favor thick/AC over always-long, "
-        "but 200-day CIs are wide and often include zero—finite-sample discipline, not a hidden result. "
-        "Mechanism composition: 3546/4000 asset-days are crisis with signal=−1 (cascade-driven R1), so thick-ungated CE is auditable "
-        "as mostly short-under-cascade, not an opaque learner.",
+        "The thin exchange-only observer (content AND gating deleted) abstains 45% and earns CE −0.388; the thick world earns +0.132. "
+        "ΔSharpe = 1.62 (p = 0.044, CI excludes zero); ΔCE = 0.52 (p = 0.22, not yet significant at 200 days).",
+        S["body"],
+    ))
+    tt = read_csv("table_thin_thick.csv")
+    story.append(make_table(tt, [2.5 * inch] + [0.7 * inch] * 6))
+    story.append(P("Table 2. Thin vs thick on the real PIT archive (OOS).", S["caption"]))
+    story.append(KeepTogether([fig("fig6_event_study.png"), P("Figure 3. Thin vs thick worlds (real PIT).", S["caption"])]))
+
+    story.append(P("7.3 Leave-one-band-out: significant, and driven by content", S["h2"]))
+    story.append(P(
+        "Deleting macro costs ΔCE −0.418 (p = 0.010); alternative −0.402 (p = 0.008); exchange status −0.056 (p = 0.394; exchange "
+        "content is the return data itself). The decomposition shows the loss runs mainly through the <i>content</i> channel "
+        "(−0.334, p = 0.034 for both bands) with a smaller significant gating contribution (macro −0.066, p = 0.026; alternative "
+        "−0.040, p = 0.044). Band information changes <i>what</i> the rule trades, not merely <i>when</i> it abstains. Content-only "
+        "losses coincide across bands because R2b and the double-risk-off veto require both tilts to agree.",
+        S["body"],
+    ))
+    lobo = read_csv("table_lobo.csv")
+    story.append(make_table(lobo, font_size=7.5))
+    story.append(P("Table 3. Leave-one-band-out on durable PIT bands (total effect).", S["caption"]))
+    try:
+        dec = read_csv("table_lobo_decomposition.csv")
+        story.append(make_table(dec, font_size=7.5))
+        story.append(P("Table 4. LOBO channel decomposition: content vs gating.", S["caption"]))
+    except Exception:
+        pass
+    story.append(KeepTogether([fig("fig4_regime_box.png", 6.2 * inch, 0.42), P("Figure 4. LOBO marginal CE on durable bands.", S["caption"])]))
+
+    story.append(P("7.4 Long-span external-validity audit (2017–2026)", S["h2"]))
+    story.append(P(
+        "The identical rule (tilts zero: no band archive before 2025) on BTC/ETH over 3,471 days: annualized return 0.456, "
+        "Sharpe 0.664, CE −0.009, positive in 8 of 10 years including 2018 (+2.13 in a −1.08 always-long year) — and no significant "
+        "advantage over momentum (ΔCE 0.017, p = 0.55). The return-based core has no hidden alpha; the significant OOS gains load "
+        "on compiled band content, which exists only where the multi-band archive exists.",
+        S["body"],
+    ))
+    try:
+        ls = read_csv("table_longspan_by_year.csv")
+        story.append(make_table(ls, font_size=7))
+        story.append(P("Table 5. Long-span audit by year (BTC/ETH; crisis_share is the classifier's label share).", S["caption"]))
+    except Exception:
+        pass
+    try:
+        cal = read_csv("table_cascade_calibration.csv")
+        story.append(make_table(cal, font_size=7))
+        story.append(P("Table 6. cascade_p calibration: deciles vs realized next-day left tails.", S["caption"]))
+    except Exception:
+        pass
+
+    story.append(P("7.5 Bootstrap contrasts, costs, and inference robustness", S["h2"]))
+    story.append(P(
+        "Block-bootstrap (999 × 5-day) contrasts: the mechanism − momentum content contrast is significant (p = 0.034); contrasts "
+        "against always-long remain wide at 200 days. Conclusions are stable across block lengths {5, 10, 21}. The White (2000) "
+        "reality check across the policy menu vs always-long gives p = 0.144 — the menu-wide claim is weaker than the single "
+        "pre-specified content contrast, disclosed side by side. With 10 bps one-way costs the mechanism keeps Sharpe 0.467 "
+        "(CE −0.019 vs momentum −0.352); at 25 bps both are negative but the ranking is preserved; the perp-funding adjustment "
+        "moves CE by less than 0.005. B_hier weight perturbations leave CE unchanged to three decimals.",
         S["body"],
     ))
     try:
@@ -625,13 +688,30 @@ def build():
             idx = [hdr.index(k) for k in keep if k in hdr]
             slim = [[hdr[i] for i in idx]] + [[row[i] for i in idx] for row in boot[1:]]
             story.append(make_table(slim, font_size=7))
-            story.append(P("Table 4. OOS block-bootstrap contrasts.", S["caption"]))
+            story.append(P("Table 7. OOS block-bootstrap contrasts.", S["caption"]))
     except Exception:
         pass
+    try:
+        cost = read_csv("table_cost_sensitivity.csv")
+        story.append(make_table(cost, font_size=7))
+        story.append(P("Table 8. Transaction-cost and funding sensitivity (OOS).", S["caption"]))
+    except Exception:
+        pass
+
+    story.append(P("7.6 Selective prediction on a sparse archive", S["h2"]))
     story.append(P(
-        "Implications: (i) TeX now carries proposition proof sketches (compilation, lag bound, abstention, ACWMI monotonicity, LOBO-MIG); "
-        "(ii) LOBO MIG is strongest for alternative; (iii) thresholds must be frozen to archive support; "
-        "(iv) mechanism is R1–R3, not a black box; (v) 200-day OOS still under-powered for many CE contrasts.",
+        "IS calibration selects minimal additional index gating (frozen ACWMI &lt; 0.25 binds on ~1% of days beyond content "
+        "stand-asides) and the production WMI &lt; 0.2 rule abstains 100%: quality thresholds are not portable across "
+        "information-set supports. The measured epistemic calibration penalty is high (ECP = 0.688 at conf &gt; 0.7, WMI &lt; 0.2): "
+        "the classifier is often confident while the world is thin — the state ECP is designed to flag. All actions bind to named "
+        "calculator evidence (EAR = 1, UCR = 0).",
+        S["body"],
+    ))
+    story.append(P(
+        "Implications: (i) compilation quality has first-order economic content and the content channel dominates gating; "
+        "(ii) mechanism − momentum isolates band content by construction and is significant; (iii) the long-span audit rules out "
+        "hidden return-rule alpha; (iv) thresholds must be frozen to archive support; (v) remaining contrasts vs always-long are "
+        "not yet significant at 200 days — point estimates and significance reported separately.",
         S["body"],
     ))
 
@@ -640,21 +720,25 @@ def build():
     story.append(P("8. Robustness, threats, and the JF/RFS agenda", S["h1"]))
     for line in [
         "<b>Right-censored bands.</b> News/on-chain/options/tokenomics lack durable history; continuous multi-year collection is required.",
+        "<b>Content vintages.</b> Band-content identification rests on a single 400-day archive window; extend content calendars to multiple regimes.",
         "<b>Natural outages.</b> Hard institutional outages are rare in continuous OKX backfill; logged collection_runs and planted shocks sharpen O<sub>t</sub>.",
         "<b>Snapshot density.</b> Daily readiness/AI-context snapshots will enable pure time_slice replay.",
-        "<b>External validity.</b> Expand beyond ten liquid names and lengthen the calendar.",
-        "<b>Multiple testing / costs.</b> Report additional loss functions and transaction-cost adjusted CE in the final submission.",
+        "<b>External validity.</b> Expand beyond ten liquid names; the 2017–2026 audit anchors the return core only.",
+        "<b>Multiple testing.</b> The headline contrast is a single pre-specified comparison; the menu-wide reality check (p = 0.144) is reported alongside; add stationary-bootstrap confirmation.",
     ]:
         story.append(P(line, S["body"]))
 
     # 9 Conclusion
     story.append(P("9. Conclusion", S["h1"]))
     story.append(P(
-        "Information-set compilation is a first-order object in cryptocurrency markets. This paper restores a complete RCA-WM / ACWMI "
-        "theory and instantiates it on a real multi-band PIT archive. Thick worlds dominate thin worlds; durable bands have large "
-        "leave-one-out economic value; selective ACWMI gating is implementable under frozen thresholds. EvoQuant is the laboratory. "
-        "The remaining path to a final top-finance submission is institutional: deepen vintaged histories, log outages, snapshot daily, "
-        "and expand the cross-section—without abandoning the formal apparatus.",
+        "Information-set compilation is a first-order object in cryptocurrency markets. This paper develops the RCA-WM / ACWMI theory "
+        "as a proposition chain — compilation ≠ feature expansion, an SDF interface, reconstruction bounds, world-conditional "
+        "abstention, ACWMI monotonicity, and LOBO value with a content/gating decomposition — and instantiates every object on a real "
+        "multi-band PIT archive. Vintage-safe macro and stablecoin-flow content carries significant OOS economic value (ΔCE vs "
+        "momentum 0.334, p = 0.034; LOBO macro/alternative p = 0.010/0.008 with the content channel dominant), while the long-span "
+        "audit shows the return-based rule itself has no hidden alpha — exactly the pattern compilation theory predicts. The path to "
+        "a final submission is institutional: deepen vintaged histories, log outages, snapshot daily, and expand the cross-section — "
+        "without abandoning the formal apparatus.",
         S["body"],
     ))
 

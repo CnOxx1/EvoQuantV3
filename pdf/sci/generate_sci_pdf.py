@@ -210,8 +210,8 @@ def build():
     story.append(P("5. Results", S["h1"]))
     story.append(P("5.1 Thick real PIT dominates thin", S["h2"]))
     story.append(P(
-        "Exchange-only thin worlds deliver OOS Sharpe ≈ 0 and CE −0.01. Thick real PIT worlds deliver Sharpe 1.40 and CE 0.47. "
-        "IS-frozen AC gating keeps Sharpe 0.90 / CE 0.20 while abstaining 29.7%.",
+        "The thin exchange-only observer (content and gating deleted) earns OOS CE −0.39 while abstaining 45%; the thick world "
+        "earns +0.13 (ΔSharpe = 1.62, p = 0.044). The band-content rule beats momentum (ΔCE = 0.334, p = 0.034).",
         S["body"],
     ))
     tt = read_csv("table_thin_thick.csv")
@@ -221,7 +221,8 @@ def build():
 
     story.append(P("5.2 Leave-one-band-out identification", S["h2"]))
     story.append(P(
-        "Dropping durable bands destroys OOS CE: macro −0.53, alternative −0.53, exchange −0.34. Thickness has direct economic MIG content.",
+        "Dropping durable bands destroys OOS CE: macro −0.42 (p = 0.010), alternative −0.40 (p = 0.008); the channel decomposition "
+        "shows the loss runs mainly through band content, not only abstention gating.",
         S["body"],
     ))
     lobo = read_csv("table_lobo.csv")
@@ -231,9 +232,10 @@ def build():
 
     story.append(P("5.3 OOS policy horse-race", S["h2"]))
     story.append(P(
-        "Always-long loses; momentum is near zero; thick ungated mechanism signals win on CE. IS-frozen ACWMI is a strong selective rule "
-        "(Sharpe 0.90). Production WMI&lt;0.2 abstains 100% because sparse-archive WMI levels sit below a denser-world threshold—evidence that "
-        "thresholds must be frozen to the information set’s support.",
+        "Always-long loses; momentum is near zero; the transparent rule with band content wins on CE (+0.13, Sharpe 0.77). "
+        "Production WMI&lt;0.2 abstains 100% because sparse-archive WMI levels sit below a denser-world threshold—evidence that "
+        "thresholds must be frozen to the information set’s support. A 2017–2026 long-span audit shows the return-based core has "
+        "no edge over momentum: the OOS gains load on compiled band content.",
         S["body"],
     ))
     econ = read_csv("table_econ_oos.csv")
@@ -254,8 +256,8 @@ def build():
     story.append(P("7. Conclusion", S["h1"]))
     story.append(P(
         "Theory first: RCA-WM / ACWMI and the World-Model-First objects define what a compiled information set is. Empirically, on a real "
-        "multi-band PIT archive, thick worlds dominate thin worlds and durable bands have large leave-one-out economic value. Selective "
-        "ACWMI gating is implementable under frozen thresholds but is not CE-dominant versus ungated thick signals here. EvoQuant remains "
+        "multi-band PIT archive, band content carries significant OOS economic value (mechanism − momentum p = 0.034; LOBO macro/alternative "
+        "p = 0.010/0.008, content channel dominant), while the long-span audit shows the return rule has no hidden alpha. EvoQuant remains "
         "the laboratory, not the theory source.",
         S["body"],
     ))
