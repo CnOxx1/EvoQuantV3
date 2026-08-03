@@ -1,0 +1,17 @@
+{
+  "thick_minus_thin": {
+    "n_days": 200,
+    "dSharpe": 1.4028,
+    "dCE": 0.4857,
+    "p_Sharpe": 0.48,
+    "p_CE": 0.442,
+    "n_boot": 999,
+    "block": 5,
+    "ci_dSharpe_05": -2.1223,
+    "ci_dSharpe_95": 3.9181,
+    "ci_dCE_05": -0.7917,
+    "ci_dCE_95": 1.7944,
+    "ci95_excludes_0_CE": false,
+    "ci95_excludes_0_Sharpe": false
+  }
+}

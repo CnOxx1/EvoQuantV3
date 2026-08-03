@@ -108,34 +108,120 @@
       "N_days": 200
     }
   ],
+  "bootstrap_oos": [
+    {
+      "contrast": "Thick ungated \u2212 Always long",
+      "n_days": 200,
+      "dSharpe": 2.798,
+      "dCE": 1.6311,
+      "p_Sharpe": 0.272,
+      "p_CE": 0.272,
+      "n_boot": 999,
+      "block": 5,
+      "ci_dSharpe_05": -1.8665,
+      "ci_dSharpe_95": 7.7607,
+      "ci_dCE_05": -0.9632,
+      "ci_dCE_95": 4.4358,
+      "ci95_excludes_0_CE": false,
+      "ci95_excludes_0_Sharpe": false
+    },
+    {
+      "contrast": "ACWMI \u2212 Always long",
+      "n_days": 200,
+      "dSharpe": 2.2999,
+      "dCE": 1.3553,
+      "p_Sharpe": 0.326,
+      "p_CE": 0.298,
+      "n_boot": 999,
+      "block": 5,
+      "ci_dSharpe_05": -2.4011,
+      "ci_dSharpe_95": 7.2067,
+      "ci_dCE_05": -1.0905,
+      "ci_dCE_95": 3.8543,
+      "ci95_excludes_0_CE": false,
+      "ci95_excludes_0_Sharpe": false
+    },
+    {
+      "contrast": "ACWMI \u2212 Momentum always",
+      "n_days": 200,
+      "dSharpe": 0.8,
+      "dCE": 0.4005,
+      "p_Sharpe": 0.434,
+      "p_CE": 0.426,
+      "n_boot": 999,
+      "block": 5,
+      "ci_dSharpe_05": -1.2259,
+      "ci_dSharpe_95": 3.1373,
+      "ci_dCE_05": -0.5859,
+      "ci_dCE_95": 1.4367,
+      "ci95_excludes_0_CE": false,
+      "ci95_excludes_0_Sharpe": false
+    },
+    {
+      "contrast": "Thick ungated \u2212 ACWMI",
+      "n_days": 200,
+      "dSharpe": 0.4981,
+      "dCE": 0.2758,
+      "p_Sharpe": 0.286,
+      "p_CE": 0.3,
+      "n_boot": 999,
+      "block": 5,
+      "ci_dSharpe_05": -0.4405,
+      "ci_dSharpe_95": 1.4644,
+      "ci_dCE_05": -0.2243,
+      "ci_dCE_95": 0.8187,
+      "ci95_excludes_0_CE": false,
+      "ci95_excludes_0_Sharpe": false
+    },
+    {
+      "contrast": "ACWMI \u2212 WMI threshold (0.2)",
+      "n_days": 200,
+      "dSharpe": 0.9009,
+      "dCE": 0.1986,
+      "p_Sharpe": 0.454,
+      "p_CE": 0.704,
+      "n_boot": 999,
+      "block": 5,
+      "ci_dSharpe_05": -1.5913,
+      "ci_dSharpe_95": 3.3203,
+      "ci_dCE_05": -0.9472,
+      "ci_dCE_95": 1.3735,
+      "ci95_excludes_0_CE": false,
+      "ci95_excludes_0_Sharpe": false
+    }
+  ],
   "lobo": [
     {
       "band_dropped": "(none)",
       "Sharpe": 0.901,
       "CE": 0.1986,
       "abstain_rate": 0.297,
-      "dCE": 0.0
+      "dCE": 0.0,
+      "p_dCE": NaN
     },
     {
       "band_dropped": "exchange",
       "Sharpe": -0.232,
       "CE": -0.1406,
       "abstain_rate": 0.737,
-      "dCE": -0.3391
+      "dCE": -0.3391,
+      "p_dCE": 0.4
     },
     {
       "band_dropped": "macro",
       "Sharpe": -0.485,
       "CE": -0.3358,
       "abstain_rate": 0.572,
-      "dCE": -0.5344
+      "dCE": -0.5344,
+      "p_dCE": 0.084
     },
     {
       "band_dropped": "alternative",
       "Sharpe": -0.422,
       "CE": -0.3272,
       "abstain_rate": 0.522,
-      "dCE": -0.5257
+      "dCE": -0.5257,
+      "p_dCE": 0.04
     }
   ],
   "thin_thick": [
@@ -165,6 +251,87 @@
       "Sharpe": 0.901,
       "CE": 0.1986,
       "abstain_rate": 0.297
+    }
+  ],
+  "thin_thick_bootstrap": {
+    "n_days": 200,
+    "dSharpe": 1.4028,
+    "dCE": 0.4857,
+    "p_Sharpe": 0.48,
+    "p_CE": 0.442,
+    "n_boot": 999,
+    "block": 5,
+    "ci_dSharpe_05": -2.1223,
+    "ci_dSharpe_95": 3.9181,
+    "ci_dCE_05": -0.7917,
+    "ci_dCE_95": 1.7944,
+    "ci95_excludes_0_CE": false,
+    "ci95_excludes_0_Sharpe": false
+  },
+  "mechanism_definition": [
+    {
+      "component": "cascade_p",
+      "formula": "LiquidationCascadeCalculator.compute_cascade_probability(cluster, capacity, distance)",
+      "inputs": "left-tail cluster intensity from pre-t returns; capacity=6e7; distance by vol regime",
+      "role": "crisis / short trigger in R1"
+    },
+    {
+      "component": "systemic",
+      "formula": "ContagionRiskCalculator.compute_systemic_risk_score([{covar_95, corr, tail_beta}])",
+      "inputs": "asset vs synthetic peer path from pre-t returns",
+      "role": "sign in consistency C"
+    },
+    {
+      "component": "S (signal integrity)",
+      "formula": "clip( hl_factor*(1-0.7*crowding_n)*(0.35+0.65*surprise_n) )",
+      "inputs": "AlphaDecay half-life on cumsum(returns), crowding, surprise of last return",
+      "role": "ACWMI factor"
+    },
+    {
+      "component": "C (consistency)",
+      "formula": "pairwise sign-agreement among {mom5, flow_sign, -1_{casc>0.55}, -1_{sys>55}}",
+      "inputs": "mom5, VPIN/flow class, cascade_p, systemic",
+      "role": "ACWMI factor + AC abstention gate"
+    },
+    {
+      "component": "detected_regime",
+      "formula": "RegimeClassifier.classify_price_regime(RegimeFeatures) with crisis override",
+      "inputs": "returns, rolling vol, RSI/ADX proxies, cascade_p, vol_regime",
+      "role": "R1/R2 branching"
+    },
+    {
+      "component": "mom5",
+      "formula": "sign(mean(r_{t-5:t}))",
+      "inputs": "last 5 pre-t daily returns",
+      "role": "R2/R3 directional fallback"
+    },
+    {
+      "component": "signal",
+      "formula": "R1\u2192-1; R2\u2192+1; else sign(mom5) or 0",
+      "inputs": "detected_regime, cascade_p, mom5",
+      "role": "position when not abstaining"
+    }
+  ],
+  "mechanism_by_regime": [
+    {
+      "detected_regime": "crisis",
+      "n": 3546,
+      "mean_cascade_p": 0.8691143824027072,
+      "mean_S": 0.12504016738112528,
+      "mean_C": 0.5821583004324121,
+      "mean_signal": -1.0,
+      "share_long": 0.0,
+      "share_short": 1.0
+    },
+    {
+      "detected_regime": "range",
+      "n": 454,
+      "mean_cascade_p": 0.4660537444933921,
+      "mean_S": 0.13731489480560707,
+      "mean_C": 0.4709985315712188,
+      "mean_signal": -0.16740088105726872,
+      "share_long": 0.36123348017621143,
+      "share_short": 0.5286343612334802
     }
   ],
   "event_study": [

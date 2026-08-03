@@ -393,9 +393,27 @@ def build():
         S["eq"],
     ))
     story.append(P(
-        "<b>Proposition (compilation ≠ feature expansion).</b> Enlarging F<sup>raw</sup> without a well-defined Π need not enlarge "
+        "<b>Proposition 1 (compilation ≠ feature expansion).</b> Enlarging F<sup>raw</sup> without a well-defined Π need not enlarge "
         "decision-relevant F<sup>AI</sup>: ungated, stale, or role-incoherent evidence can expand raw span while shrinking usable "
         "world quality via H<sub>t</sub> and U<sub>t</sub>.",
+        S["body"],
+    ))
+    story.append(P(
+        "<i>Proof sketch.</i> Add a source j* with large lag or missingness flag. If M<sub>t</sub> fails to exclude it, H falls by Δ&gt;0 "
+        "and freshness penalties weakly lower U. Breadth rises by at most 1/K, but multiplicative WMI = BUH can fall when UH losses "
+        "dominate. Since W<sup>AI</sup> = Π(F<sup>raw</sup>) inherits gated objects, raw σ-field expansion need not enlarge "
+        "payoff-relevant AI-visible information. □",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>Proposition 2 (lag reconstruction bound).</b> Under Lipschitz observation maps and bounded increments ‖S<sub>u</sub>−S<sub>u−1</sub>‖≤δ̄, "
+        "reconstruction error admits the delay / noise / missingness bound above with C′₁ = C₁δ̄ independent of the AI model class.",
+        S["body"],
+    ))
+    story.append(P(
+        "<i>Proof sketch.</i> Lipschitz gives ‖h<sub>j</sub>(S<sub>t</sub>)−h<sub>j</sub>(S<sub>t−ℓ</sub>)‖ ≤ L<sub>j</sub>δ̄ ℓ<sub>j,t</sub>. "
+        "Decompose S̃−S into lagged-map bias, ν, and missingness; triangle inequality + weights ω<sub>j</sub> yield the bound. "
+        "TTL / readiness operators shrink exactly those three terms. □",
         S["body"],
     ))
 
@@ -428,6 +446,18 @@ def build():
         "Abstain when every non-abstain action has expected loss above a world-dependent cost c<sub>abs</sub>(W<sub>t</sub>).",
         S["body"],
     ))
+    story.append(P(
+        "<b>Proposition 3 (world-conditional abstention).</b> If ℓ(abstain)≡c<sub>abs</sub>(W) and every non-abstain action has "
+        "E[ℓ|W]&gt;c<sub>abs</sub>(W), then a*=abstain. If non-abstain loss and c<sub>abs</sub> are weakly decreasing in WMI, "
+        "the abstention region is a lower set in WMI (implemented by IS-frozen ACWMI thresholds).",
+        S["body"],
+    ))
+    story.append(P(
+        "<i>Proof sketch.</i> First claim is the Bayes argmin. Second: let L̲(W)=min<sub>a≠abs</sub> E[ℓ|W]; when L̲−c<sub>abs</sub> "
+        "crosses zero at most once from above, {W: L̲&gt;c<sub>abs</sub>} is a lower contour—the empirically relevant case when worse "
+        "worlds inflate action loss faster than abstention cost. □",
+        S["body"],
+    ))
 
     story.append(P("3.7 ACWMI and explanation metrics", S["h2"]))
     story.append(P(
@@ -439,6 +469,34 @@ def build():
         "EAR<sub>t</sub> = (# evidence-bound claims)/(# claims), &nbsp; UCR<sub>t</sub> = 1 − EAR<sub>t</sub>, &nbsp; "
         "EV<sub>t</sub> = d(Φ<sub>t</sub>, Φ<sub>t−1</sub>) / (1 + d(W<sub>t</sub>, W<sub>t−1</sub>)). "
         "Thin and thick worlds also differ in explanation sets Φ<sub>t</sub>.",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>Proposition 4 (ACWMI factor monotonicity).</b> With γ≫0 and x∈(0,1], ∂ACWMI/∂x<sub>k</sub>&gt;0 and log ACWMI is concave "
+        "in log x. A proportional honesty deterioration cannot be offset one-for-one by raising breadth with equal weight.",
+        S["body"],
+    ))
+    story.append(P(
+        "<i>Proof sketch.</i> log ACWMI = Σ w<sub>i</sub> log x<sub>i</sub> with w<sub>i</sub>=γ<sub>i</sub>/Σγ; "
+        "∂ACWMI/∂x<sub>k</sub> = ACWMI·w<sub>k</sub>/x<sub>k</sub>&gt;0. Under contamination, Δlog H is large while Δlog B = O(1/K), "
+        "so net Σ w Δlog x &lt; 0. □",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>Proposition 5 (LOBO as economic MIG).</b> Let V(I) be OOS CE of a fixed rule on information set I and "
+        "MIĜ<sub>k</sub>=V(I)−V(I∖E<sub>k</sub>). Under Blackwell monotonicity and non-redundancy, MIĜ<sub>k</sub>&gt;0. "
+        "Setting band k to missing implements I∖E<sub>k</sub> under the PIT construction.",
+        S["body"],
+    ))
+    story.append(P(
+        "<i>Proof sketch.</i> Blackwell ⇒ V(I)≥V(I∖E<sub>k</sub>); strict when E<sub>k</sub> has unique predictive content. "
+        "Empirical LOBO zeros band status before recomputing B/U/H/ACWMI—exactly information-set deletion. □",
+        S["body"],
+    ))
+    story.append(P(
+        "<b>Proposition chain (summary).</b> Prop.1 separates raw span from usable world quality; Prop.2 grounds freshness/TTL "
+        "as reconstruction controls; Prop.3 justifies world-conditional abstention; Prop.4 makes ACWMI a strict quality index; "
+        "Prop.5 maps LOBO CE drops to economic MIG. Empirics below instantiate this chain—they do not replace it.",
         S["body"],
     ))
 
@@ -494,10 +552,24 @@ def build():
         "Production WMI threshold 0.2 is never tuned on OOS. "
         "Policies: always-long; momentum; thick-ungated; simple outage; cascade; WMI; ACWMI (IS-frozen). "
         "Economic value: annualized return/vol, Sharpe, CRRA CE (γ=2), max DD. "
-        "Identification: thin vs thick; leave-one-band-out on durable bands; scarce-world event study via bottom B<sup>hier</sup> quintile "
-        "when natural hard outages are rare.",
+        "<b>Inference:</b> circular block bootstrap on OOS daily PnL (n_boot=999, block=5) for ΔSharpe/ΔCE. "
+        "Identification: thin vs thick; leave-one-band-out on durable bands; scarce-world event study via bottom B<sup>hier</sup> quintile.",
         S["body"],
     ))
+    story.append(P("6.1 Mechanism signals (opened, not a black box)", S["h2"]))
+    story.append(P(
+        "Directional actions are a deterministic R1–R3 rule on named production calculators using pre-t returns only: "
+        "R1 crisis or cascade_p≥0.60 → short; R2 trend ∧ mom5&gt;0 ∧ cascade_p&lt;0.45 → long; else sign(mom5). "
+        "S = clip(hl_factor·(1−0.7·crowd)·(0.35+0.65·surprise)); C = pairwise sign agreement among "
+        "{mom5, flow, −1_{casc&gt;0.55}, −1_{sys&gt;55}}. See table_mechanism_definition.csv.",
+        S["body"],
+    ))
+    try:
+        mech = read_csv("table_mechanism_definition.csv")
+        story.append(make_table(mech, font_size=6.5))
+        story.append(P("Table. Mechanism component definitions (audit).", S["caption"]))
+    except Exception:
+        pass
 
     story.append(PageBreak())
     # 7 Results
@@ -515,13 +587,13 @@ def build():
 
     story.append(P("7.2 Leave-one-band-out identification", S["h2"]))
     story.append(P(
-        "Dropping durable bands destroys OOS CE: macro −0.534, alternative −0.526, exchange −0.339. "
-        "Thickness has direct economic MIG content.",
+        "Dropping durable bands destroys OOS CE: macro −0.534 (p=0.084), alternative −0.526 (p=0.040), exchange −0.339 (p=0.40). "
+        "This is the empirical counterpart of the LOBO-as-MIG proposition.",
         S["body"],
     ))
     lobo = read_csv("table_lobo.csv")
-    story.append(make_table(lobo, [1.6 * inch] + [1.0 * inch] * 4))
-    story.append(P("Table 2. Leave-one-band-out on durable PIT bands.", S["caption"]))
+    story.append(make_table(lobo, font_size=7.5))
+    story.append(P("Table 2. Leave-one-band-out on durable PIT bands (with bootstrap p_dCE).", S["caption"]))
     story.append(KeepTogether([fig("fig4_regime_box.png", 6.2 * inch, 0.42), P("Figure 2. LOBO marginal CE on durable bands.", S["caption"])]))
 
     story.append(P("7.3 OOS policy horse-race", S["h2"]))
@@ -532,16 +604,34 @@ def build():
         S["body"],
     ))
     econ = read_csv("table_econ_oos.csv")
-    story.append(make_table(econ, [1.7 * inch] + [0.7 * inch] * 7))
+    story.append(make_table(econ, font_size=7.5))
     story.append(P("Table 3. OOS economic value on real PIT panel.", S["caption"]))
     story.append(KeepTogether([fig("fig1_architecture.png"), P("Figure 3. OOS cumulative wealth.", S["caption"])]))
     story.append(KeepTogether([fig("fig2_coverage_compare.png", 6.2 * inch, 0.42), P("Figure 4. OOS Sharpe and CE by policy.", S["caption"])]))
 
-    story.append(P("7.4 Interpretation", S["h2"]))
+    story.append(P("7.4 Bootstrap inference and mechanism audit", S["h2"]))
     story.append(P(
-        "Three implications follow. First, compilation quality has first-order economic content. Second, MIG is heterogeneous across "
-        "durable bands; macro and alternative are not redundant with exchange bars. Third, selective prediction is implementable only "
-        "when thresholds are frozen to the archive’s support.",
+        "Block-bootstrap (999 × 5-day) OOS contrasts: point estimates favor thick/AC over always-long, "
+        "but 200-day CIs are wide and often include zero—finite-sample discipline, not a hidden result. "
+        "Mechanism composition: 3546/4000 asset-days are crisis with signal=−1 (cascade-driven R1), so thick-ungated CE is auditable "
+        "as mostly short-under-cascade, not an opaque learner.",
+        S["body"],
+    ))
+    try:
+        boot = read_csv("table_bootstrap_oos.csv")
+        if boot:
+            keep = ["contrast", "dSharpe", "dCE", "p_CE", "ci_dCE_05", "ci_dCE_95"]
+            hdr = boot[0]
+            idx = [hdr.index(k) for k in keep if k in hdr]
+            slim = [[hdr[i] for i in idx]] + [[row[i] for i in idx] for row in boot[1:]]
+            story.append(make_table(slim, font_size=7))
+            story.append(P("Table 4. OOS block-bootstrap contrasts.", S["caption"]))
+    except Exception:
+        pass
+    story.append(P(
+        "Implications: (i) TeX now carries proposition proof sketches (compilation, lag bound, abstention, ACWMI monotonicity, LOBO-MIG); "
+        "(ii) LOBO MIG is strongest for alternative; (iii) thresholds must be frozen to archive support; "
+        "(iv) mechanism is R1–R3, not a black box; (v) 200-day OOS still under-powered for many CE contrasts.",
         S["body"],
     ))
 

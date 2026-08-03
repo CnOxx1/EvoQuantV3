@@ -30,6 +30,7 @@ _spec.loader.exec_module(_jf)
 REGIME_GAMMA = _jf.REGIME_GAMMA
 acwmi = _jf.acwmi
 calibrate_thresholds = _jf.calibrate_thresholds
+bootstrap_delta_pvalues = _jf.bootstrap_delta_pvalues
 directional_signal = _jf.directional_signal
 evaluate_policies = _jf.evaluate_policies
 fig_cumreturns = _jf.fig_cumreturns
@@ -39,6 +40,7 @@ fig_oos_bars = _jf.fig_oos_bars
 fig_pareto = _jf.fig_pareto
 fig_paths = _jf.fig_paths
 fig_thin_thick = _jf.fig_thin_thick
+mechanism_component_definitions = _jf.mechanism_component_definitions
 portfolio_stats = _jf.portfolio_stats
 run_engines = _jf.run_engines
 split_is_oos = _jf.split_is_oos
@@ -220,10 +222,58 @@ def main() -> None:
     econ.to_csv(TAB / "table_econ_oos.csv", index=False)
     print(econ)
 
+    # Mechanism audit table (open the black box)
+    mech_def = pd.DataFrame(mechanism_component_definitions())
+    mech_def.to_csv(TAB / "table_mechanism_definition.csv", index=False)
+    mech_sum = (
+        df.groupby("detected_regime")
+        .agg(
+            n=("signal", "size"),
+            mean_cascade_p=("cascade_p", "mean"),
+            mean_S=("S", "mean"),
+            mean_C=("C", "mean"),
+            mean_signal=("signal", "mean"),
+            share_long=("signal", lambda s: float((s > 0).mean())),
+            share_short=("signal", lambda s: float((s < 0).mean())),
+        )
+        .reset_index()
+    )
+    mech_sum.to_csv(TAB / "table_mechanism_by_regime.csv", index=False)
+    print(mech_def)
+    print(mech_sum)
+
+    # Block-bootstrap p-values on OOS daily curves (n_boot=999, block=5)
+    print("Bootstrap OOS deltas...")
+    boot_rows = []
+    comparisons = [
+        ("Thick ungated − Always long", "Thick ungated", "Always long"),
+        ("ACWMI − Always long", "ACWMI (IS-frozen)", "Always long"),
+        ("ACWMI − Momentum always", "ACWMI (IS-frozen)", "Momentum always"),
+        ("Thick ungated − ACWMI", "Thick ungated", "ACWMI (IS-frozen)"),
+        ("ACWMI − WMI threshold (0.2)", "ACWMI (IS-frozen)", "WMI threshold (0.2)"),
+    ]
+    for name, a, b in comparisons:
+        if a not in curves or b not in curves:
+            continue
+        res = bootstrap_delta_pvalues(curves[a], curves[b], n_boot=999, block=5)
+        boot_rows.append({"contrast": name, **res})
+    boot_df = pd.DataFrame(boot_rows)
+    boot_df.to_csv(TAB / "table_bootstrap_oos.csv", index=False)
+    print(boot_df)
+
     # LOBO on historically durable bands
     _, oos0, _ = split_is_oos(df)
-    base = portfolio_stats(oos0, strategy_positions(oos0, "ac", params))
-    lobo_rows = [{"band_dropped": "(none)", "Sharpe": round(base["Sharpe"], 3), "CE": round(base["CE"], 4), "abstain_rate": round(base["abstain_rate"], 3), "dCE": 0.0}]
+    base_pos = strategy_positions(oos0, "ac", params)
+    base = portfolio_stats(oos0, base_pos)
+    base_daily = base["daily"]
+    lobo_rows = [{
+        "band_dropped": "(none)",
+        "Sharpe": round(base["Sharpe"], 3),
+        "CE": round(base["CE"], 4),
+        "abstain_rate": round(base["abstain_rate"], 3),
+        "dCE": 0.0,
+        "p_dCE": None,
+    }]
     for band in HIST_BANDS:
         d2 = recompute_world(df, drop_band=band)
         # rebuild ACWMI with same S/C
@@ -233,6 +283,8 @@ def main() -> None:
         ]
         _, oos_b, _ = split_is_oos(d2)
         st = portfolio_stats(oos_b, strategy_positions(oos_b, "ac", params))
+        # p-value for CE loss vs baseline AC (A = dropped, B = baseline → dCE negative if harmful)
+        bp = bootstrap_delta_pvalues(st["daily"], base_daily, n_boot=999, block=5)
         lobo_rows.append(
             {
                 "band_dropped": band,
@@ -240,6 +292,7 @@ def main() -> None:
                 "CE": round(st["CE"], 4),
                 "abstain_rate": round(st["abstain_rate"], 3),
                 "dCE": round(st["CE"] - base["CE"], 4),
+                "p_dCE": bp.get("p_CE"),
             }
         )
     lobo = pd.DataFrame(lobo_rows)
@@ -255,12 +308,14 @@ def main() -> None:
     _, oos_thin, _ = split_is_oos(thin)
     _, oos_thick, _ = split_is_oos(df)
     tt_rows = []
+    daily_by_world = {}
     for name, dsub, policy in [
         ("Thin (exchange only, real PIT)", oos_thin, "ac"),
         ("Thick real PIT (ex+macro+alt…)", oos_thick, "thick_ungated"),
         ("Thick gated AC (real PIT)", oos_thick, "ac"),
     ]:
         st = portfolio_stats(dsub, strategy_positions(dsub, policy, params))
+        daily_by_world[name] = st["daily"]
         tt_rows.append(
             {
                 "world": name,
@@ -272,9 +327,20 @@ def main() -> None:
                 "abstain_rate": round(st["abstain_rate"], 3),
             }
         )
+    # bootstrap: thick ungated vs thin AC
+    thick_vs_thin = bootstrap_delta_pvalues(
+        daily_by_world["Thick real PIT (ex+macro+alt…)"],
+        daily_by_world["Thin (exchange only, real PIT)"],
+        n_boot=999,
+        block=5,
+    )
     tt = pd.DataFrame(tt_rows)
     tt.to_csv(TAB / "table_thin_thick.csv", index=False)
+    (TAB / "table_thin_thick_bootstrap.json").write_text(
+        json.dumps({"thick_minus_thin": thick_vs_thin}, indent=2), encoding="utf-8"
+    )
     print(tt)
+    print("thick−thin bootstrap", thick_vs_thin)
 
     ev = event_study_scarce(df)
     print(ev)
@@ -327,10 +393,15 @@ def main() -> None:
         f"- Band ready rates: `{summary['band_ready_rates']}`",
         f"- IS/OOS cut: **{inv['is_oos_cut']}**",
         f"- Frozen: `{params}`",
+        f"- Bootstrap: circular block, n_boot=999, block=5 trading days",
         "",
         "## OOS economic value",
         "",
         econ.to_markdown(index=False),
+        "",
+        "## OOS block-bootstrap contrasts",
+        "",
+        boot_df.to_markdown(index=False),
         "",
         "## LOBO (durable bands)",
         "",
@@ -340,14 +411,37 @@ def main() -> None:
         "",
         tt.to_markdown(index=False),
         "",
+        f"- Thick − Thin bootstrap: `{thick_vs_thin}`",
+        "",
+        "## Mechanism (opened)",
+        "",
+        mech_def.to_markdown(index=False),
+        "",
+        mech_sum.to_markdown(index=False),
+        "",
         "## Notes",
         "- Exchange/macro/alternative have durable DB history; news/onchain/options/tokenomics are mostly collection-day right-censored.",
         "- Natural hard outages are rare in continuous OKX backfill; scarce-world states use bottom B_hier quintile for event study.",
+        "- Mechanism signal is the deterministic R1–R3 rule in `directional_signal` (no latent model).",
         "- time_slice grid exported to table_timeslice_grid.csv (analytics snapshots still sparse historically).",
     ]
     (OUT / "EXPERIMENT_RESULTS.md").write_text("\n".join(lines), encoding="utf-8")
     (OUT / "experiment_summary.json").write_text(
-        json.dumps({"inventory": inv, "econ_oos": econ.to_dict(orient="records"), "lobo": lobo.to_dict(orient="records"), "thin_thick": tt.to_dict(orient="records"), "event_study": ev.to_dict(orient="records")}, indent=2, default=str),
+        json.dumps(
+            {
+                "inventory": inv,
+                "econ_oos": econ.to_dict(orient="records"),
+                "bootstrap_oos": boot_df.to_dict(orient="records"),
+                "lobo": lobo.to_dict(orient="records"),
+                "thin_thick": tt.to_dict(orient="records"),
+                "thin_thick_bootstrap": thick_vs_thin,
+                "mechanism_definition": mech_def.to_dict(orient="records"),
+                "mechanism_by_regime": mech_sum.to_dict(orient="records"),
+                "event_study": ev.to_dict(orient="records"),
+            },
+            indent=2,
+            default=str,
+        ),
         encoding="utf-8",
     )
     print("Done.")

@@ -1,0 +1,8 @@
+component,formula,inputs,role
+cascade_p,"LiquidationCascadeCalculator.compute_cascade_probability(cluster, capacity, distance)",left-tail cluster intensity from pre-t returns; capacity=6e7; distance by vol regime,crisis / short trigger in R1
+systemic,"ContagionRiskCalculator.compute_systemic_risk_score([{covar_95, corr, tail_beta}])",asset vs synthetic peer path from pre-t returns,sign in consistency C
+S (signal integrity),clip( hl_factor*(1-0.7*crowding_n)*(0.35+0.65*surprise_n) ),"AlphaDecay half-life on cumsum(returns), crowding, surprise of last return",ACWMI factor
+C (consistency),"pairwise sign-agreement among {mom5, flow_sign, -1_{casc>0.55}, -1_{sys>55}}","mom5, VPIN/flow class, cascade_p, systemic",ACWMI factor + AC abstention gate
+detected_regime,RegimeClassifier.classify_price_regime(RegimeFeatures) with crisis override,"returns, rolling vol, RSI/ADX proxies, cascade_p, vol_regime",R1/R2 branching
+mom5,sign(mean(r_{t-5:t})),last 5 pre-t daily returns,R2/R3 directional fallback
+signal,R1→-1; R2→+1; else sign(mom5) or 0,"detected_regime, cascade_p, mom5",position when not abstaining

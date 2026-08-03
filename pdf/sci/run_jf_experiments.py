@@ -260,7 +260,14 @@ def build_world_factors(outage: bool, drop_band: str | None = None, ungated: boo
 
 
 def directional_signal(eng: dict) -> float:
-    """Analysis action in {-1,0,+1} when the agent chooses to act."""
+    """Deterministic mechanism action in {-1,0,+1} when the agent chooses to act.
+
+    Transparent rule (no latent NN):
+      (R1) crisis regime OR cascade_p >= 0.60           → short (−1)
+      (R2) trend regime AND mom5 > 0 AND cascade_p < 0.45 → long (+1)
+      (R3) else sign(mom5) if nonzero, else 0
+    Inputs come from production calculators on pre-t returns only (see run_engines).
+    """
     if eng["detected_regime"] == "crisis" or eng["cascade_p"] >= 0.60:
         return -1.0
     if eng["detected_regime"] == "trend" and eng["mom5"] > 0 and eng["cascade_p"] < 0.45:
@@ -268,6 +275,152 @@ def directional_signal(eng: dict) -> float:
     if eng["mom5"] != 0:
         return float(eng["mom5"])
     return 0.0
+
+
+def mechanism_component_definitions() -> list[dict]:
+    """Audit table: every mechanism input is a named formula + calculator."""
+    return [
+        {
+            "component": "cascade_p",
+            "formula": "LiquidationCascadeCalculator.compute_cascade_probability(cluster, capacity, distance)",
+            "inputs": "left-tail cluster intensity from pre-t returns; capacity=6e7; distance by vol regime",
+            "role": "crisis / short trigger in R1",
+        },
+        {
+            "component": "systemic",
+            "formula": "ContagionRiskCalculator.compute_systemic_risk_score([{covar_95, corr, tail_beta}])",
+            "inputs": "asset vs synthetic peer path from pre-t returns",
+            "role": "sign in consistency C",
+        },
+        {
+            "component": "S (signal integrity)",
+            "formula": "clip( hl_factor*(1-0.7*crowding_n)*(0.35+0.65*surprise_n) )",
+            "inputs": "AlphaDecay half-life on cumsum(returns), crowding, surprise of last return",
+            "role": "ACWMI factor",
+        },
+        {
+            "component": "C (consistency)",
+            "formula": "pairwise sign-agreement among {mom5, flow_sign, -1_{casc>0.55}, -1_{sys>55}}",
+            "inputs": "mom5, VPIN/flow class, cascade_p, systemic",
+            "role": "ACWMI factor + AC abstention gate",
+        },
+        {
+            "component": "detected_regime",
+            "formula": "RegimeClassifier.classify_price_regime(RegimeFeatures) with crisis override",
+            "inputs": "returns, rolling vol, RSI/ADX proxies, cascade_p, vol_regime",
+            "role": "R1/R2 branching",
+        },
+        {
+            "component": "mom5",
+            "formula": "sign(mean(r_{t-5:t}))",
+            "inputs": "last 5 pre-t daily returns",
+            "role": "R2/R3 directional fallback",
+        },
+        {
+            "component": "signal",
+            "formula": "R1→-1; R2→+1; else sign(mom5) or 0",
+            "inputs": "detected_regime, cascade_p, mom5",
+            "role": "position when not abstaining",
+        },
+    ]
+
+
+def block_bootstrap_indices(n: int, block: int, n_boot: int, rng: np.random.Generator) -> np.ndarray:
+    """Circular block bootstrap index matrix of shape (n_boot, n)."""
+    if n <= 1:
+        return np.zeros((n_boot, max(n, 1)), dtype=int)
+    block = max(1, min(block, n))
+    out = np.empty((n_boot, n), dtype=int)
+    for b in range(n_boot):
+        idx = []
+        while len(idx) < n:
+            start = int(rng.integers(0, n))
+            idx.extend((start + k) % n for k in range(block))
+        out[b] = np.array(idx[:n], dtype=int)
+    return out
+
+
+def _sharpe_ce_from_daily(daily: pd.Series) -> tuple[float, float]:
+    daily = daily.astype(float)
+    mu = float(daily.mean())
+    sig = float(daily.std(ddof=1) + 1e-12)
+    sharpe = mu / sig * np.sqrt(365)
+    if GAMMA == 1:
+        ce_daily = float(np.exp(np.log(np.maximum(1 + daily, 1e-8)).mean()) - 1)
+    else:
+        ce_daily = float((np.mean(np.maximum(1 + daily, 1e-8) ** (1 - GAMMA))) ** (1 / (1 - GAMMA)) - 1)
+    return sharpe, ce_daily * 365
+
+
+def bootstrap_delta_pvalues(
+    daily_a: pd.Series,
+    daily_b: pd.Series,
+    *,
+    n_boot: int = 999,
+    block: int = 5,
+    seed: int = 20260803,
+) -> dict:
+    """Two-sided block-bootstrap p-values for ΔSharpe and ΔCE (A − B).
+
+    Aligns on the intersection of dates. H0: E[Δ] = 0.
+    """
+    a = daily_a.astype(float).sort_index()
+    b = daily_b.astype(float).sort_index()
+    idx = a.index.intersection(b.index)
+    a = a.loc[idx]
+    b = b.loc[idx]
+    n = len(idx)
+    if n < 20:
+        return {
+            "n_days": n,
+            "dSharpe": None,
+            "dCE": None,
+            "p_Sharpe": None,
+            "p_CE": None,
+            "n_boot": n_boot,
+            "block": block,
+        }
+    sh_a, ce_a = _sharpe_ce_from_daily(a)
+    sh_b, ce_b = _sharpe_ce_from_daily(b)
+    d_sh = sh_a - sh_b
+    d_ce = ce_a - ce_b
+    rng = np.random.default_rng(seed)
+    boots = block_bootstrap_indices(n, block, n_boot, rng)
+    boot_sh = np.empty(n_boot)
+    boot_ce = np.empty(n_boot)
+    a_vals = a.to_numpy()
+    b_vals = b.to_numpy()
+    for i in range(n_boot):
+        ii = boots[i]
+        sh_a_b, ce_a_b = _sharpe_ce_from_daily(pd.Series(a_vals[ii]))
+        sh_b_b, ce_b_b = _sharpe_ce_from_daily(pd.Series(b_vals[ii]))
+        boot_sh[i] = sh_a_b - sh_b_b
+        boot_ce[i] = ce_a_b - ce_b_b
+    # Two-sided percentile bootstrap p-value: is 0 in the bootstrap distribution of Δ?
+    # p = 2 * min(P*(Δ* ≤ 0), P*(Δ* ≥ 0)) with +1 smoothing (Davison & Hinkley).
+    def _p_two_sided(samples: np.ndarray) -> float:
+        n = len(samples)
+        left = (np.sum(samples <= 0) + 1) / (n + 1)
+        right = (np.sum(samples >= 0) + 1) / (n + 1)
+        return float(min(1.0, 2.0 * min(left, right)))
+
+    p_sh = _p_two_sided(boot_sh)
+    p_ce = _p_two_sided(boot_ce)
+    return {
+        "n_days": n,
+        "dSharpe": round(d_sh, 4),
+        "dCE": round(d_ce, 4),
+        "p_Sharpe": round(p_sh, 4),
+        "p_CE": round(p_ce, 4),
+        "n_boot": n_boot,
+        "block": block,
+        "ci_dSharpe_05": round(float(np.quantile(boot_sh, 0.025)), 4),
+        "ci_dSharpe_95": round(float(np.quantile(boot_sh, 0.975)), 4),
+        "ci_dCE_05": round(float(np.quantile(boot_ce, 0.025)), 4),
+        "ci_dCE_95": round(float(np.quantile(boot_ce, 0.975)), 4),
+        "ci95_excludes_0_CE": bool(np.quantile(boot_ce, 0.025) > 0 or np.quantile(boot_ce, 0.975) < 0),
+        "ci95_excludes_0_Sharpe": bool(np.quantile(boot_sh, 0.025) > 0 or np.quantile(boot_sh, 0.975) < 0),
+    }
 
 
 def simulate_panel(returns: pd.DataFrame, drop_band: str | None = None, ungated: bool = False, thin: bool = False) -> pd.DataFrame:
