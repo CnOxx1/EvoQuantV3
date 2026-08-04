@@ -66,8 +66,9 @@ def fig9_lobo_decomposition() -> None:
     for i, row in df.iterrows():
         p = row.get("p_total")
         if pd.notna(p):
-            y = min(0.0, float(total[i])) - 0.03
-            ax.text(i - w, y, f"p={float(p):.3f}", ha="center", va="top", fontsize=7, color=C_NAVY)
+            y = float(total[i]) - 0.025
+            ax.text(i - w, y, f"p={float(p):.3f}", ha="center", va="top", fontsize=7.5, color=C_NAVY)
+    ax.set_ylim(min(total.min(), content.min(), gating.min()) - 0.08, 0.02)
     save(fig, "fig9_lobo_decomposition")
 
 
