@@ -401,7 +401,7 @@ The cognition base should serve analysis, not only trade/abstain decisions. We r
 \end{table}
 
 \subsection{RQ2: Economic value over traditional baselines}
-A transparent rule shares return inputs with momentum and adds vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\). Out-of-sample the world-model rule beats both traditional baselines (Table~\ref{tab:econ}): Sharpe \(0.764\) and CE \(+0.130\) versus momentum (\(0.096\), \(-0.206\)) and buy-and-hold (\(-1.404\), \(-1.163\)). The pre-specified contrast mechanism $-$ momentum is significant: \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\); stationary \(p{=}0.022\)). LOBO (Prop.~\ref{prop:lobo}) confirms the gain comes from compiled band content: deleting macro or alternative collapses to momentum (content share \(1.0\) under the ungated rule), and the relative gaps survive \(10\)--\(25\)bps transaction costs. A \(2017\)--\(2026\) audit confirms the edge requires the vintaged archives---there is no hidden return-rule alpha, so the value is attributable to the world model itself.
+A transparent rule shares return inputs with momentum and adds vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\). Out-of-sample (\(199\) days \(\times\) \(10\) assets, \(1{,}990\) asset-days) the world-model rule beats both traditional baselines (Table~\ref{tab:econ}, Figure~\ref{fig:econ}): Sharpe \(0.764\) and CE \(+0.130\) versus momentum (\(0.096\), \(-0.206\)) and buy-and-hold (\(-1.404\), \(-1.163\)). The pre-specified contrast mechanism $-$ momentum is significant under block bootstrap: \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\); stationary \(p{=}0.022\)). The edge is cross-sectionally uniform---\(\Delta\mathrm{CE}\) is positive for \emph{all ten assets individually} (\(+0.20\) to \(+0.85\); Figure~\ref{fig:econ}, right)---so the result is not driven by one lucky name. LOBO (Prop.~\ref{prop:lobo}) confirms the gain comes from compiled band content: deleting macro or alternative collapses to momentum (content share \(1.0\) under the ungated rule), and the relative gaps survive \(10\)--\(25\)bps transaction costs. A \(2017\)--\(2026\) two-asset audit with non-vintaged proxy tilts shows no such edge (\(\Delta\mathrm{CE}\approx 0\), \(p{=}0.81\)): the outperformance appears exactly where the vintage-compiled world model exists, so the value is attributable to the world model itself rather than to a generic tilt recipe.
 
 \paragraph{Within-archive dense world.}
 Among the three archive bands, \(61\%\) of OOS asset-days are \emph{thick} (exchange+macro+alternative all ready) and \(39\%\) are \emph{thin} (exchange gap; Figure~\ref{fig:ready}). Table~\ref{tab:dense}: the mechanism$-$momentum gap is strong on thick days (\(\Delta\mathrm{CE}{=}0.316\)) and smaller when exchange support is absent (\(\Delta\mathrm{CE}{=}0.129\))---the compiled content channel pays most precisely when the archive is fully populated.
@@ -435,6 +435,14 @@ Among the three archive bands, \(61\%\) of OOS asset-days are \emph{thick} (exch
     \bottomrule
   \end{tabular}
 \end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig_oos_economics.png}
+  \Description{Left: OOS cumulative wealth of the world-model rule above momentum and buy-and-hold. Right: per-asset delta CE bars, all ten positive.}
+  \caption{OOS economics. Left: equity curves (equal-weight, 10 assets); the world-model rule compounds above momentum and buy-and-hold. Right: \(\Delta\)CE (world model $-$ momentum) is positive for every asset.}
+  \label{fig:econ}
+\end{figure}
 
 \subsection{Discussion and threats}
 The live ladder
