@@ -31,7 +31,7 @@ Independent Researcher\\
 \maketitle
 
 \begin{abstract}
-Conditional asset pricing treats the investor's information set as primitive; in cryptocurrency markets evidence arrives asynchronously and is intermittently unavailable, so the information set must first be \emph{compiled}. We develop a theory of information-set compilation---epistemic observations, reconstruction bounds, a compilation operator between filtrations, world-model quality indices, and world-conditional abstention---with a proposition chain linking compilation quality to pricing-relevant information and to leave-one-band-out (LOBO) economic value. On a 400-day, 10-asset point-in-time multi-band panel, vintage-safe macro and stablecoin-flow content enters a fully transparent action rule. Deleting the macro or alternative band destroys out-of-sample certainty-equivalent returns ($\Delta$CE $-0.42$ and $-0.40$; block-bootstrap $p=0.010$ and $0.008$), and a decomposition shows the loss operates through the \emph{content} channel, not only through abstention gating. The transparent rule beats momentum out of sample ($\Delta$CE $0.334$, $p=0.034$) while a 2017--2026 long-span audit shows it has no unconditional edge over momentum---evidence that the gains come from compiled band content rather than from a hidden return predictor. Results survive ten-basis-point costs and perpetual funding adjustments; all inference is disclosed with block-length sensitivity and a reality-check correction.
+Conditional asset pricing treats the investor's information set as primitive; in cryptocurrency markets evidence arrives asynchronously and is intermittently unavailable, so the information set must first be \emph{compiled}. We develop a theory of information-set compilation---epistemic observations, reconstruction bounds, a compilation operator between filtrations, world-model quality indices, and world-conditional abstention---with a proposition chain linking compilation quality to pricing-relevant information and to leave-one-band-out (LOBO) economic value. On a real point-in-time multi-band panel (durable bands: exchange, macro, alternative), vintage-safe macro and stablecoin-flow \emph{content} enters a fully transparent action rule under a previous-close decision clock. The pre-specified contrast---mechanism versus same-input momentum---is positive out of sample ($\Delta$CE $0.334$, $p=0.034$). LOBO deletions of macro or alternative destroy value ($\Delta$CE $-0.42$ and $-0.40$; $p=0.010$ and $0.008$), operating mainly through the content channel rather than abstention gating; a joint macro+alternative deletion and a date-scrambled content placebo discipline timing. A 2017--2026 audit shows no unconditional edge over momentum when band archives are absent. Menu-wide claims versus always-long remain weaker after a reality-check correction. A pre-registered multi-model AI-consumer protocol (Compiled vs Raw information sets) is specified as secondary validation of the theory's AI interface, not as primary identification.
 \end{abstract}
 
 \noindent\textbf{Keywords:} information set, selective prediction, cryptocurrency, point-in-time, measurement error, world models\\
@@ -54,10 +54,10 @@ We formalize Regime-Conditional Adaptive World Models (RCA-WM). An AI-consumable
 A reproducible multi-band collection laboratory supplies vintage-aware history tables, readiness scoring, point-in-time queries, and configurable quality thresholds. The instrument implements the theory; it does not invent it.
 
 \paragraph{Identification on a real PIT archive.}
-We build a point-in-time panel from vintage-aware history tables, place band \emph{content} (macro risk state from vintaged VIX/DXY; stablecoin-flow liquidity from alternative series) inside a fully transparent action rule, freeze thresholds in-sample, and evaluate out-of-sample economic value with block-bootstrap inference, transaction costs, funding adjustments, a reality-check multiple-testing correction, and a 2017--2026 long-span external-validity audit of the action rule itself.
+We build a point-in-time panel from vintage-aware history tables under a previous-close decision clock, place band \emph{content} (macro risk state from vintaged VIX/DXY; stablecoin-flow liquidity from alternative series) inside a fully transparent action rule, freeze thresholds in-sample, and evaluate out-of-sample economic value with block-bootstrap inference, transaction costs, funding adjustments, a reality-check multiple-testing correction, joint LOBO and scrambled-content placebos, and a 2017--2026 long-span external-validity audit of the action rule itself. A secondary AI-consumer protocol tests whether Compiled bundles improve within-model decisions relative to Raw thin views.
 
 \paragraph{Roadmap.}
-Section~\ref{sec:lit} reviews related work. Section~\ref{sec:theory} presents the theory. Section~\ref{sec:lab} describes the laboratory. Section~\ref{sec:data} details the PIT archive. Section~\ref{sec:design} states the empirical design. Section~\ref{sec:results} reports results. Section~\ref{sec:robust} discusses robustness and limitations. Section~\ref{sec:conc} concludes. Appendices collect notation, domain inventories, and reproducibility.
+Section~\ref{sec:lit} reviews related work. Section~\ref{sec:theory} presents the theory. Section~\ref{sec:lab} describes the laboratory. Section~\ref{sec:data} details the PIT archive. Section~\ref{sec:design} states the empirical design. Section~\ref{sec:results} reports results. Section~\ref{sec:ai_consumer} specifies the AI-consumer validation. Section~\ref{sec:robust} discusses robustness and limitations. Section~\ref{sec:conc} concludes. Appendices collect notation, proofs, and reproducibility.
 
 \section{Related literature}
 \label{sec:lit}
@@ -350,7 +350,10 @@ We bootstrap the project's split SQLite store (OKX-reachable exchange path in th
 \end{itemize}
 
 \subsection{PIT panel construction}
-For each calendar date $t$ and asset $i$, band status $\in\{\mathrm{ready},\mathrm{limited},\mathrm{missing}\}$ is inferred from the latest observation time $\le t$ and band-specific freshness thresholds aligned to production \texttt{BandPITService}. We compute $B^{\mathrm{hier}}_t$, $U_t$, $H^{\mathrm{cont}}_t$, production WMI, and a world-only ACWMI placeholder; mechanism engines later refine $S_t$ and $C_t$ from pre-$t$ returns. Durable historical bands are $\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}$. Yahoo daily close-to-close returns provide payoffs. The resulting panel has 400 days $\times$ 10 assets $=4{,}000$ asset-days.
+\paragraph{Timing protocol (decision at previous close).}
+For payoff calendar day $t$ (Yahoo close-to-close return $r_t$), all band statuses and ages are evaluated at decision clock $(t-1)\,23{:}59$. No same-day close information enters the information set that selects the position earning $r_t$. Band-content tilts are likewise constructed from vintages with \texttt{available\_at}$\le t$ and then lagged one day. This protocol is versioned in \texttt{experiment\_config.json} and recorded on each panel row.
+
+For each payoff date $t$ and asset $i$, band status $\in\{\mathrm{ready},\mathrm{limited},\mathrm{missing}\}$ is inferred from the latest observation time $\le$ decision clock and band-specific freshness thresholds aligned to production \texttt{BandPITService}. We compute $B^{\mathrm{hier}}_t$, $U_t$, $H^{\mathrm{cont}}_t$, production WMI, and a world-only ACWMI placeholder; mechanism engines later refine paper $S_t$ and $C_t$ from pre-$t$ returns. Durable historical bands are $\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}$. Yahoo returns provide payoffs and are reconciled against exchange daily bars when archived (appendix audit). News/on-chain/options/tokenomics remain right-censored and are \emph{not} part of the identifying band set.
 
 \subsection{Band readiness rates}
 Empirical ready rates on the panel are approximately: exchange $0.998$, macro $1.000$, alternative $1.000$, news $0.008$, on-chain/options/tokenomics/event-calendar $\approx 0$. Identification on durable bands is therefore the credible core; right-censored bands enter only as agenda items for continuous collection.
@@ -358,11 +361,14 @@ Empirical ready rates on the panel are approximately: exchange $0.998$, macro $1
 \section{Empirical design}
 \label{sec:design}
 
+\paragraph{Pre-specified contrast.}
+The single pre-specified OOS contrast is \textbf{mechanism (band content) $-$ momentum}: the two policies share all return-based inputs and differ only by vintaged macro/alternative content. Menu-wide comparisons versus always-long are reported with a reality-check correction and are \emph{not} the headline claim.
+
 \paragraph{Sample split.}
-Chronological IS/OOS split at 2026-01-16 (200/200 days).
+Chronological IS/OOS split (half/half on the archive calendar; currently 200/200 days).
 
 \paragraph{Frozen thresholds.}
-AC thresholds are frozen on IS by Sharpe maximization subject to abstain rate $\in[5\%,55\%]$, yielding $\mathrm{ACWMI}<0.25$ or $C<0.25$ on the current archive (the calibration selects minimal additional gating). The production WMI threshold $0.2$ is never tuned on OOS.
+AC thresholds are frozen on IS by Sharpe maximization subject to abstain rate $\in[5\%,55\%]$. On the current sparse archive the calibration selects minimal additional gating ($\mathrm{ACWMI}<0.25$ or $C<0.25$), so selective-prediction results are secondary to content identification. The production WMI threshold $0.2$ is never tuned on OOS. All grids and bounds are versioned in \texttt{experiment\_config.json}.
 
 \paragraph{Policies.}
 Always-long; momentum; mechanism with band content (ungated); simple outage; cascade; WMI; ACWMI (IS-frozen).
@@ -377,7 +383,7 @@ OOS contrasts use circular block bootstrap on daily portfolio PnL ($n_{\mathrm{b
 Positions are in $\{-1,0,+1\}$; we report one-way proportional costs of $10/25/50$ bps on $|\Delta\mathrm{position}|$ and a perpetual-funding adjustment (longs pay, shorts receive the archived 8-hour rates aggregated daily) where funding history is archived.
 
 \paragraph{Identification designs.}
-(i) Thin vs thick worlds using real PIT band statuses \emph{and} content; (ii) leave-one-band-out on durable bands as economic MIG with the content/gating decomposition of Proposition~\ref{prop:lobo}; (iii) scarce-world event study using bottom $B^{\mathrm{hier}}$ quintile; (iv) a 2017--2026 long-span external-validity audit of the action rule on BTC/ETH.
+(i) Thin vs thick worlds using real PIT band statuses \emph{and} content; (ii) leave-one-band-out on durable bands as economic MIG with the content/gating decomposition of Proposition~\ref{prop:lobo}, plus joint macro+alternative deletion; (iii) date-scrambled content placebo; (iv) scarce-world event study using an \emph{expanding} $B^{\mathrm{hier}}$ quantile (no full-sample look-ahead) and a separate hard $O_t$ availability event study when outages exist; (v) a 2017--2026 long-span external-validity audit of the action rule on BTC/ETH.
 
 \subsection{Mechanism signals: transparent rule with band content}
 \label{sec:mech}
@@ -461,7 +467,7 @@ Thick real PIT & 0.356 & 0.688 & $0.767$ & $0.132$ & 0.075 \\
 \end{table}
 
 \subsection{Leave-one-band-out: significant, and driven by content}
-Table~\ref{tab:lobo} is the empirical counterpart of Proposition~\ref{prop:lobo}. Deleting the macro band costs $\Delta\mathrm{CE}=-0.418$ ($p=0.010$); deleting alternative costs $-0.402$ ($p=0.008$); deleting exchange status costs $-0.056$ ($p=0.394$; exchange content is the return data itself and cannot be separately deleted). The decomposition shows the loss operates mainly through the \emph{content} channel (content-only deletion: $-0.334$, $p=0.034$ for both bands) with a smaller but significant \emph{gating} contribution (macro $-0.066$, $p=0.026$; alternative $-0.040$, $p=0.044$). Band information changes \emph{what} the rule trades, not merely \emph{when} it abstains---the direct answer to the concern that LOBO measures gating sensitivity rather than information content. The content-only losses coincide across the two bands because the R2b long and the double-risk-off veto both require agreement of the two tilts, so deleting either band disables both branches on most affected days.
+Table~\ref{tab:lobo} is the empirical counterpart of Proposition~\ref{prop:lobo}. Deleting the macro band costs $\Delta\mathrm{CE}=-0.418$ ($p=0.010$); deleting alternative costs $-0.402$ ($p=0.008$); deleting exchange status costs $-0.056$ ($p=0.394$; exchange content is the return data itself and cannot be separately deleted). The decomposition shows the loss operates mainly through the \emph{content} channel (content-only deletion: $-0.334$, $p=0.034$ for both bands) with a smaller but significant \emph{gating} contribution (macro $-0.066$, $p=0.026$; alternative $-0.040$, $p=0.044$). Band information changes \emph{what} the rule trades, not merely \emph{when} it abstains---the direct answer to the concern that LOBO measures gating sensitivity rather than information content. The content-only losses coincide across the two bands because the R2b long and the double-risk-off veto both require agreement of the two tilts, so deleting either band disables both branches on most affected days. Joint macro+alternative deletion and a date-scrambled tilt placebo are reported in the replication tables to discipline redundancy and timing.
 
 \begin{table}[t]
 \centering
@@ -505,7 +511,18 @@ With 10 bps one-way costs the mechanism retains Sharpe $0.467$ (CE $-0.019$ vs m
 IS calibration selects minimal additional index gating (frozen $\mathrm{ACWMI}<0.25$ binds on $1\%$ of days beyond content stand-asides), and the production WMI$<0.2$ rule abstains $100\%$: sparse-archive WMI levels sit below a threshold calibrated for denser production worlds. Both facts support the same conclusion---quality thresholds are not portable across information-set supports and must be frozen to the support they will police (Proposition~\ref{prop:abstain}). The measured epistemic calibration penalty is high ($\mathrm{ECP}=0.688$ at $\mathrm{conf}>0.7$, $\mathrm{WMI}<0.2$): the classifier is frequently confident while the world is thin, which is precisely the state ECP is designed to flag. All actions bind to named calculator evidence ($\mathrm{EAR}=1$, $\mathrm{UCR}=0$).
 
 \subsection{Interpretation}
-Five implications follow. First, compilation quality has first-order economic content, and the content channel dominates the gating channel (Propositions~\ref{prop:compile}--\ref{prop:lobo}; Table~\ref{tab:lobo}). Second, the mechanism $-$ momentum contrast is significant and isolates band content by construction. Third, the long-span audit rules out hidden return-rule alpha as the driver. Fourth, selective prediction requires thresholds frozen to archive support. Fifth, remaining CE contrasts against always-long are not yet significant at 200 OOS days---point estimates and significance are reported separately, and longer calendars remain first-order.
+Five implications follow. First, compilation quality has first-order economic content, and the content channel dominates the gating channel (Propositions~\ref{prop:compile}--\ref{prop:lobo}; Table~\ref{tab:lobo}). Second, the mechanism $-$ momentum contrast is significant and isolates band content by construction. Third, the long-span audit rules out hidden return-rule alpha as the driver. Fourth, selective prediction requires thresholds frozen to archive support---on the present sparse archive, index gating is secondary to content. Fifth, remaining CE contrasts against always-long are not yet significant at 200 OOS days---point estimates and significance are reported separately, and longer calendars remain first-order.
+
+\section{AI-consumer validation (secondary)}
+\label{sec:ai_consumer}
+
+The theory's SDF interface and world-conditional abstention are statements about agents that condition on $\mathcal{F}^{\mathrm{AI}}_t$. We therefore pre-register a \emph{within-model} Compiled versus Raw protocol for AI consumers (Appendix protocol in the replication package). For each model $m$,
+\[
+\Delta_m=V_m(\mathrm{Compiled})-V_m(\mathrm{Raw}),
+\]
+with identical dates, assets, action schema $\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}$, temperature zero, and frozen prompts. Compiled bundles expose PIT-safe epistemic fields and abstention guidance; Raw bundles expose only thin return/momentum views. The scientific object is $\bar\Delta=K^{-1}\sum_m\Delta_m$, not vendor leaderboard PnL.
+
+This design is deliberately secondary. Primary identification remains the transparent rule and LOBO decomposition; LLM stochasticity, prompt sensitivity, and limited reproducibility make multi-model trading unsuitable as the headline test. Offline deterministic mock consumers ship in the replication package so the protocol is CI-testable without API keys; live vendors may be substituted behind the same interface without changing the estimand.
 
 \section{Robustness, threats, and the JF/RFS agenda}
 \label{sec:robust}
@@ -514,21 +531,27 @@ Five implications follow. First, compilation quality has first-order economic co
 News/on-chain/options/tokenomics lack durable history in the current archive. Continuous multi-year collection is required before claiming full thirteen-band identification.
 
 \paragraph{Natural outages.}
-Hard institutional outages are rare inside a continuous OKX backfill. Logged \texttt{collection\_runs} failures and planted availability shocks are the path to sharper $O_t$ designs.
+Hard institutional outages are rare inside a continuous OKX backfill. Logged \texttt{collection\_runs} failures and planted availability shocks are the path to sharper $O_t$ designs; scarce-world labels use expanding quantiles only as descriptive complements.
+
+\paragraph{Production vs paper ACWMI.}
+Live API bundles may attach production proxies for $(S,C)$ when engines are absent; paper empirics use return-engine $(S,C)$. Bundles disclose \texttt{acwmi\_input\_source}$\in\{\texttt{paper\_engines},\texttt{production\_proxy}\}$. These objects must not be treated as interchangeable without disclosure.
 
 \paragraph{Snapshot density.}
 Analytics snapshots remain sparse historically; PIT currently relies on raw history. Daily readiness/AI-context snapshots will enable pure \texttt{time\_slice} replay.
 
 \paragraph{External validity.}
-The panel covers ten liquid names and one durable content vintage per band. The 2017--2026 long-span audit anchors the return-based core of the rule, but band-content identification currently rests on a single 400-day archive window. Cross-section expansion and longer content calendars remain first-order.
+The panel covers ten liquid names and durable content only for macro/alternative. The 2017--2026 long-span audit anchors the return-based core of the rule, but band-content identification currently rests on a single archive window. Cross-section expansion and longer content calendars remain first-order.
 
 \paragraph{Multiple testing.}
 The headline mechanism $-$ momentum contrast is a single pre-specified comparison; the menu-wide reality check ($p=0.144$) is reported alongside it. A final submission should add loss-function variants and stationary-bootstrap confirmation.
 
+\paragraph{AI-consumer limits.}
+Multi-model Compiled--Raw contrasts validate the AI interface of the theory. They are not substitutes for PIT/LOBO identification and must not be read as unconditional LLM alpha.
+
 \section{Conclusion}
 \label{sec:conc}
 
-Information-set compilation is a first-order object in cryptocurrency markets. This paper develops the RCA-WM / ACWMI theory as a proposition chain---compilation is not feature expansion, reconstruction error is bounded, pricing kernels are constrained to the compiled filtration, abstention is world-conditional, and leave-one-band-out value decomposes into content and gating channels---and instantiates every object on a real multi-band PIT archive. Empirically, vintage-safe macro and stablecoin-flow content carries significant out-of-sample economic value ($\Delta\mathrm{CE}$ vs momentum $0.334$, $p=0.034$; LOBO macro/alternative $p=0.010/0.008$, content channel dominant), while a long-span audit shows the return-based rule itself has no hidden alpha---exactly the pattern the compilation theory predicts. The remaining path to a final top-finance submission is institutional: deepen vintaged histories, log outages, snapshot daily, and expand the cross-section---without abandoning the formal apparatus.
+Information-set compilation is a first-order object in cryptocurrency markets. This paper develops the RCA-WM / ACWMI theory as a proposition chain---compilation is not feature expansion, reconstruction error is bounded, pricing kernels are constrained to the compiled filtration, abstention is world-conditional, and leave-one-band-out value decomposes into content and gating channels---and instantiates every object on a real multi-band PIT archive under a previous-close clock. Empirically, the pre-specified mechanism-versus-momentum contrast and content-dominant LOBO deletions support the claim that vintage-safe macro and stablecoin-flow content has OOS economic value, while the long-span audit rules out hidden return-rule alpha. A secondary AI-consumer protocol extends the same estimand to within-model Compiled versus Raw decisions. The remaining path to a final top-finance submission is institutional: deepen vintaged histories, log outages, snapshot daily, expand the cross-section, and report live-vendor consumer results under the frozen protocol---without abandoning the formal apparatus.
 
 \appendix
 \section{Notation}

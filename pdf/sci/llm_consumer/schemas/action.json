@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LLMConsumerAction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action", "confidence"],
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["bullish", "bearish", "neutral", "abstain"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "rationale": {
+      "type": "string",
+      "maxLength": 280
+    }
+  }
+}

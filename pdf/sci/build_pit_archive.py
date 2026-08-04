@@ -28,23 +28,20 @@ sys.path.insert(0, str(ROOT))
 from logic_layer.ai_market_context.service import AIMarketContextService
 from logic_layer.asset_readiness.service import AssetReadinessService
 from logic_layer.time_slice.band_pit import BAND_FRESH_SECONDS, BandPITService
+from pdf.sci.experiment_config import (
+    asset_to_symbol,
+    config_manifest,
+    decision_asof_for_payoff_date,
+    load_experiment_config,
+    paper_assets,
+)
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 DATA.mkdir(parents=True, exist_ok=True)
 
-PAPER_ASSETS = ["BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "AVAX", "LINK", "DOT", "NEAR"]
-ASSET_TO_SYMBOL = {
-    "BTC": "BTC/USDT",
-    "ETH": "ETH/USDT",
-    "SOL": "SOL/USDT",
-    "XRP": "XRP/USDT",
-    "BNB": "BNB/USDT",
-    "ADA": "ADA/USDT",
-    "AVAX": "AVAX/USDT",
-    "LINK": "LINK/USDT",
-    "DOT": "DOT/USDT",
-    "NEAR": "NEAR/USDT",
-}
+_CFG = load_experiment_config()
+PAPER_ASSETS = paper_assets()
+ASSET_TO_SYMBOL = asset_to_symbol()
 
 # age thresholds (days) — keep aligned with production BandPITService seconds
 FRESH_DAYS = {k: max(1, int(v / 86400)) for k, v in BAND_FRESH_SECONDS.items()}
@@ -246,8 +243,10 @@ def build_panel() -> pd.DataFrame:
     # Bands with durable history in this archive (used for shock identification)
     shock_eligible = {"exchange", "macro", "alternative"}
 
+    timing_cfg = _CFG["timing"]
     for d in dates:
-        asof = pd.Timestamp(d) + pd.Timedelta(hours=23, minutes=59)
+        # JF timing: earn r_t with information known at previous close only.
+        asof = decision_asof_for_payoff_date(d)
         # band statuses are market-level for non-exchange; exchange can be asset-specific
         market_status = {}
         market_age = {}
@@ -295,7 +294,8 @@ def build_panel() -> pd.DataFrame:
             req = [readiness_ratio(statuses.get(b, "missing")) for b in AssetReadinessService.REQUIRED_BANDS]
             B_band = float(np.mean(req)) if req else B_asset
             B_domain = float(np.mean([readiness_ratio(statuses[b]) for b in statuses]))
-            B_hier = 0.25 * B_domain + 0.35 * B_band + 0.40 * B_asset
+            wt = _CFG["b_hier_weights"]["default"]
+            B_hier = wt[0] * B_domain + wt[1] * B_band + wt[2] * B_asset
 
             ready_n = sum(1 for s in statuses.values() if s == "ready")
             limited_n = sum(1 for s in statuses.values() if s == "limited")
@@ -333,6 +333,8 @@ def build_panel() -> pd.DataFrame:
                 "asset": asset,
                 "symbol": symbol,
                 "ret": float(r["ret"]),
+                "decision_asof": asof.isoformat(),
+                "timing_protocol": timing_cfg["protocol"],
                 "B_hier": B_hier,
                 "U": U,
                 "H_cont": H,
@@ -366,6 +368,8 @@ def build_panel() -> pd.DataFrame:
         "band_ready_rates": {
             b: float((df[f"st_{b}"] == "ready").mean()) for b in bands if f"st_{b}" in df.columns
         },
+        "experiment_config": config_manifest(),
+        "timing_protocol": timing_cfg["protocol"],
     }
     (DATA / "pit_archive_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))

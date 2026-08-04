@@ -316,21 +316,40 @@ class AIMarketContextService:
         *,
         asset_readiness_row: dict,
         data_quality_flags: list[str],
-    ) -> tuple[float, float]:
-        """Derive paper ACWMI inputs S (signal integrity) and C (cross evidence).
+    ) -> tuple[float, float, str]:
+        """Derive ACWMI inputs S (signal integrity) and C (cross evidence).
 
-        Production bundles may not store S/C explicitly; these proxies keep
-        WORLD_MODEL_INDEX_MODE=acwmi runnable from live readiness/quality fields.
+        Preference order (JF/RFS alignment):
+        1. Explicit paper-engine fields on the readiness row
+           (``signal_integrity`` / ``cross_evidence`` or ``S`` / ``C``) →
+           source ``paper_engines``.
+        2. Production readiness/quality proxies → source ``production_proxy``.
+
+        The paper empirics compute S/C from return engines in
+        ``pdf/sci/run_*_experiments.py``; live API bundles use (2) unless
+        engines have been attached upstream. Callers must not treat the two
+        sources as interchangeable without disclosure.
         """
+        row = asset_readiness_row or {}
+        explicit_s = row.get("signal_integrity", row.get("S"))
+        explicit_c = row.get("cross_evidence", row.get("C"))
+        if explicit_s is not None and explicit_c is not None:
+            try:
+                s_val = max(0.05, min(1.0, float(explicit_s)))
+                c_val = max(0.05, min(1.0, float(explicit_c)))
+                return s_val, c_val, "paper_engines"
+            except (TypeError, ValueError):
+                pass
+
         n_flags = len(data_quality_flags or [])
         s_val = max(0.05, min(1.0, 1.0 - 0.12 * n_flags))
 
-        ready = float(asset_readiness_row.get("ready_band_count") or 0.0)
-        limited = float(asset_readiness_row.get("limited_band_count") or 0.0)
-        missing = float(asset_readiness_row.get("missing_band_count") or 0.0)
+        ready = float(row.get("ready_band_count") or 0.0)
+        limited = float(row.get("limited_band_count") or 0.0)
+        missing = float(row.get("missing_band_count") or 0.0)
         total = ready + limited + missing
         if total <= 0:
-            bands = asset_readiness_row.get("bands") or {}
+            bands = row.get("bands") or {}
             if bands:
                 ready = float(
                     sum(
@@ -351,8 +370,9 @@ class AIMarketContextService:
         if total <= 0:
             c_val = 0.05
         else:
-            c_val = max(0.05, min(1.0, (ready + 0.5 * limited) / total))
-        return s_val, c_val
+            # Align proxy C with continuous readiness mass used by paper H_cont / U.
+            c_val = max(0.05, min(1.0, (ready + 0.7 * limited) / total))
+        return s_val, c_val, "production_proxy"
 
     @staticmethod
     def _quality_flag(
@@ -681,7 +701,7 @@ class AIMarketContextService:
         bundle["quality_notes"] = quality_notes
         bundle["risk_flags"] = self._build_risk_flags(bundle)
         bundle["evidence"] = self._build_evidence(bundle)
-        signal_integrity, cross_evidence = self._acwmi_proxies(
+        signal_integrity, cross_evidence, acwmi_source = self._acwmi_proxies(
             asset_readiness_row=asset_readiness_row,
             data_quality_flags=data_quality_flags,
         )
@@ -692,6 +712,7 @@ class AIMarketContextService:
             data_quality_flags=data_quality_flags,
             signal_integrity=signal_integrity,
             cross_evidence=cross_evidence,
+            acwmi_input_source=acwmi_source,
         )
         return bundle
 
@@ -921,6 +942,7 @@ class AIMarketContextService:
         gamma: tuple[float, ...] | None = None,
         abstain_threshold: float | None = None,
         index_mode: str | None = None,
+        acwmi_input_source: str | None = None,
     ) -> dict:
         """计算世界模型质量指数。
 
@@ -1001,4 +1023,7 @@ class AIMarketContextService:
             out["acwmi"] = acwmi
             out["signal_integrity"] = round(s_val, 4)
             out["cross_evidence"] = round(c_val, 4)
+            out["acwmi_input_source"] = acwmi_input_source or (
+                "paper_engines" if s_val is not None else "unspecified"
+            )
         return out

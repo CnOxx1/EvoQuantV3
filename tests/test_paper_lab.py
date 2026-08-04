@@ -66,7 +66,7 @@ def test_compute_world_model_index_wmi_backward_compatible():
 
 
 def test_acwmi_proxies_from_readiness():
-    s, c = AIMarketContextService._acwmi_proxies(
+    s, c, src = AIMarketContextService._acwmi_proxies(
         asset_readiness_row={
             "ready_band_count": 4,
             "limited_band_count": 2,
@@ -76,7 +76,18 @@ def test_acwmi_proxies_from_readiness():
     )
     assert 0.05 <= s <= 1.0
     assert 0.05 <= c <= 1.0
-    assert c == pytest.approx((4 + 0.5 * 2) / 8)
+    assert src == "production_proxy"
+    assert c == pytest.approx((4 + 0.7 * 2) / 8)
+
+
+def test_acwmi_proxies_prefer_paper_engine_fields():
+    s, c, src = AIMarketContextService._acwmi_proxies(
+        asset_readiness_row={"S": 0.81, "C": 0.66, "ready_band_count": 1},
+        data_quality_flags=["ignored"],
+    )
+    assert src == "paper_engines"
+    assert s == pytest.approx(0.81)
+    assert c == pytest.approx(0.66)
 
 
 def test_tag_availability_shock_metadata():

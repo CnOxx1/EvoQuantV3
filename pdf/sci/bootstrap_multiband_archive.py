@@ -29,18 +29,9 @@ os.environ.setdefault("TOKENOMICS_STAKING_RATIO_URL", "https://api.coingecko.com
 
 import config.settings as settings
 import config.symbols as symbols
+from pdf.sci.experiment_config import bootstrap_symbols
 
-PAPER_SYMBOLS = [
-    "BTC/USDT",
-    "ETH/USDT",
-    "SOL/USDT",
-    "XRP/USDT",
-    "AVAX/USDT",
-    "LINK/USDT",
-    "ADA/USDT",
-    "DOT/USDT",
-    "NEAR/USDT",
-]
+PAPER_SYMBOLS = bootstrap_symbols()
 
 
 def patch_runtime_config() -> None:

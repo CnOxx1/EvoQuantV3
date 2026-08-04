@@ -36,12 +36,17 @@ export ACWMI_ABSTAIN_THRESHOLD=0.35
 ```bash
 make paper-smoke          # production API smoke
 make paper-pit            # rebuild PIT panel from local SQLite history
-make paper-lab            # PIT → JF experiments → core figures/PDF → SCI PDF
+make paper-reconcile      # Yahoo vs exchange return audit
+make paper-llm-consumer   # Compiled vs Raw AI-consumer (mock providers; no API keys)
+make paper-lab            # PIT → JF experiments → reconcile → LLM consumer → PDFs
 make paper-lab WITH_BOOTSTRAP=1   # also bootstrap multi-band archive first
 make paper-core           # World-Model-First core figures + Chinese PDF only
 make paper-pdf
 make test-paper
 ```
+
+Versioned design knobs live in `pdf/sci/experiment_config.json` (content hash recorded in experiment outputs).
+Timing protocol: **decision at previous close** (features at \(t-1\) 23:59; payoff = day-\(t\) return).
 
 > Paper lab forces `DB_SPLIT_ENABLED=1` so readiness is read from
 > `exchange_data.db` / `market_data.db` / `analytics.db` (not empty `crypto_data.db`).
@@ -65,9 +70,12 @@ PYTHONPATH=. python3 pdf/sci/generate_sci_pdf.py
 | Script | Role |
 | --- | --- |
 | `paper_lab.py` | one-command orchestrator |
+| `experiment_config.json` | versioned assets, timing, inference, LLM protocol |
 | `bootstrap_multiband_archive.py` | fill history tables (OKX-reachable envs) |
-| `build_pit_archive.py` | PIT panel via `BandPITService` + production WMI/ACWMI |
-| `run_pit_jf_experiments.py` | OOS econ / LOBO / thin–thick on real PIT |
+| `build_pit_archive.py` | PIT panel via `BandPITService` + previous-close clock |
+| `run_pit_jf_experiments.py` | OOS econ / LOBO / placebo / thin–thick / \(O_t\) |
+| `reconcile_returns.py` | Yahoo vs exchange return reconciliation audit |
+| `llm_consumer/` | secondary Compiled vs Raw AI-consumer harness |
 | `run_jf_experiments.py` | Yahoo-return JF suite (constructed readiness) |
 | `run_paper_experiments.py` | earlier synthetic/project analytics suite |
 | `generate_sci_pdf.py` | compile `main_acwmi_sci.tex` |

@@ -93,10 +93,12 @@ def main() -> int:
             "pit",
             "pit-exp",
             "yahoo-exp",
+            "reconcile",
+            "llm-consumer",
             "pdf",
             "experiments",
         ],
-        help="Pipeline step (default: all = pit→pit-exp→pdf; bootstrap is opt-in)",
+        help="Pipeline step (default: all = pit→pit-exp→llm→pdf; bootstrap is opt-in)",
     )
     p.add_argument(
         "--with-bootstrap",
@@ -115,6 +117,15 @@ def main() -> int:
         return _run("run_pit_jf_experiments.py")
     if args.step == "yahoo-exp":
         return _run("run_jf_experiments.py")
+    if args.step == "reconcile":
+        return _run("reconcile_returns.py")
+    if args.step == "llm-consumer":
+        cmd = [sys.executable, "-m", "pdf.sci.llm_consumer.eval"]
+        print("+", " ".join(cmd), flush=True)
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(ROOT)
+        env["DB_SPLIT_ENABLED"] = "1"
+        return subprocess.call(cmd, cwd=str(ROOT), env=env)
     if args.step == "pdf":
         # Prefer the complete JF/RFS manuscript renderer when present.
         full = SCI / "generate_full_manuscript_pdf.py"
@@ -132,13 +143,27 @@ def main() -> int:
         [
             "build_pit_archive.py",
             "run_pit_jf_experiments.py",
+            "reconcile_returns.py",
             "run_longspan_backtest.py",
-            "generate_core_figures.py",
-            "generate_core_manuscript_pdf.py",
-            "generate_sci_pdf.py",
         ]
     )
     for script in steps:
+        code = _run(script)
+        if code != 0:
+            return code
+    # LLM consumer is a module invocation (secondary validation)
+    code = subprocess.call(
+        [sys.executable, "-m", "pdf.sci.llm_consumer.eval"],
+        cwd=str(ROOT),
+        env={**os.environ, "PYTHONPATH": str(ROOT), "DB_SPLIT_ENABLED": "1"},
+    )
+    if code != 0:
+        return code
+    for script in (
+        "generate_core_figures.py",
+        "generate_core_manuscript_pdf.py",
+        "generate_sci_pdf.py",
+    ):
         code = _run(script)
         if code != 0:
             return code

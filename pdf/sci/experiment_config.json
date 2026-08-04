@@ -1,0 +1,88 @@
+{
+  "name": "jf_rfs_pit_identification",
+  "version": "2.0.0",
+  "description": "Versioned JF/RFS experiment configuration. Empirics must load this file and record its content hash.",
+  "assets": ["BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "AVAX", "LINK", "DOT", "NEAR"],
+  "asset_to_symbol": {
+    "BTC": "BTC/USDT",
+    "ETH": "ETH/USDT",
+    "SOL": "SOL/USDT",
+    "XRP": "XRP/USDT",
+    "BNB": "BNB/USDT",
+    "ADA": "ADA/USDT",
+    "AVAX": "AVAX/USDT",
+    "LINK": "LINK/USDT",
+    "DOT": "DOT/USDT",
+    "NEAR": "NEAR/USDT"
+  },
+  "bootstrap_symbols": [
+    "BTC/USDT",
+    "ETH/USDT",
+    "SOL/USDT",
+    "XRP/USDT",
+    "BNB/USDT",
+    "AVAX/USDT",
+    "LINK/USDT",
+    "ADA/USDT",
+    "DOT/USDT",
+    "NEAR/USDT"
+  ],
+  "hist_bands": ["exchange", "macro", "alternative"],
+  "content_bands": {
+    "macro": "macro_tilt",
+    "alternative": "alt_tilt"
+  },
+  "timing": {
+    "protocol": "decision_at_prev_close",
+    "decision_asof_offset_days": -1,
+    "decision_asof_clock": "23:59:00",
+    "payoff": "same_calendar_day_close_to_close",
+    "notes": "Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t."
+  },
+  "split": {
+    "is_frac": 0.5,
+    "method": "chronological"
+  },
+  "inference": {
+    "n_boot": 999,
+    "block": 5,
+    "block_sensitivity": [5, 10, 21],
+    "cost_bps": [0, 10, 25, 50],
+    "crra_gamma": 2.0
+  },
+  "thresholds": {
+    "wmi_thr": 0.2,
+    "ac_grid": [0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
+    "c_grid": [0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
+    "abstain_rate_bounds": [0.05, 0.55]
+  },
+  "b_hier_weights": {
+    "default": [0.25, 0.35, 0.4],
+    "sensitivity": [
+      [0.25, 0.35, 0.4],
+      [0.15, 0.35, 0.5],
+      [0.35, 0.35, 0.3],
+      [0.333, 0.333, 0.333]
+    ]
+  },
+  "scarce_world": {
+    "method": "expanding_quantile",
+    "quantile": 0.2,
+    "min_history_days": 60,
+    "event_gap_days": 3
+  },
+  "pre_specified_contrast": {
+    "name": "Mechanism − Momentum",
+    "treatment": "Thick ungated",
+    "control": "Momentum always",
+    "metric": "CE"
+  },
+  "llm_consumer": {
+    "enabled": true,
+    "models": ["mock-compiled-aware", "mock-momentum", "mock-noisy"],
+    "temperature": 0.0,
+    "action_space": ["bullish", "bearish", "neutral", "abstain"],
+    "treatments": ["compiled", "raw"],
+    "protocol_path": "pdf/sci/llm_consumer/protocol.md"
+  }
+}
