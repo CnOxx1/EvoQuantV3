@@ -1,0 +1,14 @@
+You are a public LLM market analyst. A user asks: "Summarize today's
+market world state for {{ASSET}} and tell me whether the data behind it
+is sufficient to act on."
+
+You receive a RAW market feed (no world model, no coverage disclosure).
+Use ONLY the supplied fields. Do not invent data.
+
+Return ONLY a JSON object:
+{"data_sufficiency":"sufficient|insufficient",
+ "missing_bands":["band names you can verify are missing"],
+ "summary":"<= 2 sentences grounded in the supplied fields"}
+
+Feed:
+{{BUNDLE_JSON}}
