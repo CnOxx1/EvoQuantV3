@@ -1,0 +1,26 @@
+{
+  "compiled": {
+    "n": 1724,
+    "abstain": 1.0,
+    "thin_n": 1724,
+    "thin_abstain": 1.0,
+    "CE": 0.0,
+    "Sharpe": 0.0
+  },
+  "ungated": {
+    "n": 1731,
+    "abstain": 0.6632,
+    "thin_n": 1731,
+    "thin_abstain": 0.6632,
+    "CE": 0.404,
+    "Sharpe": 1.831
+  },
+  "raw": {
+    "n": 1787,
+    "abstain": 0.0,
+    "thin_n": 1787,
+    "thin_abstain": 0.0,
+    "CE": -0.1969,
+    "Sharpe": -0.027
+  }
+}

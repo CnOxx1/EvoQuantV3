@@ -174,7 +174,7 @@ class OpenAICompatibleProvider:
         last_err: Exception | None = None
         # Retry transient gateway failures so provider errors are not silently
         # scored as abstentions in large sweeps.
-        for attempt, timeout_s in enumerate((60, 60, 90)):
+        for attempt, timeout_s in enumerate((60, 60, 90, 120)):
             req = urllib.request.Request(url, data=data, headers=headers, method="POST")
             try:
                 with urllib.request.urlopen(req, timeout=timeout_s) as resp:
@@ -189,8 +189,9 @@ class OpenAICompatibleProvider:
                 break
             except Exception as e:  # noqa: BLE001 — retried; recorded on final failure
                 last_err = e
-                if attempt < 2:
-                    time.sleep(2.0 * (attempt + 1))
+                if attempt < 3:
+                    # Rate-limit friendly backoff (429s dominate under load).
+                    time.sleep(5.0 * (attempt + 1))
         if last_err is not None:
             action, conf = validate_action("abstain", 0.0)
             return ConsumerDecision(
