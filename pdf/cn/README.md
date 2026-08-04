@@ -1,11 +1,9 @@
 # 中文论文包（`pdf/cn/`）
 
-完整顶刊工作论文中文稿与英文镜像。
-
 | 文件 | 说明 |
 | --- | --- |
-| **`main_cn_jf.md`** | **完整中文顶刊稿**（理论公式 + 真实 PIT 实证） |
-| `main_cn_jf.pdf` | 中文 PDF（有 CJK 字体时由生成脚本写出） |
+| **`main_cn_core.md` / `.pdf`** | **World-Model-First 核心重写稿**（主题对齐 `pdf/original/main_cn_core.pdf`，含实证与图 1–15） |
+| `main_cn_jf.md` / `.pdf` | JF/RFS 风格完整中文稿（编译/SDF 接口表述） |
 | `main_jf_rfs.pdf` | 英文完整稿镜像 |
 | `main_cn_theory.md` | 理论公式摘录（较短） |
 
@@ -15,7 +13,8 @@
 ## 生成
 
 ```bash
-PYTHONPATH=. python3 pdf/sci/generate_full_manuscript_pdf.py
-# 或
-make paper-full
+export DB_SPLIT_ENABLED=1
+make paper-lab          # PIT → 实证 → 核心稿补图+PDF → SCI PDF
+# 或仅核心稿：
+make paper-core
 ```

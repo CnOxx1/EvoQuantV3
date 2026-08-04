@@ -5,14 +5,34 @@
     "klines": 9373,
     "merged_klines": 9373,
     "funding_rates": 2448,
-    "symbols_1d": ["ADA/USDT", "AVAX/USDT", "BNB/USDT", "BTC/USDT", "DOT/USDT", "ETH/USDT", "LINK/USDT", "NEAR/USDT", "SOL/USDT", "XRP/USDT"],
-    "range_1d": ["2025-06-30", "2026-08-03"]
+    "symbols_1d": [
+      "ADA/USDT",
+      "AVAX/USDT",
+      "BNB/USDT",
+      "BTC/USDT",
+      "DOT/USDT",
+      "ETH/USDT",
+      "LINK/USDT",
+      "NEAR/USDT",
+      "SOL/USDT",
+      "XRP/USDT"
+    ],
+    "range_1d": [
+      "2025-06-30",
+      "2026-08-03"
+    ]
   },
   "market": {
     "macro_timeseries": 81013,
-    "macro_range": ["1962-01-02", "2026-08-03"],
+    "macro_range": [
+      "1962-01-02",
+      "2026-08-03"
+    ],
     "alternative_timeseries": 88761,
-    "alternative_range": ["2017-11-29", "2026-08-03"],
+    "alternative_range": [
+      "2017-11-29",
+      "2026-08-03"
+    ],
     "news_articles": 198,
     "onchain_timeseries": 46,
     "options_timeseries": 24,
@@ -27,8 +47,35 @@
     "file": "pdf/data/pit_multiband_panel.csv",
     "rows": 4000,
     "days": 400,
-    "range": ["2025-06-30", "2026-08-03"],
-    "durable_bands": ["exchange", "macro", "alternative"],
-    "right_censored_bands": ["news", "onchain", "options", "tokenomics", "event_calendar"]
+    "range": [
+      "2025-06-30",
+      "2026-08-03"
+    ],
+    "durable_bands": [
+      "exchange",
+      "macro",
+      "alternative"
+    ],
+    "right_censored_bands": [
+      "news",
+      "onchain",
+      "options",
+      "tokenomics",
+      "event_calendar"
+    ],
+    "note": "Rebuild with DB_SPLIT_ENABLED=1 (paper_lab forces this)."
+  },
+  "core_manuscript": {
+    "md": "pdf/cn/main_cn_core.md",
+    "pdf": "pdf/cn/main_cn_core.pdf",
+    "figures_extra": [
+      "fig9_lobo_decomposition",
+      "fig10_longspan_by_year",
+      "fig11_band_readiness",
+      "fig12_wmi_acwmi_paths",
+      "fig13_cost_frontier",
+      "fig14_wm_pipeline",
+      "fig15_thin_thick"
+    ]
   }
 }

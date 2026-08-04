@@ -4,6 +4,7 @@
 独立研究者 · lmu151638@gmail.com  
 
 > 面向 *Journal of Finance* / *Review of Financial Studies* 的完整工作论文中文稿。  
+> **World-Model-First 核心重写稿**（主题对齐原 `main_cn_core`）：`pdf/cn/main_cn_core.md` / `.pdf`。  
 > 英文正式 TeX：`pdf/sci/main_jf_rfs.tex`。  
 > 理论公式吸收自原论文：`pdf/original/main_cn_pm.txt`。  
 > EvoQuant 是实证实验室，**不是**理论来源。

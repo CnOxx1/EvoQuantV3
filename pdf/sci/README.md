@@ -36,11 +36,15 @@ export ACWMI_ABSTAIN_THRESHOLD=0.35
 ```bash
 make paper-smoke          # production API smoke
 make paper-pit            # rebuild PIT panel from local SQLite history
-make paper-lab            # PIT → JF experiments → PDF
+make paper-lab            # PIT → JF experiments → core figures/PDF → SCI PDF
 make paper-lab WITH_BOOTSTRAP=1   # also bootstrap multi-band archive first
+make paper-core           # World-Model-First core figures + Chinese PDF only
 make paper-pdf
 make test-paper
 ```
+
+> Paper lab forces `DB_SPLIT_ENABLED=1` so readiness is read from
+> `exchange_data.db` / `market_data.db` / `analytics.db` (not empty `crypto_data.db`).
 
 Or via the orchestrator / scripts:
 
