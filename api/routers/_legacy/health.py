@@ -56,6 +56,9 @@ def get_health() -> HealthSummary:
     return HealthSummary(
         status=pipeline_status,
         wmi=wmi_data.get("wmi"),
+        acwmi=wmi_data.get("acwmi"),
+        acwmi_input_source=wmi_data.get("acwmi_input_source"),
+        index_mode=wmi_data.get("index_mode"),
         interpretation=wmi_data.get("interpretation"),
         should_ai_abstain=wmi_data.get("should_ai_abstain"),
         measured_at=summary.get("measured_at") or report.measured_at if 'report' in dir() else None,

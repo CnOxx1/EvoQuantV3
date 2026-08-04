@@ -11,6 +11,8 @@
 | --- | --- |
 | PIT clock / panel rebuild | `make paper-pit` (or migrate fallback) |
 | LOBO / bootstrap / costs / placebos | `python pdf/sci/run_pit_jf_experiments.py` or `make paper-lab` |
+| Long-span joint content (macro+stablecoin) | `python pdf/sci/run_longspan_content_audit.py` |
+| Persist paper objects to analytics | runs inside `run_pit_jf_experiments.py` → `paper_world_model_snapshots` |
 | Return reconciliation | `make paper-reconcile` |
 | AI-consumer transcripts | `make paper-llm-consumer` |
 | Manuscript PDF after TeX/generator edits | `python pdf/sci/generate_full_manuscript_pdf.py` |

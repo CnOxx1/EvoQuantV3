@@ -159,6 +159,8 @@ def load_band_content_features() -> pd.DataFrame:
             "ssc7_prev": ssc_prev.to_numpy(),
             "macro_tilt": macro_tilt,
             "alt_tilt": alt_tilt.to_numpy(),
+            "macro_tilt_source": "sqlite_macro_timeseries",
+            "alt_tilt_source": "sqlite_alternative_timeseries",
         }
     ).dropna(subset=["macro_tilt", "alt_tilt"])
     if len(out) == 0 or out[["vix_chg5", "dxy_chg5"]].notna().sum().sum() == 0:
@@ -738,6 +740,14 @@ def main() -> None:
     print("Attach engines (PIT returns + band content)...")
     df = attach_engines(pit, content=content)
     df.to_csv(TAB / "panel_simulation.csv", index=False)
+
+    try:
+        from pdf.sci.persist_paper_objects import persist_paper_world_model
+
+        n_snap = persist_paper_world_model(df)
+        print(f"persisted paper_world_model_snapshots: {n_snap} rows")
+    except Exception as exc:  # pragma: no cover - persistence must not block empirics
+        print(f"paper object persistence skipped: {type(exc).__name__}: {exc}")
 
     is_df, oos, cut = split_is_oos(df, is_frac=0.5)
     print("IS/OOS cut", cut, "IS days", is_df["date"].nunique(), "OOS", oos["date"].nunique())
