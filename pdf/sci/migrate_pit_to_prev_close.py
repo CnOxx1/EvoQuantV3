@@ -87,9 +87,13 @@ def main() -> int:
         "experiment_config": config_manifest(),
         "timing_protocol": "decision_at_prev_close",
         "timing_migration": "shift_status_from_prev_calendar_day",
+        "construction_path": "migration",
+        "fallback_reason": "sqlite_history_unavailable_or_requested",
         "note": (
             "Migrated from archived same-day-asof panel because local SQLite history "
-            "was empty; statuses for day t are taken from archived day t-1 EOD."
+            "was empty; statuses for day t are taken from archived day t-1 EOD. "
+            "This is an explicit fallback — prefer raw rebuild via build_pit_archive "
+            "when exchange/macro/alternative history tables are populated."
         ),
     }
     (DATA / "pit_archive_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")

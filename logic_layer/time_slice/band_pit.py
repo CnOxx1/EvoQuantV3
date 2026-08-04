@@ -94,6 +94,9 @@ class BandPITService:
         symbol = symbol or "BTC/USDT"
 
         if band == "exchange":
+            # Prefer the freshest bar <= asof across merged and raw klines so an
+            # incomplete merged archive cannot hide longer exchange history.
+            candidates: list[str] = []
             if _table_exists(an, "merged_klines"):
                 ts = _latest(
                     an,
@@ -102,15 +105,17 @@ class BandPITService:
                     (symbol, asof_s),
                 )
                 if ts:
-                    return ts
+                    candidates.append(ts)
             if _table_exists(ex, "klines"):
-                return _latest(
+                ts = _latest(
                     ex,
                     """SELECT MAX(open_time) FROM klines
                        WHERE symbol=? AND timeframe='1d' AND open_time<=?""",
                     (symbol, asof_s),
                 )
-            return None
+                if ts:
+                    candidates.append(ts)
+            return max(candidates) if candidates else None
 
         if band == "macro" and _table_exists(mk, "macro_timeseries"):
             cols = [r[1] for r in mk.execute("PRAGMA table_info(macro_timeseries)").fetchall()]

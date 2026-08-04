@@ -120,3 +120,31 @@ def test_availability_shock_api_object_contract():
     meta = json.loads(tag_availability_shock_metadata(band="alternative", planted=True))
     assert meta["event_kind"] == "availability_shock"
     assert meta["outage_flag"] is True
+
+
+def test_attach_paper_engines_onto_readiness_row(tmp_path: Path):
+    from logic_layer.ai_market_context.service import AIMarketContextService
+
+    db = tmp_path / "analytics.db"
+    persist_paper_world_model(_mini_panel(3), db_path=db, replace=True)
+    row = AIMarketContextService._attach_paper_engines(
+        {
+            "asset": "BTC",
+            "readiness_score": 0.2,
+            "ready_band_count": 1,
+            "limited_band_count": 0,
+            "missing_band_count": 7,
+        },
+        "BTC",
+        db_path=db,
+    )
+    assert row["S"] == pytest.approx(0.75)
+    assert row["C"] == pytest.approx(0.65)
+    assert row["signal_integrity"] == pytest.approx(0.75)
+    assert row["paper_world_model_snapshot"]["source"] == "paper_world_model_snapshots"
+    s, c, src = AIMarketContextService._acwmi_proxies(
+        asset_readiness_row=row, data_quality_flags=["ignored"]
+    )
+    assert src == "paper_engines"
+    assert s == pytest.approx(0.75)
+    assert c == pytest.approx(0.65)
