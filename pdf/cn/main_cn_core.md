@@ -3,10 +3,6 @@
 **李国聪**  
 独立研究者 · lmu151638@gmail.com  
 
-> 本稿主题对齐原论文 `pdf/original/main_cn_core.pdf`（World-Model-First）。  
-> 理论对象经 RCA-WM / ACWMI 形式化；EvoQuant 是可复现的实证仪器，不是理论来源。  
-> 英文配套：`pdf/sci/main_jf_rfs.tex`。复现：`make paper-lab`（需 `DB_SPLIT_ENABLED=1`）。
-
 ---
 
 ## 摘要
@@ -83,7 +79,7 @@ data-centric AI 强调通过数据质量与覆盖度提升表现。本文将该�
 \[
 X_{j,t}=h_j(S_t)+\nu_{j,t},\qquad j=1,\ldots,J.
 \]
-模型优先思路直接讨论 $\hat y_{t+1}=f(X_{1,t},\ldots,X_{J,t})$，却略去观测是否完整、可比较、过期或适入主视图。世界模型优先在 $f$ 之前加入生成函数：
+模型优先思路直接讨论下一期预测 $\hat{y}_{t+1}=f(X_{1,t},\ldots,X_{J,t})$，却略去观测是否完整、可比较、过期或适入主视图。世界模型优先在预测函数 $f$ 之前加入生成函数：
 \[
 W_t=G\bigl(\{X_{j,\tau}\}_{j\le J,\tau\le t},\,Q_t,\,R_t,\,A_t\bigr),
 \]
@@ -126,10 +122,7 @@ AI 消费的是带时间、质量、门控与角色的对象集合，而非平�
 
 $S_{t+1}=F(S_t,\eta_{t+1})$。来源观测 $X^{\mathrm{obs}}_{j,t}=h_j(S_{t-\ell_{j,t}})+\nu_{j,t}$。若 $h_j$ Lipschitz，则重建误差可分解为时滞、噪声与缺失三项：
 \[
-\|\widetilde S_t-S_t|
-\le C_1\sum_j\omega_j\ell_{j,t}
-+C_2\sum_j\omega_j\|\nu_{j,t}\|
-+C_3\sum_j\omega_j(1-z_{j,t}).
+|\tilde{S}_t-S_t|\leq C_1\sum_j\omega_j\ell_{j,t}+C_2\sum_j\omega_j|\nu_{j,t}|+C_3\sum_j\omega_j(1-z_{j,t})
 \]
 `latest_*`、freshness/TTL 与 `is_ready_for_ai` 正是压缩这三项的工程对应物。
 
@@ -149,10 +142,10 @@ W^{\mathrm{AI}}_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t).
 ### 3.6 ECP、MIG 与识别 DAG
 
 \[
-\mathrm{ECP}_t=\mathbf{1}\{\mathrm{conf}_t>\bar c\}\,\mathbf{1}\{\mathrm{WMI}_t<w\},
+\mathrm{ECP}_t=\mathbf{1}\{\mathrm{conf}_t>\bar{c}\}\,\mathbf{1}\{\mathrm{WMI}_t<w\}
 \]
 \[
-\mathrm{MIG}^{(m)}_{k,t}=I(R^{(m)}_t;E_{k,t}\mid I^{(-k)}_t).
+\mathrm{MIG}^{(m)}_{k,t}=I(R^{(m)}_t;E_{k,t}\mid I^{(-k)}_t)
 \]
 可用性冲击 $O_t$ 优先识别：$O_t\to W_t\to A_t$，模型 $M_t$ 与混淆 $C_t$ 进入 $W_t,A_t$。
 
@@ -160,22 +153,15 @@ W^{\mathrm{AI}}_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t).
 
 动作集 $\mathcal{A}=\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}$：
 \[
-a^\star_t=\arg\min_{a}\mathbb{E}[\ell(a,R_t)\mid W_t],
+a^{\star}_t=\arg\min_{a}\mathbb{E}[\ell(a,R_t)\mid W_t]
 \]
 当所有非弃权动作期望损失高于 $c_{\mathrm{abs}}(W_t)$ 时弃权。体制条件指数：
 \[
-\mathrm{ACWMI}_t
-=\exp\!\left(
-\frac{\sum_{i=1}^{5}\gamma_i(r_t)\log x_{i,t}}{\sum_{i=1}^{5}\gamma_i(r_t)}
-\right),
-\quad
-x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t).
+\mathrm{ACWMI}_t=\exp\left(\frac{\sum_{i=1}^{5}\gamma_i(r_t)\log x_{i,t}}{\sum_{i=1}^{5}\gamma_i(r_t)}\right)
 \]
-解释质量：
+其中 $x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t)$。解释质量：$\mathrm{EAR}_t$ 为绑定证据的判断占比，$\mathrm{UCR}_t=1-\mathrm{EAR}_t$，解释波动
 \[
-\mathrm{EAR}_t=\frac{\#\{\text{绑定证据的判断}\}}{\#\{\text{总判断}\}},\quad
-\mathrm{UCR}_t=1-\mathrm{EAR}_t,\quad
-\mathrm{EV}_t=\frac{d(\Phi_t,\Phi_{t-1})}{1+d(W_t,W_{t-1})}.
+\mathrm{EV}_t=\frac{d(\Phi_t,\Phi_{t-1})}{1+d(W_t,W_{t-1})}
 \]
 
 ### 3.8 LOBO 即经济 MIG（含通道分解）
@@ -188,7 +174,9 @@ x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t).
 
 ### 4.1 分层架构
 
-数据层采集 → SQLite 历史 / `latest_*` 快照 → 逻辑层 readiness 与 `ai_market_context` bundle → API。图 14 给出 World-Model-First 流水线：原始证据带经治理编译为 $W_t$，再进入 AI 判断与弃权。
+数据层采集 → SQLite 历史 / `latest_*` 快照 → 逻辑层 readiness 与 `ai_market_context` bundle → API。下图给出 World-Model-First 流水线：原始证据带经治理编译为 $W_t$，再进入 AI 判断与弃权。
+
+![图 14. World-Model-First 编译流水线：原始证据带 → 治理 → 编译世界 → AI 判断与弃权。](../figures/fig14_wm_pipeline.png)
 
 ### 4.2 八证据带
 
@@ -222,7 +210,9 @@ x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t).
 
 ### 6.1 数据
 
-真实多带 PIT：2025-06-30 → 2026-08-03，400 天 × 10 资产 = 4000 行。耐久带 ready 率：exchange ≈ 1.0，macro = 1.0，alternative = 1.0；news/onchain/options/tokenomics 多为采集日右删失（图 11）。
+真实多带 PIT：2025-06-30 → 2026-08-03，400 天 × 10 资产 = 4000 行。耐久带 ready 率：exchange ≈ 1.0，macro = 1.0，alternative = 1.0；news/onchain/options/tokenomics 多为采集日右删失。
+
+![图 11. 真实 PIT 面板上的证据带 readiness：耐久带持续可用，稀缺带右删失。](../figures/fig11_band_readiness.png)
 
 ### 6.2 设计
 
@@ -249,7 +239,9 @@ x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t).
 
 ### 7.1 流水线与世界质量路径
 
-图 14 展示编译流水线；图 12 给出 WMI/ACWMI 在 PIT 面板上的路径及 IS/OOS 切点；图 3（实验包）给出 cascade 与一致性 $C$ 的伴随路径；图 11 显示耐久带持续 ready、稀缺带右删失。
+图 14 展示编译流水线；下图给出 WMI/ACWMI 在 PIT 面板上的路径及 IS/OOS 切点；图 3（实验包）给出 cascade 与一致性 $C$ 的伴随路径。
+
+![图 12. PIT 面板上的 WMI / ACWMI 路径与 IS/OOS 切点。](../figures/fig12_wmi_acwmi_paths.png)
 
 ### 7.2 OOS 经济价值：带内容显著优于动量
 
@@ -258,11 +250,15 @@ x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t).
 | Always long | −0.816 | −1.399 | −1.157 | −0.466 | 0 |
 | Momentum | 0.051 | 0.101 | −0.202 | −0.500 | 0 |
 | Mechanism / Thick（带内容） | 0.385 | 0.767 | 0.132 | −0.438 | 0.075 |
-| WMI$<0.2$ | 0 | 0 | 0 | 0 | 1.000 |
+| WMI $<$ 0.2 | 0 | 0 | 0 | 0 | 1.000 |
 | ACWMI (IS-frozen) | 0.385 | 0.767 | 0.132 | −0.438 | 0.075 |
 
 **Mechanism − Momentum：$\Delta\mathrm{CE}=0.334$，$p=0.034$，95% CI 排除 0。**  
-图 1：OOS 累计财富；图 2：Sharpe/CE 条形对比。两策略共享收益率输入、仅差 vintage 宏观/替代内容——按构造隔离编译带内容的价值。
+两策略共享收益率输入、仅差 vintage 宏观/替代内容——按构造隔离编译带内容的价值。
+
+![图 1. OOS 累计财富路径（选择性策略 vs 基准）。](../figures/fig1_architecture.png)
+
+![图 2. OOS Sharpe 与确定性等价（CE）对比。](../figures/fig2_coverage_compare.png)
 
 ### 7.3 厚 vs 薄世界
 
@@ -271,7 +267,9 @@ x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t).
 | 薄（仅 exchange） | 0.201 | 0.562 | −0.850 | −0.388 | 0.454 |
 | 厚真实 PIT | 0.356 | 0.688 | 0.767 | 0.132 | 0.075 |
 
-$\Delta$Sharpe $=1.62$（$p=0.044$）；$\Delta$CE $=0.52$（$p=0.22$，200 天尚不显著）。见图 6 / 图 15。
+$\Delta\mathrm{Sharpe}=1.62$（$p=0.044$）；$\Delta\mathrm{CE}=0.52$（$p=0.22$，200 天尚不显著）。
+
+![图 15. 薄世界 vs 厚世界：世界质量与 OOS 经济价值。](../figures/fig15_thin_thick.png)
 
 ### 7.4 LOBO：显著且由内容通道驱动
 
@@ -281,34 +279,21 @@ $\Delta$Sharpe $=1.62$（$p=0.044$）；$\Delta$CE $=0.52$（$p=0.22$，200 天�
 | macro | −0.418 | 0.010 | −0.334 | 0.034 | −0.066 | 0.026 |
 | alternative | −0.402 | 0.008 | −0.334 | 0.034 | −0.040 | 0.044 |
 
-图 4 / 图 9：带信息改变的是**交易什么**，而不仅是**何时弃权**。
+带信息改变的是**交易什么**，而不仅是**何时弃权**。
+
+![图 9. LOBO 内容通道 vs 门控通道分解。](../figures/fig9_lobo_decomposition.png)
 
 ### 7.5 长回测外部有效性锚
 
-同一规则（2025 前 tilt=0）在 BTC/ETH 2017–2026（3471 天）上：年化 0.456、Sharpe 0.664，但对动量无显著优势（$\Delta\mathrm{CE}=0.017$，$p=0.55$）。图 10：日历年回报。收益率核心无隐藏 alpha ⇒ 7.2–7.4 的显著收益负载在编译带内容上。
+同一规则（2025 前 tilt=0）在 BTC/ETH 2017–2026（3471 天）上：年化 0.456、Sharpe 0.664，但对动量无显著优势（$\Delta\mathrm{CE}=0.017$，$p=0.55$）。收益率核心无隐藏 alpha ⇒ 7.2–7.4 的显著收益负载在编译带内容上。
+
+![图 10. 2017–2026 长回测分年年化收益（外部有效性锚）。](../figures/fig10_longspan_by_year.png)
 
 ### 7.6 成本、funding 与推断稳健性
 
-图 13：10bps 下 Mechanism Sharpe 0.467（CE −0.019 vs 动量 −0.352）；25bps 下排序不变；funding 调整 CE 变动 $<0.005$。块长敏感性稳定；White (2000) reality check $p=0.144$（菜单级诚实披露）。$B^{\mathrm{hier}}$ 权重扰动 CE 三位小数不变。实测 ECP $=0.688$，EAR $=1$。
+10bps 下 Mechanism Sharpe 0.467（CE −0.019 vs 动量 −0.352）；25bps 下排序不变；funding 调整 CE 变动小于 0.005。块长敏感性稳定；White (2000) reality check $p=0.144$（菜单级诚实披露）。$B^{\mathrm{hier}}$ 权重扰动 CE 三位小数不变。实测 ECP $=0.688$，EAR $=1$。
 
-### 7.7 图表索引
-
-| 图 | 内容 |
-| --- | --- |
-| 1 | OOS 累计财富 |
-| 2 | 策略 Sharpe / CE |
-| 3 | WMI/ACWMI 与 cascade/$C$ 路径 |
-| 4 | LOBO 边际 CE |
-| 5 | 稀缺世界事件研究 |
-| 6 / 15 | 薄 vs 厚 |
-| 7 | 弃权—价值前沿 |
-| 8 | IS/OOS 稳定性 |
-| 9 | LOBO 内容/门控分解（新） |
-| 10 | 长回测分年（新） |
-| 11 | 带 readiness 时间路径（新） |
-| 12 | WMI/ACWMI PIT 路径（新） |
-| 13 | 交易成本敏感性（新） |
-| 14 | World-Model-First 流水线（新） |
+![图 13. 交易成本敏感性：编译世界策略 vs 动量 / 始终做多。](../figures/fig13_cost_frontier.png)
 
 ---
 
