@@ -4,11 +4,11 @@ Thick ungated,10.0,no,0.467,-0.0191
 Thick ungated,25.0,no,0.017,-0.246
 Thick ungated,50.0,no,-0.725,-0.6251
 Thick ungated,10.0,yes (where archived),0.467,-0.0191
-ACWMI (IS-frozen),0.0,no,0.767,0.132
-ACWMI (IS-frozen),10.0,no,0.467,-0.0191
-ACWMI (IS-frozen),25.0,no,0.017,-0.246
-ACWMI (IS-frozen),50.0,no,-0.725,-0.6251
-ACWMI (IS-frozen),10.0,yes (where archived),0.467,-0.0191
+ACWMI (IS-frozen),0.0,no,0.654,0.0764
+ACWMI (IS-frozen),10.0,no,0.357,-0.0714
+ACWMI (IS-frozen),25.0,no,-0.086,-0.2935
+ACWMI (IS-frozen),50.0,no,-0.818,-0.6644
+ACWMI (IS-frozen),10.0,yes (where archived),0.357,-0.0714
 Momentum always,0.0,no,0.101,-0.2019
 Momentum always,10.0,no,-0.198,-0.3522
 Momentum always,25.0,no,-0.646,-0.578

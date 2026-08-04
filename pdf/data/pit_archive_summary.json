@@ -3,11 +3,11 @@
   "n_days": 399,
   "start": "2025-07-01",
   "end": "2026-08-03",
-  "mean_ready": 3.007518796992481,
-  "outage_rate": 0.0,
+  "mean_ready": 2.8030075187969925,
+  "outage_rate": 0.19699248120300752,
   "band_ready_rates": {
-    "exchange": 1.0,
-    "news": 0.007518796992481203,
+    "exchange": 0.8030075187969925,
+    "news": 0.0,
     "event_calendar": 0.0,
     "onchain": 0.0,
     "tokenomics": 0.0,
@@ -17,8 +17,8 @@
   },
   "experiment_config": {
     "name": "jf_rfs_pit_identification",
-    "version": "2.0.0",
-    "content_hash": "cd968df719b0601b",
+    "version": "2.1.0",
+    "content_hash": "0451376393e1481a",
     "path": "/workspace/pdf/sci/experiment_config.json",
     "pre_specified_contrast": {
       "name": "Mechanism \u2212 Momentum",
@@ -35,6 +35,15 @@
     }
   },
   "timing_protocol": "decision_at_prev_close",
-  "timing_migration": "shift_status_from_prev_calendar_day",
-  "note": "Migrated from archived same-day-asof panel because local SQLite history was empty; statuses for day t are taken from archived day t-1 EOD."
+  "construction_path": "raw_history",
+  "history_inventory": {
+    "klines": 3200,
+    "merged_klines": 2640,
+    "macro_timeseries": 85617,
+    "alternative_timeseries": 88803,
+    "exchange_bars": 5840,
+    "usable_for_raw_rebuild": true,
+    "durable_content_present": true
+  },
+  "note": "Statuses rebuilt from SQLite history via BandPITService / raw tables under decision_at_prev_close; no timing_migration applied."
 }

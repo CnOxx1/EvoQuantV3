@@ -1,4 +1,4 @@
 world,mean_B,mean_H,mean_ACWMI,Sharpe,CE,abstain_rate
-"Thin (exchange only, real PIT)",0.201,0.562,0.261,-0.85,-0.3883,0.454
-Thick real PIT (ex+macro+alt…),0.356,0.688,0.368,0.767,0.132,0.075
-Thick gated AC (real PIT),0.356,0.688,0.368,0.767,0.132,0.075
+"Thin (exchange only, real PIT)",0.123,0.538,0.165,-1.011,-0.4037,0.614
+Thick real PIT (ex+macro+alt…),0.277,0.662,0.339,0.767,0.132,0.075
+Thick gated AC (real PIT),0.277,0.662,0.339,0.654,0.0764,0.127

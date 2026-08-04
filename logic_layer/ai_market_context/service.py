@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime, timezone
+from pathlib import Path
 
 from database.db_manager import DBManager
 from data_layer.alternative_data.service import AlternativeDataService
@@ -305,6 +306,92 @@ class AIMarketContextService:
         }
 
     @staticmethod
+    def _load_latest_paper_engines(
+        entity_key: str,
+        *,
+        symbol: str | None = None,
+        db_path: Path | str | None = None,
+    ) -> dict | None:
+        """Load newest paper-engine S/C row for an asset from analytics snapshots."""
+        try:
+            from pdf.sci.persist_paper_objects import load_paper_world_model
+        except Exception:
+            return None
+
+        path = Path(db_path) if db_path is not None else None
+        rows = load_paper_world_model(
+            asset=str(entity_key or "").upper(),
+            limit=1,
+            db_path=path,
+        )
+        if not rows and symbol:
+            rows = load_paper_world_model(symbol=symbol, limit=1, db_path=path)
+        return rows[0] if rows else None
+
+    @classmethod
+    def _attach_paper_engines(
+        cls,
+        asset_readiness_row: dict,
+        entity_key: str,
+        *,
+        symbol: str | None = None,
+        db_path: Path | str | None = None,
+    ) -> dict:
+        """Attach paper S/C onto the readiness row so ACWMI uses paper_engines.
+
+        Live bundles otherwise fall back to production proxies. Explicit paper
+        fields on the readiness row already win inside ``_acwmi_proxies``; this
+        helper hydrates them from ``paper_world_model_snapshots`` when present.
+        """
+        row = dict(asset_readiness_row or {})
+        # Respect callers that already injected paper fields.
+        if row.get("S") is not None and row.get("C") is not None:
+            row.setdefault("signal_integrity", row["S"])
+            row.setdefault("cross_evidence", row["C"])
+            row.setdefault(
+                "paper_world_model_snapshot",
+                {"acwmi_input_source": "paper_engines", "source": "caller_injected"},
+            )
+            return row
+        if row.get("signal_integrity") is not None and row.get("cross_evidence") is not None:
+            row.setdefault("S", row["signal_integrity"])
+            row.setdefault("C", row["cross_evidence"])
+            row.setdefault(
+                "paper_world_model_snapshot",
+                {"acwmi_input_source": "paper_engines", "source": "caller_injected"},
+            )
+            return row
+
+        paper = cls._load_latest_paper_engines(
+            entity_key,
+            symbol=symbol or f"{str(entity_key or '').upper()}/USDT",
+            db_path=db_path,
+        )
+        if not paper:
+            return row
+        try:
+            s_val = float(paper["S"])
+            c_val = float(paper["C"])
+        except (KeyError, TypeError, ValueError):
+            return row
+        row["S"] = s_val
+        row["C"] = c_val
+        row["signal_integrity"] = s_val
+        row["cross_evidence"] = c_val
+        row["paper_world_model_snapshot"] = {
+            "decision_date": paper.get("decision_date"),
+            "asset": paper.get("asset"),
+            "symbol": paper.get("symbol"),
+            "WMI": paper.get("WMI"),
+            "ACWMI": paper.get("ACWMI"),
+            "macro_tilt": paper.get("macro_tilt"),
+            "alt_tilt": paper.get("alt_tilt"),
+            "acwmi_input_source": paper.get("acwmi_input_source") or "paper_engines",
+            "source": "paper_world_model_snapshots",
+        }
+        return row
+
+    @staticmethod
     def _coverage_score(asset_readiness_row: dict) -> float:
         try:
             return round(float(asset_readiness_row.get("readiness_score") or 0.0), 4)
@@ -534,6 +621,12 @@ class AIMarketContextService:
             "cross_exchange_execution_excluded_row_count": cross_exchange_quality_summary.get(
                 "excluded_row_count"
             ),
+            "paper_world_model_snapshot": asset_readiness_row.get(
+                "paper_world_model_snapshot"
+            ),
+            "paper_engines_attached": bool(
+                asset_readiness_row.get("paper_world_model_snapshot")
+            ),
         }
 
     def build_bundle_for_entity(
@@ -554,9 +647,15 @@ class AIMarketContextService:
                 audit_payload=resolved_audit_payload,
             )
         )
-        asset_readiness_row = self._select_asset_readiness_row(
-            resolved_asset_readiness_payload,
+        db_path = getattr(self.db, "db_path", None) or getattr(self.db, "path", None)
+        asset_readiness_row = self._attach_paper_engines(
+            self._select_asset_readiness_row(
+                resolved_asset_readiness_payload,
+                entity_key,
+            ),
             entity_key,
+            symbol=symbol,
+            db_path=db_path,
         )
         band_reports = self._band_report_map(resolved_audit_payload)
 

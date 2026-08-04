@@ -1,10 +1,10 @@
 {
   "status": "ok",
   "compiled": {
-    "r2_oos": -0.025598,
-    "ann_mean": -0.0396,
-    "Sharpe": -0.11,
-    "CE_daily": -0.000467,
+    "r2_oos": -0.960717,
+    "ann_mean": -0.0057,
+    "Sharpe": -0.014,
+    "CE_daily": -0.00047,
     "n_oos": 1990
   },
   "thin": {
@@ -14,8 +14,8 @@
     "CE_daily": -0.003188,
     "n_oos": 1990
   },
-  "dR2_compiled_minus_thin": -0.01892,
-  "dSharpe_compiled_minus_thin": 1.294,
+  "dR2_compiled_minus_thin": -0.954039,
+  "dSharpe_compiled_minus_thin": 1.39,
   "features_compiled": [
     "mom5",
     "macro_tilt",

@@ -1,10 +1,13 @@
 {
-  "built_at": "2026-08-03",
+  "built_at": "2026-08-04T06:15:57Z",
+  "construction_path": "raw_history",
+  "usable_for_raw_rebuild": true,
+  "durable_content_present": true,
   "exchange": {
     "venue": "okx",
-    "klines": 9373,
-    "merged_klines": 9373,
-    "funding_rates": 2448,
+    "klines": 3200,
+    "merged_klines": 2640,
+    "funding_rates": 0,
     "symbols_1d": [
       "ADA/USDT",
       "AVAX/USDT",
@@ -18,39 +21,42 @@
       "XRP/USDT"
     ],
     "range_1d": [
-      "2025-06-30",
-      "2026-08-03"
+      "2025-07-01",
+      "2026-08-04"
     ]
   },
   "market": {
-    "macro_timeseries": 81013,
+    "macro_timeseries": 85617,
     "macro_range": [
       "1962-01-02",
-      "2026-08-03"
+      "2026-08-04"
     ],
-    "alternative_timeseries": 88761,
+    "alternative_timeseries": 88803,
     "alternative_range": [
       "2017-11-29",
-      "2026-08-03"
+      "2026-08-04"
     ],
-    "news_articles": 198,
-    "onchain_timeseries": 46,
-    "options_timeseries": 24,
-    "tokenomics_timeseries": 40
+    "news_articles": 0,
+    "onchain_timeseries": 0,
+    "options_timeseries": 0,
+    "tokenomics_timeseries": 0
   },
   "analytics": {
+    "merged_klines": 2640,
     "asset_readiness_snapshots": 2,
-    "ai_market_context_snapshots": 18,
-    "note": "Historical analytics snapshots remain sparse; multi-band PIT uses raw history tables via build_pit_archive.py. time_slice currently resolves klines historically and latest analytics snapshots."
+    "ai_market_context_snapshots": 36,
+    "paper_world_model_snapshots": 3990,
+    "note": "Multi-band PIT prefers raw_history via build_pit_archive.py when exchange daily bars exist; migration is an explicit fallback only."
   },
   "pit_panel": {
     "file": "pdf/data/pit_multiband_panel.csv",
-    "rows": 4000,
-    "days": 400,
+    "rows": 3990,
+    "days": 399,
     "range": [
-      "2025-06-30",
+      "2025-07-01",
       "2026-08-03"
     ],
+    "construction_path": "raw_history",
     "durable_bands": [
       "exchange",
       "macro",
@@ -64,18 +70,5 @@
       "event_calendar"
     ],
     "note": "Rebuild with DB_SPLIT_ENABLED=1 (paper_lab forces this)."
-  },
-  "core_manuscript": {
-    "md": "pdf/cn/main_cn_core.md",
-    "pdf": "pdf/cn/main_cn_core.pdf",
-    "figures_extra": [
-      "fig9_lobo_decomposition",
-      "fig10_longspan_by_year",
-      "fig11_band_readiness",
-      "fig12_wmi_acwmi_paths",
-      "fig13_cost_frontier",
-      "fig14_wm_pipeline",
-      "fig15_thin_thick"
-    ]
   }
 }

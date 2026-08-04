@@ -1,5 +1,5 @@
 band,dCE_total,p_total,dCE_content_only,p_content,dCE_gating_only,p_gating
-exchange,-0.056,0.394,,,-0.056,0.394
-macro,-0.418,0.01,-0.3339,0.034,-0.0658,0.026
-alternative,-0.4019,0.008,-0.3339,0.034,-0.0404,0.044
-macro+alternative,-0.3934,0.018,-0.3341,0.034,,
+exchange,-0.0082,0.832,,,-0.0082,0.832
+macro,-0.651,0.012,-0.3456,0.026,-0.3651,0.17
+alternative,-0.551,0.014,-0.3606,0.034,-0.3846,0.128
+macro+alternative,-0.6455,0.01,-0.4831,0.016,,

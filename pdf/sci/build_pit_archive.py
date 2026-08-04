@@ -71,6 +71,154 @@ def table_exists(conn, name: str) -> bool:
     return row is not None
 
 
+def _safe_count(conn, table: str) -> int:
+    if not table_exists(conn, table):
+        return 0
+    try:
+        return int(conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
+    except Exception:
+        return 0
+
+
+def archive_history_inventory(conns: dict | None = None) -> dict:
+    """Count durable-band history that enables a raw PIT rebuild.
+
+    Raw rebuild is preferred whenever exchange daily bars exist in either
+    ``exchange.klines`` or ``analytics.merged_klines``. Macro/alternative
+    counts are reported for content-band readiness but are not required to
+    refuse migration (an all-missing content band is still a valid raw panel).
+    """
+    conns = conns or connect_dbs()
+    ex, mk, an = conns["exchange"], conns["market"], conns["analytics"]
+    n_klines = _safe_count(ex, "klines")
+    n_merged = _safe_count(an, "merged_klines")
+    n_macro = _safe_count(mk, "macro_timeseries")
+    n_alt = _safe_count(mk, "alternative_timeseries")
+    inv = {
+        "klines": n_klines,
+        "merged_klines": n_merged,
+        "macro_timeseries": n_macro,
+        "alternative_timeseries": n_alt,
+        "exchange_bars": n_klines + n_merged,
+        "usable_for_raw_rebuild": bool(n_klines > 0 or n_merged > 0),
+        "durable_content_present": bool(n_macro > 0 or n_alt > 0),
+    }
+    return inv
+
+
+def _minmax_date(conn, sql: str, params: tuple = ()) -> list[str] | None:
+    try:
+        row = conn.execute(sql, params).fetchone()
+    except Exception:
+        return None
+    if not row or not row[0] or not row[1]:
+        return None
+    return [str(pd.Timestamp(row[0]).date()), str(pd.Timestamp(row[1]).date())]
+
+
+def write_archive_inventory(inv: dict, *, construction_path: str, conns: dict | None = None) -> Path:
+    """Write manuscript-compatible archive inventory (keeps PDF generator fields)."""
+    from datetime import datetime, timezone
+
+    conns = conns or connect_dbs()
+    ex, mk, an = conns["exchange"], conns["market"], conns["analytics"]
+    symbols_1d: list[str] = []
+    if table_exists(ex, "klines"):
+        try:
+            symbols_1d = [
+                r[0]
+                for r in ex.execute(
+                    "SELECT DISTINCT symbol FROM klines WHERE timeframe='1d' ORDER BY 1"
+                ).fetchall()
+            ]
+        except Exception:
+            symbols_1d = []
+    range_1d = None
+    if table_exists(ex, "klines"):
+        range_1d = _minmax_date(
+            ex, "SELECT MIN(open_time), MAX(open_time) FROM klines WHERE timeframe='1d'"
+        )
+    if range_1d is None and table_exists(an, "merged_klines"):
+        range_1d = _minmax_date(
+            an,
+            "SELECT MIN(open_time), MAX(open_time) FROM merged_klines WHERE timeframe='1d'",
+        )
+    funding_n = _safe_count(ex, "funding_rates")
+    macro_range = None
+    if table_exists(mk, "macro_timeseries"):
+        macro_range = _minmax_date(
+            mk, "SELECT MIN(observation_time), MAX(observation_time) FROM macro_timeseries"
+        )
+    alt_range = None
+    if table_exists(mk, "alternative_timeseries"):
+        alt_range = _minmax_date(
+            mk,
+            "SELECT MIN(observation_time), MAX(observation_time) FROM alternative_timeseries",
+        )
+
+    pit_summary = {}
+    pit_summary_path = DATA / "pit_archive_summary.json"
+    if pit_summary_path.exists():
+        try:
+            pit_summary = json.loads(pit_summary_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            pit_summary = {}
+
+    payload = {
+        "built_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "construction_path": construction_path,
+        "usable_for_raw_rebuild": inv.get("usable_for_raw_rebuild", False),
+        "durable_content_present": inv.get("durable_content_present", False),
+        "exchange": {
+            "venue": "okx",
+            "klines": inv.get("klines", 0),
+            "merged_klines": inv.get("merged_klines", 0),
+            "funding_rates": funding_n,
+            "symbols_1d": symbols_1d,
+            "range_1d": range_1d or ["", ""],
+        },
+        "market": {
+            "macro_timeseries": inv.get("macro_timeseries", 0),
+            "macro_range": macro_range or ["", ""],
+            "alternative_timeseries": inv.get("alternative_timeseries", 0),
+            "alternative_range": alt_range or ["", ""],
+            "news_articles": _safe_count(mk, "news_articles"),
+            "onchain_timeseries": _safe_count(mk, "onchain_timeseries"),
+            "options_timeseries": _safe_count(mk, "options_timeseries"),
+            "tokenomics_timeseries": _safe_count(mk, "tokenomics_timeseries"),
+        },
+        "analytics": {
+            "merged_klines": inv.get("merged_klines", 0),
+            "asset_readiness_snapshots": _safe_count(an, "asset_readiness_snapshots"),
+            "ai_market_context_snapshots": _safe_count(an, "ai_market_context_snapshots"),
+            "paper_world_model_snapshots": _safe_count(an, "paper_world_model_snapshots"),
+            "note": (
+                "Multi-band PIT prefers raw_history via build_pit_archive.py when "
+                "exchange daily bars exist; migration is an explicit fallback only."
+            ),
+        },
+        "pit_panel": {
+            "file": "pdf/data/pit_multiband_panel.csv",
+            "rows": pit_summary.get("n_rows"),
+            "days": pit_summary.get("n_days"),
+            "range": [pit_summary.get("start"), pit_summary.get("end")],
+            "construction_path": pit_summary.get("construction_path", construction_path),
+            "durable_bands": ["exchange", "macro", "alternative"],
+            "right_censored_bands": [
+                "news",
+                "onchain",
+                "options",
+                "tokenomics",
+                "event_calendar",
+            ],
+            "note": "Rebuild with DB_SPLIT_ENABLED=1 (paper_lab forces this).",
+        },
+    }
+    out = DATA / "archive_inventory.json"
+    out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return out
+
+
 def latest_ts(conn, sql: str, params: tuple) -> pd.Timestamp | None:
     try:
         row = conn.execute(sql, params).fetchone()
@@ -105,7 +253,9 @@ def band_observation_time(
     ex, mk, an = conns["exchange"], conns["market"], conns["analytics"]
 
     if band == "exchange":
-        # prefer merged_klines 1d, else raw klines
+        # Take the freshest bar <= asof across merged and raw klines.
+        # Incomplete merged_klines must not hide longer raw exchange history.
+        candidates: list[pd.Timestamp] = []
         if table_exists(an, "merged_klines"):
             ts = latest_ts(
                 an,
@@ -116,9 +266,9 @@ def band_observation_time(
                 (symbol, asof_s),
             )
             if ts is not None and not pd.isna(ts):
-                return ts
+                candidates.append(ts)
         if table_exists(ex, "klines"):
-            return latest_ts(
+            ts = latest_ts(
                 ex,
                 """
                 SELECT MAX(open_time) FROM klines
@@ -126,7 +276,9 @@ def band_observation_time(
                 """,
                 (symbol, asof_s),
             )
-        return None
+            if ts is not None and not pd.isna(ts):
+                candidates.append(ts)
+        return max(candidates) if candidates else None
 
     if band == "macro" and table_exists(mk, "macro_timeseries"):
         # use available_at when present for true PIT, else observation_time
@@ -214,28 +366,29 @@ def build_panel() -> pd.DataFrame:
     first_ex = band_observation_time(
         conns, "exchange", sample_symbol, pd.Timestamp(dates[-1]), pit=pit
     )
-    # find earliest exchange bar
+    # Earliest bar across merged AND raw klines (incomplete merged must not truncate).
     an = conns["analytics"]
     ex = conns["exchange"]
-    earliest = None
+    earliest_candidates: list[pd.Timestamp] = []
     if table_exists(an, "merged_klines"):
         row = an.execute(
             "SELECT MIN(open_time) FROM merged_klines WHERE symbol=? AND timeframe='1d'",
             (sample_symbol,),
         ).fetchone()
         if row and row[0]:
-            earliest = pd.to_datetime(row[0])
-    if earliest is None and table_exists(ex, "klines"):
+            earliest_candidates.append(pd.to_datetime(row[0]))
+    if table_exists(ex, "klines"):
         row = ex.execute(
             "SELECT MIN(open_time) FROM klines WHERE symbol=? AND timeframe='1d'",
             (sample_symbol,),
         ).fetchone()
         if row and row[0]:
-            earliest = pd.to_datetime(row[0])
+            earliest_candidates.append(pd.to_datetime(row[0]))
+    earliest = min(earliest_candidates) if earliest_candidates else None
     if earliest is not None:
         dates = [d for d in dates if pd.Timestamp(d) >= earliest]
     print("PIT dates", dates[0] if dates else None, "→", dates[-1] if dates else None, "n=", len(dates))
-    print("first_ex_asof_end", first_ex)
+    print("first_ex_asof_end", first_ex, "earliest_exchange_bar", earliest)
 
     bands = list(AssetReadinessService.BAND_WEIGHTS.keys())
     rows = []
@@ -358,6 +511,7 @@ def build_panel() -> pd.DataFrame:
     df = pd.DataFrame(rows)
     out = DATA / "pit_multiband_panel.csv"
     df.to_csv(out, index=False)
+    inv = archive_history_inventory(conns)
     summary = {
         "n_rows": int(len(df)),
         "n_days": int(df["date"].nunique()) if len(df) else 0,
@@ -370,37 +524,79 @@ def build_panel() -> pd.DataFrame:
         },
         "experiment_config": config_manifest(),
         "timing_protocol": timing_cfg["protocol"],
+        "construction_path": "raw_history",
+        "history_inventory": inv,
+        "note": (
+            "Statuses rebuilt from SQLite history via BandPITService / raw tables "
+            "under decision_at_prev_close; no timing_migration applied."
+        ),
     }
     (DATA / "pit_archive_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    write_archive_inventory(inv, construction_path="raw_history", conns=conns)
     print(json.dumps(summary, indent=2))
     print("Wrote", out)
     return df
 
 
-if __name__ == "__main__":
-    # If domain DBs have no history (fresh VM), fall back to protocol migration
-    # of the checked-in archive rather than writing an all-missing panel.
-    try:
-        from database.router import DatabaseRouter, Domain
-        import sqlite3
+def run_migration_fallback(*, reason: str) -> int:
+    """Explicit fallback when raw history is unavailable."""
+    print(f"Migration fallback: {reason}")
+    from pdf.sci.migrate_pit_to_prev_close import main as migrate_main
 
-        r = DatabaseRouter()
-        ex = r.get_manager(Domain.EXCHANGE_DATA).conn
-        n_klines = 0
+    code = migrate_main()
+    summary_path = DATA / "pit_archive_summary.json"
+    if summary_path.exists():
         try:
-            n_klines = int(ex.execute("SELECT COUNT(*) FROM klines").fetchone()[0])
-        except Exception:
-            n_klines = 0
-        if n_klines == 0 and (DATA / "pit_multiband_panel.csv").exists():
-            print("SQLite exchange history empty — migrating checked-in PIT panel to previous-close clock")
-            from pdf.sci.migrate_pit_to_prev_close import main as migrate_main
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            summary = {}
+        summary["construction_path"] = "migration"
+        summary["fallback_reason"] = reason
+        summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    try:
+        inv = archive_history_inventory()
+    except Exception:
+        inv = {"usable_for_raw_rebuild": False}
+    write_archive_inventory(inv, construction_path="migration")
+    return code
 
-            raise SystemExit(migrate_main())
-    except SystemExit:
-        raise
+
+def main() -> int:
+    """Prefer raw-history PIT rebuild; migrate only when exchange bars are absent."""
+    try:
+        inv = archive_history_inventory()
     except Exception as e:
-        print("DB probe failed, attempting migration fallback:", e)
-        from pdf.sci.migrate_pit_to_prev_close import main as migrate_main
+        if not (DATA / "pit_multiband_panel.csv").exists():
+            raise
+        return run_migration_fallback(reason=f"db_probe_failed:{type(e).__name__}:{e}")
 
-        raise SystemExit(migrate_main())
-    build_panel()
+    print("history inventory", json.dumps(inv))
+    if inv["usable_for_raw_rebuild"]:
+        print(
+            "Raw history present "
+            f"(klines={inv['klines']}, merged_klines={inv['merged_klines']}) "
+            "— rebuilding PIT panel from SQLite"
+        )
+        df = build_panel()
+        if len(df) == 0:
+            if (DATA / "pit_multiband_panel.csv").exists():
+                return run_migration_fallback(
+                    reason="raw_rebuild_produced_empty_panel"
+                )
+            raise SystemExit("Raw PIT rebuild produced an empty panel and no archive exists")
+        return 0
+
+    if (DATA / "pit_multiband_panel.csv").exists():
+        return run_migration_fallback(
+            reason=(
+                "no_exchange_daily_bars "
+                f"(klines={inv['klines']}, merged_klines={inv['merged_klines']})"
+            )
+        )
+    raise SystemExit(
+        "No exchange daily bars in SQLite and no checked-in pit_multiband_panel.csv"
+    )
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,7 +1,7 @@
 # Real PIT multi-band experiment results
 
 - PIT archive: **2025-07-01 → 2026-08-03**, 3990 rows
-- Band ready rates: `{'exchange': 1.0, 'news': 0.007518796992481203, 'event_calendar': 0.0, 'onchain': 0.0, 'tokenomics': 0.0, 'options': 0.0, 'alternative': 1.0, 'macro': 1.0}`
+- Band ready rates: `{'exchange': 0.8030075187969925, 'news': 0.0, 'event_calendar': 0.0, 'onchain': 0.0, 'tokenomics': 0.0, 'options': 0.0, 'alternative': 1.0, 'macro': 1.0}`
 - IS/OOS cut: **2026-01-16**
 - Frozen: `{'ac_thr': 0.25, 'c_thr': 0.25, 'is_ce': -0.4467303855536908, 'is_abstain': 0.05628140703517588, 'is_sharpe': -0.2603324435708088, 'casc_only_thr': 0.7, 'wmi_thr': 0.2}`
 - Bootstrap: circular block, n_boot=999, block=5 trading days
@@ -13,61 +13,61 @@
 | Always long         |      -0.8164 |    0.5836 |   -1.399 | -1.1568 |  -0.4661 |          0     |      200 |
 | Momentum always     |       0.0506 |    0.5009 |    0.101 | -0.2019 |  -0.4997 |          0     |      200 |
 | Thick ungated       |       0.3846 |    0.5012 |    0.767 |  0.132  |  -0.4378 |          0.075 |      200 |
-| Simple outage rule  |       0.3846 |    0.5012 |    0.767 |  0.132  |  -0.4378 |          0.075 |      200 |
+| Simple outage rule  |      -0.0712 |    0.4432 |   -0.161 | -0.2699 |  -0.4378 |          0.438 |      200 |
 | Simple cascade rule |       0.3846 |    0.5012 |    0.767 |  0.132  |  -0.4378 |          0.075 |      200 |
 | WMI threshold (0.2) |       0      |    0      |    0     |  0      |   0      |          1     |      200 |
-| ACWMI (IS-frozen)   |       0.3846 |    0.5012 |    0.767 |  0.132  |  -0.4378 |          0.075 |      200 |
+| ACWMI (IS-frozen)   |       0.3246 |    0.4967 |    0.654 |  0.0764 |  -0.4378 |          0.127 |      200 |
 
 ## OOS block-bootstrap contrasts
 
 | contrast                    |   n_days | method   |   dSharpe |    dCE |   p_Sharpe |   p_CE |   n_boot |   block |   ci_dSharpe_05 |   ci_dSharpe_95 |   ci_dCE_05 |   ci_dCE_95 | ci95_excludes_0_CE   | ci95_excludes_0_Sharpe   |
 |:----------------------------|---------:|:---------|----------:|-------:|-----------:|-------:|---------:|--------:|----------------:|----------------:|------------:|------------:|:---------------------|:-------------------------|
 | Thick ungated − Always long |      200 | circular |    2.1664 | 1.2887 |      0.296 |  0.246 |      999 |       5 |         -2.2354 |          6.3169 |     -0.9963 |      3.5152 | False                | False                    |
-| ACWMI − Always long         |      200 | circular |    2.1664 | 1.2887 |      0.296 |  0.246 |      999 |       5 |         -2.2354 |          6.3169 |     -0.9963 |      3.5152 | False                | False                    |
-| ACWMI − Momentum always     |      200 | circular |    0.6664 | 0.3339 |      0.034 |  0.034 |      999 |       5 |          0.0552 |          1.4781 |      0.028  |      0.6768 | True                 | True                     |
-| Thick ungated − ACWMI       |      200 | circular |    0      | 0      |      1     |  1     |      999 |       5 |          0      |          0      |      0      |      0      | False                | False                    |
-| ACWMI − WMI threshold (0.2) |      200 | circular |    0.7674 | 0.132  |      0.534 |  0.802 |      999 |       5 |         -1.839  |          3.3599 |     -1.1986 |      1.3193 | False                | False                    |
+| ACWMI − Always long         |      200 | circular |    2.0525 | 1.2332 |      0.326 |  0.264 |      999 |       5 |         -2.3153 |          6.1876 |     -1.1011 |      3.4577 | False                | False                    |
+| ACWMI − Momentum always     |      200 | circular |    0.5526 | 0.2783 |      0.106 |  0.104 |      999 |       5 |         -0.1202 |          1.3873 |     -0.057  |      0.6342 | False                | False                    |
+| Thick ungated − ACWMI       |      200 | circular |    0.1139 | 0.0556 |      0.2   |  0.232 |      999 |       5 |         -0.0675 |          0.3814 |     -0.0336 |      0.1673 | False                | False                    |
+| ACWMI − WMI threshold (0.2) |      200 | circular |    0.6535 | 0.0764 |      0.576 |  0.906 |      999 |       5 |         -2.0541 |          3.2063 |     -1.2364 |      1.2439 | False                | False                    |
 
 ## LOBO (durable bands, content+gating deletion)
 
 | band_dropped      |   Sharpe |      CE |   abstain_rate |     dCE |   p_dCE |
 |:------------------|---------:|--------:|---------------:|--------:|--------:|
-| (none)            |    0.767 |  0.132  |          0.075 |  0      | nan     |
-| exchange          |    0.65  |  0.076  |          0.158 | -0.056  |   0.394 |
-| macro             |   -0.08  | -0.286  |          0.06  | -0.418  |   0.01  |
-| alternative       |   -0.042 | -0.2699 |          0.021 | -0.4019 |   0.008 |
-| macro+alternative |   -0.025 | -0.2614 |          0.021 | -0.3934 |   0.018 |
+| (none)            |    0.654 |  0.0764 |          0.127 |  0      | nan     |
+| exchange          |    0.634 |  0.0682 |          0.16  | -0.0082 |   0.832 |
+| macro             |   -0.834 | -0.5746 |          0.392 | -0.651  |   0.012 |
+| alternative       |   -0.575 | -0.4746 |          0.311 | -0.551  |   0.014 |
+| macro+alternative |   -0.774 | -0.5691 |          0.292 | -0.6455 |   0.01  |
 
 ## LOBO decomposition (content vs gating channel)
 
 | band              |   dCE_total |   p_total |   dCE_content_only |   p_content |   dCE_gating_only |   p_gating |
 |:------------------|------------:|----------:|-------------------:|------------:|------------------:|-----------:|
-| exchange          |     -0.056  |     0.394 |           nan      |     nan     |           -0.056  |      0.394 |
-| macro             |     -0.418  |     0.01  |            -0.3339 |       0.034 |           -0.0658 |      0.026 |
-| alternative       |     -0.4019 |     0.008 |            -0.3339 |       0.034 |           -0.0404 |      0.044 |
-| macro+alternative |     -0.3934 |     0.018 |            -0.3341 |       0.034 |          nan      |    nan     |
+| exchange          |     -0.0082 |     0.832 |           nan      |     nan     |           -0.0082 |      0.832 |
+| macro             |     -0.651  |     0.012 |            -0.3456 |       0.026 |           -0.3651 |      0.17  |
+| alternative       |     -0.551  |     0.014 |            -0.3606 |       0.034 |           -0.3846 |      0.128 |
+| macro+alternative |     -0.6455 |     0.01  |            -0.4831 |       0.016 |          nan      |    nan     |
 
 ## Thin vs thick (real PIT statuses; thin deletes content AND gating)
 
 | world                          |   mean_B |   mean_H |   mean_ACWMI |   Sharpe |      CE |   abstain_rate |
 |:-------------------------------|---------:|---------:|-------------:|---------:|--------:|---------------:|
-| Thin (exchange only, real PIT) |    0.201 |    0.562 |        0.261 |   -0.85  | -0.3883 |          0.454 |
-| Thick real PIT (ex+macro+alt…) |    0.356 |    0.688 |        0.368 |    0.767 |  0.132  |          0.075 |
-| Thick gated AC (real PIT)      |    0.356 |    0.688 |        0.368 |    0.767 |  0.132  |          0.075 |
+| Thin (exchange only, real PIT) |    0.123 |    0.538 |        0.165 |   -1.011 | -0.4037 |          0.614 |
+| Thick real PIT (ex+macro+alt…) |    0.277 |    0.662 |        0.339 |    0.767 |  0.132  |          0.075 |
+| Thick gated AC (real PIT)      |    0.277 |    0.662 |        0.339 |    0.654 |  0.0764 |          0.127 |
 
-- Thick − Thin bootstrap: `{'n_days': 200, 'method': 'circular', 'dSharpe': 1.6178, 'dCE': 0.5202, 'p_Sharpe': 0.044, 'p_CE': 0.22, 'n_boot': 999, 'block': 5, 'ci_dSharpe_05': 0.0938, 'ci_dSharpe_95': 3.7252, 'ci_dCE_05': -0.3617, 'ci_dCE_95': 1.373, 'ci95_excludes_0_CE': False, 'ci95_excludes_0_Sharpe': True}`
+- Thick − Thin bootstrap: `{'n_days': 200, 'method': 'circular', 'dSharpe': 1.7781, 'dCE': 0.5357, 'p_Sharpe': 0.036, 'p_CE': 0.242, 'n_boot': 999, 'block': 5, 'ci_dSharpe_05': 0.1579, 'ci_dSharpe_95': 3.9295, 'ci_dCE_05': -0.434, 'ci_dCE_95': 1.4212, 'ci95_excludes_0_CE': False, 'ci95_excludes_0_Sharpe': True}`
 
 ## Block-length sensitivity
 
 |   block |   thick_minus_thin_p_CE | thick_minus_thin_ci   |   acwmi_minus_long_p_CE | acwmi_minus_long_ci   |
 |--------:|------------------------:|:----------------------|------------------------:|:----------------------|
-|       5 |                    0.22 | [-0.3617,1.373]       |                   0.246 | [-0.9963,3.5152]      |
-|      10 |                    0.27 | [-0.3835,1.3699]      |                   0.332 | [-1.28,4.1942]        |
-|      21 |                    0.23 | [-0.3074,1.4053]      |                   0.308 | [-1.1357,4.1109]      |
+|       5 |                   0.242 | [-0.434,1.4212]       |                   0.264 | [-1.1011,3.4577]      |
+|      10 |                   0.254 | [-0.4047,1.3682]      |                   0.35  | [-1.3374,4.1243]      |
+|      21 |                   0.212 | [-0.2853,1.373]       |                   0.326 | [-1.1576,4.0107]      |
 
 ## White (2000) reality check vs Always long
 
-`{'benchmark': 'Always long', 'best_strategy': 'Thick ungated', 'max_dCE': 1.2887, 'p_reality_check': 0.144, 'n_boot': 999, 'block': 5, 'n_days': 200, 'deltas': {'Momentum always': 0.9549, 'Thick ungated': 1.2887, 'WMI threshold (0.2)': 1.1568, 'ACWMI (IS-frozen)': 1.2887}}`
+`{'benchmark': 'Always long', 'best_strategy': 'Thick ungated', 'max_dCE': 1.2887, 'p_reality_check': 0.144, 'n_boot': 999, 'block': 5, 'n_days': 200, 'deltas': {'Momentum always': 0.9549, 'Thick ungated': 1.2887, 'WMI threshold (0.2)': 1.1568, 'ACWMI (IS-frozen)': 1.2332}}`
 
 ## Transaction costs and funding
 
@@ -78,11 +78,11 @@
 | Thick ungated     |         25 | no                   |    0.017 | -0.246  |
 | Thick ungated     |         50 | no                   |   -0.725 | -0.6251 |
 | Thick ungated     |         10 | yes (where archived) |    0.467 | -0.0191 |
-| ACWMI (IS-frozen) |          0 | no                   |    0.767 |  0.132  |
-| ACWMI (IS-frozen) |         10 | no                   |    0.467 | -0.0191 |
-| ACWMI (IS-frozen) |         25 | no                   |    0.017 | -0.246  |
-| ACWMI (IS-frozen) |         50 | no                   |   -0.725 | -0.6251 |
-| ACWMI (IS-frozen) |         10 | yes (where archived) |    0.467 | -0.0191 |
+| ACWMI (IS-frozen) |          0 | no                   |    0.654 |  0.0764 |
+| ACWMI (IS-frozen) |         10 | no                   |    0.357 | -0.0714 |
+| ACWMI (IS-frozen) |         25 | no                   |   -0.086 | -0.2935 |
+| ACWMI (IS-frozen) |         50 | no                   |   -0.818 | -0.6644 |
+| ACWMI (IS-frozen) |         10 | yes (where archived) |    0.357 | -0.0714 |
 | Momentum always   |          0 | no                   |    0.101 | -0.2019 |
 | Momentum always   |         10 | no                   |   -0.198 | -0.3522 |
 | Momentum always   |         25 | no                   |   -0.646 | -0.578  |
@@ -102,8 +102,8 @@
 | Thick ungated     | range    |            153 |   0.076 |         0.0793 |      0.516 |
 | Thick ungated     | trend    |             86 |   0.043 |         2.4903 |      0.5   |
 | ACWMI (IS-frozen) | crisis   |           1761 |   0.88  |         0.3083 |      0.476 |
-| ACWMI (IS-frozen) | range    |            153 |   0.076 |         0.0793 |      0.516 |
-| ACWMI (IS-frozen) | trend    |             86 |   0.043 |         2.4903 |      0.5   |
+| ACWMI (IS-frozen) | range    |            153 |   0.076 |         0.4823 |      0.275 |
+| ACWMI (IS-frozen) | trend    |             86 |   0.043 |         0.3774 |      0.291 |
 
 ## Explanation / calibration metrics
 
@@ -111,12 +111,12 @@
 
 ## B_hier weight sensitivity (AC policy, frozen thresholds)
 
-| weights_dom_band_asset   |   Sharpe |    CE |   abstain_rate |
-|:-------------------------|---------:|------:|---------------:|
-| (0.25, 0.35, 0.4)        |    0.767 | 0.132 |          0.075 |
-| (0.15, 0.35, 0.5)        |    0.767 | 0.132 |          0.075 |
-| (0.35, 0.35, 0.3)        |    0.767 | 0.132 |          0.075 |
-| (0.333, 0.333, 0.333)    |    0.767 | 0.132 |          0.075 |
+| weights_dom_band_asset   |   Sharpe |     CE |   abstain_rate |
+|:-------------------------|---------:|-------:|---------------:|
+| (0.25, 0.35, 0.4)        |    0.654 | 0.0764 |          0.127 |
+| (0.15, 0.35, 0.5)        |    0.649 | 0.0744 |          0.127 |
+| (0.35, 0.35, 0.3)        |    0.637 | 0.0682 |          0.126 |
+| (0.333, 0.333, 0.333)    |    0.637 | 0.0682 |          0.126 |
 
 ## Mechanism (opened; band content in signals)
 

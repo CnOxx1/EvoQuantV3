@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pandas as pd
+import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -8,6 +10,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from database.db_manager import DBManager
 from logic_layer.ai_market_context.service import AIMarketContextService
+from pdf.sci.persist_paper_objects import persist_paper_world_model
 
 
 class StubService:
@@ -447,4 +450,94 @@ def test_ai_market_context_hides_raw_only_cross_exchange_rows_from_ai_view(tmp_p
         "跨交易所执行上下文存在真实原始快照" in note
         for note in bundle["quality_notes"]
     )
+    service.close()
+
+
+def test_bundle_attaches_paper_engines_from_snapshots(tmp_path):
+    db = DBManager(str(tmp_path / "ai_with_paper.sqlite"))
+    db.init_tables()
+    # Ensure paper table exists on this analytics file
+    db._create_paper_world_model_snapshots_table()
+    db.conn.commit()
+
+    panel = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2026-03-01"),
+                "asset": "BTC",
+                "symbol": "BTC/USDT",
+                "B_hier": 0.6,
+                "U": 0.7,
+                "H_cont": 0.8,
+                "S": 0.91,
+                "C": 0.77,
+                "C_base": 0.7,
+                "WMI": 0.5,
+                "ACWMI": 0.55,
+                "macro_tilt": 1.0,
+                "alt_tilt": 1.0,
+                "signal": 1.0,
+                "detected_regime": "range",
+                "mom5": 1.0,
+                "cascade_p": 0.1,
+                "scarce": 0,
+                "outage": 0,
+                "vix_chg5": -1.0,
+                "dxy_chg5": -1.0,
+            }
+        ]
+    )
+    persist_paper_world_model(panel, db_path=Path(db.db_path), replace=True)
+
+    audit_payload = {
+        "summary": {"world_model_status": "ready", "critical_gap_band_names": []},
+        "bands": [{"band_name": "exchange", "is_band_ready_for_ai": True}],
+    }
+    asset_readiness_payload = {
+        "assets": [
+            {
+                "asset": "BTC",
+                "asset_status": "partial",
+                "readiness_score": 0.4,
+                "ready_band_count": 2,
+                "limited_band_count": 1,
+                "missing_band_count": 5,
+                "missing_band_names": [],
+                "limited_band_names": [],
+                "bands": {},
+            }
+        ]
+    }
+    service = AIMarketContextService(
+        db=db,
+        repository=StubRepository(),
+        exchange_service=StubService({"symbols": []}),
+        news_service=StubService({"articles": [], "data_quality_flags": []}),
+        event_calendar_service=StubService(
+            {"upcoming_events": [], "data_quality_flags": []}
+        ),
+        onchain_service=StubService({}),
+        tokenomics_service=StubService({}),
+        alternative_service=StubService({}),
+        macro_context_service=StubService({}),
+        audit_service=StubAuditService(audit_payload),
+        market_breadth_service=StubService(
+            {
+                "breadth_status": "ok",
+                "breadth_score": 0.6,
+                "asset_count": 2,
+                "ai_ready_asset_count": 1,
+                "data_quality_flag": "ok",
+                "data_quality_flags": [],
+            }
+        ),
+        asset_readiness_service=StubService(asset_readiness_payload),
+        market_structure_service=StubService({"assets": []}),
+    )
+    bundle = service.build_bundle_for_entity("BTC")
+    wmi = bundle["world_model_index"]
+    assert wmi.get("acwmi_input_source") == "paper_engines"
+    assert wmi.get("signal_integrity") == pytest.approx(0.91)
+    assert wmi.get("cross_evidence") == pytest.approx(0.77)
+    assert bundle["data_readiness"]["paper_engines_attached"] is True
     service.close()
