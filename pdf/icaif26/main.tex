@@ -207,13 +207,13 @@ We describe the anonymized prototype as a layered systems object (Figure~\ref{fi
   \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=\linewidth]{fig14_wm_pipeline.png}
-  \Description{Pipeline from multi-band collectors through compilation to public LLM consumers.}
-  \caption{Anonymized runtime: collectors $\rightarrow$ vintage store $\rightarrow$ $\Pi_t$ / BandPIT $\rightarrow$ world bundle $\rightarrow$ public LLM decision / abstain.}
+  \includegraphics[width=0.92\textwidth]{fig_runtime_architecture.png}
+  \Description{Layered architecture: vintage-aware collectors, embedded stores, BandPIT compilation with honesty gates and availability shocks, world-bundle service contract, and three consumer arms with live abstention outcomes.}
+  \caption{Anonymized runtime architecture. Five layers map raw multi-band evidence to a typed world-bundle contract; the consumer layer runs the frozen three-arm protocol (Compiled / Ungated / Raw), whose live abstention outcomes are shown at the bottom.}
   \label{fig:pipeline}
-\end{figure}
+\end{figure*}
 
 \subsection{PIT previous-close clock}
 For calendar day \(t\), the decision information set is reconstructed at \((t{-}1)\,23{:}59\). The payoff is the same-calendar-day close-to-close return \(r_t\). This removes same-day look-ahead in band statuses and vintaged macro/alternative content. Bundle field \texttt{decision\_asof} records the clock; \texttt{timing\_protocol} is fixed to \texttt{decision\_at\_prev\_close} for all live runs.
@@ -272,12 +272,12 @@ Actions \(\in\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstai
 Listings~\ref{lst:prompt-c}--\ref{lst:prompt-u} excerpt the frozen Compiled and Ungated contracts (temperature \(0\); action schema identical). The only intentional difference is hard vs.\ soft abstention. Raw prompts omit world-quality language entirely.
 
 \begin{lstlisting}[caption={Compiled contract (excerpt).},label={lst:prompt-c}]
-Decision rules:
+Decision rules (excerpt):
 1. If world_model_index.should_ai_abstain is true
    OR the world is thin, you MUST "abstain".
 2. Prefer band content over raw momentum
    (macro_tilt, alt_tilt are PIT-safe).
-4. Rationale must be consistent with evidence_ids.
+3. Rationale must be consistent with evidence_ids.
 \end{lstlisting}
 
 \begin{lstlisting}[caption={Ungated soft contract (excerpt).},label={lst:prompt-u}]
