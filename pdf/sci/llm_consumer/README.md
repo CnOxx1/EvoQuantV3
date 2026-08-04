@@ -9,6 +9,9 @@ make paper-llm-consumer
 ```
 
 - Offline: `public-llm-compiled-follower` + diagnostic mocks
-- Live (optional): set `OPENAI_API_KEY` / `DEEPSEEK_API_KEY` / `GLM_API_KEY`
-- Outputs: `pdf/tables/table_llm_*.csv`, `table_llm_understanding.csv`,
-  `table_world_bundle_examples.json` (also copied under `pdf/icaif26/tables/`)
+- Live (optional): OpenAI-compatible gateway via `OPENAI_BASE_URL` +
+  `OPENAI_API_KEY` (or `TEAMOROUTER_API_KEY` / vendor keys). Never commit keys.
+  Example: `python -m pdf.sci.llm_consumer.eval --live-only --sample-n 100 --tag live --workers 6`
+- Outputs: `pdf/tables/table_llm_*.csv` (+ `*_live.*` when `--tag live`),
+  `table_llm_understanding.csv`, `table_world_bundle_examples.json`
+  (also copied under `pdf/icaif26/tables/`). Transcripts are gitignored.
