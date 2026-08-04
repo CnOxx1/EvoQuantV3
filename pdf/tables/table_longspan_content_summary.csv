@@ -1,0 +1,5 @@
+policy,ann_return,Sharpe,CE,max_DD,n_days
+mechanism+macro_content,0.4564,0.664,-0.0086,-0.913,3471
+mechanism (no content),0.4564,0.664,-0.0086,-0.913,3471
+momentum,0.4391,0.639,-0.0258,-0.913,3471
+always_long,0.7346,1.005,0.1893,-0.8794,3471

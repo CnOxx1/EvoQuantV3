@@ -20,13 +20,13 @@
 
 ## OOS block-bootstrap contrasts
 
-| contrast                    |   n_days |   dSharpe |    dCE |   p_Sharpe |   p_CE |   n_boot |   block |   ci_dSharpe_05 |   ci_dSharpe_95 |   ci_dCE_05 |   ci_dCE_95 | ci95_excludes_0_CE   | ci95_excludes_0_Sharpe   |
-|:----------------------------|---------:|----------:|-------:|-----------:|-------:|---------:|--------:|----------------:|----------------:|------------:|------------:|:---------------------|:-------------------------|
-| Thick ungated − Always long |      200 |    2.1664 | 1.2887 |      0.296 |  0.246 |      999 |       5 |         -2.2354 |          6.3169 |     -0.9963 |      3.5152 | False                | False                    |
-| ACWMI − Always long         |      200 |    2.1664 | 1.2887 |      0.296 |  0.246 |      999 |       5 |         -2.2354 |          6.3169 |     -0.9963 |      3.5152 | False                | False                    |
-| ACWMI − Momentum always     |      200 |    0.6664 | 0.3339 |      0.034 |  0.034 |      999 |       5 |          0.0552 |          1.4781 |      0.028  |      0.6768 | True                 | True                     |
-| Thick ungated − ACWMI       |      200 |    0      | 0      |      1     |  1     |      999 |       5 |          0      |          0      |      0      |      0      | False                | False                    |
-| ACWMI − WMI threshold (0.2) |      200 |    0.7674 | 0.132  |      0.534 |  0.802 |      999 |       5 |         -1.839  |          3.3599 |     -1.1986 |      1.3193 | False                | False                    |
+| contrast                    |   n_days | method   |   dSharpe |    dCE |   p_Sharpe |   p_CE |   n_boot |   block |   ci_dSharpe_05 |   ci_dSharpe_95 |   ci_dCE_05 |   ci_dCE_95 | ci95_excludes_0_CE   | ci95_excludes_0_Sharpe   |
+|:----------------------------|---------:|:---------|----------:|-------:|-----------:|-------:|---------:|--------:|----------------:|----------------:|------------:|------------:|:---------------------|:-------------------------|
+| Thick ungated − Always long |      200 | circular |    2.1664 | 1.2887 |      0.296 |  0.246 |      999 |       5 |         -2.2354 |          6.3169 |     -0.9963 |      3.5152 | False                | False                    |
+| ACWMI − Always long         |      200 | circular |    2.1664 | 1.2887 |      0.296 |  0.246 |      999 |       5 |         -2.2354 |          6.3169 |     -0.9963 |      3.5152 | False                | False                    |
+| ACWMI − Momentum always     |      200 | circular |    0.6664 | 0.3339 |      0.034 |  0.034 |      999 |       5 |          0.0552 |          1.4781 |      0.028  |      0.6768 | True                 | True                     |
+| Thick ungated − ACWMI       |      200 | circular |    0      | 0      |      1     |  1     |      999 |       5 |          0      |          0      |      0      |      0      | False                | False                    |
+| ACWMI − WMI threshold (0.2) |      200 | circular |    0.7674 | 0.132  |      0.534 |  0.802 |      999 |       5 |         -1.839  |          3.3599 |     -1.1986 |      1.3193 | False                | False                    |
 
 ## LOBO (durable bands, content+gating deletion)
 
@@ -55,7 +55,7 @@
 | Thick real PIT (ex+macro+alt…) |    0.356 |    0.688 |        0.368 |    0.767 |  0.132  |          0.075 |
 | Thick gated AC (real PIT)      |    0.356 |    0.688 |        0.368 |    0.767 |  0.132  |          0.075 |
 
-- Thick − Thin bootstrap: `{'n_days': 200, 'dSharpe': 1.6178, 'dCE': 0.5202, 'p_Sharpe': 0.044, 'p_CE': 0.22, 'n_boot': 999, 'block': 5, 'ci_dSharpe_05': 0.0938, 'ci_dSharpe_95': 3.7252, 'ci_dCE_05': -0.3617, 'ci_dCE_95': 1.373, 'ci95_excludes_0_CE': False, 'ci95_excludes_0_Sharpe': True}`
+- Thick − Thin bootstrap: `{'n_days': 200, 'method': 'circular', 'dSharpe': 1.6178, 'dCE': 0.5202, 'p_Sharpe': 0.044, 'p_CE': 0.22, 'n_boot': 999, 'block': 5, 'ci_dSharpe_05': 0.0938, 'ci_dSharpe_95': 3.7252, 'ci_dCE_05': -0.3617, 'ci_dCE_95': 1.373, 'ci95_excludes_0_CE': False, 'ci95_excludes_0_Sharpe': True}`
 
 ## Block-length sensitivity
 
@@ -148,6 +148,6 @@
 - Macro component LOBO (VIX vs DXY), cost-aware pre-specified contrast, compilation-wedge bridge, planted O_t shocks exported.
 - Mechanism signal is the deterministic R1–R3 rule in `directional_signal` (no latent model).
 - Timing protocol: decision_at_prev_close (features at t-1 23:59; payoff = day-t close-to-close).
-- Experiment config: `{'name': 'jf_rfs_pit_identification', 'version': '2.0.0', 'content_hash': 'cd968df719b0601b', 'path': '/workspace/pdf/sci/experiment_config.json', 'pre_specified_contrast': {'name': 'Mechanism − Momentum', 'treatment': 'Thick ungated', 'control': 'Momentum always', 'metric': 'CE'}, 'timing': {'protocol': 'decision_at_prev_close', 'decision_asof_offset_days': -1, 'decision_asof_clock': '23:59:00', 'payoff': 'same_calendar_day_close_to_close', 'notes': 'Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t.'}}`.
+- Experiment config: `{'name': 'jf_rfs_pit_identification', 'version': '2.1.0', 'content_hash': '0451376393e1481a', 'path': '/workspace/pdf/sci/experiment_config.json', 'pre_specified_contrast': {'name': 'Mechanism − Momentum', 'treatment': 'Thick ungated', 'control': 'Momentum always', 'metric': 'CE'}, 'timing': {'protocol': 'decision_at_prev_close', 'decision_asof_offset_days': -1, 'decision_asof_clock': '23:59:00', 'payoff': 'same_calendar_day_close_to_close', 'notes': 'Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t.'}}`.
 - Selective prediction / ACWMI gating is secondary on this sparse archive (often equals ungated).
 - time_slice grid exported to table_timeslice_grid.csv (analytics snapshots still sparse historically).

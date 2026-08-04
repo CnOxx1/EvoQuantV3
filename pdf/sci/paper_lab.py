@@ -145,6 +145,7 @@ def main() -> int:
             "run_pit_jf_experiments.py",
             "reconcile_returns.py",
             "run_longspan_backtest.py",
+            "run_longspan_content_audit.py",
         ]
     )
     for script in steps:

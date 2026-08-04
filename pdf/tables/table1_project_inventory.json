@@ -58,8 +58,8 @@
   "timeslice_months": 14,
   "experiment_config": {
     "name": "jf_rfs_pit_identification",
-    "version": "2.0.0",
-    "content_hash": "cd968df719b0601b",
+    "version": "2.1.0",
+    "content_hash": "0451376393e1481a",
     "path": "/workspace/pdf/sci/experiment_config.json",
     "pre_specified_contrast": {
       "name": "Mechanism \u2212 Momentum",
@@ -207,5 +207,75 @@
     "dCE_planted_minus_base": -0.0294,
     "p_CE": 0.762,
     "interpretation": "Negative dCE indicates planted missingness destroys value (O_t channel)."
+  },
+  "stationary_bootstrap": {
+    "mechanism_minus_momentum": {
+      "circular": {
+        "n_days": 200,
+        "method": "circular",
+        "dSharpe": 0.6664,
+        "dCE": 0.3339,
+        "p_Sharpe": 0.034,
+        "p_CE": 0.034,
+        "n_boot": 999,
+        "block": 5,
+        "ci_dSharpe_05": 0.0552,
+        "ci_dSharpe_95": 1.4781,
+        "ci_dCE_05": 0.028,
+        "ci_dCE_95": 0.6768,
+        "ci95_excludes_0_CE": true,
+        "ci95_excludes_0_Sharpe": true
+      },
+      "stationary": {
+        "n_days": 200,
+        "method": "stationary",
+        "dSharpe": 0.6664,
+        "dCE": 0.3339,
+        "p_Sharpe": 0.022,
+        "p_CE": 0.022,
+        "n_boot": 999,
+        "block": 5,
+        "ci_dSharpe_05": 0.1282,
+        "ci_dSharpe_95": 1.4616,
+        "ci_dCE_05": 0.0644,
+        "ci_dCE_95": 0.6183,
+        "ci95_excludes_0_CE": true,
+        "ci95_excludes_0_Sharpe": true
+      }
+    },
+    "mechanism_minus_always_long": {
+      "circular": {
+        "n_days": 200,
+        "method": "circular",
+        "dSharpe": 2.1664,
+        "dCE": 1.2887,
+        "p_Sharpe": 0.296,
+        "p_CE": 0.246,
+        "n_boot": 999,
+        "block": 5,
+        "ci_dSharpe_05": -2.2354,
+        "ci_dSharpe_95": 6.3169,
+        "ci_dCE_05": -0.9963,
+        "ci_dCE_95": 3.5152,
+        "ci95_excludes_0_CE": false,
+        "ci95_excludes_0_Sharpe": false
+      },
+      "stationary": {
+        "n_days": 200,
+        "method": "stationary",
+        "dSharpe": 2.1664,
+        "dCE": 1.2887,
+        "p_Sharpe": 0.362,
+        "p_CE": 0.312,
+        "n_boot": 999,
+        "block": 5,
+        "ci_dSharpe_05": -2.3606,
+        "ci_dSharpe_95": 6.6393,
+        "ci_dCE_05": -1.0707,
+        "ci_dCE_95": 3.9087,
+        "ci95_excludes_0_CE": false,
+        "ci95_excludes_0_Sharpe": false
+      }
+    }
   }
 }

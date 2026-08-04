@@ -406,6 +406,29 @@ def block_bootstrap_indices(n: int, block: int, n_boot: int, rng: np.random.Gene
     return out
 
 
+def stationary_bootstrap_indices(n: int, mean_block: float, n_boot: int, rng: np.random.Generator) -> np.ndarray:
+    """Politis–Romano (1994) stationary bootstrap indices, shape (n_boot, n).
+
+    Blocks have geometric length with mean ``mean_block`` and wrap circularly.
+    """
+    if n <= 1:
+        return np.zeros((n_boot, max(n, 1)), dtype=int)
+    p = 1.0 / max(1.0, float(mean_block))
+    out = np.empty((n_boot, n), dtype=int)
+    for b in range(n_boot):
+        idx = np.empty(n, dtype=int)
+        t = int(rng.integers(0, n))
+        idx[0] = t
+        for k in range(1, n):
+            if rng.random() < p:
+                t = int(rng.integers(0, n))
+            else:
+                t = (t + 1) % n
+            idx[k] = t
+        out[b] = idx
+    return out
+
+
 def _sharpe_ce_from_daily(daily: pd.Series) -> tuple[float, float]:
     daily = daily.astype(float)
     mu = float(daily.mean())
@@ -425,10 +448,13 @@ def bootstrap_delta_pvalues(
     n_boot: int = 999,
     block: int = 5,
     seed: int = 20260803,
+    method: str = "circular",
 ) -> dict:
     """Two-sided block-bootstrap p-values for ΔSharpe and ΔCE (A − B).
 
     Aligns on the intersection of dates. H0: E[Δ] = 0.
+    ``method``: "circular" (fixed blocks) or "stationary" (Politis–Romano,
+    geometric block length with mean ``block``).
     """
     a = daily_a.astype(float).sort_index()
     b = daily_b.astype(float).sort_index()
@@ -451,7 +477,10 @@ def bootstrap_delta_pvalues(
     d_sh = sh_a - sh_b
     d_ce = ce_a - ce_b
     rng = np.random.default_rng(seed)
-    boots = block_bootstrap_indices(n, block, n_boot, rng)
+    if method == "stationary":
+        boots = stationary_bootstrap_indices(n, block, n_boot, rng)
+    else:
+        boots = block_bootstrap_indices(n, block, n_boot, rng)
     boot_sh = np.empty(n_boot)
     boot_ce = np.empty(n_boot)
     a_vals = a.to_numpy()
@@ -474,6 +503,7 @@ def bootstrap_delta_pvalues(
     p_ce = _p_two_sided(boot_ce)
     return {
         "n_days": n,
+        "method": method,
         "dSharpe": round(d_sh, 4),
         "dCE": round(d_ce, 4),
         "p_Sharpe": round(p_sh, 4),
