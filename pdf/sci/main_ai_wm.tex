@@ -1,0 +1,635 @@
+%% AI-for-finance / systems framing variant (minimal narrative rewrite of main_jf_rfs.tex).
+%% Core claim: a market world-model runtime that compiles raw evidence into an LLM-consumable,
+%% abstention-aware, tradeable state; trading numbers prove the world has content, not strategy alpha.
+%% Canonical JF/RFS sibling: main_jf_rfs.tex. Compile with pdflatex when available.
+\documentclass[12pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{natbib}
+\usepackage{enumitem}
+\onehalfspacing
+\graphicspath{{../figures/}}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{assumption}{Assumption}
+\newtheorem{remark}{Remark}
+
+\title{A Market World-Model Runtime for AI Consumers:\\
+Compiling Asynchronous Evidence into Analyzable,\\
+Abstention-Aware, and Tradeable State\footnote{Working paper (AI-for-finance / systems framing). Sibling JF/RFS draft: \texttt{main\_jf\_rfs.tex}. The laboratory is part of the contribution: a reproducible runtime that compiles multi-band evidence into quality-tagged world bundles for LLM and rule-based consumers. Trading empirics are used to show that compiled content is nonempty---not to claim a strategy Holy Grail. A full replication package accompanies the paper.}}
+\author{Guocong Li\\
+Independent Researcher\\
+\texttt{lmu151638@gmail.com}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Large language models and autonomous agents increasingly \emph{consume} market evidence, but raw feeds are asynchronous, intermittently missing, and quality-heterogeneous. What an AI needs is not another feature dump: it needs a \emph{world-model runtime} that compiles raw evidence into a state that can be analyzed, refused when thin, and acted on when ready. We develop RCA-WM: epistemic observations $O_{j,t}=(x,\tau,q,g,r)$, a compilation operator $\Pi_t:\mathcal{F}^{\mathrm{raw}}_t\to\mathcal{F}^{\mathrm{AI}}_t$, reconstruction bounds (delay/noise/missingness), world-quality indices (WMI/ACWMI) with world-conditional abstention, and a leave-one-band-out (LOBO) decomposition of content versus gating. The system contribution is a point-in-time multi-band laboratory that exposes quality-tagged bundles, availability shocks $O_t$, and a Compiled-versus-Raw consumer protocol. Empirically, on a PIT panel with durable bands $\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}$, vintaged macro and stablecoin-flow \emph{content} changes a transparent action rule relative to same-input momentum ($\Delta$CE $0.334$, $p=0.034$; relative gap survives 10--25\,bps costs). LOBO attributes losses mainly to content; a 2017--2026 audit finds no hidden return-rule alpha when band archives are absent. \textbf{Thesis:} we build a financial-market world-model runtime that compiles the raw market into an LLM-analyzable, abstention-aware, tradeable state; trading numbers prove that this world has content---they do not proclaim a strategy Holy Grail.
+\end{abstract}
+
+\noindent\textbf{Keywords:} world models, AI for finance, information-set compilation, selective prediction, point-in-time, cryptocurrency, LLM consumers\\
+\textbf{JEL:} G12, G14, C58, C55; ACM CCS: Computing methodologies $\rightarrow$ Artificial intelligence; Applied computing $\rightarrow$ Economics
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+\label{sec:intro}
+
+AI systems that analyze or trade markets do not observe a clean panel. They face venue fragmentation, perpetual leverage, options walls, unlocks, on-chain flows, news, and macro vintages that arrive on incompatible clocks \citep{makarov2020,liu2022}. Asset-pricing and ML-pricing literatures typically treat the information set $I_t$ as given and study how it is \emph{used} \citep{fama1993,cochrane2005,gu2020,kelly2019,nagel2021}. For AI consumers the prior engineering problem is different: how $I_t$ is \emph{compiled} into a usable world state, when that world is too thin to act, and how the compiled object is served to an LLM or policy.
+
+\paragraph{Thesis.}
+We build a financial-market \emph{world-model runtime}: it compiles raw market evidence into a state that an LLM (or any AI consumer) can analyze, abstain on, and---when warranted---trade. Trading statistics in this paper are instruments that show the compiled world has nonempty content; they are not a claim of unconditional strategy alpha.
+
+This paper makes three contributions, ordered for an AI-for-finance / systems audience.
+
+\paragraph{World-model theory (runtime semantics).}
+We formalize RCA-WM. The primitive is an epistemic observation $O_{j,t}=(x,\tau,q,g,r)$, not a bare feature. A compilation operator $\Pi_t$ maps $\mathcal{F}^{\mathrm{raw}}_t$ into a usable filtration $\mathcal{F}^{\mathrm{AI}}_t$. Asynchronous lags induce a reconstruction bound with delay, noise, and missingness. World-model indices (WMI/ACWMI) and world-conditional abstention specify when the runtime should refuse to act. LOBO economic value decomposes into a \emph{content} channel and a \emph{gating} channel (Propositions~\ref{prop:compile}--\ref{prop:lobo}). An SDF / compilation-wedge interface records that agents constrained to $\mathcal{F}^{\mathrm{AI}}_t$ cannot be scored as if they saw $\mathcal{F}^{\mathrm{raw}}_t$; in this framing it is a consistency remark, not the headline estimand.
+
+\paragraph{System (runtime contribution).}
+A reproducible multi-band laboratory is part of the claim: collectors, vintage-aware stores, BandPIT reconstruction, readiness/WMI/ACWMI, availability-shock queries $O_t$, paper world-model snapshots, and AI bundles with disclosed \texttt{acwmi\_input\_source}. The runtime implements the theory and exposes a Compiled-versus-Raw consumer protocol (frozen prompts, temperature zero, action schema including abstain).
+
+\paragraph{Content validation (supporting empirics).}
+On a real PIT panel under a previous-close clock, vintaged macro and stablecoin-flow content enter a transparent rule that shares return-based inputs with momentum. The pre-specified contrast mechanism $-$ momentum is positive OOS and content-dominated under LOBO; long-span audits without band archives show no hidden return-rule alpha. We claim that compiled band content is economically nonempty in this design---not a trading Holy Grail, not full thirteen-band identification, and not live LLM alpha.
+
+\paragraph{Roadmap.}
+Section~\ref{sec:lit} reviews related work. Section~\ref{sec:theory} presents the theory. Section~\ref{sec:lab} describes the runtime laboratory. Section~\ref{sec:data} details the PIT archive. Section~\ref{sec:design} states the empirical design. Section~\ref{sec:results} reports content-validation results. Section~\ref{sec:ai_consumer} states the AI-consumer protocol (first-class interface in this framing). Section~\ref{sec:robust} discusses robustness and the systems agenda. Section~\ref{sec:conc} concludes. Appendices collect notation, proofs, and reproducibility.
+
+\section{Related literature}
+\label{sec:lit}
+
+\paragraph{AI for finance and world models.}
+Machine-learning asset pricing expands the feature span inside $I_t$ \citep{gu2020,kelly2019,nagel2021} but typically assumes synchronized panels and human (or offline) consumers. LLM agents reverse the interface: the model is the consumer, and the missing product is a compilable, quality-tagged market world. We study that runtime layer.
+
+\paragraph{Information sets in asset pricing.}
+Classic and modern pricing frameworks treat $I_t$ as given \citep{cochrane2005,fama1993}. We keep the asset-pricing vocabulary where useful, but the primary object is the AI-visible compiled world rather than a new factor horse-race.
+
+\paragraph{Cryptocurrency market structure.}
+Crypto markets exhibit fragmentation and microstructure frictions \citep{makarov2020} and distinctive risk factors \citep{liu2022}. These facts motivate multi-band worlds rather than price-only predictors.
+
+\paragraph{Selective prediction and abstention.}
+Selective classification studies when a learner should refuse to predict \citep{elyaniv2010,geifman2017}. When the world is thin or dishonest, the optimal action may be abstention. Our Bayesian rule links abstention costs to world-model quality, connecting selective prediction to information-set support rather than to model confidence alone.
+
+\paragraph{Information choice and rational inattention.}
+The information-choice literature endogenizes what investors learn \citep{sims2003,veldkamp2011}. We study the complementary engineering margin: given collected evidence, how the usable information set is assembled, and what is lost when assembly fails.
+
+\paragraph{Measurement error and vintages.}
+Macro data are vintage-dependent \citep{croushore2001}; investor attention proxies show that information arrival itself is priced \citep{da2011}. Crypto bands add freshness and missingness on top of vintages. Our reconstruction bound and PIT construction treat measurement timing as first-class.
+
+\paragraph{Inference discipline.}
+Data-snooping corrections \citep{white2000,hansen2005,harvey2016} and dependent-data bootstrap methods \citep{politis1994,ledoit2008} discipline our out-of-sample comparisons: all contrasts carry block-bootstrap $p$-values, block-length sensitivity, and a reality-check correction across the policy menu.
+
+\section{Theory}
+\label{sec:theory}
+
+\noindent\textit{Reading guide.} For AI-for-finance readers, the core object is the \emph{runtime semantics}: epistemic observations $\rightarrow$ operator $\Pi_t$ $\rightarrow$ reconstruction bounds $\rightarrow$ WMI/ACWMI and abstention $\rightarrow$ LOBO content/gating $\rightarrow$ AI bundle schema. The SDF / compilation-wedge paragraph is kept as a pricing-consistency interface for agents that condition only on $\mathcal{F}^{\mathrm{AI}}_t$. Section~\ref{sec:results} validates that compiled content is nonempty; it does not redefine the contribution as a pure asset-pricing horse-race.
+
+\subsection{World-model quality: breadth, stability, honesty}
+\label{sec:wmi}
+
+\begin{definition}[Breadth]
+Let $K$ be the number of critical evidence bands at date $t$, and let $a_{k,t}\in\{0,1\}$ indicate whether band $k$ meets an AI-usable threshold. Breadth is
+\begin{equation}
+B_t=\frac{1}{K}\sum_{k=1}^{K}a_{k,t}.
+\label{eq:breadth}
+\end{equation}
+\end{definition}
+
+\begin{definition}[Stability]
+Let $d_{j,t}$ be a freshness/TTL penalty for source $j$ with importance weight $\omega_j\ge 0$. Stability is
+\begin{equation}
+U_t=\exp\!\left(-\sum_{j=1}^{J}\omega_j d_{j,t}\right).
+\label{eq:stability}
+\end{equation}
+\end{definition}
+
+\begin{definition}[Honesty]
+Let $m_{j,t}=1$ if source $j$ should not enter the AI main view but is incorrectly injected. Honesty is
+\begin{equation}
+H_t=1-\frac{1}{J}\sum_{j=1}^{J}m_{j,t}.
+\label{eq:honesty}
+\end{equation}
+\end{definition}
+
+The production baseline World Model Index used by the laboratory is the product form
+\begin{equation}
+\mathrm{WMI}_t=B_t\times U_t\times H_t.
+\label{eq:wmi}
+\end{equation}
+
+For hierarchical readiness we use a convex combination of domain-, band-, and asset-level readiness ratios,
+\begin{equation}
+B^{\mathrm{hier}}_t=0.25\,B^{\mathrm{dom}}_t+0.35\,B^{\mathrm{band}}_t+0.40\,B^{\mathrm{asset}}_t,
+\label{eq:bhier}
+\end{equation}
+and a continuous honesty score that rewards exclusion of contaminated evidence and penalizes partial contamination,
+\begin{equation}
+H^{\mathrm{cont}}_t=\exp(-2c_t)\max\!\bigl(0,\,1-0.5(1-e_t)\bigr),
+\label{eq:hcont}
+\end{equation}
+where $e_t$ is the ready-share and $c_t$ a contamination share inferred from limited/missing bands.
+
+\subsection{Epistemic observations}
+\begin{definition}[Epistemic observation]
+An AI-consumable market observation is
+\begin{equation}
+O_{j,t}=\bigl(x_{j,t},\,\tau_{j,t},\,q_{j,t},\,g_{j,t},\,r_{j,t}\bigr),
+\label{eq:obs}
+\end{equation}
+with value $x$, latest-available time $\tau$, quality state $q$, main-view gate $g$, and semantic role $r$.
+\end{definition}
+
+\begin{remark}
+The AI consumes a set of epistemic objects, not a flat feature matrix. Two numerically identical $x$ values with different $(\tau,q,g,r)$ are different world-model objects.
+\end{remark}
+
+\subsection{Asynchronous state space and lag error}
+Let latent states evolve as
+\begin{equation}
+S_{t+1}=F(S_t,\eta_{t+1}).
+\label{eq:state}
+\end{equation}
+Source $j$ observes a lagged map
+\begin{equation}
+X^{\mathrm{obs}}_{j,t}=h_j(S_{t-\ell_{j,t}})+\nu_{j,t},\qquad \ell_{j,t}\ge 0.
+\label{eq:lagobs}
+\end{equation}
+\begin{assumption}[Lipschitz observation maps]
+Each $h_j$ is Lipschitz with constant $L_j<\infty$.
+\end{assumption}
+Then
+\begin{equation}
+\bigl\|h_j(S_t)-h_j(S_{t-\ell_{j,t}})\bigr\|
+\le L_j\sum_{u=t-\ell_{j,t}+1}^{t}\|S_u-S_{u-1}\|.
+\label{eq:lipschitz}
+\end{equation}
+A world-model reconstruction $\widetilde S_t$ therefore obeys a bound with delay, noise, and missingness terms:
+\begin{equation}
+\|\widetilde S_t-S_t\|
+\le C_1\sum_j\omega_j\ell_{j,t}
++C_2\sum_j\omega_j\|\nu_{j,t}\|
++C_3\sum_j\omega_j(1-z_{j,t}),
+\label{eq:recon}
+\end{equation}
+where $z_{j,t}$ indicates availability. Latest-snapshot mechanisms, freshness/TTL rules, and readiness gates target these three terms.
+
+\subsection{Filters and the compilation operator}
+Define the raw and AI-visible filtrations
+\begin{align}
+\mathcal{F}^{\mathrm{raw}}_t&=\sigma\bigl(\{X^{\mathrm{obs}}_{j,\tau}: j\le J,\ \tau\le t\}\bigr),
+\label{eq:fraw}\\
+\mathcal{F}^{\mathrm{AI}}_t&=\sigma\bigl(W^{\mathrm{AI}}_t,\,D_t\bigr),
+\label{eq:fai}
+\end{align}
+where $W^{\mathrm{AI}}_t$ is the main view and $D_t$ the diagnostic view. Compilation is the composition
+\begin{equation}
+\Pi_t=\mathcal{B}_t\circ M_t\circ A_t,\qquad
+W^{\mathrm{AI}}_t=\Pi_t\bigl(\mathcal{F}^{\mathrm{raw}}_t\bigr),
+\label{eq:pi}
+\end{equation}
+with alignment/snapshot sync $A_t$, quality gating $M_t$, and bundle aggregation $\mathcal{B}_t$.
+
+\begin{proposition}[Compilation is not feature expansion]
+\label{prop:compile}
+Enlarging $\mathcal{F}^{\mathrm{raw}}_t$ without a well-defined $\Pi_t$ need not enlarge $\mathcal{F}^{\mathrm{AI}}_t$ in a decision-relevant way: ungated, stale, or role-incoherent evidence can expand raw span while shrinking usable world quality via $H_t$ and $U_t$.
+\end{proposition}
+\begin{proof}[Proof sketch]
+Fix filtrations $\mathcal{F}^{\mathrm{raw}}_t\subset\widetilde{\mathcal{F}}^{\mathrm{raw}}_t$ obtained by adding a source $j^\star$ with large lag $\ell_{j^\star,t}$ or $m_{j^\star,t}=1$. Under $M_t$ that fails to exclude $j^\star$, honesty falls: $H_t'=H_t-\Delta$ for some $\Delta>0$. Freshness penalties raise $d_{j^\star,t}$, so $U_t'\le U_t$. Breadth may rise by at most $1/K$, but $\mathrm{WMI}_t'=B_t'U_t'H_t'$ can fall whenever the multiplicative loss in $U_tH_t$ dominates. Since $W^{\mathrm{AI}}_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t)$ inherits the gated objects, the AI-visible $\sigma$-field need not expand in a payoff-relevant way even though the raw $\sigma$-field does. Hence raw span and usable world quality are not monotone in the same direction.
+\end{proof}
+
+\begin{proposition}[SDF interface: compilation constrains pricing]
+\label{prop:sdf}
+Let $m_{t+1}$ be a candidate stochastic discount factor used by an agent whose usable conditioning information is $\mathcal{F}^{\mathrm{AI}}_t=\sigma(\Pi_t(\mathcal{F}^{\mathrm{raw}}_t))$. Any implementable conditional pricing statement is of the form
+$\mathbb{E}[m_{t+1}R_{t+1}\mid\mathcal{F}^{\mathrm{AI}}_t]=1$.
+If a researcher evaluates the same agent against the finer set $\mathcal{F}^{\mathrm{raw}}_t$, the measured conditional pricing error contains a \emph{compilation wedge}
+\[
+w_t \;=\; \mathbb{E}\bigl[m_{t+1}R_{t+1}\mid\mathcal{F}^{\mathrm{raw}}_t\bigr]-\mathbb{E}\bigl[m_{t+1}R_{t+1}\mid\mathcal{F}^{\mathrm{AI}}_t\bigr],
+\]
+which is zero for all payoffs if and only if $\mathbb{E}[m_{t+1}R_{t+1}\mid\mathcal{F}^{\mathrm{raw}}_t]$ is $\mathcal{F}^{\mathrm{AI}}_t$-measurable, i.e.\ compilation loses no pricing-relevant information. Alpha measured against the raw filtration therefore confounds skill with compilation loss.
+\end{proposition}
+\begin{proof}[Proof sketch]
+By the law of iterated expectations, $\mathbb{E}[w_t\mid\mathcal{F}^{\mathrm{AI}}_t]=0$: the wedge is conditionally mean-zero but not pointwise zero unless the raw-conditional moment is measurable with respect to the compiled $\sigma$-field. When $\Pi_t$ discards a band $E_k$ with $\mathrm{MIG}_{k,t}>0$ for the pricing task, there exists a payoff whose raw-conditional expectation varies with $E_{k,t}$ while its compiled-conditional expectation does not, so $w_t\neq 0$ on a positive-probability set. Full details in Appendix~\ref{app:proofs}.
+\end{proof}
+
+\begin{proposition}[Lag reconstruction bound]
+\label{prop:recon}
+Under Assumption~1 and bounded increments $\|S_u-S_{u-1}\|\le \bar\delta$, the reconstruction error satisfies
+\[
+\|\widetilde S_t-S_t\|
+\le C_1'\sum_j\omega_j\ell_{j,t}
++C_2\sum_j\omega_j\|\nu_{j,t}\|
++C_3\sum_j\omega_j(1-z_{j,t})
+\]
+for constants $C_1'=C_1\bar\delta$ independent of the AI model class.
+\end{proposition}
+\begin{proof}
+By the Lipschitz property,
+$\|h_j(S_t)-h_j(S_{t-\ell_{j,t}})\|\le L_j\sum_{u=t-\ell_{j,t}+1}^{t}\|S_u-S_{u-1}\|\le L_j\bar\delta\,\ell_{j,t}$.
+Decompose $\widetilde S_t-S_t$ into the sum of (i) lagged-map bias, (ii) observation noise $\nu_{j,t}$, and (iii) missingness when $z_{j,t}=0$ forces imputation/omission. Triangle inequality and weighting by $\omega_j$ yield the stated bound. Latest-snapshot / TTL / readiness controls are exactly operators that shrink $\ell_{j,t}$, $\|\nu_{j,t}\|$, and $(1-z_{j,t})$.
+\end{proof}
+
+\subsection{Calibration penalty, MIG, and causal DAG}
+If the AI reports confidence $\mathrm{conf}_t$ while $\mathrm{WMI}_t$ is low, define the epistemic calibration penalty
+\begin{equation}
+\mathrm{ECP}_t=\mathbf{1}\{\mathrm{conf}_t>\bar c\}\,\mathbf{1}\{\mathrm{WMI}_t<w\}.
+\label{eq:ecp}
+\end{equation}
+Thick versus thin information sets differ by conditional mutual information
+\begin{equation}
+H(R_t\mid I^{\mathrm{thin}}_t)-H(R_t\mid I^{\mathrm{thick}}_t)
+=I\!\bigl(R_t;\,I^{\mathrm{thick}}_t\setminus I^{\mathrm{thin}}_t\,\big|\,I^{\mathrm{thin}}_t\bigr).
+\label{eq:thickthin}
+\end{equation}
+Band $k$'s marginal information gain on task $m$ is
+\begin{equation}
+\mathrm{MIG}^{(m)}_{k,t}=I\!\bigl(R^{(m)}_t;\,E_{k,t}\,\big|\,I^{(-k)}_t\bigr).
+\label{eq:mig}
+\end{equation}
+For identification, let $W_t$ be world quality, $A_t$ AI/analysis action quality, $M_t$ market complexity, $O_t$ observable availability shocks, and $C_t$ latent configuration:
+\begin{equation}
+O_t\to W_t\to A_t,\quad
+M_t\to W_t,\quad
+M_t\to A_t,\quad
+C_t\to (W_t,A_t).
+\label{eq:dag}
+\end{equation}
+Without controlling $M_t$ and $C_t$, ``thicker worlds correlate with better AI outcomes'' is not causal. Availability shocks $O_t$ are the preferred quasi-exogenous lever.
+
+\subsection{Bayesian abstention}
+With action set $\mathcal{A}=\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}$ and loss $\ell(a,R_t)$,
+\begin{equation}
+a^\star_t=\arg\min_{a\in\mathcal{A}}\,\mathbb{E}\bigl[\ell(a,R_t)\mid W_t\bigr].
+\label{eq:bayes}
+\end{equation}
+Abstain whenever every non-abstain action has expected loss above a world-dependent cost $c_{\mathrm{abs}}(W_t)$:
+\begin{equation}
+\min_{a\neq\mathrm{abstain}}\mathbb{E}\bigl[\ell(a,R_t)\mid W_t\bigr]>c_{\mathrm{abs}}(W_t).
+\label{eq:abstain}
+\end{equation}
+
+\begin{assumption}[Single crossing]
+\label{ass:singlecross}
+Let $\underline L(W)=\min_{a\neq\mathrm{abstain}}\mathbb{E}[\ell(a,R_t)\mid W]$. The function $\underline L(W)-c_{\mathrm{abs}}(W)$, viewed along the $\mathrm{WMI}$ ordering of worlds, crosses zero at most once and from above.
+\end{assumption}
+
+\begin{proposition}[World-conditional abstention]
+\label{prop:abstain}
+Suppose $\ell(\mathrm{abstain},R_t)\equiv c_{\mathrm{abs}}(W_t)$ and $\ell(a,R_t)\ge 0$ for $a\neq\mathrm{abstain}$. If for every $a\neq\mathrm{abstain}$ one has $\mathbb{E}[\ell(a,R_t)\mid W_t]>c_{\mathrm{abs}}(W_t)$, then $a^\star_t=\mathrm{abstain}$. Moreover, under Assumption~\ref{ass:singlecross}, with expected non-abstain loss and $c_{\mathrm{abs}}$ weakly decreasing in $\mathrm{WMI}_t$, the abstention region is a lower set in $\mathrm{WMI}_t$.
+\end{proposition}
+\begin{proof}
+The first claim is immediate from \eqref{eq:bayes}--\eqref{eq:abstain}: abstain uniquely minimizes expected loss. For the second, Assumption~\ref{ass:singlecross} makes $\{W:\underline L(W)>c_{\mathrm{abs}}(W)\}$ a lower contour set in $\mathrm{WMI}$. Threshold rules $\mathrm{ACWMI}_t<\bar a$ implement this lower-set structure after IS freezing of $\bar a$.
+\end{proof}
+
+\subsection{ACWMI and explanation metrics}
+Regime-conditional ACWMI extends \eqref{eq:wmi} to a weighted geometric mean of
+$x_t=(B^{\mathrm{hier}}_t,U_t,H^{\mathrm{cont}}_t,S_t,C_t)$ with regime weights $\gamma(r_t)\in\mathbb{R}^5_{+}$:
+\begin{equation}
+\mathrm{ACWMI}_t
+=\exp\!\left(
+\frac{\sum_{i=1}^{5}\gamma_i(r_t)\log x_{i,t}}{\sum_{i=1}^{5}\gamma_i(r_t)}
+\right),
+\label{eq:acwmi}
+\end{equation}
+where $S_t$ is signal integrity and $C_t$ cross-evidence consistency. Explanation quality uses
+\begin{align}
+\mathrm{EAR}_t&=\frac{\#\{\text{claims bound to evidence}\}}{\#\{\text{claims}\}},
+\label{eq:ear}\\
+\mathrm{UCR}_t&=1-\mathrm{EAR}_t,
+\label{eq:ucr}\\
+\mathrm{EV}_t&=\frac{d(\Phi_t,\Phi_{t-1})}{1+d(W_t,W_{t-1})},
+\label{eq:ev}
+\end{align}
+with explanation object $\Phi_t$ and distance $d(\cdot,\cdot)$. Thin and thick worlds also differ in explanation sets:
+\begin{equation}
+\Phi^{\mathrm{thin}}_t\neq\Phi^{\mathrm{thick}}_t,\qquad
+\Pr(\phi^\star_t\in\Phi^{\mathrm{thick}}_t)>\Pr(\phi^\star_t\in\Phi^{\mathrm{thin}}_t).
+\label{eq:phi}
+\end{equation}
+
+\begin{proposition}[ACWMI factor monotonicity]
+\label{prop:acwmi}
+Fix $\gamma(r_t)\gg 0$ and $x_{i,t}\in(0,1]$. Then $\partial\mathrm{ACWMI}_t/\partial x_{k,t}>0$ for each factor $k$, and $\log\mathrm{ACWMI}_t$ is concave in $\log x_t$. Consequently, a proportional deterioration in any single factor (e.g., honesty under contamination) cannot be offset one-for-one by raising another factor with the same weight.
+\end{proposition}
+\begin{proof}
+Let $w_i=\gamma_i/\sum_j\gamma_j$. Then $\log\mathrm{ACWMI}=\sum_i w_i\log x_i$, so $\partial\mathrm{ACWMI}/\partial x_k=\mathrm{ACWMI}\cdot w_k/x_k>0$. Concavity in $\log x$ is immediate. Equal-weight compensation would require $\Delta\log x_k=-\Delta\log x_\ell$, but under contamination shocks that hit $H$ while $B$ rises only by $O(1/K)$, the net $\sum w_i\Delta\log x_i$ is negative whenever $w_H|\Delta\log H|>w_B\Delta\log B$.
+\end{proof}
+
+\begin{assumption}[Non-redundancy]
+\label{ass:nonredundant}
+Band $k$'s evidence $E_{k,t}$ has predictive content for the payoff-relevant state that is not measurable with respect to $\sigma(I_t\setminus E_{k,t})$, i.e.\ $\mathrm{MIG}_{k,t}>0$ on a positive-probability set.
+\end{assumption}
+
+\begin{proposition}[Leave-one-band-out as economic MIG, with channel decomposition]
+\label{prop:lobo}
+Let $V(I)$ be the OOS certainty-equivalent value of a fixed action rule given information set $I$, and define $\widehat{\mathrm{MIG}}_k=V(I)-V(I\setminus E_k)$. Band $k$ enters decisions through two channels: (i) a \emph{content} channel, where $E_{k,t}$ changes the direction or activation of the action itself; and (ii) a \emph{gating} channel, where band availability changes $B,U,H$ and hence the abstention decision. Writing $V$ as a function of both channels,
+\[
+\widehat{\mathrm{MIG}}_k=\underbrace{\bigl[V(I)-V(I^{\,-k\,\mathrm{content}})\bigr]}_{\text{content}}
++\underbrace{\bigl[V(I^{\,-k\,\mathrm{content}})-V(I\setminus E_k)\bigr]}_{\text{gating, evaluated after content deletion}}.
+\]
+If $V$ is monotone in Blackwell informativeness and Assumption~\ref{ass:nonredundant} holds, then $\widehat{\mathrm{MIG}}_k>0$. Under the maintained PIT construction, setting band $k$'s status to \texttt{missing} implements the gating deletion, and forcing the band's content signal to its uninformative value implements the content deletion; applying both implements $I\setminus E_k$.
+\end{proposition}
+\begin{proof}
+Blackwell monotonicity gives $V(I)\ge V(I\setminus E_k)$, with strict inequality under Assumption~\ref{ass:nonredundant} because a fixed rule that uses $E_{k,t}$ in its action map loses conditional information when the band is deleted. The decomposition is an exact telescoping identity. The empirical LOBO exercise implements the two deletions separately (content: band tilt forced to zero; gating: band status \texttt{missing} before recomputing $B^{\mathrm{hier}},U,H$, ACWMI) and jointly, which identifies each channel's contribution.
+\end{proof}
+
+\section{The measurement instrument}
+\label{sec:lab}
+
+The runtime laboratory is a modular multi-band system: data-layer collectors ingest exchange, macro, on-chain, options, tokenomics, news, and alternative series into vintage-aware history stores; a logic layer computes indicators, band readiness, and world-quality indices; a service layer exposes quality-tagged AI bundles. For this paper, the system supplies (i) multi-band history tables with observation timestamps and macro \texttt{available\_at} vintages; (ii) band readiness and WMI/ACWMI implementations; (iii) point-in-time band-status reconstruction; (iv) an availability-shock query surface $O_t$; (v) paper world-model snapshots; and (vi) configurable abstention thresholds plus a Compiled-versus-Raw consumer protocol. In the AI-for-finance framing the laboratory is not a disposable instrument: it \emph{is} the world-model runtime that implements the theory.
+
+\section{Data and real multi-band PIT archive}
+\label{sec:data}
+
+\subsection{Populated archive}
+We bootstrap the project's split SQLite store (OKX-reachable exchange path in the build environment):
+\begin{itemize}[leftmargin=1.4em]
+\item \textbf{Exchange:} $\sim$9.4k OKX klines/merged daily bars for 10 symbols, 2025-06-30 to 2026-08-03; $\sim$2.4k funding rows.
+\item \textbf{Macro:} $\sim$81k vintaged points with \texttt{available\_at}, spanning decades through 2026-08-03.
+\item \textbf{Alternative:} $\sim$89k points from 2017 onward.
+\item \textbf{News / on-chain / options / tokenomics:} populated but mostly right-censored to collection day in the current archive.
+\item \textbf{Analytics snapshots:} historically sparse; multi-band PIT is therefore built from raw history tables.
+\end{itemize}
+
+\subsection{PIT panel construction}
+\paragraph{Timing protocol (decision at previous close).}
+For payoff calendar day $t$ (Yahoo close-to-close return $r_t$), all band statuses and ages are evaluated at decision clock $(t-1)\,23{:}59$. No same-day close information enters the information set that selects the position earning $r_t$. Band-content tilts are likewise constructed from vintages with \texttt{available\_at}$\le t$ and then lagged one day. This protocol is versioned in \texttt{experiment\_config.json} and recorded on each panel row as \texttt{decision\_asof}.
+
+\paragraph{Construction path and migration disclosure.}
+The preferred path is a \emph{raw-history} rebuild: when \texttt{exchange.klines} or \texttt{analytics.merged\_klines} contain daily bars, statuses are reconstructed from SQLite via production \texttt{BandPITService} under the previous-close clock (\texttt{construction\_path=raw\_history}; no \texttt{timing\_migration}). Migration is an explicit fallback only when exchange daily bars are absent: the checked-in archive panel is shifted algebraically so payoff day $t$ inherits statuses from calendar day $t-1$ EOD (\texttt{construction\_path=migration}, \texttt{timing\_migration=shift\_status\_from\_prev\_calendar\_day}, with \texttt{fallback\_reason} recorded). Content tilts continue to come from the vintaged feature cache (already lag-1) and are never overwritten by empty database pulls. Yahoo returns are reconciled against exchange daily closes when klines exist (\texttt{table\_return\_reconciliation.*}).
+
+For each payoff date $t$ and asset $i$, band status $\in\{\mathrm{ready},\mathrm{limited},\mathrm{missing}\}$ is taken at the decision clock with band-specific freshness thresholds aligned to production. We compute $B^{\mathrm{hier}}_t$, $U_t$, $H^{\mathrm{cont}}_t$, production WMI, and a world-only ACWMI placeholder; mechanism engines later refine paper $S_t$ and $C_t$ from pre-$t$ returns. Durable historical bands are $\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}$. Yahoo returns provide payoffs and are reconciled against exchange daily bars when archived. News/on-chain/options/tokenomics remain right-censored and are \emph{not} part of the identifying band set.
+
+\subsection{Band readiness rates}
+After a raw-history rebuild from populated SQLite (\texttt{construction\_path=raw\_history}), empirical ready rates are approximately: exchange $0.803$, macro $1.000$, alternative $1.000$, news/on-chain/options/tokenomics/event-calendar $\approx 0$. The exchange rate is below one because OKX daily bars are freshness-gated at the previous-close clock; durable macro/alternative content remains fully ready. Identification on durable bands is therefore the credible core; right-censored bands enter only as agenda items for continuous collection. Yahoo--exchange return reconciliation on archived daily closes yields mean correlation $0.999$ across all ten names (\texttt{status=ok}).
+
+\section{Empirical design}
+\label{sec:design}
+
+\paragraph{Pre-specified contrast.}
+The single pre-specified OOS contrast is \textbf{mechanism (band content) $-$ momentum}: the two policies share all return-based inputs and differ only by vintaged macro/alternative content. Menu-wide comparisons versus always-long are reported with a reality-check correction and are \emph{not} the headline claim.
+
+\paragraph{Sample split.}
+Chronological IS/OOS split (half/half on the archive calendar; currently 200/200 days).
+
+\paragraph{Frozen thresholds.}
+AC thresholds are frozen on IS by Sharpe maximization subject to abstain rate $\in[5\%,55\%]$. On the current sparse archive the calibration selects minimal additional gating ($\mathrm{ACWMI}<0.25$ or $C<0.25$), so selective-prediction results are secondary to content identification. The production WMI threshold $0.2$ is never tuned on OOS. All grids and bounds are versioned in \texttt{experiment\_config.json}.
+
+\paragraph{Policies.}
+Always-long; momentum; mechanism with band content (ungated); simple outage; cascade; WMI; ACWMI (IS-frozen).
+
+\paragraph{Economic value.}
+Annualized return and volatility, Sharpe ratio, CRRA certainty equivalent with $\gamma=2$, and maximum drawdown. Positions are equal-weight across tradeable names on active days; abstention earns cash (zero return).
+
+\paragraph{Inference.}
+OOS contrasts use circular block bootstrap on daily portfolio PnL ($n_{\mathrm{boot}}=999$, block length 5 days) with two-sided $p$-values for $\Delta$Sharpe and $\Delta$CE under $H_0:\Delta=0$, block-length sensitivity over $\{5,10,21\}$, and a \citet{white2000} reality-check correction across the policy menu against the always-long benchmark.
+
+\paragraph{Costs and funding.}
+Positions are in $\{-1,0,+1\}$; we report one-way proportional costs of $10/25/50$ bps on $|\Delta\mathrm{position}|$ and a perpetual-funding adjustment (longs pay, shorts receive the archived 8-hour rates aggregated daily) where funding history is archived.
+
+\paragraph{Identification designs.}
+(i) Thin vs thick worlds using real PIT band statuses \emph{and} content; (ii) leave-one-band-out on durable bands as economic MIG with the content/gating decomposition of Proposition~\ref{prop:lobo}, plus joint macro+alternative deletion; (iii) date-scrambled content placebo; (iv) scarce-world event study using an \emph{expanding} $B^{\mathrm{hier}}$ quantile (no full-sample look-ahead) and a separate hard $O_t$ availability event study when outages exist; (v) a 2017--2026 long-span external-validity audit of the action rule on BTC/ETH.
+
+\subsection{Mechanism signals: transparent rule with band content}
+\label{sec:mech}
+Directional actions are \emph{not} a latent model, and---critically for identification---band \emph{content} enters the action map directly. On pre-$t$ returns, production calculators emit
+\begin{align*}
+S_t&=\mathrm{clip}\!\big(\mathrm{hl\_factor}\cdot(1-0.7\,\mathrm{crowd}_t)\cdot(0.35+0.65\,\mathrm{surprise}_t)\big),\\
+C_t&=\text{pairwise sign-agreement among }\{\mathrm{mom5},\mathrm{flow},-\mathbf{1}_{\mathrm{casc}>0.55},-\mathbf{1}_{\mathrm{sys}>55},\mathrm{macro\_tilt},\mathrm{alt\_tilt}\},
+\end{align*}
+and two PIT-safe band-content signals:
+\begin{align*}
+\mathrm{macro\_tilt}_t&=\begin{cases}+1 & \Delta_5\mathrm{VIX}<0\ \wedge\ \Delta_5\mathrm{DXY}<0\ \text{(risk-on)}\\ -1 & \Delta_5\mathrm{VIX}>0\ \wedge\ \Delta_5\mathrm{DXY}>0\ \text{(risk-off)}\\ 0 & \text{otherwise or band not ready,}\end{cases}\\
+\mathrm{alt\_tilt}_t&=\mathrm{sign}\bigl(\text{stablecoin 7d net supply change, latest obs}<t\bigr)\ \text{(0 if band not ready)},
+\end{align*}
+where macro changes use vintaged \texttt{available\_at} timestamps. The action rule is deterministic:
+\begin{align*}
+\text{(R1)}&\quad \mathrm{crisis}\ \wedge\ \mathrm{cascade\_p}\ge 0.60 \Rightarrow \mathrm{signal}=-1\quad\text{(evidence conjunction)},\\
+\text{(R2)}&\quad \mathrm{trend}\ \wedge\ \mathrm{mom5}>0\ \wedge\ \mathrm{cascade\_p}<0.45\ \wedge\ \mathrm{macro\_tilt}\ge 0 \Rightarrow \mathrm{signal}=+1,\\
+\text{(R2b)}&\quad \mathrm{range}\ \wedge\ \mathrm{macro\_tilt}>0\ \wedge\ \mathrm{alt\_tilt}>0\ \wedge\ \mathrm{mom5}\ge 0 \Rightarrow \mathrm{signal}=+1,\\
+\text{(R3)}&\quad \text{else }\mathrm{sign}(\mathrm{mom5}),\ \text{with a long vetoed to }0\ \text{when both tilts are risk-off};\\
+&\quad \text{ties broken by }\mathrm{sign}(\mathrm{macro\_tilt}+\mathrm{alt\_tilt}).
+\end{align*}
+A zero signal is an intentional stand-aside (flat position). Because tilts are forced to zero whenever their band is not PIT-ready, leave-one-band-out deletes \emph{content}, not only gating. R1 requires the conjunction of regime and cascade evidence---single-source triggers are not actionable, the same logic as the consistency factor $C$. Component definitions and regime-level composition are exported with the replication tables.
+
+\paragraph{Calibration audit and engine-input repair.}
+A long-span audit initially exposed two harness flaws: full-history drawdowns made \texttt{crisis} an absorbing state, and the cascade input map saturated ($\mathrm{cascade\_p}\approx0.86$ always), collapsing the rule into a constant short that won a bear-market OOS by construction. We repaired the input maps (bounded 60-day windows, volatility-standardized tail intensity, real RSI/ADX proxies). Post-repair, $\mathrm{cascade\_p}$ is monotone in realized next-day left tails across deciles ($P(r_{t+1}<-5\%)$ rising from $0.039$ to $0.110$), and regimes are no longer degenerate. We disclose this repair explicitly: it was driven by the audit, not by OOS performance search.
+
+\section{Main results}
+\label{sec:results}
+
+\subsection{Band content beats momentum out of sample}
+Table~\ref{tab:econ} reports the OOS policy horse-race. Always-long loses badly in this bear window (CE $-1.157$); pure momentum is nearly flat (Sharpe $0.101$, CE $-0.202$); the transparent rule with band content earns Sharpe $0.767$ and CE $+0.132$, standing aside on $7.5\%$ of asset-days through content-driven vetoes. IS-frozen ACWMI adds only modest further gating (Sharpe $0.654$, CE $+0.076$, abstain $12.7\%$) and is secondary. The headline inference is the content contrast: \textbf{mechanism $-$ momentum $\Delta\mathrm{CE}=0.334$ with $p=0.034$ and a 95\% CI $[0.03,0.68]$ that excludes zero} (Table~\ref{tab:boot}, first row). Since the two policies share identical return-based inputs and differ only in the vintaged macro/alternative content, this contrast isolates the value of compiled band content.
+
+\begin{table}[t]
+\centering
+\caption{Out-of-sample economic value on the real PIT panel (200 days).}
+\label{tab:econ}
+\begin{tabular}{lrrrrr}
+\toprule
+Policy & Ann.\ ret & Sharpe & CE & Max DD & Abstain \\
+\midrule
+Always long & $-0.816$ & $-1.399$ & $-1.157$ & $-0.466$ & 0.000 \\
+Momentum always & $0.051$ & $0.101$ & $-0.202$ & $-0.500$ & 0.000 \\
+Mechanism (band content) & $0.385$ & $0.767$ & $0.132$ & $-0.438$ & 0.075 \\
+WMI ($0.2$) & $0.000$ & $0.000$ & $0.000$ & $0.000$ & 1.000 \\
+ACWMI (IS-frozen) & $0.325$ & $0.654$ & $0.076$ & $-0.438$ & 0.127 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{OOS circular block-bootstrap contrasts ($n=999$, block $=5$). Pre-specified headline first.}
+\label{tab:boot}
+\begin{tabular}{lrrrr}
+\toprule
+Contrast & $\Delta$Sharpe & $\Delta$CE & $p_{\mathrm{CE}}$ & 95\% CI($\Delta$CE) \\
+\midrule
+Mechanism $-$ Momentum & 0.67 & 0.33 & \textbf{0.034} & $[0.03,0.68]$ \\
+Mechanism $-$ Always long & 2.17 & 1.29 & 0.25 & $[-1.00,3.52]$ \\
+ACWMI $-$ WMI ($0.2$) & 0.65 & 0.08 & 0.91 & $[-1.24,1.24]$ \\
+Thick $-$ Thin (worlds) & 1.78 & 0.54 & 0.24 & $[-0.43,1.42]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Thick vs thin worlds}
+Table~\ref{tab:thin} contrasts information-set regimes: a thin, exchange-only observer (band statuses and content both deleted) versus the thick real PIT world. The thin world abstains $61\%$ of the time and earns CE $-0.404$; the thick world earns $+0.132$. The Sharpe contrast is significant ($\Delta\mathrm{Sharpe}=1.78$, $p=0.036$, 95\% CI $[0.16,3.93]$ excludes zero); the CE contrast is positive but not yet significant at 200 days ($p=0.24$).
+
+\begin{table}[t]
+\centering
+\caption{Thin vs thick worlds on the real PIT archive (OOS). Thin deletes both content and gating.}
+\label{tab:thin}
+\begin{tabular}{lrrrrr}
+\toprule
+World & Mean $B$ & Mean $H$ & Sharpe & CE & Abstain \\
+\midrule
+Thin (exchange only) & 0.123 & 0.538 & $-1.011$ & $-0.404$ & 0.614 \\
+Thick real PIT & 0.277 & 0.662 & $0.767$ & $0.132$ & 0.075 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Leave-one-band-out: significant, and driven by content}
+Table~\ref{tab:lobo} is the empirical counterpart of Proposition~\ref{prop:lobo}, evaluated under the headline ungated mechanism so the decomposition speaks to the same policy as the pre-specified contrast. Deleting macro or alternative costs $\Delta\mathrm{CE}=-0.334$ ($p=0.034$)---exactly the mechanism $-$ momentum gap---because content deletion collapses the rule onto momentum. Exchange status deletion costs $0$ under the ungated rule (exchange content is the return data itself). The telescoping identity holds exactly: content share of total loss is $1.0$, and the gating residual after content deletion is $0$. Band information changes \emph{what} the rule trades, not merely \emph{when} it abstains. Zeroing either the VIX or the DXY leg of $\mathrm{macro\_tilt}$ likewise collapses to momentum ($\Delta\mathrm{CE}=-0.334$, $p=0.034$). A date-scrambled content placebo loses $0.386$ CE relative to timed content ($p=0.082$). Planted 5\% availability shocks move CE by $-0.029$ ($p=0.762$): hard $O_t$ bites directionally but is not yet precise in this continuous backfill.
+
+\begin{table}[t]
+\centering
+\caption{Leave-one-band-out on durable PIT bands (OOS), ungated mechanism: telescoping content/gating decomposition.}
+\label{tab:lobo}
+\begin{tabular}{lrrrrrr}
+\toprule
+Band & $\Delta$CE total & $p$ & $\Delta$CE content & $p$ & $\Delta$CE gating resid.\ & $p$ \\
+\midrule
+exchange & $0.000$ & 1.000 & --- & --- & $0.000$ & 1.000 \\
+macro & $-0.334$ & \textbf{0.034} & $-0.334$ & \textbf{0.034} & $0.000$ & 1.000 \\
+alternative & $-0.334$ & \textbf{0.034} & $-0.334$ & \textbf{0.034} & $0.000$ & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Long-span external-validity audit}
+Running the identical rule (tilts zero: no band archive before 2025) on BTC/ETH daily data over 2017--2026 (3{,}471 days) yields annualized return $0.456$, Sharpe $0.664$, CE $-0.009$, positive in 8 of 10 calendar years including 2018 ($+2.13$ annualized in a $-1.08$ always-long year) --- and \emph{no significant advantage over momentum} ($\Delta\mathrm{CE}=0.017$, $p=0.55$; Table~\ref{tab:longspan}). This is the honest anchor for interpretation: the return-based core of the rule is an ordinary regime-aware momentum strategy with no secret alpha. The significant OOS gains in Tables~\ref{tab:boot}--\ref{tab:lobo} therefore load on the compiled band content, which only exists where the multi-band archive exists.
+
+\paragraph{Long-span joint content-proxy audit.}
+To probe whether the content result could be a short-window artifact, we inject \emph{joint} content proxies over the full 2017--2026 span: $\mathrm{macro\_tilt}$ from Yahoo VIX/DXY daily closes and $\mathrm{alt\_tilt}$ from DefiLlama aggregate stablecoin circulating USD (sign of the 7-day supply change), both lagged one day and disclosed as proxies for, not substitutes of, the vintaged PIT series. A macro-only ablation still changes \emph{zero} of $6{,}630$ signals---confirming that R2b / double-risk-off / tie-break require two-band agreement. With the stablecoin-flow proxy present, joint content changes $157$ signals ($1{,}272$ asset-days with both tilts positive) but does \emph{not} recreate the PIT-window CE gap ($\Delta\mathrm{CE}=-0.022$ vs no-content, $p=0.40$). The architecture fires outside the archive; the economic value does not travel with unsigned proxy tilts alone. That contrast sharpens the headline claim: OOS content value in Tables~\ref{tab:boot}--\ref{tab:lobo} loads on \emph{vintaged, readiness-gated} band content, not on generic macro/stablecoin timing. Full year splits and bootstraps are in \texttt{table\_longspan\_content\_*}.
+
+\begin{table}[t]
+\centering
+\caption{Long-span audit, BTC/ETH 2017--2026: annualized return (Sharpe) by year.}
+\label{tab:longspan}
+\begin{tabular}{lrrrrr}
+\toprule
+Year & Mechanism & Always long & Year & Mechanism & Always long \\
+\midrule
+2017 & $1.30\ (1.38)$ & $3.69\ (3.92)$ & 2022 & $-0.91\ (-1.32)$ & $-0.79\ (-1.08)$ \\
+2018 & $2.13\ (2.64)$ & $-1.08\ (-1.20)$ & 2023 & $0.15\ (0.37)$ & $0.89\ (2.07)$ \\
+2019 & $0.80\ (1.24)$ & $0.58\ (0.83)$ & 2024 & $0.16\ (0.30)$ & $0.76\ (1.35)$ \\
+2020 & $0.60\ (0.79)$ & $1.94\ (2.44)$ & 2025 & $-0.25\ (-0.48)$ & $0.09\ (0.17)$ \\
+2021 & $0.46\ (0.56)$ & $1.49\ (1.69)$ & 2026\textsuperscript{ytd} & $0.02\ (0.05)$ & $-0.51\ (-0.94)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Costs, funding, and inference robustness}
+The pre-specified mechanism $-$ momentum contrast remains significant after costs: at 10 bps, $\Delta\mathrm{CE}=0.333$ ($p=0.034$, CI excludes zero) even though the mechanism's own CE turns slightly negative ($-0.019$ vs momentum $-0.352$); at 25 bps, $\Delta\mathrm{CE}=0.332$ ($p=0.038$). Absolute profitability is therefore fragile to costs; relative content value versus the same-input momentum benchmark is not. The relative gap is also stable across CRRA risk aversion $\gamma\in\{1,2,4,6\}$ ($\Delta\mathrm{CE}\in[0.329,0.334]$ at zero cost; still $\ge 0.329$ at 25 bps), so the headline is not an artefact of $\gamma=2$. A leave-one-asset jackknife keeps $\Delta\mathrm{CE}\in[0.302,0.352]$ for every dropped name. Funding adjustments change CE by less than $0.005$. Bootstrap conclusions are stable across block lengths $\{5,10,21\}$, and a \citet{politis1994} stationary-bootstrap confirmation reproduces the headline contrast ($\Delta\mathrm{CE}=0.334$, $p=0.022$ stationary vs $0.034$ circular). The \citet{white2000} reality check across the full policy menu against always-long gives $p=0.144$---menu-wide claims remain weaker than the pre-specified pairwise contrast. The $B^{\mathrm{hier}}$ weight perturbations leave CE unchanged to three decimals.
+
+A transparent IS-fit / OOS-evaluate compilation-wedge bridge (compiled features vs $\mathrm{mom5}$ alone) speaks to the SDF interface: linear $R^2$ stays near zero, but the sign-projection policy built from compiled features raises annualized CE by $0.992$ relative to thin momentum ($p=0.020$, 95\% CI $[0.18,1.80]$) and lifts sign-hit by about five percentage points. Economic value from compilation therefore appears in implementable signed payoffs, not in high linear return predictability.
+
+\subsection{World-quality indices on a sparse archive (secondary)}
+The core theory still defines WMI/ACWMI and world-conditional abstention, but the present archive does not identify them as the headline margin. IS calibration selects minimal additional index gating (frozen $\mathrm{ACWMI}<0.25$ barely binds beyond content stand-asides), so ACWMI tracks the ungated mechanism; production WMI$<0.2$ abstains essentially always because sparse-archive levels sit below a denser-world threshold. These facts are \emph{consistent} with Proposition~\ref{prop:abstain} (thresholds must be frozen to the support they police); they are \emph{not} a successful selective-prediction horse-race. ECP is high ($0.688$ at $\mathrm{conf}>0.7$, $\mathrm{WMI}<0.2$), and actions remain fully evidence-bound ($\mathrm{EAR}=1$).
+
+\subsection{Interpretation}
+Read these tables as \emph{content validation for the world-model runtime}, not as a mandate to trade the mechanism frictionlessly. First, enlarging usable $I_t$ by vintaged macro/alternative content changes actions and raises OOS CE relative to same-input momentum (Propositions~\ref{prop:compile} and~\ref{prop:lobo})---the compiled world is not an empty label. Second, LOBO's content channel dominates gating: band information changes \emph{what} is traded, not only \emph{when}. Third, the long-span audit shows the return-based core has no hidden alpha, so the OOS gap loads on compiled band content. Fourth, absolute CE is cost-fragile while the relative gap remains significant---trading numbers prove content, they do not proclaim a Holy Grail. Fifth, WMI/ACWMI abstention and the Compiled-versus-Raw protocol are first-class runtime objects; denser archives and live LLM consumers are the natural next tests.
+
+\section{AI-consumer protocol (first-class interface)}
+\label{sec:ai_consumer}
+
+The runtime is built for agents that condition on $\mathcal{F}^{\mathrm{AI}}_t$. The replication package therefore pre-registers a within-model Compiled versus Raw protocol:
+\[
+\Delta_m=V_m(\mathrm{Compiled})-V_m(\mathrm{Raw}),
+\]
+with frozen prompts, temperature zero, and action schema $\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}$. In this AI-for-finance framing the protocol is a \emph{first-class interface test}: it asks whether the compiled world changes consumer decisions relative to a raw feed under a fixed schema. Offline mock consumers keep the protocol executable without API keys; live vendors may be substituted later without changing the estimand. We report protocol smoke results and evidence-binding metrics (e.g.\ EAR); we do \emph{not} claim live LLM trading alpha. Content-validation empirics in Section~\ref{sec:results} complement the interface by showing that the world bundle carries economically nonempty band content for a transparent rule-based consumer.
+
+\section{Robustness, threats, and the systems agenda}
+\label{sec:robust}
+
+\paragraph{Right-censored bands.}
+News/on-chain/options/tokenomics lack durable history in the current archive. Continuous multi-year collection is required before claiming full thirteen-band identification.
+
+\paragraph{Natural outages.}
+Hard institutional outages are rare inside a continuous OKX backfill. Logged \texttt{collection\_runs} failures and planted availability shocks are the path to sharper $O_t$ designs; scarce-world labels use expanding quantiles only as descriptive complements.
+
+\paragraph{Production vs paper ACWMI.}
+Live AI bundles automatically hydrate the latest \texttt{paper\_world\_model\_snapshots} $(S,C)$ onto the readiness row when present, so \texttt{acwmi\_input\_source=paper\_engines}; otherwise production readiness proxies are used and disclosed as \texttt{production\_proxy}. Bundles and \texttt{/health} carry this field; paper objects are also served at \texttt{/time-slice/paper-world-model}, and availability shocks $O_t$ at \texttt{/data-quality/availability-shocks}. These objects must not be treated as interchangeable without disclosure.
+
+\paragraph{Snapshot density.}
+Paper-engine daily rows now exist alongside AI-context bundles, and the headline PIT panel in this revision is a raw-history rebuild (\texttt{construction\_path=raw\_history}) rather than a migration. Continuous readiness/AI-context snapshots will further enable pure \texttt{time\_slice} replay.
+
+\paragraph{External validity.}
+The panel covers ten liquid names and durable content only for macro/alternative. The 2017--2026 joint-content proxy shows that two-band rules can fire outside the PIT window ($157$ signal changes) without recreating the PIT CE gap---so unsigned long-span proxies are not a free lunch. Headline identification remains on the vintaged archive; true multi-year \texttt{available\_at} alternative history and denser cross-sections remain first-order.
+
+\paragraph{Multiple testing.}
+The headline mechanism $-$ momentum contrast is a single pre-specified comparison; the menu-wide reality check ($p=0.144$), a stationary-bootstrap confirmation ($p=0.022$), a CRRA $\gamma$ grid, and a leave-one-asset jackknife are reported alongside it.
+
+\paragraph{AI-consumer limits.}
+Compiled--Raw contrasts validate the runtime interface. Offline mocks are not substitutes for live multi-vendor tests and must not be read as unconditional LLM alpha. PIT/LOBO results validate content emptiness vs nonempty worlds for a transparent consumer, not LLM skill.
+
+\section{Conclusion}
+\label{sec:conc}
+
+We build a financial-market world-model runtime: it compiles raw, asynchronous evidence into an LLM-analyzable, abstention-aware, and tradeable state $\mathcal{F}^{\mathrm{AI}}_t=\sigma(\Pi_t(\mathcal{F}^{\mathrm{raw}}_t))$. Epistemic observations, reconstruction bounds, WMI/ACWMI abstention, LOBO content/gating, and quality-tagged bundles are the semantics of that runtime; the laboratory (PIT reconstruction, $O_t$, paper snapshots, AI bundles, Compiled-versus-Raw protocol) is the system that implements them.
+
+Trading numbers in this paper are not a strategy Holy Grail. Under a previous-close PIT clock, vintage-safe macro and stablecoin-flow content raise OOS certainty-equivalent value relative to same-input momentum; LOBO attributes band-deletion losses mainly to content; a long-span audit without band archives finds no hidden return-rule alpha. Absolute CE is cost-fragile; menu-wide superiority versus always-long is not established. Those facts show that the compiled world has content---the necessary property of a world model worth serving to AI consumers.
+
+The agenda is thicker measurement and stronger consumers: multi-year vintaged band histories, logged availability shocks, denser snapshots for pure time-slice replay, support-matched abstention calibration, and live Compiled-versus-Raw LLM tests under the frozen schema---without abandoning the runtime semantics.
+
+\appendix
+\section{Notation}
+\label{app:notation}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Symbol & Meaning \\
+\midrule
+$O_{j,t}$ & Epistemic observation \\
+$B_t,U_t,H_t$ & Breadth, stability, honesty \\
+$\mathrm{WMI}_t$ & Production world-model index \\
+$\mathrm{ACWMI}_t$ & Regime-conditional geometric index \\
+$\Pi_t$ & Compilation operator \\
+$\mathcal{F}^{\mathrm{raw}}_t,\mathcal{F}^{\mathrm{AI}}_t$ & Raw / AI filtrations \\
+$\mathrm{ECP}_t$ & Epistemic calibration penalty \\
+$\mathrm{MIG}^{(m)}_{k,t}$ & Band marginal information gain \\
+$\Phi_t$ & Explanation set \\
+$\mathrm{EAR},\mathrm{UCR},\mathrm{EV}$ & Explanation metrics \\
+$O_t$ & Availability shock (DAG) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Full proofs}
+\label{app:proofs}
+
+\paragraph{Proposition~\ref{prop:sdf} (SDF interface).}
+Let $\mathcal{G}=\mathcal{F}^{\mathrm{AI}}_t\subseteq\mathcal{H}=\mathcal{F}^{\mathrm{raw}}_t$ and $Y=m_{t+1}R_{t+1}$ integrable. Define $w_t=\mathbb{E}[Y\mid\mathcal{H}]-\mathbb{E}[Y\mid\mathcal{G}]$. (i) $\mathbb{E}[w_t\mid\mathcal{G}]=\mathbb{E}[\mathbb{E}[Y\mid\mathcal{H}]\mid\mathcal{G}]-\mathbb{E}[Y\mid\mathcal{G}]=0$ by the tower property. (ii) $w_t=0$ a.s.\ for all payoffs iff $\mathbb{E}[Y\mid\mathcal{H}]$ is $\mathcal{G}$-measurable for all $Y$, which is the statement that no pricing-relevant information is lost by $\Pi_t$. (iii) If band $k$ has $\mathrm{MIG}_{k,t}>0$ for the pricing task, take $Y^\star$ measurable with respect to $\sigma(E_{k,t})\vee\mathcal{G}$ with $\mathbb{E}[Y^\star\mid\mathcal{H}]$ non-degenerate in $E_{k,t}$; then $\mathrm{Var}(w_t)\ge\mathrm{Var}\bigl(\mathbb{E}[Y^\star\mid\mathcal{H}]-\mathbb{E}[Y^\star\mid\mathcal{G}]\bigr)>0$. Hence alpha measured against $\mathcal{H}$ for an agent constrained to $\mathcal{G}$ mixes true mispricing with the compilation wedge. \hfill$\square$
+
+\paragraph{Proposition~\ref{prop:lobo} (decomposition detail).}
+Let $V(\cdot)$ be evaluated at fixed frozen thresholds. Write the empirical rule as $a_t=\rho(E^{\mathrm{ret}}_t,\kappa_{k,t},g_t)$ where $\kappa_{k,t}$ is band $k$'s content signal and $g_t=\mathbf{1}\{\mathrm{ACWMI}_t\ge\bar a,\,C_t\ge\bar c\}$ the gate. Content deletion maps $\kappa_{k,t}\mapsto 0$ holding the gate inputs at their observed values; gating deletion maps band status to \texttt{missing}, changing $(B,U,H,\mathrm{ACWMI},C)$ and hence $g_t$, holding $\kappa_{k,t}$. The telescoping identity in the proposition is exact by construction of the three experiment arms; no approximation is involved. Blackwell monotonicity of $V$ in the underlying information order follows from the value function being a maximum over decision rules measurable with respect to the conditioning set. \hfill$\square$
+
+\section{Replication package}
+\label{app:repro}
+A replication package reproduces the archive bootstrap, PIT panel construction, all experiments (including the long-span audit), and both manuscript PDFs from a single entry point. Key artifacts: the point-in-time panel, band-content features with vintage timestamps, funding aggregates, all exported tables (economic value, bootstrap contrasts, LOBO decomposition, cost/block/weight sensitivities, reality check, calibration deciles, mechanism definitions), and the frozen-threshold record.
+
+\begin{thebibliography}{99}
+\bibitem[Blackwell(1953)]{blackwell1953} Blackwell, D., 1953. Equivalent comparisons of experiments. \textit{Annals of Mathematical Statistics} 24, 265--272.
+\bibitem[Cochrane(2005)]{cochrane2005} Cochrane, J.H., 2005. \textit{Asset Pricing}. Princeton University Press.
+\bibitem[Cong et~al.(2021)]{cong2021} Cong, L.W., Li, Y., Wang, N., 2021. Tokenomics: Dynamic adoption and valuation. \textit{Review of Financial Studies} 34, 1105--1155.
+\bibitem[Croushore and Stark(2001)]{croushore2001} Croushore, D., Stark, T., 2001. A real-time data set for macroeconomists. \textit{Journal of Econometrics} 105, 111--130.
+\bibitem[Da et~al.(2011)]{da2011} Da, Z., Engelberg, J., Gao, P., 2011. In search of attention. \textit{Journal of Finance} 66, 1461--1499.
+\bibitem[El-Yaniv and Wiener(2010)]{elyaniv2010} El-Yaniv, R., Wiener, Y., 2010. On the foundations of noise-free selective classification. \textit{Journal of Machine Learning Research} 11, 1605--1641.
+\bibitem[Fama and French(1993)]{fama1993} Fama, E.F., French, K.R., 1993. Common risk factors in the returns on stocks and bonds. \textit{Journal of Financial Economics} 33, 3--56.
+\bibitem[Geifman and El-Yaniv(2017)]{geifman2017} Geifman, Y., El-Yaniv, R., 2017. Selective prediction and classification with deep neural networks. \textit{Advances in Neural Information Processing Systems} 30.
+\bibitem[Griffin and Shams(2020)]{griffin2020} Griffin, J.M., Shams, A., 2020. Is Bitcoin really untethered? \textit{Journal of Finance} 75, 1913--1964.
+\bibitem[Gu et~al.(2020)]{gu2020} Gu, S., Kelly, B., Xiu, D., 2020. Empirical asset pricing via machine learning. \textit{Review of Financial Studies} 33, 2223--2273.
+\bibitem[Hansen(2005)]{hansen2005} Hansen, P.R., 2005. A test for superior predictive ability. \textit{Journal of Business \& Economic Statistics} 23, 365--380.
+\bibitem[Harvey et~al.(2016)]{harvey2016} Harvey, C.R., Liu, Y., Zhu, H., 2016. \ldots and the cross-section of expected returns. \textit{Review of Financial Studies} 29, 5--68.
+\bibitem[Kelly et~al.(2019)]{kelly2019} Kelly, B.T., Pruitt, S., Su, Y., 2019. Characteristics are covariances: A unified model of risk and return. \textit{Journal of Financial Economics} 134, 501--524.
+\bibitem[Ledoit and Wolf(2008)]{ledoit2008} Ledoit, O., Wolf, M., 2008. Robust performance hypothesis testing with the Sharpe ratio. \textit{Journal of Empirical Finance} 15, 850--859.
+\bibitem[Liu et~al.(2022)]{liu2022} Liu, Y., Tsyvinski, A., Wu, X., 2022. Common risk factors in cryptocurrency. \textit{Journal of Finance} 77, 1133--1177.
+\bibitem[Makarov and Schoar(2020)]{makarov2020} Makarov, I., Schoar, A., 2020. Trading and arbitrage in cryptocurrency markets. \textit{Journal of Financial Economics} 135, 293--319.
+\bibitem[Nagel(2021)]{nagel2021} Nagel, S., 2021. \textit{Machine Learning in Asset Pricing}. Princeton University Press.
+\bibitem[Politis and Romano(1994)]{politis1994} Politis, D.N., Romano, J.P., 1994. The stationary bootstrap. \textit{Journal of the American Statistical Association} 89, 1303--1313.
+\bibitem[Sims(2003)]{sims2003} Sims, C.A., 2003. Implications of rational inattention. \textit{Journal of Monetary Economics} 50, 665--690.
+\bibitem[Veldkamp(2011)]{veldkamp2011} Veldkamp, L., 2011. \textit{Information Choice in Macroeconomics and Finance}. Princeton University Press.
+\bibitem[White(2000)]{white2000} White, H., 2000. A reality check for data snooping. \textit{Econometrica} 68, 1097--1126.
+\end{thebibliography}
+\end{document}

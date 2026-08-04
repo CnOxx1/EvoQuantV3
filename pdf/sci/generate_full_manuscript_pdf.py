@@ -92,6 +92,7 @@ CN = ROOT / "cn"
 OUT_EN = SCI / "main_jf_rfs.pdf"
 OUT_EN_ALIAS = SCI / "main_acwmi_sci.pdf"
 OUT_CN_MIRROR = CN / "main_jf_rfs.pdf"
+OUT_AI_WM = SCI / "main_ai_world_model.pdf"
 
 
 def styles():
@@ -232,7 +233,26 @@ def on_page(canvas, doc):
     canvas.restoreState()
 
 
-def build():
+def on_page_ai_wm(canvas, doc):
+    canvas.saveState()
+    canvas.setFont("Times-Roman", 8)
+    canvas.drawString(
+        1 * inch,
+        letter[1] - 0.55 * inch,
+        "Li — Market World-Model Runtime for AI Consumers (AI-for-finance draft)",
+    )
+    canvas.drawCentredString(letter[0] / 2, 0.55 * inch, str(doc.page))
+    canvas.restoreState()
+
+
+def build(variant: str = "jf"):
+    """Render manuscript PDF.
+
+    variant:
+      - \"jf\": JF/RFS framing → main_jf_rfs.pdf (default)
+      - \"ai-wm\": AI-for-finance / world-model runtime framing → main_ai_world_model.pdf
+    """
+    ai = variant == "ai-wm"
     S = styles()
     inv = json.loads((TAB / "table1_project_inventory.json").read_text())
     arch = json.loads((DATA / "archive_inventory.json").read_text())
@@ -240,66 +260,142 @@ def build():
     thr = inv.get("frozen_thresholds", {})
     story = []
 
-    story.append(P("Working paper draft — Journal of Finance / Review of Financial Studies", S["journal"]))
-    story.append(P(
-        "Compiling the Market Information Set: Band Content, Point-in-Time Measurement, "
-        "and Economic Value in Cryptocurrency Markets",
-        S["title"],
-    ))
-    story.append(P("Guocong Li", S["author"]))
-    story.append(P("Independent Researcher · lmu151638@gmail.com", S["affil"]))
-    story.append(P(
-        "Canonical TeX with displayed equations: <font face='Courier'>pdf/sci/main_jf_rfs.tex</font>. "
-        "Chinese full manuscript: <font face='Courier'>pdf/cn/main_cn_jf.md</font>. "
-        "Theory source: <font face='Courier'>pdf/original/</font>. EvoQuant is the laboratory, not the theory source.",
-        S["note"],
-    ))
+    if ai:
+        story.append(P(
+            "Working paper draft — AI-for-finance / systems framing (sibling of the JF/RFS draft)",
+            S["journal"],
+        ))
+        story.append(P(
+            "A Market World-Model Runtime for AI Consumers: Compiling Asynchronous Evidence "
+            "into Analyzable, Abstention-Aware, and Tradeable State",
+            S["title"],
+        ))
+        story.append(P("Guocong Li", S["author"]))
+        story.append(P("Independent Researcher · lmu151638@gmail.com", S["affil"]))
+        story.append(P(
+            "Canonical TeX: <font face='Courier'>pdf/sci/main_ai_wm.tex</font>. "
+            "JF/RFS sibling: <font face='Courier'>pdf/sci/main_jf_rfs.tex</font>. "
+            "Thesis: a financial-market world-model runtime compiles the raw market into an "
+            "LLM-analyzable, abstention-aware, tradeable state; trading numbers prove the world "
+            "has content—they do not proclaim a strategy Holy Grail.",
+            S["note"],
+        ))
+        story.append(P("<b>Abstract</b>", S["h2"]))
+        story.append(P(
+            "Large language models and autonomous agents increasingly <i>consume</i> market evidence, but raw feeds are "
+            "asynchronous, intermittently missing, and quality-heterogeneous. What an AI needs is not another feature dump: "
+            "it needs a <i>world-model runtime</i> that compiles raw evidence into a state that can be analyzed, refused when "
+            "thin, and acted on when ready. We develop RCA-WM: epistemic observations O<sub>j,t</sub>=(x,τ,q,g,r), a "
+            "compilation operator Π<sub>t</sub>, reconstruction bounds, WMI/ACWMI with world-conditional abstention, and a "
+            "LOBO content/gating decomposition. The system contribution is a point-in-time multi-band laboratory that exposes "
+            "quality-tagged bundles, availability shocks O<sub>t</sub>, and a Compiled-versus-Raw consumer protocol.",
+            S["abs"],
+        ))
+        story.append(P(
+            f"Empirically, on a PIT panel ({pit.get('n_days', 399)} days; durable bands: exchange, macro, alternative), "
+            "vintaged macro and stablecoin-flow <i>content</i> changes a transparent action rule relative to same-input "
+            "momentum (ΔCE 0.334, p = 0.034; relative gap survives 10–25 bps costs). LOBO attributes losses mainly to content; "
+            "a 2017–2026 audit finds no hidden return-rule alpha when band archives are absent. "
+            "<b>Thesis:</b> we build a financial-market world-model runtime that compiles the raw market into an "
+            "LLM-analyzable, abstention-aware, tradeable state; trading numbers prove that this world has content—"
+            "they do not proclaim a strategy Holy Grail.",
+            S["abs"],
+        ))
+        story.append(P(
+            "<b>Keywords:</b> world models; AI for finance; information-set compilation; selective prediction; "
+            "point-in-time; cryptocurrency; LLM consumers. "
+            "&nbsp; <b>JEL:</b> G12, G14, C58, C55",
+            S["note"],
+        ))
+        story.append(P("1. Introduction", S["h1"]))
+        story.append(P(
+            "AI systems that analyze or trade markets do not observe a clean panel. They face venue fragmentation, perpetual "
+            "leverage, options walls, unlocks, on-chain flows, news, and macro vintages on incompatible clocks. Asset-pricing "
+            "and ML-pricing literatures typically treat the information set I<sub>t</sub> as given and study how it is "
+            "<i>used</i>. For AI consumers the prior engineering problem is different: how I<sub>t</sub> is <i>compiled</i> "
+            "into a usable world state, when that world is too thin to act, and how the compiled object is served to an LLM "
+            "or policy.",
+            S["body"],
+        ))
+        story.append(P(
+            "<b>Thesis.</b> We build a financial-market <i>world-model runtime</i>: it compiles raw market evidence into a "
+            "state that an LLM (or any AI consumer) can analyze, abstain on, and—when warranted—trade. Trading statistics "
+            "are instruments that show the compiled world has nonempty content; they are not a claim of unconditional "
+            "strategy alpha.",
+            S["body"],
+        ))
+        story.append(P(
+            "Three contributions, ordered for an AI-for-finance / systems audience. "
+            "<b>World-model theory:</b> epistemic observations, Π<sub>t</sub>, reconstruction bounds, WMI/ACWMI abstention, "
+            "and LOBO content/gating; the SDF / compilation-wedge interface is a consistency remark for agents constrained "
+            "to ℱ<sup>AI</sup><sub>t</sub>, not the headline estimand. "
+            "<b>System (runtime):</b> collectors, BandPIT, readiness/WMI/ACWMI, O<sub>t</sub>, paper snapshots, AI bundles, "
+            "and a Compiled-versus-Raw consumer protocol. "
+            "<b>Content validation:</b> mechanism − momentum on the PIT panel shows compiled band content is economically "
+            "nonempty (ΔCE 0.334, p = 0.034; LOBO content-dominant)—not a trading Holy Grail and not live LLM alpha.",
+            S["body"],
+        ))
+    else:
+        story.append(P("Working paper draft — Journal of Finance / Review of Financial Studies", S["journal"]))
+        story.append(P(
+            "Compiling the Market Information Set: Band Content, Point-in-Time Measurement, "
+            "and Economic Value in Cryptocurrency Markets",
+            S["title"],
+        ))
+        story.append(P("Guocong Li", S["author"]))
+        story.append(P("Independent Researcher · lmu151638@gmail.com", S["affil"]))
+        story.append(P(
+            "Canonical TeX with displayed equations: <font face='Courier'>pdf/sci/main_jf_rfs.tex</font>. "
+            "Chinese full manuscript: <font face='Courier'>pdf/cn/main_cn_jf.md</font>. "
+            "Theory source: <font face='Courier'>pdf/original/</font>. EvoQuant is the laboratory, not the theory source.",
+            S["note"],
+        ))
 
-    # Abstract
-    story.append(P("<b>Abstract</b>", S["h2"]))
-    story.append(P(
-        "Conditional asset pricing treats the investor’s information set I<sub>t</sub> as primitive. In cryptocurrency markets, "
-        "asynchronous and intermittently missing evidence makes <i>compilation of</i> I<sub>t</sub> first-order. We develop a "
-        "theory of information-set compilation whose core objects are epistemic observations, a compilation operator between raw "
-        "and usable filtrations, reconstruction bounds, and an SDF interface under which pricing statements are constrained to the "
-        "compiled σ-field; leave-one-band-out (LOBO) value then decomposes into content and gating channels.",
-        S["abs"],
-    ))
-    story.append(P(
-        f"Empirically, on a PIT panel ({pit.get('n_days', 399)} days; durable bands: exchange, macro, alternative), vintage-safe "
-        "macro and stablecoin-flow <i>content</i> enters a transparent action rule under a previous-close clock. The pre-specified "
-        "contrast—mechanism versus same-input momentum—is positive OOS (ΔCE 0.334, p = 0.034) and remains significant after "
-        "10–25 bps costs as a <i>relative</i> value gap, even though absolute CE is cost-fragile. LOBO losses operate mainly "
-        "through content; VIX/DXY conjunction tests, joint deletion, and a scrambled-content placebo discipline the design. A "
-        "2017–2026 audit finds no unconditional edge over momentum when band archives are absent. World-quality indices and "
-        "selective prediction remain part of the theory but are secondary in this sparse archive.",
-        S["abs"],
-    ))
-    story.append(P(
-        "<b>Keywords:</b> information set; selective prediction; cryptocurrency; point-in-time; measurement error; world models. "
-        "&nbsp; <b>JEL:</b> G12, G14, C58, C55",
-        S["note"],
-    ))
+        # Abstract
+        story.append(P("<b>Abstract</b>", S["h2"]))
+        story.append(P(
+            "Conditional asset pricing treats the investor’s information set I<sub>t</sub> as primitive. In cryptocurrency markets, "
+            "asynchronous and intermittently missing evidence makes <i>compilation of</i> I<sub>t</sub> first-order. We develop a "
+            "theory of information-set compilation whose core objects are epistemic observations, a compilation operator between raw "
+            "and usable filtrations, reconstruction bounds, and an SDF interface under which pricing statements are constrained to the "
+            "compiled σ-field; leave-one-band-out (LOBO) value then decomposes into content and gating channels.",
+            S["abs"],
+        ))
+        story.append(P(
+            f"Empirically, on a PIT panel ({pit.get('n_days', 399)} days; durable bands: exchange, macro, alternative), vintage-safe "
+            "macro and stablecoin-flow <i>content</i> enters a transparent action rule under a previous-close clock. The pre-specified "
+            "contrast—mechanism versus same-input momentum—is positive OOS (ΔCE 0.334, p = 0.034) and remains significant after "
+            "10–25 bps costs as a <i>relative</i> value gap, even though absolute CE is cost-fragile. LOBO losses operate mainly "
+            "through content; VIX/DXY conjunction tests, joint deletion, and a scrambled-content placebo discipline the design. A "
+            "2017–2026 audit finds no unconditional edge over momentum when band archives are absent. World-quality indices and "
+            "selective prediction remain part of the theory but are secondary in this sparse archive.",
+            S["abs"],
+        ))
+        story.append(P(
+            "<b>Keywords:</b> information set; selective prediction; cryptocurrency; point-in-time; measurement error; world models. "
+            "&nbsp; <b>JEL:</b> G12, G14, C58, C55",
+            S["note"],
+        ))
 
-    # 1 Intro
-    story.append(P("1. Introduction", S["h1"]))
-    story.append(P(
-        "Modern asset pricing conditions on an information set I<sub>t</sub>. The literature’s discipline has focused on how I<sub>t</sub> "
-        "is used—for discount factors, return prediction, and machine-learning pricing kernels—not on how I<sub>t</sub> is compiled from "
-        "asynchronous, quality-heterogeneous evidence. In cryptocurrency markets, compilation is first-order: venue fragmentation, "
-        "perpetual leverage, options walls, unlocks, on-chain flows, and macro liquidity can map the same price path into incompatible states.",
-        S["body"],
-    ))
-    story.append(P(
-        "This paper makes three contributions, ordered by what the present archive can identify. <b>Theory (core apparatus):</b> "
-        "epistemic observations, compilation operator Π<sub>t</sub>, reconstruction bounds, an SDF interface on "
-        "ℱ<sup>AI</sup><sub>t</sub>, and LOBO content/gating decomposition; WMI/ACWMI and abstention complete the apparatus but "
-        "are secondary empirics here. <b>Instrument:</b> a reproducible multi-band laboratory. <b>Identification (headline):</b> "
-        "vintaged macro/stablecoin content in a transparent rule versus same-input momentum, disciplined by LOBO, conjunction "
-        "tests, scrambled placebo, costs, and a 2017–2026 audit without band archives. We claim relative information value of "
-        "compiled band content—not unconditional alpha and not a completed selective-prediction horse-race.",
-        S["body"],
-    ))
+        # 1 Intro
+        story.append(P("1. Introduction", S["h1"]))
+        story.append(P(
+            "Modern asset pricing conditions on an information set I<sub>t</sub>. The literature’s discipline has focused on how I<sub>t</sub> "
+            "is used—for discount factors, return prediction, and machine-learning pricing kernels—not on how I<sub>t</sub> is compiled from "
+            "asynchronous, quality-heterogeneous evidence. In cryptocurrency markets, compilation is first-order: venue fragmentation, "
+            "perpetual leverage, options walls, unlocks, on-chain flows, and macro liquidity can map the same price path into incompatible states.",
+            S["body"],
+        ))
+        story.append(P(
+            "This paper makes three contributions, ordered by what the present archive can identify. <b>Theory (core apparatus):</b> "
+            "epistemic observations, compilation operator Π<sub>t</sub>, reconstruction bounds, an SDF interface on "
+            "ℱ<sup>AI</sup><sub>t</sub>, and LOBO content/gating decomposition; WMI/ACWMI and abstention complete the apparatus but "
+            "are secondary empirics here. <b>Instrument:</b> a reproducible multi-band laboratory. <b>Identification (headline):</b> "
+            "vintaged macro/stablecoin content in a transparent rule versus same-input momentum, disciplined by LOBO, conjunction "
+            "tests, scrambled placebo, costs, and a 2017–2026 audit without band archives. We claim relative information value of "
+            "compiled band content—not unconditional alpha and not a completed selective-prediction horse-race.",
+            S["body"],
+        ))
 
     # 2 Literature
     story.append(P("2. Related literature", S["h1"]))
@@ -322,10 +418,19 @@ def build():
 
     # 3 Theory
     story.append(P("3. Theory", S["h1"]))
-    story.append(P(
-        "This section restores the formal World-Model-First / RCA-WM apparatus. Empirics instantiate these objects; they do not replace them.",
-        S["body"],
-    ))
+    if ai:
+        story.append(P(
+            "Reading guide (AI-for-finance). The core object is runtime semantics: epistemic observations → operator Π<sub>t</sub> → "
+            "reconstruction bounds → WMI/ACWMI and abstention → LOBO content/gating → AI bundle schema. The SDF / compilation-wedge "
+            "paragraph is a pricing-consistency interface for agents that condition only on ℱ<sup>AI</sup><sub>t</sub>. "
+            "Section 7 validates that compiled content is nonempty; it does not redefine the contribution as a pure asset-pricing horse-race.",
+            S["body"],
+        ))
+    else:
+        story.append(P(
+            "This section restores the formal World-Model-First / RCA-WM apparatus. Empirics instantiate these objects; they do not replace them.",
+            S["body"],
+        ))
 
     story.append(P("3.1 World-model quality: breadth, stability, honesty", S["h2"]))
     story.append(P(
@@ -715,24 +820,47 @@ def build():
         "calculator evidence (EAR = 1, UCR = 0).",
         S["body"],
     ))
-    story.append(P(
-        "Implications: (i) compilation quality has first-order economic content and the content channel dominates gating; "
-        "(ii) mechanism − momentum isolates band content by construction and is significant; (iii) the long-span audit rules out "
-        "hidden return-rule alpha; (iv) thresholds must be frozen to archive support; (v) remaining contrasts vs always-long are "
-        "not yet significant at 200 days — point estimates and significance reported separately.",
-        S["body"],
-    ))
+    if ai:
+        story.append(P(
+            "Read Section 7 as <i>content validation for the world-model runtime</i>, not as a frictionless trading mandate: "
+            "(i) compiled content is economically nonempty and LOBO is content-dominant; (ii) mechanism − momentum isolates "
+            "band content; (iii) the long-span audit rules out hidden return-rule alpha; (iv) absolute CE is cost-fragile—"
+            "trading numbers prove content, they do not proclaim a Holy Grail; (v) WMI/ACWMI and Compiled-versus-Raw remain "
+            "first-class runtime objects for denser archives and live LLM tests.",
+            S["body"],
+        ))
+    else:
+        story.append(P(
+            "Implications: (i) compilation quality has first-order economic content and the content channel dominates gating; "
+            "(ii) mechanism − momentum isolates band content by construction and is significant; (iii) the long-span audit rules out "
+            "hidden return-rule alpha; (iv) thresholds must be frozen to archive support; (v) remaining contrasts vs always-long are "
+            "not yet significant at 200 days — point estimates and significance reported separately.",
+            S["body"],
+        ))
 
     story.append(PageBreak())
-    # 8 AI-interface protocol (appendix-grade)
-    story.append(P("8. AI-interface protocol (appendix-grade)", S["h1"]))
-    story.append(P(
-        "Because the SDF interface concerns agents that condition on ℱ<sup>AI</sup><sub>t</sub>, the replication package "
-        "pre-registers a within-model Compiled versus Raw protocol, Δ<sub>m</sub> = V<sub>m</sub>(Compiled) − V<sub>m</sub>(Raw), "
-        "with frozen prompts and temperature 0. This is deliberately <i>not</i> primary identification. Offline mocks keep the "
-        "protocol executable without API keys; no LLM trading alpha is claimed.",
-        S["body"],
-    ))
+    # 8 AI-consumer protocol
+    if ai:
+        story.append(P("8. AI-consumer protocol (first-class interface)", S["h1"]))
+        story.append(P(
+            "The runtime is built for agents that condition on ℱ<sup>AI</sup><sub>t</sub>. The replication package pre-registers "
+            "a within-model Compiled versus Raw protocol, Δ<sub>m</sub> = V<sub>m</sub>(Compiled) − V<sub>m</sub>(Raw), with "
+            "frozen prompts, temperature 0, and action schema {bullish, bearish, neutral, abstain}. In this framing the protocol "
+            "is a <i>first-class interface test</i>: does the compiled world change consumer decisions relative to a raw feed? "
+            "Offline mocks keep the protocol executable without API keys; live vendors may be substituted later. We do "
+            "<i>not</i> claim live LLM trading alpha. Section 7 complements the interface by showing the world bundle carries "
+            "economically nonempty band content for a transparent rule-based consumer.",
+            S["body"],
+        ))
+    else:
+        story.append(P("8. AI-interface protocol (appendix-grade)", S["h1"]))
+        story.append(P(
+            "Because the SDF interface concerns agents that condition on ℱ<sup>AI</sup><sub>t</sub>, the replication package "
+            "pre-registers a within-model Compiled versus Raw protocol, Δ<sub>m</sub> = V<sub>m</sub>(Compiled) − V<sub>m</sub>(Raw), "
+            "with frozen prompts and temperature 0. This is deliberately <i>not</i> primary identification. Offline mocks keep the "
+            "protocol executable without API keys; no LLM trading alpha is claimed.",
+            S["body"],
+        ))
     llm_path = TAB / "table_llm_consumer_summary.json"
     if llm_path.exists():
         try:
@@ -747,7 +875,10 @@ def build():
             pass
 
     # 9 Robustness
-    story.append(P("9. Robustness, threats, and the JF/RFS agenda", S["h1"]))
+    story.append(P(
+        "9. Robustness, threats, and the systems agenda" if ai else "9. Robustness, threats, and the JF/RFS agenda",
+        S["h1"],
+    ))
     for line in [
         "<b>Right-censored bands.</b> News/on-chain/options/tokenomics lack durable history; continuous multi-year collection is required.",
         "<b>Content vintages.</b> Band-content identification rests on a single 400-day archive window; extend content calendars to multiple regimes.",
@@ -763,20 +894,45 @@ def build():
         "disclose acwmi_input_source ∈ {paper_engines, production_proxy}; paper empirics use engine (S,C).",
         S["body"],
     ))
+    if ai:
+        story.append(P(
+            "<b>AI-consumer limits.</b> Offline Compiled−Raw mocks validate the runtime interface; they are not live multi-vendor "
+            "LLM alpha. Support-matched abstention calibration and live consumers are first-order systems agenda items.",
+            S["body"],
+        ))
 
     # 10 Conclusion
     story.append(P("10. Conclusion", S["h1"]))
-    story.append(P(
-        "Information-set compilation is a first-order object in cryptocurrency markets. This paper develops the RCA-WM / ACWMI theory "
-        "as a proposition chain — compilation ≠ feature expansion, an SDF interface, reconstruction bounds, world-conditional "
-        "abstention, ACWMI monotonicity, and LOBO value with a content/gating decomposition — and instantiates every object on a real "
-        "multi-band PIT archive. Vintage-safe macro and stablecoin-flow content carries significant OOS economic value (ΔCE vs "
-        "momentum 0.334, p = 0.034; LOBO macro/alternative p = 0.010/0.008 with the content channel dominant), while the long-span "
-        "audit shows the return-based rule itself has no hidden alpha — exactly the pattern compilation theory predicts. The path to "
-        "a final submission is institutional: deepen vintaged histories, log outages, snapshot daily, and expand the cross-section — "
-        "without abandoning the formal apparatus.",
-        S["body"],
-    ))
+    if ai:
+        story.append(P(
+            "We build a financial-market world-model runtime: it compiles raw, asynchronous evidence into an LLM-analyzable, "
+            "abstention-aware, and tradeable state ℱ<sup>AI</sup><sub>t</sub> = σ(Π<sub>t</sub>(ℱ<sup>raw</sup><sub>t</sub>)). "
+            "Epistemic observations, reconstruction bounds, WMI/ACWMI abstention, LOBO content/gating, and quality-tagged bundles "
+            "are the semantics of that runtime; the laboratory (PIT, O<sub>t</sub>, paper snapshots, AI bundles, "
+            "Compiled-versus-Raw) is the system that implements them.",
+            S["body"],
+        ))
+        story.append(P(
+            "Trading numbers in this paper are not a strategy Holy Grail. Vintage-safe macro and stablecoin-flow content raise "
+            "OOS CE relative to same-input momentum (ΔCE 0.334, p = 0.034); LOBO is content-dominant; a long-span audit without "
+            "band archives finds no hidden return-rule alpha. Absolute CE is cost-fragile. Those facts show that the compiled "
+            "world has content—the necessary property of a world model worth serving to AI consumers. The agenda is thicker "
+            "measurement and stronger consumers: multi-year vintaged histories, logged O<sub>t</sub>, denser snapshots, "
+            "support-matched abstention, and live Compiled-versus-Raw LLM tests under the frozen schema.",
+            S["body"],
+        ))
+    else:
+        story.append(P(
+            "Information-set compilation is a first-order object in cryptocurrency markets. This paper develops the RCA-WM / ACWMI theory "
+            "as a proposition chain — compilation ≠ feature expansion, an SDF interface, reconstruction bounds, world-conditional "
+            "abstention, ACWMI monotonicity, and LOBO value with a content/gating decomposition — and instantiates every object on a real "
+            "multi-band PIT archive. Vintage-safe macro and stablecoin-flow content carries significant OOS economic value (ΔCE vs "
+            "momentum 0.334, p = 0.034; LOBO macro/alternative p = 0.010/0.008 with the content channel dominant), while the long-span "
+            "audit shows the return-based rule itself has no hidden alpha — exactly the pattern compilation theory predicts. The path to "
+            "a final submission is institutional: deepen vintaged histories, log outages, snapshot daily, and expand the cross-section — "
+            "without abandoning the formal apparatus.",
+            S["body"],
+        ))
 
     story.append(PageBreak())
     # Appendix
@@ -918,21 +1074,35 @@ def build():
         story.append(P(f"[Table C3 unavailable: {e}]", S["note"]))
 
     story.append(P("Appendix D. Reproducibility", S["h1"]))
-    story.append(P(
-        "make paper-full &nbsp;|&nbsp; make paper-lab &nbsp;|&nbsp; "
-        "python3 pdf/sci/bootstrap_multiband_archive.py &nbsp;|&nbsp; "
-        "build_pit_archive.py &nbsp;|&nbsp; "
-        "run_pit_jf_experiments.py &nbsp;|&nbsp; "
-        "generate_full_manuscript_pdf.py. "
-        "Artifacts: pdf/data/pit_multiband_panel.csv; pdf/sci/main_jf_rfs.tex; pdf/cn/main_cn_jf.md.",
-        S["body"],
-    ))
-    story.append(P(
-        "Draft status: structurally complete working paper (theory + real PIT empirics + agenda). "
-        "Acceptance at JF/RFS still requires deeper vintaged histories, logged outages, broader cross-section, "
-        "and journal-format polishing—without dropping the formal apparatus again.",
-        S["note"],
-    ))
+    if ai:
+        story.append(P(
+            "make paper-ai-wm &nbsp;|&nbsp; make paper-full &nbsp;|&nbsp; make paper-lab &nbsp;|&nbsp; "
+            "python3 pdf/sci/generate_full_manuscript_pdf.py --variant ai-wm. "
+            "Artifacts: pdf/data/pit_multiband_panel.csv; pdf/sci/main_ai_wm.tex; "
+            "pdf/sci/main_ai_world_model.pdf; sibling JF draft pdf/sci/main_jf_rfs.tex.",
+            S["body"],
+        ))
+        story.append(P(
+            "Draft status: AI-for-finance / systems framing of the same runtime + PIT content-validation empirics. "
+            "Next: live Compiled-versus-Raw LLM tests, support-matched abstention calibration, and thicker vintaged histories.",
+            S["note"],
+        ))
+    else:
+        story.append(P(
+            "make paper-full &nbsp;|&nbsp; make paper-lab &nbsp;|&nbsp; "
+            "python3 pdf/sci/bootstrap_multiband_archive.py &nbsp;|&nbsp; "
+            "build_pit_archive.py &nbsp;|&nbsp; "
+            "run_pit_jf_experiments.py &nbsp;|&nbsp; "
+            "generate_full_manuscript_pdf.py. "
+            "Artifacts: pdf/data/pit_multiband_panel.csv; pdf/sci/main_jf_rfs.tex; pdf/cn/main_cn_jf.md.",
+            S["body"],
+        ))
+        story.append(P(
+            "Draft status: structurally complete working paper (theory + real PIT empirics + agenda). "
+            "Acceptance at JF/RFS still requires deeper vintaged histories, logged outages, broader cross-section, "
+            "and journal-format polishing—without dropping the formal apparatus again.",
+            S["note"],
+        ))
 
     story.append(PageBreak())
     story.append(P("References", S["h1"]))
@@ -949,20 +1119,28 @@ def build():
         story.append(P(r, S["ref"]))
 
     CN.mkdir(parents=True, exist_ok=True)
+    out_path = OUT_AI_WM if ai else OUT_EN
+    page_fn = on_page_ai_wm if ai else on_page
+    doc_title = (
+        "A Market World-Model Runtime for AI Consumers"
+        if ai
+        else "Compiling the Market Information Set (JF/RFS Working Paper)"
+    )
     doc = SimpleDocTemplate(
-        str(OUT_EN),
+        str(out_path),
         pagesize=letter,
         leftMargin=1.0 * inch,
         rightMargin=1.0 * inch,
         topMargin=0.85 * inch,
         bottomMargin=0.85 * inch,
-        title="Compiling the Market Information Set (JF/RFS Working Paper)",
+        title=doc_title,
         author="Guocong Li",
     )
-    doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
-    OUT_EN_ALIAS.write_bytes(OUT_EN.read_bytes())
-    OUT_CN_MIRROR.write_bytes(OUT_EN.read_bytes())
-    print("Wrote", OUT_EN, OUT_EN.stat().st_size)
+    doc.build(story, onFirstPage=page_fn, onLaterPages=page_fn)
+    if not ai:
+        OUT_EN_ALIAS.write_bytes(OUT_EN.read_bytes())
+        OUT_CN_MIRROR.write_bytes(OUT_EN.read_bytes())
+    print("Wrote", out_path, out_path.stat().st_size)
 
 
 def build_chinese_pdf():
@@ -1053,8 +1231,23 @@ def build_chinese_pdf():
 
 
 if __name__ == "__main__":
-    build()
-    build_chinese_pdf()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Render JF/RFS and/or AI-WM manuscript PDFs")
+    parser.add_argument(
+        "--variant",
+        choices=("jf", "ai-wm", "both"),
+        default="both",
+        help="jf → main_jf_rfs.pdf; ai-wm → main_ai_world_model.pdf; both → both (default)",
+    )
+    parser.add_argument("--skip-chinese", action="store_true", help="Skip Chinese mirror PDF")
+    args = parser.parse_args()
+
+    variants = ("jf", "ai-wm") if args.variant == "both" else (args.variant,)
+    for v in variants:
+        build(variant=v)
+    if "jf" in variants and not args.skip_chinese:
+        build_chinese_pdf()
     try:
         from pypdf import PdfReader
     except ImportError:
@@ -1063,8 +1256,9 @@ if __name__ == "__main__":
         except ImportError:
             PdfReader = None
     if PdfReader:
-        r = PdfReader(str(OUT_EN))
-        print("English pages:", len(r.pages))
+        for path in (OUT_EN, OUT_AI_WM):
+            if path.exists():
+                print(f"{path.name} pages:", len(PdfReader(str(path)).pages))
         cn = CN / "main_cn_jf.pdf"
         if cn.exists():
             print("Chinese pages:", len(PdfReader(str(cn)).pages))
