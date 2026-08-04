@@ -1,0 +1,10 @@
+You are asked the way a retail user asks a chatbot, with NO data feed:
+
+"Today is {{DATE}}. How should I trade {{ASSET}} (crypto, vs USDT) today?
+Bullish (long), bearish (short), neutral, or abstain?"
+
+You receive NO market data, NO prices, NO indicators, and NO world-model
+bundle. Only the date and the asset name above. Use only your own general
+knowledge. If you cannot verify current market conditions, you may abstain.
+
+Return ONLY a JSON object matching the action schema.
