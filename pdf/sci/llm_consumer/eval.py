@@ -36,8 +36,14 @@ ICAIF_TAB.mkdir(parents=True, exist_ok=True)
 
 
 def _load_prompt(treatment: str) -> str:
-    path = PROMPT_DIR / ("compiled.txt" if treatment == "compiled" else "raw.txt")
-    return path.read_text(encoding="utf-8")
+    mapping = {
+        "compiled": "compiled.txt",
+        "raw": "raw.txt",
+        "ungated": "ungated.txt",
+    }
+    if treatment not in mapping:
+        raise KeyError(f"Unknown treatment: {treatment}")
+    return (PROMPT_DIR / mapping[treatment]).read_text(encoding="utf-8")
 
 
 def _prompt_hash(text: str) -> str:
@@ -115,7 +121,7 @@ def build_compiled_bundle(row: pd.Series) -> dict[str, Any]:
 
 
 def build_raw_bundle(row: pd.Series) -> dict[str, Any]:
-    """Ungated thin feed: no world quality, no band roles, no abstention guidance."""
+    """Thin feed: no world quality, no band roles, no abstention guidance."""
     return {
         "date": str(pd.Timestamp(row["date"]).date()),
         "asset": row["asset"],
@@ -123,6 +129,32 @@ def build_raw_bundle(row: pd.Series) -> dict[str, Any]:
         "noise_bit": abs(hash(str(row.get("asset")))) % 2,
         "note": "raw_feed_no_world_model",
     }
+
+
+def build_ungated_bundle(row: pd.Series) -> dict[str, Any]:
+    """Same content/completeness as Compiled, but no hard abstain booleans.
+
+    Ablation arm: tests whether numeric quality + missingness disclosure alone
+    induce refusal, versus the typed runtime contract (should_ai_abstain).
+    """
+    bundle = build_compiled_bundle(row)
+    wmi = dict(bundle.get("world_model_index") or {})
+    wmi.pop("should_ai_abstain", None)
+    wmi.pop("thin_world", None)
+    wmi["note"] = "numeric_quality_only_no_hard_abstain_flag"
+    bundle["world_model_index"] = wmi
+    bundle.pop("abstain_threshold", None)
+    return bundle
+
+
+def _build_bundle(treatment: str, row: pd.Series) -> dict[str, Any]:
+    if treatment == "compiled":
+        return build_compiled_bundle(row)
+    if treatment == "raw":
+        return build_raw_bundle(row)
+    if treatment == "ungated":
+        return build_ungated_bundle(row)
+    raise KeyError(treatment)
 
 
 def _ensure_panel() -> pd.DataFrame:
@@ -161,24 +193,21 @@ def _understanding_metrics(df: pd.DataFrame, transcripts: list[dict], treatment:
     ear_ok = 0
     ready_shares = []
     for t, (_, r) in zip(sub, df.iterrows()):
-        bundle = build_compiled_bundle(r) if treatment == "compiled" else build_raw_bundle(r)
-        thin = bool((bundle.get("world_model_index") or {}).get("thin_world"))
-        if treatment == "compiled" and thin:
+        # Thinness is defined by the compiled world index even for ablations.
+        compiled = build_compiled_bundle(r)
+        thin = bool((compiled.get("world_model_index") or {}).get("thin_world"))
+        if treatment in {"compiled", "ungated"} and thin:
             thin_n += 1
             if t["action"] == "abstain":
                 thin_hits += 1
-        # EAR proxy: non-abstain actions should cite evidence in rationale or use compiled fields
         if t["action"] == "abstain":
             ear_ok += 1
-        elif treatment == "compiled":
-            rat = str(t.get("rationale") or "")
-            if "compiled" in rat or "world" in rat or "band" in rat or "momentum" in rat:
-                ear_ok += 1
-            else:
-                ear_ok += 1  # structured consumer always evidence-bound in this harness
+        elif treatment in {"compiled", "ungated"}:
+            ear_ok += 1  # structured consumer harness
         else:
-            ear_ok += 1 if "mom" in str(t.get("rationale") or "") or t["action"] in {"bullish", "bearish", "neutral"} else 0
-        if treatment == "compiled":
+            ear_ok += 1 if t["action"] in {"bullish", "bearish", "neutral"} else 0
+        if treatment in {"compiled", "ungated"}:
+            bundle = _build_bundle(treatment, r)
             ready_shares.append(float((bundle.get("completeness") or {}).get("ready_share") or 0.0))
     return {
         "thin_world_abstain_rate": round(thin_hits / thin_n, 4) if thin_n else float("nan"),
@@ -193,6 +222,8 @@ def evaluate_model(
     model_name: str,
     *,
     max_workers: int = 4,
+    treatments: tuple[str, ...] = ("compiled", "raw"),
+    transcript_tag: str = "",
 ) -> dict[str, Any]:
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -200,22 +231,22 @@ def evaluate_model(
     rows_out = []
     transcripts = []
     understanding = {}
-    for treatment in ("compiled", "raw"):
+    for treatment in treatments:
         template = _load_prompt(treatment)
         ph = _prompt_hash(template)
         items = list(df.iterrows())
 
-        def _one(pair):
+        def _one(pair, _treatment=treatment, _template=template, _ph=ph):
             idx, r = pair
-            bundle = build_compiled_bundle(r) if treatment == "compiled" else build_raw_bundle(r)
-            prompt = template.replace("{{BUNDLE_JSON}}", json.dumps(bundle, default=str))
-            dec = provider.decide(treatment=treatment, prompt=prompt, bundle=bundle)
+            bundle = _build_bundle(_treatment, r)
+            prompt = _template.replace("{{BUNDLE_JSON}}", json.dumps(bundle, default=str))
+            dec = provider.decide(treatment=_treatment, prompt=prompt, bundle=bundle)
             return idx, {
                 "date": bundle["date"],
                 "asset": bundle["asset"],
                 "model": model_name,
-                "treatment": treatment,
-                "prompt_hash": ph,
+                "treatment": _treatment,
+                "prompt_hash": _ph,
                 "action": dec.action,
                 "confidence": dec.confidence,
                 "position": dec.position(),
@@ -264,14 +295,22 @@ def evaluate_model(
     by_t = {r["treatment"]: r for r in rows_out}
     delta = {
         "model": model_name,
-        "dCE_compiled_minus_raw": round(by_t["compiled"]["CE"] - by_t["raw"]["CE"], 4),
-        "dSharpe_compiled_minus_raw": round(by_t["compiled"]["Sharpe"] - by_t["raw"]["Sharpe"], 4),
-        "compiled_abstain_rate": by_t["compiled"]["abstain_rate"],
-        "raw_abstain_rate": by_t["raw"]["abstain_rate"],
-        "compiled_thin_world_abstain_rate": by_t["compiled"]["thin_world_abstain_rate"],
-        "compiled_ear_proxy": by_t["compiled"]["ear_proxy"],
+        "compiled_abstain_rate": by_t.get("compiled", {}).get("abstain_rate"),
+        "ungated_abstain_rate": by_t.get("ungated", {}).get("abstain_rate"),
+        "raw_abstain_rate": by_t.get("raw", {}).get("abstain_rate"),
+        "compiled_thin_world_abstain_rate": by_t.get("compiled", {}).get("thin_world_abstain_rate"),
+        "ungated_thin_world_abstain_rate": by_t.get("ungated", {}).get("thin_world_abstain_rate"),
+        "compiled_ear_proxy": by_t.get("compiled", {}).get("ear_proxy"),
     }
-    (TRANSCRIPT_DIR / f"{model_name}.jsonl").write_text(
+    if "compiled" in by_t and "raw" in by_t:
+        delta["dCE_compiled_minus_raw"] = round(by_t["compiled"]["CE"] - by_t["raw"]["CE"], 4)
+        delta["dSharpe_compiled_minus_raw"] = round(
+            by_t["compiled"]["Sharpe"] - by_t["raw"]["Sharpe"], 4
+        )
+    if "ungated" in by_t and "raw" in by_t:
+        delta["dCE_ungated_minus_raw"] = round(by_t["ungated"]["CE"] - by_t["raw"]["CE"], 4)
+    suffix = f"_{transcript_tag}" if transcript_tag else ""
+    (TRANSCRIPT_DIR / f"{model_name}{suffix}.jsonl").write_text(
         "\n".join(json.dumps(t) for t in transcripts) + "\n",
         encoding="utf-8",
     )
@@ -279,12 +318,13 @@ def evaluate_model(
 
 
 def _export_sample_bundles(df: pd.DataFrame, n: int = 3) -> None:
-    """Export example compiled/raw bundles for the ICAIF manuscript."""
+    """Export example compiled/raw/ungated bundles for the ICAIF manuscript."""
     samples = []
     for _, r in df.head(n).iterrows():
         samples.append(
             {
                 "compiled": build_compiled_bundle(r),
+                "ungated": build_ungated_bundle(r),
                 "raw": build_raw_bundle(r),
             }
         )
@@ -346,6 +386,12 @@ def main(argv: list[str] | None = None) -> int:
         default=4,
         help="Parallel HTTP workers per treatment (default 4)",
     )
+    parser.add_argument(
+        "--treatments",
+        type=str,
+        default="compiled,raw",
+        help="Comma-separated treatments: compiled,raw,ungated",
+    )
     args = parser.parse_args(argv)
 
     cfg = load_experiment_config()
@@ -359,17 +405,24 @@ def main(argv: list[str] | None = None) -> int:
         from pdf.sci.llm_consumer.providers.mock import _is_live_model_name
 
         models = [m for m in models if _is_live_model_name(m)]
+    treatments = tuple(t.strip() for t in args.treatments.split(",") if t.strip())
     df = _ensure_panel()
     _, oos, cut = split_is_oos(df, is_frac=float(cfg["split"]["is_frac"]))
     oos = _sample_oos(oos, args.sample_n if args.sample_n > 0 else None)
-    print("LLM consumer OOS from", cut, "n=", len(oos), "models=", models)
+    print("LLM consumer OOS from", cut, "n=", len(oos), "models=", models, "treatments=", treatments)
 
     _export_sample_bundles(oos)
 
     all_rows = []
     deltas = []
     for m in models:
-        res = evaluate_model(oos, m, max_workers=max(1, int(args.workers)))
+        res = evaluate_model(
+            oos,
+            m,
+            max_workers=max(1, int(args.workers)),
+            treatments=treatments,
+            transcript_tag=args.tag or "",
+        )
         all_rows.extend(res["rows"])
         deltas.append(res["delta"])
         print(m, res["delta"])
@@ -390,11 +443,12 @@ def main(argv: list[str] | None = None) -> int:
 
     und_rows = []
     for _, r in econ.iterrows():
-        if r["treatment"] != "compiled":
+        if r["treatment"] not in {"compiled", "ungated"}:
             continue
         und_rows.append(
             {
                 "model": r["model"],
+                "treatment": r["treatment"],
                 "abstain_rate": r["abstain_rate"],
                 "thin_world_abstain_rate": r["thin_world_abstain_rate"],
                 "ear_proxy": r["ear_proxy"],
@@ -408,6 +462,14 @@ def main(argv: list[str] | None = None) -> int:
         und_df.to_csv(TAB / "table_llm_understanding.csv", index=False)
         und_df.to_csv(ICAIF_TAB / "table_llm_understanding.csv", index=False)
 
+    def _mean_or_none(series_name: str):
+        if series_name not in delta_df.columns:
+            return None
+        s = pd.to_numeric(delta_df[series_name], errors="coerce").dropna()
+        if s.empty:
+            return None
+        return round(float(s.mean()), 4)
+
     summary = {
         "protocol": "pdf/sci/llm_consumer/protocol.md",
         "role": "primary_ai_consumer_validation_understanding_first",
@@ -417,10 +479,10 @@ def main(argv: list[str] | None = None) -> int:
         "n_oos_rows": int(len(oos)),
         "sample_n": int(args.sample_n or 0),
         "models": models,
-        "mean_dCE": round(float(delta_df["dCE_compiled_minus_raw"].mean()), 4),
-        "mean_compiled_thin_world_abstain": round(
-            float(pd.to_numeric(delta_df["compiled_thin_world_abstain_rate"], errors="coerce").mean()), 4
-        ),
+        "treatments": list(treatments),
+        "mean_dCE": _mean_or_none("dCE_compiled_minus_raw"),
+        "mean_compiled_thin_world_abstain": _mean_or_none("compiled_thin_world_abstain_rate"),
+        "mean_ungated_thin_world_abstain": _mean_or_none("ungated_thin_world_abstain_rate"),
         "deltas": deltas,
         "experiment_config_hash": cfg["_content_hash"],
     }
