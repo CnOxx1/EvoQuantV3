@@ -1,0 +1,4 @@
+threshold,open_share,wmi_max,wmi_median,note
+0.2,0.0,0.0929,0.0929,production default
+0.05,0.612,0.0929,0.0929,counterfactual; approx band-thick share
+0.01,1.0,0.0929,0.0929,near-floor open

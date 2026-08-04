@@ -1,0 +1,5 @@
+model,n,n_act,act_rate,CE_all,CE_when_acts,Sharpe_when_acts
+gpt-5.4-mini,96,37,0.3854,-0.3182,1.3847,3.512
+deepseek-v4-flash,100,19,0.19,-0.1065,-3.1238,-6.024
+glm-5.2,100,14,0.14,0.018,-4.281,-4.215
+gemini-3.5-flash-lite,93,57,0.6129,-1.1394,-1.6745,-3.483
