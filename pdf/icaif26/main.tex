@@ -220,6 +220,27 @@ We describe the anonymized prototype as a layered systems object (Figure~\ref{fi
   \label{fig:pipeline}
 \end{figure*}
 
+\subsection{Data flow: inputs, processing, outputs}
+Table~\ref{tab:dataflow} traces the runtime end-to-end. \emph{Inputs}: per-band collectors pull public market data---exchange klines/funding/open-interest via REST, daily macro risk indices (equity volatility, dollar index), aggregate stablecoin circulation, and (when reachable) news/on-chain/options feeds---each row stored with its observation timestamp and, for macro, an \texttt{available\_at} vintage. \emph{Processing}: for every asset-day, BandPIT selects the latest observation with timestamp \(\le(t{-}1)\,23{:}59\), grades it fresh/stale/missing against per-band age thresholds, aggregates breadth/stability/honesty into WMI and regime-conditional ACWMI, derives content tilts (5-day macro-index changes; 7-day stablecoin-flow slope; return momentum), and logs availability shocks \(O_t\). \emph{Outputs}: a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days, \(\sim\)50 columns), per-day world bundles (Listing~\ref{lst:bundle}), and the consumer transcripts/tables behind Sections~\ref{sec:exp}.
+
+\begin{table}[t]
+  \caption{Data flow through the runtime (anonymized sources).}
+  \label{tab:dataflow}
+  \small
+  \begin{tabular}{>{\raggedright\arraybackslash}p{0.17\linewidth}>{\raggedright\arraybackslash}p{0.34\linewidth}>{\raggedright\arraybackslash}p{0.36\linewidth}}
+    \toprule
+    Band & Fetched (raw) & Emitted (bundle) \\
+    \midrule
+    exchange & OHLCV klines (1h/1d), funding, open interest, orderbook & \(\mathrm{mom5}\); band status/age; funding context \\
+    macro & equity-vol and dollar indices; vintaged macro series & \(\mathrm{macro\_tilt}\) (5d changes); status/age \\
+    alternative & aggregate stablecoin circulation & \(\mathrm{alt\_tilt}\) (7d flow slope); status/age \\
+    news / on-chain / options / tokenomics & RSS, chain explorers, option chains (right-censored here) & status = \texttt{missing}, disclosed \\
+    payoff & daily closes (external reference) & close-to-close \(r_t\) for scoring only \\
+    derived & --- & \(B,U,H\), WMI, ACWMI, \texttt{should\_ai\_abstain}, \texttt{thin\_world}, \(O_t\), \texttt{evidence\_ids} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \subsection{PIT previous-close clock}
 For calendar day \(t\), the decision information set is reconstructed at \((t{-}1)\,23{:}59\). The payoff is the same-calendar-day close-to-close return \(r_t\). This removes same-day look-ahead in band statuses and vintaged macro/alternative content. The bundle records the clock in \texttt{decision\_asof}, and every live run pins \texttt{timing\_protocol} to the previous-close protocol.
 
