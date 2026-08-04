@@ -1,0 +1,5 @@
+model,compiled_n,compiled_coverage,compiled_rate,compiled_ci_lo,compiled_ci_hi,compiled_CE,ungated_n,ungated_coverage,ungated_rate,ungated_ci_lo,ungated_ci_hi,ungated_CE,raw_n,raw_coverage,raw_rate,raw_ci_lo,raw_ci_hi,raw_CE,dCE
+gpt-5.4-mini,2000,1.0,1.0,0.998,1,0.0,2000,1.0,0.666,0.645,0.686,0.402,2000,1.0,0.0,0.0,0.002,-0.0976,0.0976
+deepseek-v4-flash,2000,1.0,1.0,0.998,1,0.0,2000,1.0,0.5395,0.518,0.561,0.3484,1925,0.963,0.7481,0.728,0.767,0.0333,-0.0333
+glm-5.2,2000,1.0,1.0,0.998,1,0.0,1402,0.701,0.679,0.654,0.703,0.2229,675,0.338,,0.058,0.098,-0.2761,
+gemini-3.5-flash-lite,2000,1.0,1.0,0.998,1,0.0,2000,1.0,0.3585,0.338,0.38,0.3267,2000,1.0,0.0,0.0,0.002,-0.2019,0.2019
