@@ -1,0 +1,56 @@
+{
+  "protocol": "pdf/sci/llm_consumer/protocol.md",
+  "role": "primary_ai_consumer_validation_understanding_first",
+  "thesis": "world_model_cognition_base_for_public_llms",
+  "gateway": "https://api.teamorouter.com/v1",
+  "is_oos_cut": "2026-01-16",
+  "n_oos_rows": 100,
+  "sample_n": 100,
+  "models": [
+    "gpt-5.4-mini",
+    "deepseek-v4-flash",
+    "glm-5.2",
+    "gemini-3.5-flash-lite"
+  ],
+  "mean_dCE": 1.0715,
+  "mean_compiled_thin_world_abstain": 1.0,
+  "deltas": [
+    {
+      "model": "gpt-5.4-mini",
+      "dCE_compiled_minus_raw": 0.7296,
+      "dSharpe_compiled_minus_raw": 2.853,
+      "compiled_abstain_rate": 1.0,
+      "raw_abstain_rate": 0.04,
+      "compiled_thin_world_abstain_rate": 1.0,
+      "compiled_ear_proxy": 1.0
+    },
+    {
+      "model": "deepseek-v4-flash",
+      "dCE_compiled_minus_raw": 1.2173,
+      "dSharpe_compiled_minus_raw": 12.893,
+      "compiled_abstain_rate": 1.0,
+      "raw_abstain_rate": 0.75,
+      "compiled_thin_world_abstain_rate": 1.0,
+      "compiled_ear_proxy": 1.0
+    },
+    {
+      "model": "glm-5.2",
+      "dCE_compiled_minus_raw": 1.0401,
+      "dSharpe_compiled_minus_raw": 3.036,
+      "compiled_abstain_rate": 1.0,
+      "raw_abstain_rate": 0.11,
+      "compiled_thin_world_abstain_rate": 1.0,
+      "compiled_ear_proxy": 1.0
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "dCE_compiled_minus_raw": 1.2989,
+      "dSharpe_compiled_minus_raw": 3.51,
+      "compiled_abstain_rate": 1.0,
+      "raw_abstain_rate": 0.07,
+      "compiled_thin_world_abstain_rate": 1.0,
+      "compiled_ear_proxy": 1.0
+    }
+  ],
+  "experiment_config_hash": "08da093f3b8ee25e"
+}

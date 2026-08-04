@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{13}
+\begin{thebibliography}{16}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -76,6 +76,17 @@
 \newblock
 
 
+\bibitem[Gu et~al\mbox{.}(2020)]%
+        {gu2020}
+\bibfield{author}{\bibinfo{person}{Shihao Gu}, \bibinfo{person}{Bryan Kelly},
+  {and} \bibinfo{person}{Dacheng Xiu}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Empirical Asset Pricing via Machine Learning}.
+\newblock \bibinfo{journal}{\emph{Review of Financial Studies}}
+  \bibinfo{volume}{33}, \bibinfo{number}{5} (\bibinfo{year}{2020}),
+  \bibinfo{pages}{2223--2273}.
+\newblock
+
+
 \bibitem[Ha and Schmidhuber(2018)]%
         {ha2018world}
 \bibfield{author}{\bibinfo{person}{David Ha} {and} \bibinfo{person}{J{\"u}rgen
@@ -106,6 +117,18 @@
 \newblock
 
 
+\bibitem[Kelly et~al\mbox{.}(2019)]%
+        {kelly2019}
+\bibfield{author}{\bibinfo{person}{Bryan~T. Kelly}, \bibinfo{person}{Seth
+  Pruitt}, {and} \bibinfo{person}{Yinan Su}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Characteristics Are Covariances: A Unified Model of
+  Risk and Return}.
+\newblock \bibinfo{journal}{\emph{Journal of Financial Economics}}
+  \bibinfo{volume}{134}, \bibinfo{number}{3} (\bibinfo{year}{2019}),
+  \bibinfo{pages}{501--524}.
+\newblock
+
+
 \bibitem[LeCun(2022)]%
         {lecun2022path}
 \bibfield{author}{\bibinfo{person}{Yann LeCun}.}
@@ -133,6 +156,15 @@
 \newblock \bibinfo{journal}{\emph{Journal of Financial Economics}}
   \bibinfo{volume}{135}, \bibinfo{number}{2} (\bibinfo{year}{2020}),
   \bibinfo{pages}{293--319}.
+\newblock
+
+
+\bibitem[Nagel(2021)]%
+        {nagel2021}
+\bibfield{author}{\bibinfo{person}{Stefan Nagel}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Machine Learning in Asset Pricing}}.
+\newblock \bibinfo{publisher}{Princeton University Press}.
 \newblock
 
 

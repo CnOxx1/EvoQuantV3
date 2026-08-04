@@ -137,20 +137,43 @@ PROVIDERS = {
 }
 
 
+def _is_live_model_name(name: str) -> bool:
+    lname = name.lower().strip()
+    live_prefixes = (
+        "gpt-",
+        "deepseek",
+        "glm",
+        "gemini-",
+        "kimi-",
+        "openai:",
+        "live:",
+        "teamo:",
+    )
+    return lname.startswith(live_prefixes) or lname in {
+        "gpt",
+        "deepseek-chat",
+        "deepseek-v4-flash",
+        "deepseek-v4-pro",
+        "glm-4",
+        "glm-5.2",
+    }
+
+
 def get_provider(name: str):
-    # Live public LLMs: gpt-*, deepseek-*, glm-* when keys are configured
-    live_prefixes = ("gpt-", "deepseek", "glm", "openai:", "live:")
-    lname = name.lower()
-    if lname.startswith(live_prefixes) or lname in {"gpt", "deepseek-chat", "glm-4"}:
+    # Live public LLMs via OpenAI-compatible gateway (e.g. TeamoRouter)
+    if _is_live_model_name(name):
         from pdf.sci.llm_consumer.providers.openai_compatible import (
             OpenAICompatibleProvider,
             live_llm_configured,
         )
 
         if not live_llm_configured():
-            # Fall back to stylized public follower so the pipeline still runs
             return PublicLLMCompiledFollower()
-        return OpenAICompatibleProvider(name.replace("openai:", "").replace("live:", ""))
+        clean = name
+        for p in ("openai:", "live:", "teamo:"):
+            if clean.lower().startswith(p):
+                clean = clean[len(p) :]
+        return OpenAICompatibleProvider(clean)
 
     cls = PROVIDERS.get(name)
     if cls is None:

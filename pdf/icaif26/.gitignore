@@ -1,8 +1,12 @@
 *.aux
 *.blg
+.env
+.env.*
+*.fdb_latexmk
+*.fls
 *.log
 *.out
-*.toc
-*.fls
-*.fdb_latexmk
+*.pem
+*secret*
 *.synctex.gz
+*.toc

@@ -1,5 +1,5 @@
 %% ICAIF '26 — ACM acmart sigconf + anonymous
-%% Understanding-first: market world model for public LLMs (GPT / DeepSeek / GLM).
+%% Understanding-first: market world model for public LLMs (GPT / DeepSeek / GLM / Gemini).
 %% Isolated from pdf/sci/ JF-RFS materials.
 \documentclass[sigconf,anonymous,review]{acmart}
 
@@ -13,6 +13,7 @@
 
 \usepackage{booktabs}
 \usepackage{amsthm}
+\usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{enumitem}
 \setlist{nosep,leftmargin=*}
@@ -21,6 +22,7 @@
 \newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
 \newtheorem{remark}{Remark}
+\newtheorem{assumption}{Assumption}
 
 \author{Anonymous Author(s)}
 \affiliation{%
@@ -34,7 +36,7 @@
 Complete, Honest, Auditable Crypto Cognition before Decision}
 
 \begin{abstract}
-Most quant stacks start from \emph{strategy}. Public large language models (GPT-, DeepSeek-, and GLM-class agents) that act in cryptocurrency markets instead fail earlier: they lack a complete, honest, auditable \emph{market cognition base}. Raw feeds are asynchronous, intermittently missing, and quality-heterogeneous; ungated tool dumps invite overconfident action. We build a \emph{financial world-model runtime} that compiles multi-band evidence into a point-in-time (PIT) world bundle for public LLMs. The primitive is an epistemic observation \(O_{j,t}=(x,\tau,q,g,r)\); a compilation operator \(\Pi_t\) yields \(\mathcal{F}^{\mathrm{AI}}_t\); completeness, honesty \((B,U,H)\), and WMI/ACWMI gate abstention; evidence IDs make actions auditable. On a real crypto PIT panel, Compiled-versus-Raw consumers that honor the world model abstain on thin worlds (thin-world abstain rate \(1.0\), EAR proxy \(1.0\)), while momentum-only and noisy consumers do not. A secondary content probe shows vintaged macro/stablecoin fields change a transparent rule versus same-input momentum (\(\Delta\)CE \(0.334\), \(p{=}0.034\))---evidence the compiled world is nonempty, not a strategy Holy Grail. Live OpenAI-compatible adapters (GPT / DeepSeek / GLM) share the same protocol when API keys are present.
+Most quant stacks start from \emph{strategy}. Public large language models (GPT-, DeepSeek-, GLM-, and Gemini-class agents) that act in cryptocurrency markets instead fail earlier: they lack a complete, honest, auditable \emph{market cognition base}. Raw feeds are asynchronous, intermittently missing, and quality-heterogeneous; ungated tool dumps invite overconfident action. We build a \emph{financial world-model runtime} that compiles multi-band evidence into a point-in-time (PIT) world bundle for public LLMs. The primitive is an epistemic observation \(O_{j,t}=(x,\tau,q,g,r)\); a compilation operator \(\Pi_t\) yields \(\mathcal{F}^{\mathrm{AI}}_t\); completeness, honesty \((B,U,H)\), and WMI/ACWMI gate abstention; evidence IDs make actions auditable. On a real crypto PIT panel, four live public LLMs via an OpenAI-compatible gateway (temperature \(0\), frozen prompts) receive Compiled vs.\ Raw bundles on \(100\) OOS asset-days each: under Compiled, every model abstains on thin worlds (thin-world abstain \(1.0\), EAR proxy \(1.0\)); under Raw, abstain rates fall to \(0.04\)--\(0.75\) and models trade into sparse support. Mean \(\Delta\)CE (Compiled$-$Raw) is \(+1.07\), reported as a secondary content probe---not a strategy Holy Grail. Offline rule consumers reproduce the same refusal pattern when they honor the world model and fail when they do not.
 \end{abstract}
 
 \begin{CCSXML}
@@ -71,43 +73,71 @@ Most quant stacks start from \emph{strategy}. Public large language models (GPT-
 Public LLMs are increasingly asked to analyze or trade crypto markets. The bottleneck is not another alpha signal. It is \emph{understanding}: before decision, an agent needs a market world that is \textbf{complete} (missingness disclosed), \textbf{honest} (stale or role-incoherent evidence gated), and \textbf{auditable} (actions bound to evidence). Venue fragmentation, derivatives, on-chain flows, news, and macro vintages arrive on incompatible clocks~\cite{makarov2020,liu2022}. Generative world models~\cite{ha2018world,hafner2020dreamer,lecun2022path} and tool-using agents~\cite{yao2023react,brown2020gpt3} typically assume a usable observation stream. Crypto agents often do not have one.
 
 \paragraph{Thesis.}
-We build a market \emph{world-model runtime} for public LLMs: compile raw multi-band evidence into a PIT-safe cognition bundle that GLM / DeepSeek / GPT-class models can call. Strategy metrics are secondary probes that the world has content---not the product objective.
+We build a market \emph{world-model runtime} for public LLMs: compile raw multi-band evidence into a PIT-safe cognition bundle that GPT / DeepSeek / GLM / Gemini-class models can call. Strategy metrics are secondary probes that the world has content---not the product objective. In slogan form: \emph{quant from strategy; this runtime from understanding}.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{Cognition semantics.} Epistemic observations, compilation \(\Pi_t\), reconstruction bound, completeness/honesty fields, WMI/ACWMI abstention, evidence-bound actions.
-\item \textbf{Runtime for public LLMs.} Vintage-aware collectors, BandPIT previous-close clock, quality-tagged bundles, availability shocks \(O_t\), frozen Compiled-versus-Raw protocol with OpenAI-compatible live adapters.
-\item \textbf{Understanding-first validation.} On a real PIT archive, world-honoring consumers abstain when the world is thin; content probes show compiled band fields are economically nonempty versus same-input momentum.
+\item \textbf{Cognition semantics.} Epistemic observations, compilation \(\Pi_t\), a lag reconstruction bound, completeness/honesty fields, WMI/ACWMI abstention, evidence-bound actions.
+\item \textbf{Runtime for public LLMs.} Vintage-aware collectors, BandPIT previous-close clock, quality-tagged bundles, availability shocks \(O_t\), frozen Compiled-versus-Raw protocol with an OpenAI-compatible multi-vendor adapter.
+\item \textbf{Live understanding-first validation.} Four live public LLMs abstain when the compiled world is thin and often trade under Raw; a secondary content probe shows vintaged band fields are economically nonempty versus same-input momentum.
 \end{enumerate}
 
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{World models.}
-World models learn compact states and often dynamics~\cite{ha2018world,hafner2020dreamer,lecun2022path}. We address the complementary \emph{observation-side} problem: a PIT-safe, quality-tagged crypto world \emph{before} dynamics or LLM policy.
+\paragraph{World models in AI.}
+World models learn compact states and often dynamics for control or imagination~\cite{ha2018world,hafner2020dreamer,lecun2022path}. We address the complementary \emph{observation-side} problem: a PIT-safe, quality-tagged crypto world \emph{before} dynamics or LLM policy. We do not claim a Dreamer/JEPA-style generative simulator; we claim the missing systems layer those models usually assume.
 
 \paragraph{LLM agents in finance.}
-Agentic workflows call tools over streams~\cite{yao2023react}. Without a compiled cognition base, models face stale or incomplete evidence. We evaluate within-model Compiled vs.\ Raw under a frozen schema.
+Agentic workflows call tools over streams~\cite{yao2023react}. Without a compiled cognition base, models face stale or incomplete evidence and overconfident action schemas. We evaluate within-model Compiled vs.\ Raw under a frozen schema so the estimand is the world interface, not a new chat prompt.
 
 \paragraph{Selective prediction and trustworthy AI.}
-Abstention can be optimal under noise~\cite{elyaniv2010,geifman2017}. We tie refusal to world quality, not classifier confidence alone---aligned with trustworthy AI in finance.
+Abstention can be optimal under noise~\cite{elyaniv2010,geifman2017}. We tie refusal to world quality (WMI/ACWMI), not classifier confidence alone---aligned with trustworthy AI in finance.
 
-\paragraph{PIT measurement.}
-Macro vintages~\cite{croushore2001} and crypto microstructure~\cite{makarov2020,liu2022} motivate multi-band compilation. Bootstrap discipline follows~\cite{white2000,politis1994,harvey2016}.
+\paragraph{PIT measurement and crypto microstructure.}
+Macro vintages~\cite{croushore2001} and crypto microstructure~\cite{makarov2020,liu2022} motivate multi-band compilation. Bootstrap and multiple-testing discipline for secondary economic probes follow~\cite{white2000,politis1994,harvey2016}. Asset-pricing ML~\cite{gu2020,kelly2019,nagel2021} is adjacent but not our estimand: we validate that the compiled world is nonempty for agents, not that a return factor is priced.
 
 \section{Market World-Model Semantics}
 \label{sec:method}
 
 \begin{definition}[Epistemic observation]
-\(O_{j,t}=(x_{j,t},\tau_{j,t},q_{j,t},g_{j,t},r_{j,t})\): value, latest-available time, quality, main-view gate, semantic role.
+An epistemic observation is
+\(O_{j,t}=(x_{j,t},\tau_{j,t},q_{j,t},g_{j,t},r_{j,t})\):
+value, latest-available time, quality, main-view gate, and semantic role.
+A bare feature dump that omits \((\tau,q,g,r)\) is not a world observation.
+\end{definition}
+
+\begin{definition}[Financial world state]
+A financial world state at \(t\) is a quality-tagged, PIT-safe compilation
+\(W_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t)\) together with a scalar world quality \(q(W_t)\)
+(e.g.\ WMI/ACWMI) that gates abstention; \(\mathcal{F}^{\mathrm{AI}}_t=\sigma(W_t)\).
 \end{definition}
 
 \begin{definition}[Compilation]
-\(W_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t)\) with \(\Pi_t=B_t\circ M_t\circ A_t\) (align, honesty/missingness gates, band assembly); \(\mathcal{F}^{\mathrm{AI}}_t=\sigma(W_t)\).
+\(\Pi_t=B_t\circ M_t\circ A_t\): align clocks, apply honesty/missingness gates, assemble band views.
 \end{definition}
 
 \paragraph{Completeness, honesty, quality.}
-Ready/limited/missing counts disclose coverage. Breadth/stability/honesty give \(\mathrm{WMI}_t=B_t U_t H_t\); ACWMI supports regime-conditional gating. Reconstruction error admits a delay/noise/missingness bound (Eq.\ omitted for space).
+Ready/limited/missing counts disclose coverage. Breadth/stability/honesty give
+\(\mathrm{WMI}_t=B_t U_t H_t\); ACWMI supports regime-conditional gating. The runtime exposes
+\texttt{should\_ai\_abstain} and \texttt{thin\_world} as first-class fields.
+
+\begin{assumption}[Bounded lag and increments]
+Each band \(j\) has a maximum observation lag \(\Delta_j\) under the decision clock, and the latent state \(S_t\) has bounded increments \(\|S_u-S_{u-1}\|\le\bar\delta\).
+\end{assumption}
+
+\begin{proposition}[Lag reconstruction bound]
+\label{prop:recon}
+Under Assumption~1, a reconstruction \(\widetilde S_t\) built from lagged, noisy, and partially missing observations satisfies
+\[
+\|\widetilde S_t-S_t\|
+\;\le\;
+\underbrace{C_{\mathrm{del}}\bar\delta}_{\mathrm{delay}}
++\underbrace{C_{\mathrm{noi}}\varepsilon_t}_{\mathrm{noise}}
++\underbrace{C_{\mathrm{miss}}m_t}_{\mathrm{missingness}},
+\]
+where \(\varepsilon_t\) aggregates observation noise and \(m_t\) aggregates disclosed missing mass. Compilation cannot erase delay; it can only refuse to pretend the bound is zero.
+\end{proposition}
 
 \begin{proposition}[Compilation \(\neq\) feature dump]
 \label{prop:compile}
@@ -119,14 +149,19 @@ Enlarging raw span without \(\Pi_t\) need not enlarge usable \(\mathcal{F}^{\mat
 If non-abstain actions exceed a world-dependent cost \(c_{\mathrm{abs}}(W_t)\), Bayes action is abstain; with costs decreasing in WMI, abstention is a lower set in world quality~\cite{elyaniv2010}.
 \end{proposition}
 
+\begin{proposition}[LOBO content vs.\ gating]
+\label{prop:lobo}
+Deleting band \(j\) changes economic value through a \emph{content} channel (actions change given the same gate) and a \emph{gating} channel (the abstention set changes). Empirically we report content share under an ungated rule so the probe speaks to nonempty fields, not only refusal.
+\end{proposition}
+
 \begin{remark}[Not a generative WM]
-We do not learn \(p(s_{t+1}\mid s_t,a_t)\). We deliver a \emph{state compiler + abstention runtime} for public LLM consumers.
+We do not learn \(p(s_{t+1}\mid s_t,a_t)\). We deliver a \emph{state compiler + abstention runtime} for public LLM consumers---the observation interface generative world models usually assume.
 \end{remark}
 
 \section{Runtime for Public LLMs}
 \label{sec:system}
 
-Figure~\ref{fig:pipeline} shows the anonymized prototype. Collectors fill vintage-aware stores; BandPIT reconstructs readiness at \((t{-}1)\,23{:}59\) for payoff \(r_t\); the runtime emits a world bundle consumed by rule or LLM agents via frozen prompts (temperature \(0\)). OpenAI-compatible adapters target GPT / DeepSeek / GLM when API keys exist; offline stylized public-LLM followers keep the protocol reproducible without keys.
+Figure~\ref{fig:pipeline} shows the anonymized prototype. Collectors fill vintage-aware stores; BandPIT reconstructs readiness at \((t{-}1)\,23{:}59\) for payoff \(r_t\); the runtime emits a world bundle consumed by rule or LLM agents via frozen prompts (temperature \(0\)). An OpenAI-compatible adapter routes the same schema to GPT / DeepSeek / GLM / Gemini-class endpoints; offline stylized followers keep the protocol reproducible without keys. Availability shocks \(O_t\) are queryable from collection logs as a quasi-exogenous lever on world thickness.
 
 \begin{figure}[t]
   \centering
@@ -146,7 +181,7 @@ Figure~\ref{fig:pipeline} shows the anonymized prototype. Collectors fill vintag
     Timing & \texttt{decision\_asof}, previous-close protocol \\
     Completeness & \(n_{\mathrm{ready/limited/missing}}\), band statuses \\
     Honesty & \(B,U,H\), main-view / stale gates \\
-    Quality & WMI, ACWMI, \texttt{should\_ai\_abstain} \\
+    Quality & WMI, ACWMI, \texttt{should\_ai\_abstain}, \texttt{thin\_world} \\
     Content & \(\mathrm{macro\_tilt}\), \(\mathrm{alt\_tilt}\), regime, cascade \\
     Audit & \texttt{evidence\_ids}, EAR required \\
     \bottomrule
@@ -157,7 +192,8 @@ Figure~\ref{fig:pipeline} shows the anonymized prototype. Collectors fill vintag
 \[
 \Delta_m=V_m(\mathrm{Compiled})-V_m(\mathrm{Raw}),
 \]
-same dates/assets/schema. Understanding metrics: thin-world abstain rate; EAR proxy; disclosed ready share. Durable bands in the archive: \(\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}\) (ready rates \(\approx 0.80/1/1\)); other bands right-censored and disclosed as missing.
+same dates/assets/schema/prompts. Understanding metrics: thin-world abstain rate; evidence-audit (EAR) proxy; disclosed ready share. Durable bands in the archive: \(\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}\) (ready rates \(\approx 0.80/1/1\)); other bands right-censored and disclosed as missing. Actions are restricted to
+\(\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}\).
 
 \begin{figure}[t]
   \centering
@@ -171,22 +207,24 @@ same dates/assets/schema. Understanding metrics: thin-world abstain rate; EAR pr
 \label{sec:exp}
 
 \subsection{Setup}
-PIT panel \(\sim\)399 days, 10 liquid names, previous-close clock, IS/OOS \(200/200\) days (\(\sim\)2000 asset-days OOS). Consumers: \texttt{public-llm-compiled-follower} (stylized public LLM), diagnostic mocks (compiled-aware / momentum / noisy), optional live vendors. Prompts frozen; temperature \(0\).
+PIT panel \(\sim\)399 days, 10 liquid names, previous-close clock, IS/OOS \(200/200\) days. Live RQ1 uses a stratified OOS sample of \(100\) asset-days per model \(\times\) arm (Compiled/Raw), temperature \(0\), frozen prompts, OpenAI-compatible multi-vendor gateway. Models: \texttt{gpt-5.4-mini}, \texttt{deepseek-v4-flash}, \texttt{glm-5.2}, \texttt{gemini-3.5-flash-lite}. Offline diagnostic consumers (stylized public-LLM follower; compiled-aware / momentum / noisy mocks) reproduce the protocol on the full OOS panel without keys.
 
-\subsection{RQ1: Does the world model change LLM behavior?}
-Table~\ref{tab:llm} and Figure~\ref{fig:und}: world-honoring consumers abstain on the entire OOS window under the sparse-archive WMI/ACWMI gate (abstain \(1.0\); thin-world abstain \(1.0\); EAR proxy \(1.0\)). Raw arms never receive abstention guidance (abstain \(0\)). Momentum-only and noisy consumers \emph{ignore} thin-world flags (thin-world abstain \(0\))---exactly the failure mode of ungated public LLMs. Mean \(\Delta\mathrm{CE}\) across consumers is positive but secondary: the cognition claim is correct refusal under thin support (Prop.~\ref{prop:abstain}).
+\subsection{RQ1 (primary): Do live public LLMs change behavior under the world model?}
+Table~\ref{tab:llm} and Figure~\ref{fig:und}: under Compiled, all four live models abstain on every sampled thin-world day (abstain \(1.0\); thin-world abstain \(1.0\); EAR proxy \(1.0\)). Under Raw---same dates/assets, no WMI/ACWMI guidance---abstain rates drop to \(0.04\)--\(0.75\) and models take directional positions into sparse support. Mean \(\Delta\mathrm{CE}\) (Compiled$-$Raw) is \(+1.07\); CE is secondary. The cognition claim is correct refusal when the world is thin (Prop.~\ref{prop:abstain}), not outperformance as a trading Holy Grail.
 
 \begin{table}[t]
-  \caption{Compiled vs.\ Raw public-LLM protocol (OOS). CE is secondary.}
+  \caption{Live public LLMs: Compiled vs.\ Raw on $100$ OOS asset-days (temp.\ $0$). CE secondary.}
   \label{tab:llm}
   \begin{tabular}{lrrrr}
     \toprule
-    Consumer & \(\Delta\)CE & Abs.\ C & Thin-abs. & EAR \\
+    Model & \(\Delta\)CE & Abs.\ C & Abs.\ R & Thin-abs. \\
     \midrule
-    public-llm-follower & $+0.202$ & $1.00$ & $1.00$ & $1.00$ \\
-    mock-compiled-aware & $+0.202$ & $1.00$ & $1.00$ & $1.00$ \\
-    mock-momentum & $0.000$ & $0.00$ & $0.00$ & $1.00$ \\
-    mock-noisy & $+0.212$ & $0.00$ & $0.00$ & $1.00$ \\
+    gpt-5.4-mini & $+0.73$ & $1.00$ & $0.04$ & $1.00$ \\
+    deepseek-v4-flash & $+1.22$ & $1.00$ & $0.75$ & $1.00$ \\
+    glm-5.2 & $+1.04$ & $1.00$ & $0.11$ & $1.00$ \\
+    gemini-3.5-flash-lite & $+1.30$ & $1.00$ & $0.07$ & $1.00$ \\
+    \midrule
+    Mean & $+1.07$ & $1.00$ & --- & $1.00$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -194,13 +232,31 @@ Table~\ref{tab:llm} and Figure~\ref{fig:und}: world-honoring consumers abstain o
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig_llm_understanding.png}
-  \Description{Bar charts of abstain rates and thin-world abstain versus EAR for LLM consumers.}
-  \caption{Understanding-first metrics: compiled arms refuse thin worlds; raw/momentum/noisy do not.}
+  \Description{Bar charts of Raw vs Compiled abstain rates and thin-world abstain versus EAR for live public LLMs.}
+  \caption{Live public LLMs: Compiled arms refuse thin worlds; Raw arms often trade.}
   \label{fig:und}
 \end{figure}
 
+\paragraph{Offline diagnostics.}
+Table~\ref{tab:mock}: world-honoring followers abstain at \(1.0\) on the full OOS panel; momentum-only and noisy mocks ignore thin-world flags (thin-world abstain \(0\))---the same failure mode Raw live models exhibit when they trade without a cognition base. Offline mocks are protocol checks; live vendors are the product claim.
+
+\begin{table}[t]
+  \caption{Offline diagnostics (full OOS): world-honoring vs.\ strategy-like mocks.}
+  \label{tab:mock}
+  \begin{tabular}{lrrr}
+    \toprule
+    Consumer & \(\Delta\)CE & Thin-abs. & EAR \\
+    \midrule
+    public-llm-follower & $+0.202$ & $1.00$ & $1.00$ \\
+    mock-compiled-aware & $+0.202$ & $1.00$ & $1.00$ \\
+    mock-momentum & $0.000$ & $0.00$ & $1.00$ \\
+    mock-noisy & $+0.212$ & $0.00$ & $1.00$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \subsection{RQ2: Is the compiled world nonempty? (content probe)}
-To show the bundle is not an empty label, a transparent rule shares return inputs with momentum and adds vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\). Pre-specified OOS contrast mechanism $-$ momentum: \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\); stationary \(p{=}0.022\)). LOBO: deleting macro or alternative collapses to momentum (content share \(1.0\) under the ungated rule). Relative gaps survive \(10\)--\(25\)bps costs; absolute CE is cost-fragile. A \(2017\)--\(2026\) audit without vintaged archives finds no hidden return-rule alpha. These results \emph{probe content}, they do not define the product.
+To show the bundle is not an empty label, a transparent rule shares return inputs with momentum and adds vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\). Pre-specified OOS contrast mechanism $-$ momentum: \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\); stationary \(p{=}0.022\)). LOBO (Prop.~\ref{prop:lobo}): deleting macro or alternative collapses to momentum (content share \(1.0\) under the ungated rule). Relative gaps survive \(10\)--\(25\)bps costs; absolute CE is cost-fragile. A \(2017\)--\(2026\) audit without vintaged archives finds no hidden return-rule alpha. These results \emph{probe content}, they do not define the product.
 
 \begin{table}[t]
   \caption{Secondary content probe (not the LLM product claim).}
@@ -217,19 +273,19 @@ To show the bundle is not an empty label, a transparent rule shares return input
 \end{table}
 
 \subsection{Discussion}
-Quant stacks usually ask ``what trades?'' We ask ``what does the LLM know, and should it act?'' Table~\ref{tab:llm} answers the second question under sparse support: a cognition base that marks the world thin induces abstention; raw feeds and strategy-like mocks do not. Table~\ref{tab:econ} answers a weaker but necessary question: compiled band fields are not decorative---they change actions and CE versus same-input momentum. Together they match the product claim: \emph{understanding first, strategy second}.
+Quant stacks usually ask ``what trades?'' We ask ``what does the LLM know, and should it act?'' Table~\ref{tab:llm} answers under sparse support with \emph{live} public LLMs: a cognition base that marks the world thin induces abstention across four vendors; raw feeds do not. Table~\ref{tab:econ} answers a weaker but necessary question: compiled band fields are not decorative---they change actions and CE versus same-input momentum. Together they match the product claim: \emph{understanding first, strategy second}.
 
-Live vendors share the OpenAI-compatible adapter without changing the estimand. In this environment, API keys were absent, so we report the offline public-LLM follower and diagnostic mocks; the same prompts and bundles apply when GPT / DeepSeek / GLM endpoints are configured.
+Sparse archives make production WMI thresholds bind on the sampled OOS window---consistent with support-matched abstention (Prop.~\ref{prop:abstain}). The live result is therefore a strong honesty test (do models refuse when told the world is thin?), not a finished selective-prediction horse-race on dense worlds. Expanding historical band coverage is the natural next measurement step; denser worlds would let ACWMI separate ``act'' from ``abstain'' on a nontrivial fraction of days while keeping the same protocol.
 
 \section{Limitations}
 \label{sec:limit}
 
-Offline stylized public-LLM followers are protocol-complete without keys; live GPT/DeepSeek/GLM runs require credentials and remain the next measurement step. Sparse archives make production WMI thresholds bind almost always---consistent with support-matched abstention (Prop.~\ref{prop:abstain}), not a finished selective-prediction horse-race on dense worlds. News/on-chain/options history remains right-censored and is disclosed as missing. We do not claim generative dynamics \(p(s_{t+1}\mid s_t,a_t)\) or unconditional trading alpha.
+Live eval uses \(100\) stratified OOS asset-days per model (cost/latency budget); full-panel live replication remains future work. Sparse archives make WMI thresholds bind almost always on the sample---honest under thin support, not a dense-world calibration study. News/on-chain/options history remains right-censored and is disclosed as missing. We do not claim generative dynamics \(p(s_{t+1}\mid s_t,a_t)\) or unconditional trading alpha. Gateway routing and model IDs are vendor-dependent; prompts and schema are frozen for within-model Compiled vs.\ Raw contrasts.
 
 \section{Conclusion}
 \label{sec:conc}
 
-Public LLMs need a market to \emph{understand} before they decide. We compile asynchronous crypto evidence into a complete, honest, auditable world-model bundle and show that world-honoring consumers abstain when the world is thin, while content probes confirm the compiled state is nonempty. Strategy is downstream of understanding---not the other way around.
+Public LLMs need a market to \emph{understand} before they decide. We compile asynchronous crypto evidence into a complete, honest, auditable world-model bundle and show that four live public LLMs abstain when the world is thin, while Raw arms often trade and content probes confirm the compiled state is nonempty. Strategy is downstream of understanding---not the other way around.
 
 \begin{acks}
 Omitted for anonymous review.

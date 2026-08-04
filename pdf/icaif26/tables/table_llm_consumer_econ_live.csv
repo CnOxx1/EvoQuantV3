@@ -1,0 +1,9 @@
+model,treatment,ann_return,Sharpe,CE,abstain_rate,thin_world_abstain_rate,ear_proxy,prompt_hash
+gpt-5.4-mini,compiled,0.0,0.0,0.0,1.0,1.0,1.0,1b3837719ae9d6b3
+gpt-5.4-mini,raw,-0.679,-2.853,-0.7296,0.04,,1.0,5bbb78d665f58924
+deepseek-v4-flash,compiled,0.0,0.0,0.0,1.0,1.0,1.0,1b3837719ae9d6b3
+deepseek-v4-flash,raw,-1.2093,-12.893,-1.2173,0.75,,1.0,5bbb78d665f58924
+glm-5.2,compiled,0.0,0.0,0.0,1.0,1.0,1.0,1b3837719ae9d6b3
+glm-5.2,raw,-0.9522,-3.036,-1.0401,0.11,,1.0,5bbb78d665f58924
+gemini-3.5-flash-lite,compiled,0.0,0.0,0.0,1.0,1.0,1.0,1b3837719ae9d6b3
+gemini-3.5-flash-lite,raw,-1.1954,-3.51,-1.2989,0.07,,1.0,5bbb78d665f58924
