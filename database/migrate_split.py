@@ -39,6 +39,7 @@ ANALYTICS_TABLE_NAMES: list[str] = [
     "exchange_comparison_snapshots",
     "macro_context_snapshots",
     "ai_market_context_snapshots",
+    "paper_world_model_snapshots",
     "market_breadth_snapshots",
     "market_structure_snapshots",
     "asset_readiness_snapshots",

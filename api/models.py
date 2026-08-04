@@ -10,6 +10,9 @@ from pydantic import BaseModel
 class HealthSummary(BaseModel):
     status: str
     wmi: float | None = None
+    acwmi: float | None = None
+    acwmi_input_source: str | None = None
+    index_mode: str | None = None
     interpretation: str | None = None
     should_ai_abstain: bool | None = None
     measured_at: str | None = None

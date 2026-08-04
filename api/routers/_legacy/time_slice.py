@@ -93,3 +93,38 @@ def get_feature_history(
         logger.error("feature_history {} failed: {}: {}", symbol, type(e).__name__, e)
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
     return result.__dict__ if hasattr(result, "__dict__") else result
+
+
+@router.get("/paper-world-model")
+def get_paper_world_model(
+    date: str | None = Query(None, description="决策日 YYYY-MM-DD（previous-close clock）"),
+    asset: str | None = Query(None, description="资产代码，如 BTC"),
+    symbol: str | None = Query(None, description="交易对，如 BTC/USDT"),
+    limit: int = Query(100, ge=1, le=5000, description="最多返回行数"),
+) -> dict[str, Any]:
+    """论文引擎世界模型对象（B,U,H,S,C,WMI,ACWMI,tilts）。
+
+    ``acwmi_input_source`` 恒为 ``paper_engines``。生产代理 ACWMI 请走
+    ``/ai-context`` / ``/health`` 中的 ``world_model_index``（可能为
+    ``production_proxy``）。二者不可互换。
+    """
+    from pdf.sci.persist_paper_objects import load_paper_world_model
+
+    rows = load_paper_world_model(date=date, asset=asset, symbol=symbol, limit=limit)
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "No paper_world_model_snapshots found. "
+                "Run pdf/sci/run_pit_jf_experiments.py (or make paper-lab) first."
+            ),
+        )
+    return {
+        "count": len(rows),
+        "acwmi_input_source": "paper_engines",
+        "disclosure": (
+            "Paper-engine S/C from return engines + PIT band content; "
+            "not interchangeable with production_proxy ACWMI."
+        ),
+        "rows": rows,
+    }

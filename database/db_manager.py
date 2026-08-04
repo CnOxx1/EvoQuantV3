@@ -90,6 +90,7 @@ class DBManager:
         self._create_token_unlock_events_table()
         self._create_macro_context_snapshots_table()
         self._create_ai_market_context_snapshots_table()
+        self._create_paper_world_model_snapshots_table()
         self._create_market_breadth_snapshots_table()
         self._create_market_structure_snapshots_table()
         self._create_asset_readiness_snapshots_table()
@@ -2232,6 +2233,77 @@ class DBManager:
         self.conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_ai_market_context_snapshots_lookup
             ON ai_market_context_snapshots(entity_key, snapshot_time)
+        """)
+
+    def _create_paper_world_model_snapshots_table(self):
+        """Daily paper-engine world-model objects (B,U,H,S,C,WMI,ACWMI,tilts)."""
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS paper_world_model_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                decision_date TEXT NOT NULL,
+                asset TEXT NOT NULL,
+                symbol TEXT,
+                B_hier REAL,
+                U REAL,
+                H_cont REAL,
+                S REAL,
+                C REAL,
+                C_base REAL,
+                WMI REAL,
+                ACWMI REAL,
+                macro_tilt REAL,
+                alt_tilt REAL,
+                signal REAL,
+                detected_regime TEXT,
+                mom5 REAL,
+                cascade_p REAL,
+                scarce INTEGER,
+                outage INTEGER,
+                vix_chg5 REAL,
+                dxy_chg5 REAL,
+                acwmi_input_source TEXT NOT NULL DEFAULT 'paper_engines',
+                content_source_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(decision_date, asset)
+            )
+        """)
+        self._ensure_columns("paper_world_model_snapshots", {
+            "decision_date": "TEXT",
+            "asset": "TEXT",
+            "symbol": "TEXT",
+            "B_hier": "REAL",
+            "U": "REAL",
+            "H_cont": "REAL",
+            "S": "REAL",
+            "C": "REAL",
+            "C_base": "REAL",
+            "WMI": "REAL",
+            "ACWMI": "REAL",
+            "macro_tilt": "REAL",
+            "alt_tilt": "REAL",
+            "signal": "REAL",
+            "detected_regime": "TEXT",
+            "mom5": "REAL",
+            "cascade_p": "REAL",
+            "scarce": "INTEGER",
+            "outage": "INTEGER",
+            "vix_chg5": "REAL",
+            "dxy_chg5": "REAL",
+            "acwmi_input_source": "TEXT NOT NULL DEFAULT 'paper_engines'",
+            "content_source_json": "TEXT",
+            "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        })
+        self.conn.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_paper_world_model_snapshots_identity
+            ON paper_world_model_snapshots(decision_date, asset)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_paper_world_model_snapshots_date
+            ON paper_world_model_snapshots(decision_date)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_paper_world_model_snapshots_symbol
+            ON paper_world_model_snapshots(symbol, decision_date)
         """)
 
     def _create_market_breadth_snapshots_table(self):

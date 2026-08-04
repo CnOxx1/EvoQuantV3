@@ -154,3 +154,29 @@ def get_collection_runs(
     if not rows:
         raise HTTPException(status_code=404, detail="No collection runs found.")
     return {"count": len(rows), "runs": [dict(r) for r in rows]}
+
+
+@router.get("/availability-shocks")
+def get_availability_shocks(
+    start: str | None = Query(None, description="起始时间 ISO"),
+    end: str | None = Query(None, description="结束时间 ISO"),
+    module: str | None = Query(None, description="逗号分隔模块名过滤"),
+    limit: int = Query(200, ge=1, le=5000, description="最多返回条数"),
+) -> dict[str, Any]:
+    """一等公民可用性冲击 \(O_t\)（collection_runs 失败/空跑 + 元数据标记）。
+
+    对应论文 DAG 中的可观测可用性冲击，供 PIT 事件研究与种植冲击审计使用。
+    """
+    from data_layer.data_quality.availability import load_availability_shocks
+
+    modules = [m.strip() for m in module.split(",") if m.strip()] if module else None
+    shocks = load_availability_shocks(start=start, end=end, modules=modules, limit=limit)
+    return {
+        "object": "O_t",
+        "count": len(shocks),
+        "disclosure": (
+            "Availability shocks from collection_runs (status error/empty) "
+            "across split DBs; metadata may carry planted=true for audit designs."
+        ),
+        "shocks": shocks,
+    }

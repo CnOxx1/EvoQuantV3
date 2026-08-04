@@ -59,6 +59,7 @@ ANALYTICS_INIT_METHODS: list[str] = [
     "_create_exchange_comparison_snapshots_table",
     "_create_macro_context_snapshots_table",
     "_create_ai_market_context_snapshots_table",
+    "_create_paper_world_model_snapshots_table",
     "_create_market_breadth_snapshots_table",
     "_create_market_structure_snapshots_table",
     "_create_asset_readiness_snapshots_table",

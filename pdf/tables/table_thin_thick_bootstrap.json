@@ -1,6 +1,7 @@
 {
   "thick_minus_thin": {
     "n_days": 200,
+    "method": "circular",
     "dSharpe": 1.6178,
     "dCE": 0.5202,
     "p_Sharpe": 0.044,

@@ -159,6 +159,8 @@ def load_band_content_features() -> pd.DataFrame:
             "ssc7_prev": ssc_prev.to_numpy(),
             "macro_tilt": macro_tilt,
             "alt_tilt": alt_tilt.to_numpy(),
+            "macro_tilt_source": "sqlite_macro_timeseries",
+            "alt_tilt_source": "sqlite_alternative_timeseries",
         }
     ).dropna(subset=["macro_tilt", "alt_tilt"])
     if len(out) == 0 or out[["vix_chg5", "dxy_chg5"]].notna().sum().sum() == 0:
@@ -739,6 +741,14 @@ def main() -> None:
     df = attach_engines(pit, content=content)
     df.to_csv(TAB / "panel_simulation.csv", index=False)
 
+    try:
+        from pdf.sci.persist_paper_objects import persist_paper_world_model
+
+        n_snap = persist_paper_world_model(df)
+        print(f"persisted paper_world_model_snapshots: {n_snap} rows")
+    except Exception as exc:  # pragma: no cover - persistence must not block empirics
+        print(f"paper object persistence skipped: {type(exc).__name__}: {exc}")
+
     is_df, oos, cut = split_is_oos(df, is_frac=0.5)
     print("IS/OOS cut", cut, "IS days", is_df["date"].nunique(), "OOS", oos["date"].nunique())
     params = calibrate_thresholds(is_df)
@@ -943,6 +953,29 @@ def main() -> None:
     comp_lobo = pd.DataFrame(comp_rows)
     comp_lobo.to_csv(TAB / "table_macro_component_lobo.csv", index=False)
     print(comp_lobo)
+
+    # Stationary-bootstrap (Politis–Romano) confirmation of headline contrasts
+    print("Stationary bootstrap confirmation...")
+    stat_rows = {}
+    for name, a, b in [
+        ("mechanism_minus_momentum", "Thick ungated", "Momentum always"),
+        ("mechanism_minus_always_long", "Thick ungated", "Always long"),
+    ]:
+        if a in curves and b in curves:
+            stat_rows[name] = {
+                m: bootstrap_delta_pvalues(
+                    curves[a], curves[b],
+                    n_boot=_CFG["inference"]["n_boot"],
+                    block=_CFG["inference"]["block"],
+                    method=m,
+                )
+                for m in ("circular", "stationary")
+            }
+    (TAB / "table_stationary_bootstrap.json").write_text(
+        json.dumps(stat_rows, indent=2), encoding="utf-8"
+    )
+    for k, v in stat_rows.items():
+        print(k, {m: (r["dCE"], r["p_CE"]) for m, r in v.items()})
 
     # Cost-aware pre-specified contrast (mechanism − momentum at 10 bps)
     print("Cost-aware pre-specified contrast...")
@@ -1200,6 +1233,7 @@ def main() -> None:
         "prespec_cost_contrast": cost_pre.to_dict(orient="records"),
         "compilation_wedge_bridge": wedge,
         "planted_ot_shocks": planted,
+        "stationary_bootstrap": stat_rows,
     }
     (TAB / "table1_project_inventory.json").write_text(json.dumps(inv, indent=2, default=str), encoding="utf-8")
 
@@ -1333,6 +1367,7 @@ def main() -> None:
                 "prespec_cost_contrast": cost_pre.to_dict(orient="records"),
                 "compilation_wedge_bridge": wedge,
                 "planted_ot_shocks": planted,
+                "stationary_bootstrap": stat_rows,
                 "experiment_config": config_manifest(),
             },
             indent=2,

@@ -258,22 +258,21 @@ def build():
     # Abstract
     story.append(P("<b>Abstract</b>", S["h2"]))
     story.append(P(
-        "Conditional asset pricing treats the investor’s information set as primitive. In cryptocurrency markets that premise fails: "
-        "evidence arrives asynchronously and is intermittently unavailable. This paper develops a finance-native theory of "
-        "<i>information-set compilation</i>. We define epistemic observations, asynchronous reconstruction bounds, a compilation "
-        "operator from raw to AI-visible filtrations, WMI, and regime-conditional ACWMI; and we formalize ECP, MIG, an "
-        "availability-shock identification DAG, Bayesian abstention, and explanation metrics EAR/UCR/EV.",
+        "Conditional asset pricing treats the investor’s information set I<sub>t</sub> as primitive. In cryptocurrency markets, "
+        "asynchronous and intermittently missing evidence makes <i>compilation of</i> I<sub>t</sub> first-order. We develop a "
+        "theory of information-set compilation whose core objects are epistemic observations, a compilation operator between raw "
+        "and usable filtrations, reconstruction bounds, and an SDF interface under which pricing statements are constrained to the "
+        "compiled σ-field; leave-one-band-out (LOBO) value then decomposes into content and gating channels.",
         S["abs"],
     ))
     story.append(P(
-        f"Empirically, on a real PIT multi-band panel ({pit.get('n_days', 400)} days × 10 assets; durable bands: exchange, macro, "
-        "alternative), vintage-safe macro and stablecoin-flow <i>content</i> enters a transparent action rule under a previous-close "
-        "decision clock. The pre-specified contrast—mechanism versus same-input momentum—is positive OOS (ΔCE 0.334, p = 0.034). "
-        "LOBO deletions of macro or alternative destroy value (ΔCE −0.42 / −0.40; p = 0.010 / 0.008), mainly through the content "
-        "channel; joint deletion and a date-scrambled content placebo discipline redundancy and timing. A 2017–2026 audit shows no "
-        "unconditional edge over momentum when band archives are absent. Menu-wide claims versus always-long remain weaker after a "
-        "reality-check correction. A pre-registered multi-model AI-consumer protocol (Compiled vs Raw) is secondary validation of "
-        "the theory’s AI interface, not primary identification.",
+        f"Empirically, on a PIT panel ({pit.get('n_days', 399)} days; durable bands: exchange, macro, alternative), vintage-safe "
+        "macro and stablecoin-flow <i>content</i> enters a transparent action rule under a previous-close clock. The pre-specified "
+        "contrast—mechanism versus same-input momentum—is positive OOS (ΔCE 0.334, p = 0.034) and remains significant after "
+        "10–25 bps costs as a <i>relative</i> value gap, even though absolute CE is cost-fragile. LOBO losses operate mainly "
+        "through content; VIX/DXY conjunction tests, joint deletion, and a scrambled-content placebo discipline the design. A "
+        "2017–2026 audit finds no unconditional edge over momentum when band archives are absent. World-quality indices and "
+        "selective prediction remain part of the theory but are secondary in this sparse archive.",
         S["abs"],
     ))
     story.append(P(
@@ -292,12 +291,13 @@ def build():
         S["body"],
     ))
     story.append(P(
-        "This paper makes three contributions. <b>Theory:</b> Regime-Conditional Adaptive World Models (RCA-WM) with a proposition "
-        "chain — compilation ≠ feature expansion, an SDF interface constraining pricing to the compiled filtration, reconstruction "
-        "bounds, world-conditional abstention, ACWMI monotonicity, and LOBO value with a content/gating decomposition. "
-        "<b>Instrument:</b> a reproducible multi-band collection laboratory. <b>Identification:</b> a real PIT archive where band "
-        "content enters a transparent action rule, with bootstrap inference, costs/funding, a reality check, and a 2017–2026 "
-        "long-span external-validity audit.",
+        "This paper makes three contributions, ordered by what the present archive can identify. <b>Theory (core apparatus):</b> "
+        "epistemic observations, compilation operator Π<sub>t</sub>, reconstruction bounds, an SDF interface on "
+        "ℱ<sup>AI</sup><sub>t</sub>, and LOBO content/gating decomposition; WMI/ACWMI and abstention complete the apparatus but "
+        "are secondary empirics here. <b>Instrument:</b> a reproducible multi-band laboratory. <b>Identification (headline):</b> "
+        "vintaged macro/stablecoin content in a transparent rule versus same-input momentum, disciplined by LOBO, conjunction "
+        "tests, scrambled placebo, costs, and a 2017–2026 audit without band archives. We claim relative information value of "
+        "compiled band content—not unconditional alpha and not a completed selective-prediction horse-race.",
         S["body"],
     ))
 
@@ -546,12 +546,20 @@ def build():
     ))
     story.append(P("5.2 PIT panel", S["h2"]))
     story.append(P(
-        f"For each date t and asset, band status ∈ {{ready, limited, missing}} is inferred from the latest observation time ≤ t "
-        f"and band-specific freshness thresholds. Panel: {pit.get('start')} → {pit.get('end')}, "
+        "Timing protocol: decision at previous close. For payoff day t, band statuses are evaluated at (t−1) 23:59; "
+        "content tilts use vintaged available_at with a one-day lag. "
+        f"Panel: {pit.get('start')} → {pit.get('end')}, "
         f"{pit.get('n_days')} days × 10 assets = {pit.get('n_rows')} rows. "
         f"Durable bands: {', '.join(inv.get('hist_bands', []))}. Yahoo daily returns provide payoffs; engines use only pre-t returns.",
         S["body"],
     ))
+    if pit.get("timing_migration"):
+        story.append(P(
+            f"Migration disclosure: {pit.get('note') or pit.get('timing_migration')}. "
+            "When SQLite history is populated, statuses are rebuilt from raw tables; empty-history environments use the "
+            "checked-in archive shifted to the same previous-close clock and never overwrite band-content caches with empty pulls.",
+            S["body"],
+        ))
     br = pit.get("band_ready_rates", {})
     story.append(P(
         "Empirical ready rates (approx.): "
@@ -717,17 +725,13 @@ def build():
     ))
 
     story.append(PageBreak())
-    # 8 AI-consumer validation (secondary)
-    story.append(P("8. AI-consumer validation (secondary)", S["h1"]))
+    # 8 AI-interface protocol (appendix-grade)
+    story.append(P("8. AI-interface protocol (appendix-grade)", S["h1"]))
     story.append(P(
-        "The SDF interface and world-conditional abstention are statements about agents that condition on "
-        "ℱ<sup>AI</sup><sub>t</sub>. We pre-register a <i>within-model</i> Compiled versus Raw protocol: for each model m, "
-        "Δ<sub>m</sub> = V<sub>m</sub>(Compiled) − V<sub>m</sub>(Raw), with frozen prompts, temperature 0, and the same action "
-        "schema {bullish, bearish, neutral, abstain}. Compiled bundles expose PIT-safe epistemic fields and abstention guidance; "
-        "Raw bundles expose only thin return/momentum views. The estimand is the cross-model mean Δ̄, not a vendor leaderboard. "
-        "Offline deterministic mock consumers ship in the replication package (pdf/sci/llm_consumer/) so the protocol is "
-        "CI-testable without API keys; live vendors may be substituted behind the same interface. This design is deliberately "
-        "secondary to PIT/LOBO identification.",
+        "Because the SDF interface concerns agents that condition on ℱ<sup>AI</sup><sub>t</sub>, the replication package "
+        "pre-registers a within-model Compiled versus Raw protocol, Δ<sub>m</sub> = V<sub>m</sub>(Compiled) − V<sub>m</sub>(Raw), "
+        "with frozen prompts and temperature 0. This is deliberately <i>not</i> primary identification. Offline mocks keep the "
+        "protocol executable without API keys; no LLM trading alpha is claimed.",
         S["body"],
     ))
     llm_path = TAB / "table_llm_consumer_summary.json"

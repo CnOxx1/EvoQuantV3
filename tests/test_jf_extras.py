@@ -86,3 +86,39 @@ def test_compilation_wedge_bridge_runs():
     assert res["status"] == "ok"
     assert "dR2_compiled_minus_thin" in res
     assert res["compiled"]["n_oos"] > 0
+
+
+def test_stationary_bootstrap_indices_and_method():
+    from pdf.sci.run_jf_experiments import (
+        bootstrap_delta_pvalues,
+        stationary_bootstrap_indices,
+    )
+
+    rng = np.random.default_rng(0)
+    idx = stationary_bootstrap_indices(50, 5.0, 7, rng)
+    assert idx.shape == (7, 50)
+    assert idx.min() >= 0 and idx.max() < 50
+
+    dates = pd.date_range("2026-01-01", periods=120, freq="D")
+    strong = pd.Series(np.random.default_rng(1).normal(0.02, 0.01, 120), index=dates)
+    weak = pd.Series(np.random.default_rng(2).normal(0.0, 0.01, 120), index=dates)
+    res = bootstrap_delta_pvalues(strong, weak, n_boot=199, block=5, method="stationary")
+    assert res["method"] == "stationary"
+    assert res["p_CE"] is not None and res["p_CE"] < 0.05
+
+
+def test_longspan_content_tilt_construction():
+    from pdf.sci.run_longspan_content_audit import build_content_tilts
+
+    days = pd.date_range("2020-01-01", periods=30, freq="D")
+    macro = pd.DataFrame(
+        {
+            "date": days,
+            "vix": np.linspace(30, 20, 30),   # falling VIX
+            "dxy": np.linspace(100, 95, 30),  # falling DXY → risk-on
+        }
+    )
+    tilts = build_content_tilts(macro)
+    assert (tilts["macro_tilt"] == 1.0).all()
+    # lag-1: first usable day requires 6 prior observations
+    assert tilts["date"].min() >= days[6]

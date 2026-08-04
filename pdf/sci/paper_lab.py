@@ -61,6 +61,13 @@ def cmd_smoke() -> int:
     )
     assert "acwmi" in wmi
     assert wmi["index_mode"] == "acwmi"
+    assert "acwmi_input_source" in wmi
+    # Explicit proxy vs paper disclosure on sample
+    s, c, src = AIMarketContextService._acwmi_proxies(
+        asset_readiness_row={"ready_band_count": 3, "limited_band_count": 1, "missing_band_count": 4},
+        data_quality_flags=[],
+    )
+    assert src == "production_proxy" and 0 < s <= 1 and 0 < c <= 1
     # BandPIT + shocks tolerate empty DBs
     _ = BandPITService().get_band_readiness_at("2026-01-01T00:00:00", symbols=["BTC/USDT"])
     _ = load_availability_shocks(limit=5)
@@ -72,6 +79,7 @@ def cmd_smoke() -> int:
                 "WMI_ABSTAIN_THRESHOLD": WMI_ABSTAIN_THRESHOLD,
                 "ACWMI_ABSTAIN_THRESHOLD": ACWMI_ABSTAIN_THRESHOLD,
                 "wmi_sample": wmi,
+                "acwmi_proxy_smoke": {"S": s, "C": c, "source": src},
                 "data_dir": str(DATA),
             },
             indent=2,
@@ -145,6 +153,7 @@ def main() -> int:
             "run_pit_jf_experiments.py",
             "reconcile_returns.py",
             "run_longspan_backtest.py",
+            "run_longspan_content_audit.py",
         ]
     )
     for script in steps:
