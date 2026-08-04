@@ -1,0 +1,60 @@
+{
+  "protocol": "pdf/sci/llm_consumer/protocol.md",
+  "role": "primary_ai_consumer_validation_understanding_first",
+  "thesis": "world_model_cognition_base_for_public_llms",
+  "gateway": "https://api.teamorouter.com/v1",
+  "is_oos_cut": "2026-01-16",
+  "n_oos_rows": 100,
+  "sample_n": 100,
+  "models": [
+    "gpt-5.4-mini",
+    "deepseek-v4-flash",
+    "glm-5.2",
+    "gemini-3.5-flash-lite"
+  ],
+  "treatments": [
+    "ungated"
+  ],
+  "mean_dCE": null,
+  "mean_compiled_thin_world_abstain": null,
+  "mean_ungated_thin_world_abstain": 0.6825,
+  "deltas": [
+    {
+      "model": "gpt-5.4-mini",
+      "compiled_abstain_rate": null,
+      "ungated_abstain_rate": 0.63,
+      "raw_abstain_rate": null,
+      "compiled_thin_world_abstain_rate": null,
+      "ungated_thin_world_abstain_rate": 0.63,
+      "compiled_ear_proxy": null
+    },
+    {
+      "model": "deepseek-v4-flash",
+      "compiled_abstain_rate": null,
+      "ungated_abstain_rate": 0.81,
+      "raw_abstain_rate": null,
+      "compiled_thin_world_abstain_rate": null,
+      "ungated_thin_world_abstain_rate": 0.81,
+      "compiled_ear_proxy": null
+    },
+    {
+      "model": "glm-5.2",
+      "compiled_abstain_rate": null,
+      "ungated_abstain_rate": 0.86,
+      "raw_abstain_rate": null,
+      "compiled_thin_world_abstain_rate": null,
+      "ungated_thin_world_abstain_rate": 0.86,
+      "compiled_ear_proxy": null
+    },
+    {
+      "model": "gemini-3.5-flash-lite",
+      "compiled_abstain_rate": null,
+      "ungated_abstain_rate": 0.43,
+      "raw_abstain_rate": null,
+      "compiled_thin_world_abstain_rate": null,
+      "ungated_thin_world_abstain_rate": 0.43,
+      "compiled_ear_proxy": null
+    }
+  ],
+  "experiment_config_hash": "c23f41360338c166"
+}

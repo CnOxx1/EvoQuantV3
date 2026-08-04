@@ -150,7 +150,7 @@ def main() -> int:
     # ---- Output row ------------------------------------------------------------------
     y6 = 0.35
     box(ax, 0.3, y6, 3.6, 0.86, "abstain 1.00\nthin-world refusal\nenforced", c_out[0], c_cons[1], fs=FS_SMALL, weight="bold")
-    box(ax, 4.2, y6, 3.6, 0.86, "abstain 0.74 mean\n(0.38–0.94)\nvendor-dependent", c_out[0], "#c8952e", fs=FS_SMALL)
+    box(ax, 4.2, y6, 3.6, 0.86, "abstain 0.68 mean\n(0.43–0.86)\nvendor-dependent", c_out[0], "#c8952e", fs=FS_SMALL)
     box(ax, 8.1, y6, 3.6, 0.86, "abstain 0.04–0.75\ntrades into\nsparse support", c_out[0], "#888888", fs=FS_SMALL)
 
     # ---- Arrows ----------------------------------------------------------------------
