@@ -1,7 +1,9 @@
-%% ICAIF '26 — ACM acmart sigconf + anonymous (+ review line numbers)
-%% CFP: latest ACM template, sigconf two-column, anonymous, ≤8 pages, no appendix.
+%% ICAIF '26 — ACM acmart sigconf + anonymous
+%% CFP (icaif2026.org/call-for-papers): latest ACM template, sigconf two-column
+%% with the "anonymous" parameter, ≤8 pages, no appendix/supplement.
+%% Do NOT enable "review" (line numbers): CFP specifies only sigconf+anonymous.
 %% Isolated from pdf/sci/ JF-RFS materials.
-\documentclass[sigconf,anonymous,review]{acmart}
+\documentclass[sigconf,anonymous]{acmart}
 
 %% Rights / metadata (anonymous submission)
 \setcopyright{none}
@@ -15,16 +17,13 @@
 
 %% Only packages not already pulled by acmart. Do NOT load amsthm/enumitem:
 %% acmart enables acmthm by default; enumitem would alter ACM list spacing.
+%% Do NOT load geometry or tweak headheight/topmargin — stock acmart owns layout.
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{listings}
 \graphicspath{{figures/}{figures_src/}}
-
-%% Slightly taller header for review line-number / fancyhdr warning.
-\setlength{\headheight}{15.2pt}
-\addtolength{\topmargin}{-2.2pt}
 
 \lstset{
   basicstyle=\ttfamily\scriptsize,
@@ -56,8 +55,10 @@
 
 \begin{document}
 
-\title{A Market World Model for Public LLMs:\\
-A Typed Observation Contract before Decision}
+%% Optional short title keeps the running head to one line (stock acmart).
+\title[A Market World Model for Public LLMs]{%
+  A Market World Model for Public LLMs:\\
+  A Typed Observation Contract before Decision}
 
 \begin{abstract}
 Public LLMs asked to analyze or trade crypto markets fail before strategy: they lack a complete, honest, auditable \emph{market observation interface}. We present an anonymized \emph{world-model runtime} that compiles asynchronous multi-band evidence into a point-in-time (PIT) world bundle with a typed abstention contract. Epistemic observations \(O_{j,t}=(x,\tau,q,g,r)\) and compilation \(\Pi_t\) yield \(\mathcal{F}^{\mathrm{AI}}_t\); completeness, honesty \((B,U,H)\), and WMI/ACWMI expose machine-readable refusal; evidence IDs make actions auditable. The primary claim is \emph{trustworthy interfacing}, not a new trading agent: on identical \(100\) OOS asset-days, four live public LLMs (temperature \(0\)) form a behavior ladder---asked \emph{blind}, every model refuses (\(1.0\)); given a momentum fragment they over-trade (abstain \(0.04\)--\(0.75\)) and lose; given the compiled world with a hard flag they abstain on every thin day (\(1.0\)); Ungated (same content, no hard flag) averages only \(0.68\). A full-OOS checkpointed sweep (\(n{=}2000\)) keeps Compiled at \(1.000\) for all vendors. Even on archive-thick days (all three evaluation bands ready), Raw still over-acts and often loses while Compiled continues to refuse---readiness counts alone do not replace the typed contract. A grounding workflow recovers ready/missing/tilt answers at mean F1/acc.\ \(0.97\) from Compiled vs.\ \(0.04\)--\(0.23\) from Raw. As a secondary \emph{content} probe (not an LLM leaderboard), a transparent world-model rule that reads the same vintaged tilts beats momentum and buy-and-hold out-of-sample (Sharpe \(0.76\) vs.\ \(0.10\) / \(-1.40\); \(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\)). We detail the runtime (collectors, vintage store, BandPIT, bundle schema, LLM adapter) as an ICAIF systems contribution.
@@ -105,7 +106,7 @@ RQ1 tests whether a typed world interface can \emph{enforce} world-conditional a
 \paragraph{Contributions.}
 \begin{enumerate}
 \item \textbf{Cognition semantics.} Epistemic observations, compilation \(\Pi_t\), a lag reconstruction bound, completeness/honesty fields, WMI/ACWMI abstention, evidence-bound actions.
-\item \textbf{Anonymized runtime architecture.} Vintage-aware collectors, BandPIT previous-close clock, quality-tagged bundles, availability shocks \(O_t\), OpenAI-compatible multi-vendor adapter, and a frozen Compiled / Ungated / Raw / Blind consumer protocol.
+\item \textbf{Anonymized runtime architecture.} Vintage-aware collectors, BandPIT previous-close clock, quality-tagged bundles, availability shocks \(O_t\), a multi-vendor OpenAI-compatible adapter, and a frozen Compiled / Ungated / Raw / Blind consumer protocol.
 \item \textbf{Live interface validation.} Four-arm ladder on identical days: Blind refuses, Raw over-trades and loses, Ungated is vendor-dependent, Compiled enforces thin-world abstain \(1.0\) (replicated on full OOS for all vendors). A band-thick split shows the contract still binds when all archive bands are ready; grounding recovers ready/missing/tilt at \(0.97\) vs.\ \(0.04\)--\(0.23\) raw; a secondary content rule confirms the tilts are economically nonempty.
 \end{enumerate}
 
@@ -197,8 +198,8 @@ We describe the anonymized prototype as a layered systems object (Figure~\ref{fi
 \subsection{Layered design}
 \begin{enumerate}
 \item \textbf{Data layer (collectors).} Exchange, macro, and alternative collectors write vintage-aware history: observation timestamps plus macro \texttt{available\_at} vintages.
-\item \textbf{Store layer.} Embedded analytical stores hold raw series, merged market panels, and pipeline outputs (readiness, WMI/ACWMI, paper world snapshots).
-\item \textbf{Logic layer (compilation).} BandPIT reconstructs band readiness on a previous-close clock; honesty/missingness gates and band assembly implement \(\Pi_t\); world-quality indices and availability shocks \(O_t\) are first-class.
+\item \textbf{Store layer.} Embedded analytical stores hold raw series, merged market panels, and pipeline outputs (readiness, WMI / ACWMI, paper world snapshots).
+\item \textbf{Logic layer (compilation).} BandPIT reconstructs band readiness on a previous-close clock; honesty and missingness gates plus band assembly implement \(\Pi_t\); world-quality indices and availability shocks \(O_t\) are first-class.
 \item \textbf{Service layer.} A read API serves quality-tagged AI bundles and health/readiness objects to consumers without requiring collector restarts for newly arrived rows.
 \item \textbf{Consumer layer.} Frozen-prompt LLM / rule agents call an OpenAI-compatible adapter (temperature \(0\)) under Compiled, Ungated, or Raw treatments.
 \end{enumerate}
@@ -231,7 +232,7 @@ We describe the anonymized prototype as a layered systems object (Figure~\ref{fi
 \end{figure*}
 
 \subsection{Data flow: inputs, processing, outputs}
-Table~\ref{tab:dataflow} traces the runtime end-to-end. \emph{Inputs}: the evaluation archive populates three public bands---exchange klines/funding/open-interest via REST, daily macro risk indices (equity volatility, dollar index) with \texttt{available\_at} vintages, and aggregate stablecoin circulation---each row stored with its observation timestamp. \emph{Processing}: for every asset-day, BandPIT selects the latest observation with timestamp \(\le(t{-}1)\,23{:}59\), grades it fresh/stale/missing against per-band age thresholds, aggregates breadth/stability/honesty into WMI and regime-conditional ACWMI, derives content tilts (5-day macro-index changes; 7-day stablecoin-flow slope; return momentum), and logs availability shocks \(O_t\). \emph{Outputs}: a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days), per-day world bundles scoped to these three archive bands (Listing~\ref{lst:bundle}), and the consumer transcripts/tables behind Section~\ref{sec:exp}.
+Table~\ref{tab:dataflow} traces the runtime end-to-end. \emph{Inputs}: the evaluation archive populates three public bands---exchange klines, funding, and open interest via REST; daily macro risk indices (equity volatility, dollar index) with \texttt{available\_at} vintages; and aggregate stablecoin circulation---each row stored with its observation timestamp. \emph{Processing}: for every asset-day, BandPIT selects the latest observation with timestamp \(\le(t{-}1)\,23{:}59\), grades it fresh/stale/missing against per-band age thresholds, aggregates breadth/stability/honesty into WMI and regime-conditional ACWMI, derives content tilts (5-day macro-index changes; 7-day stablecoin-flow slope; return momentum), and logs availability shocks \(O_t\). \emph{Outputs}: a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days), per-day world bundles scoped to these three archive bands (Listing~\ref{lst:bundle}), and the consumer transcripts/tables behind Section~\ref{sec:exp}.
 
 \begin{table}[t]
   \caption{Data flow through the runtime (three-band evaluation archive).}

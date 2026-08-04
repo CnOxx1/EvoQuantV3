@@ -12,7 +12,7 @@ CE is secondary. System section documents anonymized runtime architecture.
 | --- | --- |
 | Venue | [ACM ICAIF '26](https://icaif2026.org/) (Milan, 14–17 Nov 2026) |
 | Deadline | **9 Aug 2026, 23:59 AOE** |
-| Format | ACM `acmart` **`sigconf,anonymous,review`** |
+| Format | ACM `acmart` **`sigconf,anonymous`** (CFP; no `review` line numbers) |
 | Limit | **≤ 8 pages** total (figures + references); **no appendix** |
 | Submit | [CMT ICAIF2026](https://cmt3.research.microsoft.com/ICAIF2026/) |
 | Template | [ACM proceedings template](https://www.acm.org/publications/proceedings-template) / [Overleaf ACM](https://www.overleaf.com/gallery/tagged/acm-official) |
@@ -49,4 +49,4 @@ pdflatex main && bibtex main && pdflatex main && pdflatex main
 ## Anonymity
 
 - Authors set to Anonymous; no org/repo URLs in the PDF.
-- Camera-ready: drop `anonymous,review`, restore authors, fix DOI/ISBN placeholders.
+- Camera-ready: drop `anonymous`, restore authors, fix DOI/ISBN placeholders.
