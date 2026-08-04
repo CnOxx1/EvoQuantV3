@@ -1,0 +1,203 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{16}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{} and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showURL}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showURL #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[Brown et~al\mbox{.}(2020)]%
+        {brown2020gpt3}
+\bibfield{author}{\bibinfo{person}{Tom Brown} {et~al\mbox{.}}}
+  \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Language Models are Few-Shot Learners}.
+\newblock \bibinfo{journal}{\emph{NeurIPS}} (\bibinfo{year}{2020}).
+\newblock
+
+
+\bibitem[Croushore and Stark(2001)]%
+        {croushore2001}
+\bibfield{author}{\bibinfo{person}{Dean Croushore} {and} \bibinfo{person}{Tom
+  Stark}.} \bibinfo{year}{2001}\natexlab{}.
+\newblock \showarticletitle{A Real-Time Data Set for Macroeconomists}.
+\newblock \bibinfo{journal}{\emph{Journal of Econometrics}}
+  \bibinfo{volume}{105}, \bibinfo{number}{1} (\bibinfo{year}{2001}),
+  \bibinfo{pages}{111--130}.
+\newblock
+
+
+\bibitem[El-Yaniv and Wiener(2010)]%
+        {elyaniv2010}
+\bibfield{author}{\bibinfo{person}{Ran El-Yaniv} {and} \bibinfo{person}{Yair
+  Wiener}.} \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{On the Foundations of Noise-Free Selective
+  Classification}.
+\newblock \bibinfo{journal}{\emph{JMLR}}  \bibinfo{volume}{11}
+  (\bibinfo{year}{2010}), \bibinfo{pages}{1605--1641}.
+\newblock
+
+
+\bibitem[Geifman and El-Yaniv(2017)]%
+        {geifman2017}
+\bibfield{author}{\bibinfo{person}{Yonatan Geifman} {and} \bibinfo{person}{Ran
+  El-Yaniv}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Selective Classification for Deep Neural Networks}.
+  In \bibinfo{booktitle}{\emph{NeurIPS}}.
+\newblock
+
+
+\bibitem[Gu et~al\mbox{.}(2020)]%
+        {gu2020}
+\bibfield{author}{\bibinfo{person}{Shihao Gu}, \bibinfo{person}{Bryan Kelly},
+  {and} \bibinfo{person}{Dacheng Xiu}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Empirical Asset Pricing via Machine Learning}.
+\newblock \bibinfo{journal}{\emph{Review of Financial Studies}}
+  \bibinfo{volume}{33}, \bibinfo{number}{5} (\bibinfo{year}{2020}),
+  \bibinfo{pages}{2223--2273}.
+\newblock
+
+
+\bibitem[Ha and Schmidhuber(2018)]%
+        {ha2018world}
+\bibfield{author}{\bibinfo{person}{David Ha} {and} \bibinfo{person}{J{\"u}rgen
+  Schmidhuber}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{World Models}. In
+  \bibinfo{booktitle}{\emph{NeurIPS}}.
+\newblock
+
+
+\bibitem[Hafner et~al\mbox{.}(2020)]%
+        {hafner2020dreamer}
+\bibfield{author}{\bibinfo{person}{Danijar Hafner}, \bibinfo{person}{Timothy
+  Lillicrap}, \bibinfo{person}{Jimmy Ba}, {and} \bibinfo{person}{Mohammad
+  Norouzi}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Dream to Control: Learning Behaviors by Latent
+  Imagination}. In \bibinfo{booktitle}{\emph{ICLR}}.
+\newblock
+
+
+\bibitem[Harvey et~al\mbox{.}(2016)]%
+        {harvey2016}
+\bibfield{author}{\bibinfo{person}{Campbell~R. Harvey}, \bibinfo{person}{Yan
+  Liu}, {and} \bibinfo{person}{Heqing Zhu}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{... and the Cross-Section of Expected Returns}.
+\newblock \bibinfo{journal}{\emph{Review of Financial Studies}}
+  \bibinfo{volume}{29}, \bibinfo{number}{1} (\bibinfo{year}{2016}),
+  \bibinfo{pages}{5--68}.
+\newblock
+
+
+\bibitem[Kelly et~al\mbox{.}(2019)]%
+        {kelly2019}
+\bibfield{author}{\bibinfo{person}{Bryan~T. Kelly}, \bibinfo{person}{Seth
+  Pruitt}, {and} \bibinfo{person}{Yinan Su}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Characteristics Are Covariances: A Unified Model of
+  Risk and Return}.
+\newblock \bibinfo{journal}{\emph{Journal of Financial Economics}}
+  \bibinfo{volume}{134}, \bibinfo{number}{3} (\bibinfo{year}{2019}),
+  \bibinfo{pages}{501--524}.
+\newblock
+
+
+\bibitem[LeCun(2022)]%
+        {lecun2022path}
+\bibfield{author}{\bibinfo{person}{Yann LeCun}.}
+  \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{A Path Towards Autonomous Machine Intelligence}.
+\newblock \bibinfo{journal}{\emph{Open Review}} (\bibinfo{year}{2022}).
+\newblock
+
+
+\bibitem[Liu et~al\mbox{.}(2022)]%
+        {liu2022}
+\bibfield{author}{\bibinfo{person}{Yukun Liu}, \bibinfo{person}{Aleh
+  Tsyvinski}, {and} \bibinfo{person}{Xi Wu}.} \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{Common Risk Factors in Cryptocurrency}.
+\newblock \bibinfo{journal}{\emph{Journal of Finance}} \bibinfo{volume}{77},
+  \bibinfo{number}{2} (\bibinfo{year}{2022}), \bibinfo{pages}{1133--1177}.
+\newblock
+
+
+\bibitem[Makarov and Schoar(2020)]%
+        {makarov2020}
+\bibfield{author}{\bibinfo{person}{Igor Makarov} {and}
+  \bibinfo{person}{Antoinette Schoar}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Trading and Arbitrage in Cryptocurrency Markets}.
+\newblock \bibinfo{journal}{\emph{Journal of Financial Economics}}
+  \bibinfo{volume}{135}, \bibinfo{number}{2} (\bibinfo{year}{2020}),
+  \bibinfo{pages}{293--319}.
+\newblock
+
+
+\bibitem[Nagel(2021)]%
+        {nagel2021}
+\bibfield{author}{\bibinfo{person}{Stefan Nagel}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Machine Learning in Asset Pricing}}.
+\newblock \bibinfo{publisher}{Princeton University Press}.
+\newblock
+
+
+\bibitem[Politis and Romano(1994)]%
+        {politis1994}
+\bibfield{author}{\bibinfo{person}{Dimitris~N. Politis} {and}
+  \bibinfo{person}{Joseph~P. Romano}.} \bibinfo{year}{1994}\natexlab{}.
+\newblock \showarticletitle{The Stationary Bootstrap}.
+\newblock \bibinfo{journal}{\emph{J. Amer. Statist. Assoc.}}
+  \bibinfo{volume}{89}, \bibinfo{number}{428} (\bibinfo{year}{1994}),
+  \bibinfo{pages}{1303--1313}.
+\newblock
+
+
+\bibitem[White(2000)]%
+        {white2000}
+\bibfield{author}{\bibinfo{person}{Halbert White}.}
+  \bibinfo{year}{2000}\natexlab{}.
+\newblock \showarticletitle{A Reality Check for Data Snooping}.
+\newblock \bibinfo{journal}{\emph{Econometrica}} \bibinfo{volume}{68},
+  \bibinfo{number}{5} (\bibinfo{year}{2000}), \bibinfo{pages}{1097--1126}.
+\newblock
+
+
+\bibitem[Yao et~al\mbox{.}(2023)]%
+        {yao2023react}
+\bibfield{author}{\bibinfo{person}{Shunyu Yao}, \bibinfo{person}{Jeffrey Zhao},
+  \bibinfo{person}{Dian Yu}, \bibinfo{person}{Nan Du}, \bibinfo{person}{Izhak
+  Shafran}, \bibinfo{person}{Karthik Narasimhan}, {and} \bibinfo{person}{Yuan
+  Cao}.} \bibinfo{year}{2023}\natexlab{}.
+\newblock \showarticletitle{ReAct: Synergizing Reasoning and Acting in Language
+  Models}. In \bibinfo{booktitle}{\emph{ICLR}}.
+\newblock
+
+
+\end{thebibliography}

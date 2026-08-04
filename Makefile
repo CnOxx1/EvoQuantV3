@@ -58,8 +58,14 @@ paper-full: ## 生成完整顶刊工作论文 PDF（英+中；含 AI-WM 变体�
 paper-ai-wm: ## AI-for-finance 世界模型运行时叙事 PDF → pdf/sci/main_ai_world_model.pdf
 	$(PYTHON) pdf/sci/generate_full_manuscript_pdf.py --variant ai-wm --skip-chinese
 
-paper-icaif26: ## ICAIF '26 匿名草稿（独立目录 pdf/icaif26/，与 JF 稿隔离）
-	$(PYTHON) pdf/icaif26/generate_icaif26_pdf.py
+paper-icaif26: ## ICAIF '26 ACM sigconf 匿名稿（pdf/icaif26/main.pdf）
+	cd pdf/icaif26 && pdflatex -interaction=nonstopmode main.tex >/dev/null || true
+	cd pdf/icaif26 && bibtex main >/dev/null || true
+	cd pdf/icaif26 && pdflatex -interaction=nonstopmode main.tex >/dev/null || true
+	cd pdf/icaif26 && pdflatex -interaction=nonstopmode main.tex >/dev/null || true
+	test -f pdf/icaif26/main.pdf
+	cp pdf/icaif26/main.pdf pdf/icaif26/main_icaif26.pdf
+	@echo "Wrote pdf/icaif26/main.pdf (ACM sigconf anonymous)"
 
 paper-core: ## World-Model-First 核心中文稿：补图 + PDF
 	$(PYTHON) pdf/sci/generate_core_figures.py
