@@ -86,6 +86,54 @@ def _endpoint_and_key(model_hint: str) -> tuple[str, str, str]:
     )
 
 
+def chat_text(
+    model_name: str,
+    *,
+    system: str,
+    user: str,
+    temperature: float = 0.0,
+    max_tokens: int = 1024,
+    timeout: int = 120,
+) -> str:
+    """Generic OpenAI-compatible chat call returning raw text ('' on error).
+
+    Reused by non-trading consumer tasks (e.g. grounding eval) so all live
+    experiments share one endpoint/key resolution path.
+    """
+    base_url, api_key, model = _endpoint_and_key(model_name)
+    if not api_key:
+        raise RuntimeError(f"No API key for live provider {model_name}")
+    body = {
+        "model": model,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+    }
+    req = urllib.request.Request(
+        f"{base_url.rstrip('/')}/chat/completions",
+        data=json.dumps(body).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        text = payload["choices"][0]["message"].get("content") or ""
+        if isinstance(text, list):
+            text = "".join(
+                (p.get("text") if isinstance(p, dict) else str(p)) for p in text
+            )
+        return text if isinstance(text, str) else json.dumps(text)
+    except Exception as e:  # noqa: BLE001 — caller scores empty as failure
+        return f'{{"error":"{type(e).__name__}"}}'
+
+
 class OpenAICompatibleProvider:
     """Thin chat.completions adapter for public LLM vendors / gateways."""
 

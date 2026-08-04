@@ -1,0 +1,9 @@
+model,treatment,n,sufficiency_acc,missing_f1
+gpt-5.4-mini,compiled,50,0.96,0.96
+gpt-5.4-mini,raw,50,0.86,0.2942
+deepseek-v4-flash,compiled,50,0.96,0.98
+deepseek-v4-flash,raw,50,1.0,0.0651
+glm-5.2,compiled,50,0.98,0.98
+glm-5.2,raw,50,1.0,0.1116
+gemini-3.5-flash-lite,compiled,50,1.0,1.0
+gemini-3.5-flash-lite,raw,50,0.94,0.0
