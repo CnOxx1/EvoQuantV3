@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{20}
+\begin{thebibliography}{24}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -36,6 +36,22 @@
 \providecommand\natexlab[1]{#1}
 \providecommand\showeprint[2][]{arXiv:#2}
 
+\bibitem[Choi et~al\mbox{.}(2025)]%
+        {choi2025finagentbench}
+\bibfield{author}{\bibinfo{person}{Chanyeol Choi}, \bibinfo{person}{Jihoon
+  Kwon}, \bibinfo{person}{Alejandro Lopez-Lira}, \bibinfo{person}{Chaewoon
+  Kim}, \bibinfo{person}{Minjae Kim}, \bibinfo{person}{Juneha Hwang},
+  \bibinfo{person}{Jaeseon Ha}, \bibinfo{person}{Hojun Choi},
+  \bibinfo{person}{Suyeol Yun}, \bibinfo{person}{Yongjin Kim}, {and}
+  \bibinfo{person}{Yongjae Lee}.} \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{{FinAgentBench}: A Benchmark Dataset for Agentic
+  Retrieval in Financial Question Answering}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 6th ACM International Conference
+  on AI in Finance}}. \bibinfo{publisher}{ACM}, \bibinfo{pages}{632--637}.
+\newblock
+\href{https://doi.org/10.1145/3768292.3770362}{doi:\nolinkurl{10.1145/3768292.3770362}}
+
+
 \bibitem[Croushore and Stark(2001)]%
         {croushore2001}
 \bibfield{author}{\bibinfo{person}{Dean Croushore} {and} \bibinfo{person}{Tom
@@ -44,6 +60,17 @@
 \newblock \bibinfo{journal}{\emph{Journal of Econometrics}}
   \bibinfo{volume}{105}, \bibinfo{number}{1} (\bibinfo{year}{2001}),
   \bibinfo{pages}{111--130}.
+\newblock
+
+
+\bibitem[Duan et~al\mbox{.}(2025)]%
+        {duan2025factormad}
+\bibfield{author}{\bibinfo{person}{Yitong Duan}, \bibinfo{person}{Chuheng
+  Zhang}, {and} \bibinfo{person}{Jian Li}.} \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{{FactorMAD}: A Multi-Agent Debate Framework Based
+  on Large Language Models for Interpretable Stock Alpha Factor Mining}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 6th ACM International Conference
+  on AI in Finance}}. \bibinfo{publisher}{ACM}, \bibinfo{pages}{605--613}.
 \newblock
 
 
@@ -195,6 +222,33 @@
   \bibinfo{volume}{89}, \bibinfo{number}{428} (\bibinfo{year}{1994}),
   \bibinfo{pages}{1303--1313}.
 \newblock
+
+
+\bibitem[Shen et~al\mbox{.}(2025)]%
+        {shen2025finsearch}
+\bibfield{author}{\bibinfo{person}{Yiqing Shen}, \bibinfo{person}{Jingshu
+  Zhang}, \bibinfo{person}{Feng Chen}, \bibinfo{person}{Kaiyuan Yan}, {and}
+  \bibinfo{person}{Hongguang Li}.} \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{{FinSearch}: A Temporal-Aware Search Agent
+  Framework for Real-Time Financial Information Retrieval with Large Language
+  Models}. In \bibinfo{booktitle}{\emph{Proceedings of the 6th ACM
+  International Conference on AI in Finance}}. \bibinfo{publisher}{ACM}.
+\newblock
+\href{https://doi.org/10.1145/3768292.3770382}{doi:\nolinkurl{10.1145/3768292.3770382}}
+
+
+\bibitem[Sun et~al\mbox{.}(2025)]%
+        {sun2025finresearchbench}
+\bibfield{author}{\bibinfo{person}{Rui Sun}, \bibinfo{person}{Zuo Bai},
+  \bibinfo{person}{Wentao Zhang}, \bibinfo{person}{Yuxiang Zhang},
+  \bibinfo{person}{Li Zhao}, \bibinfo{person}{Shan Sun}, {and}
+  \bibinfo{person}{Zhengwen Qiu}.} \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{{FinResearchBench}: A Logic Tree based
+  Agent-as-a-Judge Evaluation Framework for Financial Research Agents}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 6th ACM International Conference
+  on AI in Finance}}. \bibinfo{publisher}{ACM}, \bibinfo{pages}{656--664}.
+\newblock
+\href{https://doi.org/10.1145/3768292.3770364}{doi:\nolinkurl{10.1145/3768292.3770364}}
 
 
 \bibitem[White(2000)]%
