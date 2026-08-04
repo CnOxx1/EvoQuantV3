@@ -127,36 +127,43 @@ def main() -> int:
         "should_ai_abstain · thin_world   ·   content: macro_tilt, alt_tilt, regime, cascade   ·   audit: evidence_ids (EAR)",
         c_serv[0], c_serv[1], fs=FS_SMALL)
 
-    # ---- Layer 5: consumers (three arms) -------------------------------------------
+    # ---- Layer 5: consumers (four arms) -------------------------------------------
     y5 = 2.1
     layer_title(ax, 0.28, y5 + 1.16 + 0.16,
         "Consumer layer — frozen prompts, temp. 0, OpenAI-compatible adapter (GPT / DeepSeek / GLM / Gemini)",
         c_cons[1])
-    box(ax, 0.3, y5, 3.6, 1.16,
+    arm_w = 2.72
+    xs = [0.3, 3.28, 6.26, 9.24]
+    box(ax, xs[0], y5, arm_w, 1.16,
         "COMPILED\nfull bundle + hard\nshould_ai_abstain\n(typed contract)",
         c_cons[0], c_cons[1], fs=FS_SMALL, weight="bold")
-    box(ax, 4.2, y5, 3.6, 1.16,
-        "UNGATED (ablation)\nsame content + numeric\nWMI, no hard flag\n(soft judgment)",
+    box(ax, xs[1], y5, arm_w, 1.16,
+        "UNGATED (ablation)\nsame content, numeric\nWMI, no hard flag\n(soft judgment)",
         "#fdf6ec", "#c8952e", fs=FS_SMALL)
-    box(ax, 8.1, y5, 3.6, 1.16,
-        "RAW\nmom5 only\nno world model\n(common integration)",
+    box(ax, xs[2], y5, arm_w, 1.16,
+        "RAW\nmom5 fragment only\nno world model\n(common integration)",
         "#f2f2f2", "#888888", fs=FS_SMALL)
+    box(ax, xs[3], y5, arm_w, 1.16,
+        "BLIND\ndirect ask, no feed\n('how should I\ntrade BTC?')",
+        "#eef2f7", "#4a7fb5", fs=FS_SMALL)
 
     # ---- Output row ------------------------------------------------------------------
     y6 = 0.35
-    box(ax, 0.3, y6, 3.6, 0.86, "abstain 1.00\nthin-world refusal\nenforced", c_out[0], c_cons[1], fs=FS_SMALL, weight="bold")
-    box(ax, 4.2, y6, 3.6, 0.86, "abstain 0.68 mean\n(0.43–0.86)\nvendor-dependent", c_out[0], "#c8952e", fs=FS_SMALL)
-    box(ax, 8.1, y6, 3.6, 0.86, "abstain 0.04–0.75\ntrades into\nsparse support", c_out[0], "#888888", fs=FS_SMALL)
+    box(ax, xs[0], y6, arm_w, 0.86, "abstain 1.00\nthin-world refusal\nenforced", c_out[0], c_cons[1], fs=FS_SMALL, weight="bold")
+    box(ax, xs[1], y6, arm_w, 0.86, "abstain 0.68 mean\n(0.43–0.86)\nvendor-dependent", c_out[0], "#c8952e", fs=FS_SMALL)
+    box(ax, xs[2], y6, arm_w, 0.86, "abstain 0.04–0.75\ntrades into sparse\nsupport, loses", c_out[0], "#888888", fs=FS_SMALL)
+    box(ax, xs[3], y6, arm_w, 0.86, "abstain 1.00\nrefuses: cannot verify\n(no product)", c_out[0], "#4a7fb5", fs=FS_SMALL)
 
     # ---- Arrows ----------------------------------------------------------------------
     for x in (2.1, 6.0, 9.9):
         arrow(ax, x, y1 - 0.03, x, y2 + BOX_H + 0.06)
         arrow(ax, x, y2 - 0.03, x, y3 + 0.95 + 0.06)
         arrow(ax, x, y3 - 0.03, x, y4 + 1.06 + 0.06)
-        arrow(ax, x, y5 - 0.03, x, y6 + 0.86 + 0.06)
-    # bundle -> three arms
-    for x in (2.1, 6.0, 9.9):
+    # bundle -> first three arms (blind gets no feed), arms -> outcomes
+    for x in [xs[0] + arm_w / 2, xs[1] + arm_w / 2, xs[2] + arm_w / 2]:
         arrow(ax, x, y4 - 0.03, x, y5 + 1.16 + 0.06)
+    for x in [xi + arm_w / 2 for xi in xs]:
+        arrow(ax, x, y5 - 0.03, x, y6 + 0.86 + 0.06)
 
     fig.savefig(OUT, bbox_inches="tight", facecolor="white")
     print(f"wrote {OUT}")

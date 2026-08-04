@@ -95,8 +95,8 @@ RQ1 tests whether a typed world interface can \emph{enforce} world-conditional a
 \paragraph{Contributions.}
 \begin{enumerate}
 \item \textbf{Cognition semantics.} Epistemic observations, compilation \(\Pi_t\), a lag reconstruction bound, completeness/honesty fields, WMI/ACWMI abstention, evidence-bound actions.
-\item \textbf{Anonymized runtime architecture.} Vintage-aware collectors, BandPIT previous-close clock, quality-tagged bundles, availability shocks \(O_t\), OpenAI-compatible multi-vendor adapter, and a frozen Compiled / Ungated / Raw consumer protocol.
-\item \textbf{Live three-arm validation.} Four live public LLMs on identical \(100\)-day samples: Compiled enforces thin-world abstain \(1.0\); Ungated soft judgment averages \(0.68\); Raw often trades and loses. A grounding workflow shows compiled worlds make ready/missing/tilt answers verifiable (mean F1/acc.\ \(0.97\) vs.\ \(0.04\)--\(0.23\) raw); an economic probe---including a dense-world split---shows the world-model rule beats traditional momentum and buy-and-hold baselines out-of-sample.
+\item \textbf{Anonymized runtime architecture.} Vintage-aware collectors, BandPIT previous-close clock, quality-tagged bundles, availability shocks \(O_t\), OpenAI-compatible multi-vendor adapter, and a frozen Compiled / Ungated / Raw / Blind consumer protocol.
+\item \textbf{Live four-arm validation.} Four live public LLMs on identical \(100\)-day samples: asked blind, every model refuses (abstain \(1.0\), no product); fed a raw fragment, they trade and lose; Compiled enforces thin-world abstain \(1.0\) and acts on verifiable support; Ungated soft judgment averages \(0.68\). A grounding workflow shows compiled worlds make ready/missing/tilt answers verifiable (mean F1/acc.\ \(0.97\) vs.\ \(0.04\)--\(0.23\) raw); an economic probe---including a dense-world split---shows the world-model rule beats traditional momentum and buy-and-hold baselines out-of-sample.
 \end{enumerate}
 
 \section{Related Work}
@@ -215,13 +215,13 @@ We describe the anonymized prototype as a layered systems object (Figure~\ref{fi
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.92\textwidth]{fig_runtime_architecture.png}
-  \Description{Layered architecture: vintage-aware collectors, embedded stores, BandPIT compilation with honesty gates and availability shocks, world-bundle service contract, and three consumer arms with live abstention outcomes.}
-  \caption{Anonymized runtime architecture. Five layers map raw multi-band evidence to a typed world-bundle contract; the consumer layer runs the frozen three-arm protocol (Compiled / Ungated / Raw), whose live abstention outcomes are shown at the bottom.}
+  \Description{Layered architecture: vintage-aware collectors, embedded stores, BandPIT compilation with honesty gates and availability shocks, world-bundle service contract, and four consumer arms with live abstention outcomes.}
+  \caption{Anonymized runtime architecture. Five layers map raw multi-band evidence to a typed world-bundle contract; the consumer layer runs the frozen four-arm protocol (Compiled / Ungated / Raw / Blind), whose live abstention outcomes are shown at the bottom.}
   \label{fig:pipeline}
 \end{figure*}
 
 \subsection{Data flow: inputs, processing, outputs}
-Table~\ref{tab:dataflow} traces the runtime end-to-end. \emph{Inputs}: the evaluation archive populates three public bands---exchange klines/funding/open-interest via REST, daily macro risk indices (equity volatility, dollar index) with \texttt{available\_at} vintages, and aggregate stablecoin circulation---each row stored with its observation timestamp. \emph{Processing}: for every asset-day, BandPIT selects the latest observation with timestamp \(\le(t{-}1)\,23{:}59\), grades it fresh/stale/missing against per-band age thresholds, aggregates breadth/stability/honesty into WMI and regime-conditional ACWMI, derives content tilts (5-day macro-index changes; 7-day stablecoin-flow slope; return momentum), and logs availability shocks \(O_t\). \emph{Outputs}: a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days), per-day world bundles scoped to these three archive bands (Listing~\ref{lst:bundle}), and the consumer transcripts/tables behind Sections~\ref{sec:exp}.
+Table~\ref{tab:dataflow} traces the runtime end-to-end. \emph{Inputs}: the evaluation archive populates three public bands---exchange klines/funding/open-interest via REST, daily macro risk indices (equity volatility, dollar index) with \texttt{available\_at} vintages, and aggregate stablecoin circulation---each row stored with its observation timestamp. \emph{Processing}: for every asset-day, BandPIT selects the latest observation with timestamp \(\le(t{-}1)\,23{:}59\), grades it fresh/stale/missing against per-band age thresholds, aggregates breadth/stability/honesty into WMI and regime-conditional ACWMI, derives content tilts (5-day macro-index changes; 7-day stablecoin-flow slope; return momentum), and logs availability shocks \(O_t\). \emph{Outputs}: a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days), per-day world bundles scoped to these three archive bands (Listing~\ref{lst:bundle}), and the consumer transcripts/tables behind Section~\ref{sec:exp}.
 
 \begin{table}[t]
   \caption{Data flow through the runtime (three-band evaluation archive).}
@@ -326,13 +326,13 @@ The service layer exposes read-only objects used by the consumer harness: (i)~qu
 \label{sec:exp}
 
 \subsection{Setup}
-PIT panel \(\sim\)399 days (\(\approx\)13 months), 10 liquid names, previous-close clock, chronological IS/OOS \(200/200\) days. Live RQ1: all four arms run on the \emph{same} stratified \(100\) OOS asset-days (same sampling seed), temperature \(0\), frozen prompts, OpenAI-compatible gateway. Models: \texttt{gpt-5.4-mini}, \texttt{deepseek-v4-flash}, \texttt{glm-5.2}, \texttt{gemini-3.5-flash-lite}. Offline mocks reproduce the protocol on full OOS without keys. Scarce/thin labels bind on OOS by design, stress-testing honesty under sparse support; the dense-world split in Sec.~5.4 covers fully populated days.
+PIT panel \(\sim\)399 days (\(\approx\)13 months), 10 liquid names, previous-close clock, chronological IS/OOS \(200/200\) days. Live RQ1: all four arms run on the \emph{same} stratified \(100\) OOS asset-days (same sampling seed), temperature \(0\), frozen prompts, OpenAI-compatible gateway. Models: \texttt{gpt-5.4-mini}, \texttt{deepseek-v4-flash}, \texttt{glm-5.2}, \texttt{gemini-3.5-flash-lite}. Offline mocks reproduce the protocol on full OOS without keys. Scarce/thin labels bind on OOS by design, stress-testing honesty under sparse support; the dense-world split in Sec.~\ref{sec:econ} covers fully populated days.
 
 \subsection{RQ1 (primary): Live behavior across information arms}
 Table~\ref{tab:llm} and Figure~\ref{fig:und} are the headline result; all arms share the same \(100\) OOS asset-days. Under Compiled, all four models abstain on every thin-world day (thin-abs.\ \(1.0\)); rationales cite world fields on \(93\)--\(99\%\) of days. Under Ungated, mean thin-abs.\ falls to \(0.68\) (range \(0.43\)--\(0.86\)): DeepSeek and GLM stay above \(0.80\), GPT drops to \(0.63\), and \texttt{gemini-3.5-flash-lite} falls to \(0.43\) and trades. When Ungated models do act, they lose (CE \(-1.04\) to \(+0.02\) across models)---soft judgment fails exactly where enforcement matters. Under Raw, abstain rates are \(0.04\)--\(0.75\) with substantial directional mass (Table~\ref{tab:mix}). The economic gap is uniformly in the world model's favor: mean \(\Delta\)CE (Compiled$-$Raw) \(=+1.07\), positive for every vendor---agents equipped with the compiled world avoid the losses that raw-feed agents incur on sparse support.
 
 \begin{table}[t]
-  \caption{Live three-arm ladder on identical $100$ OOS asset-days (Wilson 95\% CIs). $\Delta$CE (Compiled$-$Raw) positive for every vendor.}
+  \caption{Live abstention ladder on identical $100$ OOS asset-days (Wilson 95\% CIs); Blind abstains $1.0$ for every model. $\Delta$CE (Compiled$-$Raw) positive for every vendor.}
   \label{tab:llm}
   \small
   \begin{tabular}{lrrrr}
@@ -351,9 +351,9 @@ Table~\ref{tab:llm} and Figure~\ref{fig:und} are the headline result; all arms s
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{fig_three_arm_ladder.png}
-  \Description{Grouped bars of abstain rates for Compiled, Ungated, and Raw arms per model with Wilson error bars.}
-  \caption{Live three-arm ladder (same $100$ days per arm; Wilson 95\% CIs). Typed contract $>$ disclosure-only $>$ raw feed; soft judgment is vendor-dependent.}
+  \includegraphics[width=\linewidth]{fig_four_arm_ladder.png}
+  \Description{Grouped bars of abstain rates for Blind, Raw, Ungated, and Compiled arms per model with Wilson error bars.}
+  \caption{Live four-arm ladder (same $100$ days per arm; Wilson 95\% CIs). Blind refuses everything; the raw fragment induces over-trading; the typed contract acts exactly on world quality; soft judgment is vendor-dependent.}
   \label{fig:und}
 \end{figure}
 
@@ -373,7 +373,7 @@ Table~\ref{tab:llm} and Figure~\ref{fig:und} are the headline result; all arms s
 \end{table}
 
 \paragraph{The Blind arm: what happens if you just ask.}
-The product-realistic control is the question a retail user actually types: \emph{``Today is \(d\). How should I trade BTC?''} with no data feed. Run live on the same \(100\) asset-days, all four models abstain on \(100\%\) of days, uniformly answering that they cannot verify current market conditions (CE \(=0\); zero directional actions). A bare public LLM is therefore not a trading agent at all---it refuses. The failure mode that costs money is the middle case: give the same model a \emph{fragment} of data (Raw) and it starts trading on it (abstain as low as \(0.04\)) and loses. The world model is what turns an LLM from ``refuses because it knows nothing'' into ``acts exactly when verifiable support exists'': Compiled abstains on thin days like Blind, but unlike Blind it can trade the thick days that drive the economic results of Sec.~5.4.
+The product-realistic control is the question a retail user actually types: \emph{``Today is \(d\). How should I trade BTC?''} with no data feed. Run live on the same \(100\) asset-days, all four models abstain on \(100\%\) of days, uniformly answering that they cannot verify current market conditions (CE \(=0\); zero directional actions). A bare public LLM is therefore not a trading agent at all---it refuses. The failure mode that costs money is the middle case: give the same model a \emph{fragment} of data (Raw) and it starts trading on it (abstain as low as \(0.04\)) and loses. The world model is what turns an LLM from ``refuses because it knows nothing'' into ``acts exactly when verifiable support exists'': Compiled abstains on thin days like Blind, but unlike Blind it can trade the thick days that drive the economic results of Sec.~\ref{sec:econ}.
 
 \paragraph{Inside the Ungated arm.}
 Ungated rationales cite disclosed world fields (missingness, readiness, WMI) on \(53\)--\(93\%\) of days, so the models demonstrably \emph{read} the world; they differ in acting on it. Non-abstain Ungated actions are overwhelmingly directional (e.g.\ Gemini: \(55\) bearish, \(2\) bullish of \(57\) trades) and destroy value on thin support---evidence that vendor-specific caution, not lack of disclosure, drives the gap the typed contract closes.
@@ -405,6 +405,7 @@ The cognition base should serve analysis, not only trade/abstain decisions. We r
 \end{table}
 
 \subsection{RQ2: Economic value over traditional baselines}
+\label{sec:econ}
 A transparent rule shares return inputs with momentum and adds vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\). Out-of-sample (\(199\) days \(\times\) \(10\) assets, \(1{,}990\) asset-days) the world-model rule beats both traditional baselines (Table~\ref{tab:econ}, Figure~\ref{fig:econ}): Sharpe \(0.764\) and CE \(+0.130\) versus momentum (\(0.096\), \(-0.206\)) and buy-and-hold (\(-1.404\), \(-1.163\)). The pre-specified contrast mechanism $-$ momentum is significant under block bootstrap: \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\); stationary \(p{=}0.022\)). The edge is cross-sectionally uniform---\(\Delta\mathrm{CE}\) is positive for \emph{all ten assets individually} (\(+0.20\) to \(+0.85\); Figure~\ref{fig:econ}, right)---so the result is not driven by one lucky name. LOBO (Prop.~\ref{prop:lobo}) confirms the gain comes from compiled band content: deleting macro or alternative collapses to momentum (content share \(1.0\) under the ungated rule), and the relative gaps survive \(10\)--\(25\)bps transaction costs. A \(2017\)--\(2026\) two-asset audit with non-vintaged proxy tilts shows no such edge (\(\Delta\mathrm{CE}\approx 0\), \(p{=}0.81\)): the outperformance appears exactly where the vintage-compiled world model exists, so the value is attributable to the world model itself rather than to a generic tilt recipe.
 
 \paragraph{Within-archive dense world.}
@@ -467,8 +468,8 @@ Silent feature stores hide staleness. By placing completeness, honesty, and \tex
 \paragraph{Previous-close PIT over wall-clock streaming.}
 Intraday streaming demos look impressive but confound look-ahead. The previous-close clock is conservative and auditable: every live decision cites a \texttt{decision\_asof} stamp that a reviewer can recompute from the panel.
 
-\paragraph{Three arms instead of one leaderboard.}
-A single Compiled-vs-holdout Sharpe invites Holy-Grail readings. Compiled / Ungated / Raw separates (i)~typed enforcement, (ii)~soft judgment from disclosure, and (iii)~no world model---matching how teams actually integrate LLMs.
+\paragraph{Four arms instead of one leaderboard.}
+A single Compiled-vs-holdout Sharpe invites Holy-Grail readings. Compiled / Ungated / Raw / Blind separates (i)~typed enforcement, (ii)~soft judgment from disclosure, (iii)~fragment feeds, and (iv)~no feed at all---matching the full spectrum of how people actually query LLMs about markets.
 
 \section{Scope and Future Work}
 \label{sec:limit}
@@ -478,7 +479,7 @@ This study delivers the observation-side world model: a state compiler with type
 \section{Conclusion}
 \label{sec:conc}
 
-Public LLMs need a market to \emph{understand} before they decide. We contribute cognition semantics and an anonymized layered runtime---collectors, vintage store, BandPIT compilation, bundle contract, and LLM adapter---that turns asynchronous crypto evidence into a complete, honest, auditable world state. Live public LLMs exhibit a three-arm ladder: Compiled enforces thin-world refusal, Ungated partially recovers it from disclosure alone, and Raw often trades into sparse support and loses. The same bundle makes analyst-facing answers verifiable (grounding ready/missing/tilt mean \(0.97\) vs.\ \(0.04\)--\(0.23\) raw), and the world-model rule outperforms traditional momentum and buy-and-hold baselines out-of-sample (Sharpe \(0.76\) vs.\ \(0.10\) and \(-1.40\)). Understanding comes first---and the returns follow.
+Public LLMs need a market to \emph{understand} before they decide. We contribute cognition semantics and an anonymized layered runtime---collectors, vintage store, BandPIT compilation, bundle contract, and LLM adapter---that turns asynchronous crypto evidence into a complete, honest, auditable world state. Live public LLMs exhibit a four-arm ladder: asked blind they refuse entirely, fed a raw fragment they trade into sparse support and lose, Ungated partially recovers refusal from disclosure alone, and Compiled acts exactly on world quality. The same bundle makes analyst-facing answers verifiable (grounding ready/missing/tilt mean \(0.97\) vs.\ \(0.04\)--\(0.23\) raw), and the world-model rule outperforms traditional momentum and buy-and-hold baselines out-of-sample (Sharpe \(0.76\) vs.\ \(0.10\) and \(-1.40\)). Understanding comes first---and the returns follow.
 
 \begin{acks}
 Omitted for anonymous review.
