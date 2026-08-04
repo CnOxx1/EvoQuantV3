@@ -1,4 +1,6 @@
-# ICAIF '26 — Financial World-Model Runtime
+# ICAIF '26 — Market World Model for Public LLMs
+
+**Thesis:** Quant stacks start from *strategy*; this runtime starts from *understanding* — a complete, honest, auditable crypto cognition base for public LLMs (GPT / DeepSeek / GLM).
 
 **Isolated from** `pdf/sci/` (JF/RFS). Submit **only** artifacts from this folder.
 
