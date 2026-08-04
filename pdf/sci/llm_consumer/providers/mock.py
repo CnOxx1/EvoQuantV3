@@ -174,6 +174,14 @@ def get_provider(name: str):
         )
 
         if not live_llm_configured():
+            import sys
+
+            print(
+                f"WARNING: no live LLM credentials (OPENAI_API_KEY/BASE_URL); "
+                f"'{name}' falls back to offline mock PublicLLMCompiledFollower",
+                file=sys.stderr,
+                flush=True,
+            )
             return PublicLLMCompiledFollower()
         clean = name
         for p in ("openai:", "live:", "teamo:"):
