@@ -225,23 +225,51 @@ def evaluate_model(
     treatments: tuple[str, ...] = ("compiled", "raw"),
     transcript_tag: str = "",
 ) -> dict[str, Any]:
+    import threading
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     provider = get_provider(model_name)
     rows_out = []
     transcripts = []
     understanding = {}
+    ckpt_suffix = f"_{transcript_tag}" if transcript_tag else ""
     for treatment in treatments:
         template = _load_prompt(treatment)
         ph = _prompt_hash(template)
         items = list(df.iterrows())
 
-        def _one(pair, _treatment=treatment, _template=template, _ph=ph):
+        # Resume support for large sweeps: completed (date, asset) decisions are
+        # streamed to a checkpoint file and skipped on restart.
+        ckpt_path = TRANSCRIPT_DIR / f"{model_name}{ckpt_suffix}_{treatment}.ckpt.jsonl"
+        done: dict[tuple[str, str], dict] = {}
+        if ckpt_path.exists():
+            for line in ckpt_path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not str(rec.get("rationale", "")).startswith("provider-error"):
+                    done[(rec["date"], rec["asset"])] = rec
+            if done:
+                print(f"  resume {model_name}/{treatment}: {len(done)} cached decisions")
+        ckpt_lock = threading.Lock()
+        ckpt_fh = ckpt_path.open("a", encoding="utf-8")
+
+        def _one(pair, _treatment=treatment, _template=template, _ph=ph,
+                 _fh=ckpt_fh, _lock=ckpt_lock, _done=done):
             idx, r = pair
             bundle = _build_bundle(_treatment, r)
-            prompt = _template.replace("{{BUNDLE_JSON}}", json.dumps(bundle, default=str))
-            dec = provider.decide(treatment=_treatment, prompt=prompt, bundle=bundle)
-            return idx, {
+            key = (bundle["date"], str(bundle["asset"]))
+            cached = _done.get(key)
+            if cached is not None:
+                out = dict(cached)
+                out["prompt_hash"] = _ph
+                return idx, out
+            dec = provider.decide(treatment=_treatment, prompt=_template.replace(
+                "{{BUNDLE_JSON}}", json.dumps(bundle, default=str)), bundle=bundle)
+            out = {
                 "date": bundle["date"],
                 "asset": bundle["asset"],
                 "model": model_name,
@@ -253,6 +281,10 @@ def evaluate_model(
                 "rationale": dec.rationale,
                 "is_abstain": int(dec.is_abstain()),
             }
+            with _lock:
+                _fh.write(json.dumps(out) + "\n")
+                _fh.flush()
+            return idx, out
 
         treat_transcripts = []
         positions_map: dict[Any, float] = {}
@@ -264,10 +296,13 @@ def evaluate_model(
             results = []
             with ThreadPoolExecutor(max_workers=workers) as ex:
                 futs = [ex.submit(_one, p) for p in items]
-                for fut in as_completed(futs):
+                for n_done, fut in enumerate(as_completed(futs), 1):
                     results.append(fut.result())
+                    if n_done % 200 == 0:
+                        print(f"  {model_name}/{treatment}: {n_done}/{len(items)}", flush=True)
             order = {idx: n for n, (idx, _) in enumerate(items)}
             results.sort(key=lambda x: order.get(x[0], 0))
+        ckpt_fh.close()
         for idx, row_t in results:
             positions_map[idx] = float(row_t["position"])
             abstains_map[idx] = int(row_t["is_abstain"])

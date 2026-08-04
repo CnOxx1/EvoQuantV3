@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 from typing import Any
@@ -163,31 +164,40 @@ class OpenAICompatibleProvider:
                 {"role": "user", "content": prompt},
             ],
         }
-        req = urllib.request.Request(
-            f"{self.base_url.rstrip('/')}/chat/completions",
-            data=json.dumps(body).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}",
-            },
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                payload = json.loads(resp.read().decode("utf-8"))
-            msg = payload["choices"][0]["message"]
-            text = msg.get("content") or ""
-            if isinstance(text, list):  # some gateways return content parts
-                text = "".join(
-                    (p.get("text") if isinstance(p, dict) else str(p)) for p in text
-                )
-        except Exception as e:  # noqa: BLE001 — record provider errors as abstain
+        data = json.dumps(body).encode("utf-8")
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+        url = f"{self.base_url.rstrip('/')}/chat/completions"
+        text = ""
+        last_err: Exception | None = None
+        # Retry transient gateway failures so provider errors are not silently
+        # scored as abstentions in large sweeps.
+        for attempt, timeout_s in enumerate((60, 60, 90)):
+            req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+            try:
+                with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+                    payload = json.loads(resp.read().decode("utf-8"))
+                msg = payload["choices"][0]["message"]
+                text = msg.get("content") or ""
+                if isinstance(text, list):  # some gateways return content parts
+                    text = "".join(
+                        (p.get("text") if isinstance(p, dict) else str(p)) for p in text
+                    )
+                last_err = None
+                break
+            except Exception as e:  # noqa: BLE001 — retried; recorded on final failure
+                last_err = e
+                if attempt < 2:
+                    time.sleep(2.0 * (attempt + 1))
+        if last_err is not None:
             action, conf = validate_action("abstain", 0.0)
             return ConsumerDecision(
                 action=action,
                 confidence=conf,
-                rationale=f"provider-error:{type(e).__name__}",
-                raw_text=str(e)[:500],
+                rationale=f"provider-error:{type(last_err).__name__}",
+                raw_text=str(last_err)[:500],
                 model=self.name,
                 treatment=treatment,
             )
