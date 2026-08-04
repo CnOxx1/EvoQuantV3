@@ -12,6 +12,7 @@ make paper-llm-consumer
 - Live (optional): OpenAI-compatible gateway via `OPENAI_BASE_URL` +
   `OPENAI_API_KEY` (or `TEAMOROUTER_API_KEY` / vendor keys). Never commit keys.
   Example: `python -m pdf.sci.llm_consumer.eval --live-only --sample-n 100 --tag live --workers 6`
+  Ungated ablation: `--treatments ungated --sample-n 50 --tag ungated`
 - Outputs: `pdf/tables/table_llm_*.csv` (+ `*_live.*` when `--tag live`),
   `table_llm_understanding.csv`, `table_world_bundle_examples.json`
   (also copied under `pdf/icaif26/tables/`). Transcripts are gitignored.

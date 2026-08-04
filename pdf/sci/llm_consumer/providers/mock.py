@@ -32,14 +32,20 @@ class MockCompiledAwareProvider:
                 treatment=treatment,
             )
         wmi = bundle.get("world_model_index") or {}
-        should_abs = bool(wmi.get("should_ai_abstain"))
         idx = float(wmi.get("acwmi") or wmi.get("wmi") or 0.0)
-        if should_abs or idx < float(bundle.get("abstain_threshold") or 0.25):
+        # Compiled: honor hard boolean. Ungated: soft numeric threshold only.
+        if treatment == "compiled":
+            should_abs = bool(wmi.get("should_ai_abstain")) or idx < float(
+                bundle.get("abstain_threshold") or 0.25
+            )
+        else:  # ungated / disclose-only
+            should_abs = idx < 0.25
+        if should_abs:
             action, conf = validate_action("abstain", 0.9)
             return ConsumerDecision(
                 action=action,
                 confidence=conf,
-                rationale="world-thin-abstain",
+                rationale="world-thin-abstain" if treatment == "compiled" else "ungated-soft-abstain",
                 raw_text=json.dumps({"action": action, "confidence": conf}),
                 model=self.name,
                 treatment=treatment,

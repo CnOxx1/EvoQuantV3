@@ -1,0 +1,5 @@
+model,treatment,ann_return,Sharpe,CE,abstain_rate,thin_world_abstain_rate,ear_proxy,prompt_hash
+gpt-5.4-mini,ungated,0.1218,1.684,0.1176,0.8,0.8,1.0,31469ee2be04555c
+deepseek-v4-flash,ungated,0.4098,6.784,0.4068,0.82,0.82,1.0,31469ee2be04555c
+glm-5.2,ungated,0.3974,13.271,0.3967,0.94,0.94,1.0,31469ee2be04555c
+gemini-3.5-flash-lite,ungated,0.5019,2.175,0.4591,0.38,0.38,1.0,31469ee2be04555c
