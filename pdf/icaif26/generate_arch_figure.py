@@ -150,9 +150,9 @@ def main() -> int:
     # ---- Output row ------------------------------------------------------------------
     y6 = 0.35
     box(ax, xs[0], y6, arm_w, 0.86, "abstain 1.00\nthin-world refusal\nenforced", c_out[0], c_cons[1], fs=FS_SMALL, weight="bold")
-    box(ax, xs[1], y6, arm_w, 0.86, "abstain 0.68 mean\n(0.43–0.86)\nvendor-dependent", c_out[0], "#c8952e", fs=FS_SMALL)
-    box(ax, xs[2], y6, arm_w, 0.86, "abstain 0.04–0.75\ntrades into sparse\nsupport, loses", c_out[0], "#888888", fs=FS_SMALL)
-    box(ax, xs[3], y6, arm_w, 0.86, "abstain 1.00\nrefuses: cannot verify\n(no product)", c_out[0], "#4a7fb5", fs=FS_SMALL)
+    box(ax, xs[1], y6, arm_w, 0.86, "abstain ≈0.68\nvendor-dependent\nsoft judgment", c_out[0], "#c8952e", fs=FS_SMALL)
+    box(ax, xs[2], y6, arm_w, 0.86, "abstain 0.04–0.75\nover-trades on\nsparse support", c_out[0], "#888888", fs=FS_SMALL)
+    box(ax, xs[3], y6, arm_w, 0.86, "abstain 1.00\ncannot verify\n(no feed)", c_out[0], "#4a7fb5", fs=FS_SMALL)
 
     # ---- Arrows ----------------------------------------------------------------------
     for x in (2.1, 6.0, 9.9):
