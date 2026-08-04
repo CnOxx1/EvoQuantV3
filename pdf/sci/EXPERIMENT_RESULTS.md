@@ -22,7 +22,8 @@
 
 | contrast                    |   n_days | method   |   dSharpe |    dCE |   p_Sharpe |   p_CE |   n_boot |   block |   ci_dSharpe_05 |   ci_dSharpe_95 |   ci_dCE_05 |   ci_dCE_95 | ci95_excludes_0_CE   | ci95_excludes_0_Sharpe   |
 |:----------------------------|---------:|:---------|----------:|-------:|-----------:|-------:|---------:|--------:|----------------:|----------------:|------------:|------------:|:---------------------|:-------------------------|
-| Thick ungated − Always long |      200 | circular |    2.1664 | 1.2887 |      0.296 |  0.246 |      999 |       5 |         -2.2354 |          6.3169 |     -0.9963 |      3.5152 | False                | False                    |
+| Mechanism − Momentum        |      200 | circular |    0.6664 | 0.3339 |      0.034 |  0.034 |      999 |       5 |          0.0552 |          1.4781 |      0.028  |      0.6768 | True                 | True                     |
+| Mechanism − Always long     |      200 | circular |    2.1664 | 1.2887 |      0.296 |  0.246 |      999 |       5 |         -2.2354 |          6.3169 |     -0.9963 |      3.5152 | False                | False                    |
 | ACWMI − Always long         |      200 | circular |    2.0525 | 1.2332 |      0.326 |  0.264 |      999 |       5 |         -2.3153 |          6.1876 |     -1.1011 |      3.4577 | False                | False                    |
 | ACWMI − Momentum always     |      200 | circular |    0.5526 | 0.2783 |      0.106 |  0.104 |      999 |       5 |         -0.1202 |          1.3873 |     -0.057  |      0.6342 | False                | False                    |
 | Thick ungated − ACWMI       |      200 | circular |    0.1139 | 0.0556 |      0.2   |  0.232 |      999 |       5 |         -0.0675 |          0.3814 |     -0.0336 |      0.1673 | False                | False                    |
@@ -30,22 +31,22 @@
 
 ## LOBO (durable bands, content+gating deletion)
 
-| band_dropped      |   Sharpe |      CE |   abstain_rate |     dCE |   p_dCE |
-|:------------------|---------:|--------:|---------------:|--------:|--------:|
-| (none)            |    0.654 |  0.0764 |          0.127 |  0      | nan     |
-| exchange          |    0.634 |  0.0682 |          0.16  | -0.0082 |   0.832 |
-| macro             |   -0.834 | -0.5746 |          0.392 | -0.651  |   0.012 |
-| alternative       |   -0.575 | -0.4746 |          0.311 | -0.551  |   0.014 |
-| macro+alternative |   -0.774 | -0.5691 |          0.292 | -0.6455 |   0.01  |
+| band_dropped      |   Sharpe |      CE |   abstain_rate |     dCE |   p_dCE | policy        |
+|:------------------|---------:|--------:|---------------:|--------:|--------:|:--------------|
+| (none)            |    0.767 |  0.132  |          0.075 |  0      | nan     | thick_ungated |
+| exchange          |    0.767 |  0.132  |          0.075 |  0      |   1     | thick_ungated |
+| macro             |    0.101 | -0.2019 |          0     | -0.3339 |   0.034 | thick_ungated |
+| alternative       |    0.101 | -0.2019 |          0     | -0.3339 |   0.034 | thick_ungated |
+| macro+alternative |    0.101 | -0.2019 |          0     | -0.3339 |   0.034 | thick_ungated |
 
 ## LOBO decomposition (content vs gating channel)
 
-| band              |   dCE_total |   p_total |   dCE_content_only |   p_content |   dCE_gating_only |   p_gating |
-|:------------------|------------:|----------:|-------------------:|------------:|------------------:|-----------:|
-| exchange          |     -0.0082 |     0.832 |           nan      |     nan     |           -0.0082 |      0.832 |
-| macro             |     -0.651  |     0.012 |            -0.3456 |       0.026 |           -0.3651 |      0.17  |
-| alternative       |     -0.551  |     0.014 |            -0.3606 |       0.034 |           -0.3846 |      0.128 |
-| macro+alternative |     -0.6455 |     0.01  |            -0.4831 |       0.016 |          nan      |    nan     |
+| band              |   dCE_total |   p_total |   dCE_content |   p_content |   dCE_gating_residual |   p_gating_residual |   dCE_gating_standalone |   p_gating_standalone | telescope_ok   |   content_share_of_total |
+|:------------------|------------:|----------:|--------------:|------------:|----------------------:|--------------------:|------------------------:|----------------------:|:---------------|-------------------------:|
+| exchange          |      0      |     1     |      nan      |     nan     |                     0 |                   1 |                       0 |                     1 | True           |                      nan |
+| macro             |     -0.3339 |     0.034 |       -0.3339 |       0.034 |                     0 |                   1 |                       0 |                     1 | True           |                        1 |
+| alternative       |     -0.3339 |     0.034 |       -0.3339 |       0.034 |                     0 |                   1 |                       0 |                     1 | True           |                        1 |
+| macro+alternative |     -0.3339 |     0.034 |       -0.3339 |       0.034 |                     0 |                   1 |                     nan |                   nan | True           |                        1 |
 
 ## Thin vs thick (real PIT statuses; thin deletes content AND gating)
 

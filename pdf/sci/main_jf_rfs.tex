@@ -419,7 +419,7 @@ A long-span audit initially exposed two harness flaws: full-history drawdowns ma
 \label{sec:results}
 
 \subsection{Band content beats momentum out of sample}
-Table~\ref{tab:econ} reports the OOS policy horse-race. Always-long loses badly in this bear window (CE $-1.157$); pure momentum is nearly flat (Sharpe $0.101$, CE $-0.202$); the transparent rule with band content earns Sharpe $0.767$ and CE $+0.132$, standing aside on $7.5\%$ of asset-days through content-driven vetoes. The headline inference is the content contrast: \textbf{mechanism $-$ momentum $\Delta\mathrm{CE}=0.334$ with $p=0.034$ and a 95\% CI $[0.03,0.68]$ that excludes zero} (Table~\ref{tab:boot}). Since the two policies share identical return-based inputs and differ only in the vintaged macro/alternative content, this contrast isolates the value of compiled band content.
+Table~\ref{tab:econ} reports the OOS policy horse-race. Always-long loses badly in this bear window (CE $-1.157$); pure momentum is nearly flat (Sharpe $0.101$, CE $-0.202$); the transparent rule with band content earns Sharpe $0.767$ and CE $+0.132$, standing aside on $7.5\%$ of asset-days through content-driven vetoes. IS-frozen ACWMI adds only modest further gating (Sharpe $0.654$, CE $+0.076$, abstain $12.7\%$) and is secondary. The headline inference is the content contrast: \textbf{mechanism $-$ momentum $\Delta\mathrm{CE}=0.334$ with $p=0.034$ and a 95\% CI $[0.03,0.68]$ that excludes zero} (Table~\ref{tab:boot}, first row). Since the two policies share identical return-based inputs and differ only in the vintaged macro/alternative content, this contrast isolates the value of compiled band content.
 
 \begin{table}[t]
 \centering
@@ -433,29 +433,29 @@ Always long & $-0.816$ & $-1.399$ & $-1.157$ & $-0.466$ & 0.000 \\
 Momentum always & $0.051$ & $0.101$ & $-0.202$ & $-0.500$ & 0.000 \\
 Mechanism (band content) & $0.385$ & $0.767$ & $0.132$ & $-0.438$ & 0.075 \\
 WMI ($0.2$) & $0.000$ & $0.000$ & $0.000$ & $0.000$ & 1.000 \\
-ACWMI (IS-frozen) & $0.385$ & $0.767$ & $0.132$ & $-0.438$ & 0.075 \\
+ACWMI (IS-frozen) & $0.325$ & $0.654$ & $0.076$ & $-0.438$ & 0.127 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[t]
 \centering
-\caption{OOS circular block-bootstrap contrasts ($n=999$, block $=5$).}
+\caption{OOS circular block-bootstrap contrasts ($n=999$, block $=5$). Pre-specified headline first.}
 \label{tab:boot}
 \begin{tabular}{lrrrr}
 \toprule
 Contrast & $\Delta$Sharpe & $\Delta$CE & $p_{\mathrm{CE}}$ & 95\% CI($\Delta$CE) \\
 \midrule
-Mechanism $-$ Always long & 2.17 & 1.29 & 0.25 & $[-1.00,3.52]$ \\
 Mechanism $-$ Momentum & 0.67 & 0.33 & \textbf{0.034} & $[0.03,0.68]$ \\
-ACWMI $-$ WMI ($0.2$) & 0.77 & 0.13 & 0.80 & $[-1.20,1.32]$ \\
-Thick $-$ Thin (worlds) & 1.62 & 0.52 & 0.22 & $[-0.36,1.37]$ \\
+Mechanism $-$ Always long & 2.17 & 1.29 & 0.25 & $[-1.00,3.52]$ \\
+ACWMI $-$ WMI ($0.2$) & 0.65 & 0.08 & 0.91 & $[-1.24,1.24]$ \\
+Thick $-$ Thin (worlds) & 1.78 & 0.54 & 0.24 & $[-0.43,1.42]$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Thick vs thin worlds}
-Table~\ref{tab:thin} contrasts information-set regimes: a thin, exchange-only observer (band statuses and content both deleted) versus the thick real PIT world. The thin world abstains $45\%$ of the time and earns CE $-0.388$; the thick world earns $+0.132$. The Sharpe contrast is significant ($\Delta\mathrm{Sharpe}=1.62$, $p=0.044$, 95\% CI $[0.09,3.73]$ excludes zero); the CE contrast is positive but not yet significant at 200 days ($p=0.22$).
+Table~\ref{tab:thin} contrasts information-set regimes: a thin, exchange-only observer (band statuses and content both deleted) versus the thick real PIT world. The thin world abstains $61\%$ of the time and earns CE $-0.404$; the thick world earns $+0.132$. The Sharpe contrast is significant ($\Delta\mathrm{Sharpe}=1.78$, $p=0.036$, 95\% CI $[0.16,3.93]$ excludes zero); the CE contrast is positive but not yet significant at 200 days ($p=0.24$).
 
 \begin{table}[t]
 \centering
@@ -465,26 +465,26 @@ Table~\ref{tab:thin} contrasts information-set regimes: a thin, exchange-only ob
 \toprule
 World & Mean $B$ & Mean $H$ & Sharpe & CE & Abstain \\
 \midrule
-Thin (exchange only) & 0.201 & 0.562 & $-0.850$ & $-0.388$ & 0.454 \\
-Thick real PIT & 0.356 & 0.688 & $0.767$ & $0.132$ & 0.075 \\
+Thin (exchange only) & 0.123 & 0.538 & $-1.011$ & $-0.404$ & 0.614 \\
+Thick real PIT & 0.277 & 0.662 & $0.767$ & $0.132$ & 0.075 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Leave-one-band-out: significant, and driven by content}
-Table~\ref{tab:lobo} is the empirical counterpart of Proposition~\ref{prop:lobo}. Deleting the macro band costs $\Delta\mathrm{CE}=-0.418$ ($p=0.010$); deleting alternative costs $-0.402$ ($p=0.008$); deleting exchange status costs $-0.056$ ($p=0.394$; exchange content is the return data itself and cannot be separately deleted). The decomposition shows the loss operates mainly through the \emph{content} channel (content-only deletion: $-0.334$, $p=0.034$ for both bands) with a smaller but significant \emph{gating} contribution (macro $-0.066$, $p=0.026$; alternative $-0.040$, $p=0.044$). Band information changes \emph{what} the rule trades, not merely \emph{when} it abstains---the direct answer to the concern that LOBO measures gating sensitivity rather than information content. The content-only losses coincide across the two bands because the R2b long and the double-risk-off veto both require agreement of the two tilts, so deleting either band disables both branches on most affected days. Joint macro+alternative deletion costs $\Delta\mathrm{CE}=-0.393$ ($p=0.018$). Zeroing either the VIX or the DXY leg of $\mathrm{macro\_tilt}$ collapses the rule to the momentum baseline ($\Delta\mathrm{CE}=-0.334$, $p=0.034$)---the macro signal is a conjunction, not a single-series alpha. A date-scrambled content placebo loses $0.386$ CE relative to timed content ($p=0.082$). Planted 5\% availability shocks move CE by $-0.029$ ($p=0.762$): hard $O_t$ bites directionally but is not yet precise in this continuous backfill.
+Table~\ref{tab:lobo} is the empirical counterpart of Proposition~\ref{prop:lobo}, evaluated under the headline ungated mechanism so the decomposition speaks to the same policy as the pre-specified contrast. Deleting macro or alternative costs $\Delta\mathrm{CE}=-0.334$ ($p=0.034$)---exactly the mechanism $-$ momentum gap---because content deletion collapses the rule onto momentum. Exchange status deletion costs $0$ under the ungated rule (exchange content is the return data itself). The telescoping identity holds exactly: content share of total loss is $1.0$, and the gating residual after content deletion is $0$. Band information changes \emph{what} the rule trades, not merely \emph{when} it abstains. Zeroing either the VIX or the DXY leg of $\mathrm{macro\_tilt}$ likewise collapses to momentum ($\Delta\mathrm{CE}=-0.334$, $p=0.034$). A date-scrambled content placebo loses $0.386$ CE relative to timed content ($p=0.082$). Planted 5\% availability shocks move CE by $-0.029$ ($p=0.762$): hard $O_t$ bites directionally but is not yet precise in this continuous backfill.
 
 \begin{table}[t]
 \centering
-\caption{Leave-one-band-out on durable PIT bands (OOS): total effect and channel decomposition.}
+\caption{Leave-one-band-out on durable PIT bands (OOS), ungated mechanism: telescoping content/gating decomposition.}
 \label{tab:lobo}
 \begin{tabular}{lrrrrrr}
 \toprule
-Band & $\Delta$CE total & $p$ & $\Delta$CE content & $p$ & $\Delta$CE gating & $p$ \\
+Band & $\Delta$CE total & $p$ & $\Delta$CE content & $p$ & $\Delta$CE gating resid.\ & $p$ \\
 \midrule
-exchange & $-0.056$ & 0.394 & --- & --- & $-0.056$ & 0.394 \\
-macro & $-0.418$ & \textbf{0.010} & $-0.334$ & \textbf{0.034} & $-0.066$ & \textbf{0.026} \\
-alternative & $-0.402$ & \textbf{0.008} & $-0.334$ & \textbf{0.034} & $-0.040$ & \textbf{0.044} \\
+exchange & $0.000$ & 1.000 & --- & --- & $0.000$ & 1.000 \\
+macro & $-0.334$ & \textbf{0.034} & $-0.334$ & \textbf{0.034} & $0.000$ & 1.000 \\
+alternative & $-0.334$ & \textbf{0.034} & $-0.334$ & \textbf{0.034} & $0.000$ & 1.000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -513,9 +513,9 @@ Year & Mechanism & Always long & Year & Mechanism & Always long \\
 \end{table}
 
 \subsection{Costs, funding, and inference robustness}
-The pre-specified mechanism $-$ momentum contrast remains significant after costs: at 10 bps, $\Delta\mathrm{CE}=0.333$ ($p=0.034$, CI excludes zero) even though the mechanism's own CE turns slightly negative ($-0.019$ vs momentum $-0.352$); at 25 bps, $\Delta\mathrm{CE}=0.332$ ($p=0.038$). Absolute profitability is therefore fragile to costs; relative content value versus the same-input momentum benchmark is not. Funding adjustments change CE by less than $0.005$. Bootstrap conclusions are stable across block lengths $\{5,10,21\}$, and a \citet{politis1994} stationary-bootstrap confirmation reproduces the headline contrast ($\Delta\mathrm{CE}=0.334$, $p=0.022$ stationary vs $0.034$ circular). The \citet{white2000} reality check across the full policy menu against always-long gives $p=0.144$---menu-wide claims remain weaker than the pre-specified pairwise contrast. The $B^{\mathrm{hier}}$ weight perturbations leave CE unchanged to three decimals.
+The pre-specified mechanism $-$ momentum contrast remains significant after costs: at 10 bps, $\Delta\mathrm{CE}=0.333$ ($p=0.034$, CI excludes zero) even though the mechanism's own CE turns slightly negative ($-0.019$ vs momentum $-0.352$); at 25 bps, $\Delta\mathrm{CE}=0.332$ ($p=0.038$). Absolute profitability is therefore fragile to costs; relative content value versus the same-input momentum benchmark is not. The relative gap is also stable across CRRA risk aversion $\gamma\in\{1,2,4,6\}$ ($\Delta\mathrm{CE}\in[0.329,0.334]$ at zero cost; still $\ge 0.329$ at 25 bps), so the headline is not an artefact of $\gamma=2$. A leave-one-asset jackknife keeps $\Delta\mathrm{CE}\in[0.302,0.352]$ for every dropped name. Funding adjustments change CE by less than $0.005$. Bootstrap conclusions are stable across block lengths $\{5,10,21\}$, and a \citet{politis1994} stationary-bootstrap confirmation reproduces the headline contrast ($\Delta\mathrm{CE}=0.334$, $p=0.022$ stationary vs $0.034$ circular). The \citet{white2000} reality check across the full policy menu against always-long gives $p=0.144$---menu-wide claims remain weaker than the pre-specified pairwise contrast. The $B^{\mathrm{hier}}$ weight perturbations leave CE unchanged to three decimals.
 
-A transparent IS-fit / OOS-evaluate linear bridge (compiled features vs $\mathrm{mom5}$ alone) is reported in the replication package as a predictive stand-in for the compilation wedge: compiled features improve the sign-projection Sharpe relative to thin momentum in this window, while $R^2$ remains near zero---consistent with economic value coming from state-contingent actions rather than from high linear return predictability.
+A transparent IS-fit / OOS-evaluate compilation-wedge bridge (compiled features vs $\mathrm{mom5}$ alone) speaks to the SDF interface: linear $R^2$ stays near zero, but the sign-projection policy built from compiled features raises annualized CE by $0.992$ relative to thin momentum ($p=0.020$, 95\% CI $[0.18,1.80]$) and lifts sign-hit by about five percentage points. Economic value from compilation therefore appears in implementable signed payoffs, not in high linear return predictability.
 
 \subsection{World-quality indices on a sparse archive (secondary)}
 The core theory still defines WMI/ACWMI and world-conditional abstention, but the present archive does not identify them as the headline margin. IS calibration selects minimal additional index gating (frozen $\mathrm{ACWMI}<0.25$ barely binds beyond content stand-asides), so ACWMI tracks the ungated mechanism; production WMI$<0.2$ abstains essentially always because sparse-archive levels sit below a denser-world threshold. These facts are \emph{consistent} with Proposition~\ref{prop:abstain} (thresholds must be frozen to the support they police); they are \emph{not} a successful selective-prediction horse-race. ECP is high ($0.688$ at $\mathrm{conf}>0.7$, $\mathrm{WMI}<0.2$), and actions remain fully evidence-bound ($\mathrm{EAR}=1$).
@@ -551,7 +551,7 @@ Paper-engine daily rows now exist alongside AI-context bundles, and the headline
 The panel covers ten liquid names and durable content only for macro/alternative. The 2017--2026 joint-content proxy shows that two-band rules can fire outside the PIT window ($157$ signal changes) without recreating the PIT CE gap---so unsigned long-span proxies are not a free lunch. Headline identification remains on the vintaged archive; true multi-year \texttt{available\_at} alternative history and denser cross-sections remain first-order.
 
 \paragraph{Multiple testing.}
-The headline mechanism $-$ momentum contrast is a single pre-specified comparison; the menu-wide reality check ($p=0.144$) and a stationary-bootstrap confirmation ($p=0.022$) are reported alongside it. A final submission should still add loss-function variants beyond CRRA $\gamma=2$.
+The headline mechanism $-$ momentum contrast is a single pre-specified comparison; the menu-wide reality check ($p=0.144$), a stationary-bootstrap confirmation ($p=0.022$), a CRRA $\gamma$ grid, and a leave-one-asset jackknife are reported alongside it.
 
 \paragraph{AI-consumer limits.}
 Multi-model Compiled--Raw contrasts validate the AI interface of the theory. They are not substitutes for PIT/LOBO identification and must not be read as unconditional LLM alpha.

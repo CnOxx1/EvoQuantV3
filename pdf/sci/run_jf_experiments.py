@@ -710,6 +710,7 @@ def portfolio_stats(
     pos: pd.Series,
     cost_bps: float = 0.0,
     funding_daily: pd.DataFrame | None = None,
+    risk_aversion: float | None = None,
 ) -> dict:
     """Equal-weight portfolio stats with optional turnover costs and funding.
 
@@ -717,7 +718,9 @@ def portfolio_stats(
     per asset per day (positions in {-1,0,+1}, so a flip costs 2×cost).
     funding_daily: optional DataFrame [date, asset, funding_rate_daily]; longs
     pay positive funding, shorts receive it (perp convention): pnl -= pos*funding.
+    risk_aversion: CRRA γ for certainty equivalent (default ``GAMMA``).
     """
+    gamma = float(GAMMA if risk_aversion is None else risk_aversion)
     tmp = df[["date", "asset", "ret"]].copy() if "asset" in df.columns else df[["date", "ret"]].copy()
     tmp["pos"] = pos.values
     tmp["pnl"] = tmp["pos"] * tmp["ret"]
@@ -737,10 +740,12 @@ def portfolio_stats(
     # CRRA CE on daily equal-weight portfolio
     wealth = (1 + daily).cumprod()
     # certainty equivalent return (daily) then annualize
-    if GAMMA == 1:
+    if abs(gamma - 1.0) < 1e-12:
         ce_daily = float(np.exp(np.log(np.maximum(1 + daily, 1e-8)).mean()) - 1)
     else:
-        ce_daily = float((np.mean(np.maximum(1 + daily, 1e-8) ** (1 - GAMMA))) ** (1 / (1 - GAMMA)) - 1)
+        ce_daily = float(
+            (np.mean(np.maximum(1 + daily, 1e-8) ** (1 - gamma))) ** (1 / (1 - gamma)) - 1
+        )
     max_dd = float((wealth / wealth.cummax() - 1).min())
     abstain_rate = float((pos == 0).mean())
     return {
@@ -752,6 +757,7 @@ def portfolio_stats(
         "abstain_rate": abstain_rate,
         "N_days": int(daily.shape[0]),
         "daily": daily,
+        "risk_aversion": gamma,
     }
 
 

@@ -617,8 +617,9 @@ def build():
     story.append(P(
         "Always-long loses badly in this bear window (CE −1.157); momentum is nearly flat (Sharpe 0.101, CE −0.202); the transparent "
         "rule with band content earns Sharpe 0.767 and CE +0.132, standing aside on 7.5% of asset-days via content-driven vetoes. "
-        "<b>Headline: mechanism − momentum ΔCE = 0.334, p = 0.034, 95% CI [0.03, 0.68] excludes zero.</b> The two policies share all "
-        "return-based inputs and differ only in vintaged macro/alternative content, so this contrast isolates compiled band content.",
+        "IS-frozen ACWMI is secondary (Sharpe 0.654, CE +0.076). "
+        "<b>Headline: mechanism − momentum ΔCE = 0.334, p = 0.034, 95% CI [0.03, 0.68] excludes zero</b> (first row of the bootstrap table). "
+        "The two policies share all return-based inputs and differ only in vintaged macro/alternative content.",
         S["body"],
     ))
     econ = read_csv("table_econ_oos.csv")
@@ -629,8 +630,8 @@ def build():
 
     story.append(P("7.2 Thick vs thin worlds", S["h2"]))
     story.append(P(
-        "The thin exchange-only observer (content AND gating deleted) abstains 45% and earns CE −0.388; the thick world earns +0.132. "
-        "ΔSharpe = 1.62 (p = 0.044, CI excludes zero); ΔCE = 0.52 (p = 0.22, not yet significant at 200 days).",
+        "The thin exchange-only observer (content AND gating deleted) abstains 61% and earns CE −0.404; the thick world earns +0.132. "
+        "ΔSharpe = 1.78 (p = 0.036, CI excludes zero); ΔCE = 0.54 (p = 0.24, not yet significant at 200 days).",
         S["body"],
     ))
     tt = read_csv("table_thin_thick.csv")
@@ -640,11 +641,10 @@ def build():
 
     story.append(P("7.3 Leave-one-band-out: significant, and driven by content", S["h2"]))
     story.append(P(
-        "Deleting macro costs ΔCE −0.418 (p = 0.010); alternative −0.402 (p = 0.008); exchange status −0.056 (p = 0.394; exchange "
-        "content is the return data itself). The decomposition shows the loss runs mainly through the <i>content</i> channel "
-        "(−0.334, p = 0.034 for both bands) with a smaller significant gating contribution (macro −0.066, p = 0.026; alternative "
-        "−0.040, p = 0.044). Band information changes <i>what</i> the rule trades, not merely <i>when</i> it abstains. Content-only "
-        "losses coincide across bands because R2b and the double-risk-off veto require both tilts to agree.",
+        "Under the headline ungated mechanism, deleting macro or alternative costs ΔCE −0.334 (p = 0.034) — exactly the "
+        "mechanism − momentum gap — because content deletion collapses the rule onto momentum. Exchange status deletion costs 0 "
+        "under the ungated rule. The telescoping identity holds exactly: content share of total loss is 1.0 and the gating residual "
+        "after content deletion is 0. Band information changes <i>what</i> the rule trades, not merely <i>when</i> it abstains.",
         S["body"],
     ))
     lobo = read_csv("table_lobo.csv")
@@ -682,11 +682,10 @@ def build():
     story.append(P("7.5 Bootstrap contrasts, costs, and inference robustness", S["h2"]))
     story.append(P(
         "Block-bootstrap (999 × 5-day) contrasts: the mechanism − momentum content contrast is significant (p = 0.034); contrasts "
-        "against always-long remain wide at 200 days. Conclusions are stable across block lengths {5, 10, 21}. The White (2000) "
-        "reality check across the policy menu vs always-long gives p = 0.144 — the menu-wide claim is weaker than the single "
-        "pre-specified content contrast, disclosed side by side. With 10 bps one-way costs the mechanism keeps Sharpe 0.467 "
-        "(CE −0.019 vs momentum −0.352); at 25 bps both are negative but the ranking is preserved; the perp-funding adjustment "
-        "moves CE by less than 0.005. B_hier weight perturbations leave CE unchanged to three decimals.",
+        "against always-long remain wide at 200 days. The relative ΔCE stays in [0.329, 0.334] across CRRA γ ∈ {1,2,4,6} and "
+        "survives 10–25 bps costs; leave-one-asset jackknife keeps ΔCE ∈ [0.302, 0.352]. Stationary bootstrap confirms p = 0.022. "
+        "White (2000) reality check vs always-long: p = 0.144. Compilation-wedge sign-projection raises CE by 0.992 vs thin momentum "
+        "(p = 0.020) even though linear R² stays near zero — value is in implementable signed payoffs, not predictive R².",
         S["body"],
     ))
     try:
