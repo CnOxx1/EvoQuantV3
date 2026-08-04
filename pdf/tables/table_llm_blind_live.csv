@@ -1,0 +1,5 @@
+model,treatment,n,abstain_rate,thin_world_abstain_rate,bullish,bearish,neutral,Sharpe,CE
+gpt-5.4-mini,blind,100,1.0,1.0,0.0,0.0,0.0,0.0,0.0
+deepseek-v4-flash,blind,100,1.0,1.0,0.0,0.0,0.0,0.0,0.0
+glm-5.2,blind,100,1.0,1.0,0.0,0.0,0.0,0.0,0.0
+gemini-3.5-flash-lite,blind,100,1.0,1.0,0.0,0.0,0.0,0.0,0.0

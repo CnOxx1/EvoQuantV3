@@ -174,7 +174,11 @@ def get_provider(name: str):
         )
 
         if not live_llm_configured():
-            return PublicLLMCompiledFollower()
+            raise RuntimeError(
+                f"Live model '{name}' requested but no OPENAI_API_KEY / "
+                "OPENAI_BASE_URL (or TEAMOROUTER_*/LLM_*) configured. "
+                "Refusing silent mock fallback that would contaminate checkpoints."
+            )
         clean = name
         for p in ("openai:", "live:", "teamo:"):
             if clean.lower().startswith(p):
