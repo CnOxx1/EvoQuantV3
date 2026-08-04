@@ -272,12 +272,12 @@ Actions \(\in\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstai
 Listings~\ref{lst:prompt-c}--\ref{lst:prompt-u} excerpt the frozen Compiled and Ungated contracts (temperature \(0\); action schema identical). The only intentional difference is hard vs.\ soft abstention. Raw prompts omit world-quality language entirely.
 
 \begin{lstlisting}[caption={Compiled contract (excerpt).},label={lst:prompt-c}]
-Decision rules:
+Decision rules (excerpt):
 1. If world_model_index.should_ai_abstain is true
    OR the world is thin, you MUST "abstain".
 2. Prefer band content over raw momentum
    (macro_tilt, alt_tilt are PIT-safe).
-4. Rationale must be consistent with evidence_ids.
+3. Rationale must be consistent with evidence_ids.
 \end{lstlisting}
 
 \begin{lstlisting}[caption={Ungated soft contract (excerpt).},label={lst:prompt-u}]
