@@ -1,4 +1,4 @@
-.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-full paper-ai-wm paper-core paper-bootstrap paper-llm-consumer paper-reconcile test-paper
+.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-full paper-ai-wm paper-icaif26 paper-core paper-bootstrap paper-llm-consumer paper-reconcile test-paper
 
 PYTHON ?= python
 export PYTHONPATH := $(CURDIR)
@@ -57,6 +57,9 @@ paper-full: ## 生成完整顶刊工作论文 PDF（英+中；含 AI-WM 变体�
 
 paper-ai-wm: ## AI-for-finance 世界模型运行时叙事 PDF → pdf/sci/main_ai_world_model.pdf
 	$(PYTHON) pdf/sci/generate_full_manuscript_pdf.py --variant ai-wm --skip-chinese
+
+paper-icaif26: ## ICAIF '26 匿名草稿（独立目录 pdf/icaif26/，与 JF 稿隔离）
+	$(PYTHON) pdf/icaif26/generate_icaif26_pdf.py
 
 paper-core: ## World-Model-First 核心中文稿：补图 + PDF
 	$(PYTHON) pdf/sci/generate_core_figures.py

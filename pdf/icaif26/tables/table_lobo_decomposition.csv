@@ -1,0 +1,5 @@
+band,dCE_total,p_total,dCE_content,p_content,dCE_gating_residual,p_gating_residual,dCE_gating_standalone,p_gating_standalone,telescope_ok,content_share_of_total
+exchange,0.0,1.0,,,0.0,1.0,0.0,1.0,True,
+macro,-0.3339,0.034,-0.3339,0.034,0.0,1.0,0.0,1.0,True,1.0
+alternative,-0.3339,0.034,-0.3339,0.034,0.0,1.0,0.0,1.0,True,1.0
+macro+alternative,-0.3339,0.034,-0.3339,0.034,0.0,1.0,,,True,1.0

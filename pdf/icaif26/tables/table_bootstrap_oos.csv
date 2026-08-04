@@ -1,0 +1,7 @@
+contrast,n_days,method,dSharpe,dCE,p_Sharpe,p_CE,n_boot,block,ci_dSharpe_05,ci_dSharpe_95,ci_dCE_05,ci_dCE_95,ci95_excludes_0_CE,ci95_excludes_0_Sharpe
+Mechanism − Momentum,200,circular,0.6664,0.3339,0.034,0.034,999,5,0.0552,1.4781,0.028,0.6768,True,True
+Mechanism − Always long,200,circular,2.1664,1.2887,0.296,0.246,999,5,-2.2354,6.3169,-0.9963,3.5152,False,False
+ACWMI − Always long,200,circular,2.0525,1.2332,0.326,0.264,999,5,-2.3153,6.1876,-1.1011,3.4577,False,False
+ACWMI − Momentum always,200,circular,0.5526,0.2783,0.106,0.104,999,5,-0.1202,1.3873,-0.057,0.6342,False,False
+Thick ungated − ACWMI,200,circular,0.1139,0.0556,0.2,0.232,999,5,-0.0675,0.3814,-0.0336,0.1673,False,False
+ACWMI − WMI threshold (0.2),200,circular,0.6535,0.0764,0.576,0.906,999,5,-2.0541,3.2063,-1.2364,1.2439,False,False

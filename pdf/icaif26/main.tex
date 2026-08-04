@@ -1,0 +1,182 @@
+%% ICAIF '26 submission draft (anonymous, ~8 pages target).
+%% Isolated from pdf/sci/ (JF/RFS) materials — submit only from pdf/icaif26/.
+%%
+%% TO COMPILE FOR CMT (recommended: Overleaf):
+%%   1) Switch the documentclass line below to:
+%%        \documentclass[sigconf,anonymous,review]{acmart}
+%%   2) Uncomment the ACM metadata block.
+%%   3) Use ACM-Reference-Format / refs.bib.
+%% Fallback twocolumn article is for local drafting without acmart.cls.
+
+\documentclass[10pt,twocolumn]{article}
+% \documentclass[sigconf,anonymous,review]{acmart}  % <-- use this on Overleaf
+
+\usepackage[margin=0.7in]{geometry}
+\usepackage{times}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage[numbers,sort&compress]{natbib}
+\setlist{nosep,leftmargin=*}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+%% ACM metadata (uncomment with acmart):
+% \acmConference[ICAIF '26]{7th ACM International Conference on AI in Finance}{November 14--17, 2026}{Milan, Italy}
+% \setcopyright{none}
+% \copyrightyear{2026}
+% \acmYear{2026}
+
+\title{\bf Financial World-Model Runtime:\\
+Compiling Asynchronous Market Evidence for LLM Agents}
+
+\author{Anonymous Author(s)\\
+\normalsize Anonymous Affiliation}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Large language models and autonomous agents increasingly consume market evidence, yet raw financial feeds are asynchronous, intermittently missing, and quality-heterogeneous. Generative world models assume a usable observation stream; financial agents often lack that stream. We propose a \emph{financial world-model runtime}: a point-in-time compiler that maps raw multi-band evidence into an AI-consumable world state with explicit quality scores and abstention. The primitive object is an epistemic observation \(O_{j,t}=(x,\tau,q,g,r)\); a compilation operator \(\Pi_t\) yields \(\mathcal{F}^{\mathrm{AI}}_t\); world-quality indices (WMI/ACWMI) gate actions. Empirically, on a cryptocurrency PIT panel, vintaged macro and stablecoin-flow \emph{content} changes a transparent consumer rule relative to same-input momentum (\(\Delta\)CE \(0.334\), \(p{=}0.034\)), with leave-one-band-out losses dominated by content rather than gating. A Compiled-versus-Raw consumer protocol tests the agent interface. Trading metrics validate that the compiled world has content; they do not claim a strategy Holy Grail.
+\end{abstract}
+
+\noindent\textbf{Keywords:} world models, LLM agents, information-set compilation, selective prediction, point-in-time, cryptocurrency
+
+\section{Introduction}
+\label{sec:intro}
+
+AI agents that analyze or trade markets do not observe a clean panel. Venue fragmentation, derivatives surfaces, on-chain flows, news, and macro vintages arrive on incompatible clocks~\cite{makarov2020,liu2022}. Parallel literatures on machine-learning asset pricing~\cite{gu2020,kelly2019,nagel2021} and on generative world models~\cite{ha2018world,hafner2020dreamer,lecun2022path} largely assume that observations are already aligned for learning or control. For LLM and tool-using agents~\cite{brown2020gpt3,yao2023react}, the prior systems problem is different: \emph{compile} asynchronous evidence into a world state that can be read, refused when thin, and acted on when ready.
+
+\paragraph{Thesis.}
+We build a financial \emph{world-model runtime}: an observation-side world model that compiles raw market evidence into a quality-tagged state for AI consumers. Trading statistics are instruments that show this world has nonempty content---not a claim of unconditional strategy alpha.
+
+\paragraph{Contributions.}
+(1)~\textbf{Semantics:} epistemic observations, compilation operator \(\Pi_t\), reconstruction bound (delay/noise/missingness), WMI/ACWMI, and world-conditional abstention.
+(2)~\textbf{Runtime:} a reproducible PIT multi-band system exposing quality-tagged bundles, availability shocks, and a Compiled-versus-Raw consumer protocol.
+(3)~\textbf{Validation:} on a real PIT archive, compiled macro/alternative content yields a significant OOS certainty-equivalent gap versus same-input momentum, with content-dominated LOBO ablations.
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{World models in AI.}
+World models learn compact states and (often) dynamics for imagination and control~\cite{ha2018world,hafner2020dreamer,lecun2022path}. We address the complementary \emph{observation-side} problem in markets: constructing a PIT-safe state with explicit quality before any dynamics model or LLM policy is applied.
+
+\paragraph{LLM agents in finance.}
+LLM workflows increasingly call tools and act on streams~\cite{yao2023react}. Without a compiled world interface, agents face stale, ungated, or role-incoherent evidence. Our runtime supplies that interface.
+
+\paragraph{Selective prediction.}
+Refusing to predict can be optimal under noise~\cite{elyaniv2010,geifman2017}. We tie abstention to world quality rather than classifier confidence alone.
+
+\paragraph{PIT measurement and crypto structure.}
+Macro vintages~\cite{croushore2001} and crypto fragmentation~\cite{makarov2020,liu2022} motivate multi-band compilation. Inference uses bootstrap and snooping discipline~\cite{white2000,politis1994,harvey2016}.
+
+\section{Financial World-Model Runtime}
+\label{sec:method}
+
+\begin{definition}[Epistemic observation]
+An AI-consumable observation is \(O_{j,t}=(x_{j,t},\tau_{j,t},q_{j,t},g_{j,t},r_{j,t})\): value, latest-available time, quality, main-view gate, and semantic role. Identical \(x\) with different \((\tau,q,g,r)\) are different world objects.
+\end{definition}
+
+\begin{definition}[Compilation]
+Let \(\mathcal{F}^{\mathrm{raw}}_t=\sigma(\{X^{\mathrm{obs}}_{j,\tau}\})\) and \(W_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t)\) with \(\Pi_t=B_t\circ M_t\circ A_t\) (align, missingness/honesty gates, band assembly). The AI filtration is \(\mathcal{F}^{\mathrm{AI}}_t=\sigma(W_t)\).
+\end{definition}
+
+\paragraph{World quality.}
+Breadth \(B_t\), stability \(U_t\), and honesty \(H_t\) yield \(\mathrm{WMI}_t=B_t U_t H_t\). A geometric ACWMI variant is used for regime-conditional gating. Reconstruction error admits a delay/noise/missingness bound under Lipschitz observation maps (omitted for space).
+
+\begin{proposition}[Compilation \(\neq\) feature expansion]
+Enlarging \(\mathcal{F}^{\mathrm{raw}}\) without a well-defined \(\Pi_t\) need not enlarge decision-relevant \(\mathcal{F}^{\mathrm{AI}}\): stale or role-incoherent evidence can raise raw span while lowering usable world quality via \(H_t\) and \(U_t\).
+\end{proposition}
+
+\begin{proposition}[World-conditional abstention]
+If every non-abstain action has expected loss above a world-dependent cost \(c_{\mathrm{abs}}(W_t)\), the Bayes action is abstain. With costs weakly decreasing in WMI, abstention is a lower set in world quality~\cite{elyaniv2010}.
+\end{proposition}
+
+\begin{definition}[LOBO content vs.\ gating]
+Band \(k\)'s economic value decomposes into a \emph{content} channel (changes the action map) and a \emph{gating} channel (changes readiness/abstention only).
+\end{definition}
+
+\begin{remark}[Scope vs.\ generative WMs]
+We do not claim a learned \(p(s_{t+1}\mid s_t,a_t)\). This paper delivers a \emph{state compiler + abstention runtime}; generative dynamics are orthogonal future work.
+\end{remark}
+
+\section{System}
+\label{sec:system}
+
+The prototype runtime (anonymized) implements: (i)~multi-band collectors into vintage-aware stores; (ii)~BandPIT reconstruction under a previous-close decision clock---positions earning return \(r_t\) use information known at \((t{-}1)\,23{:}59\); (iii)~readiness, WMI/ACWMI, and paper engine snapshots; (iv)~availability-shock queries \(O_t\); (v)~quality-tagged AI bundles; (vi)~a Compiled-versus-Raw consumer protocol with frozen prompts, temperature \(0\), and action schema \(\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}\).
+
+Durable historical bands in the present archive are \(\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}\); news/on-chain/options/tokenomics remain right-censored and are not identifying.
+
+\section{Experiments}
+\label{sec:exp}
+
+\paragraph{Setup.}
+PIT panel: \(\sim\)399 days, 10 liquid crypto names, previous-close clock, IS/OOS split \(200/200\). Pre-specified contrast: \textbf{mechanism (band content) $-$ momentum}, sharing all return-based inputs. Metrics: annualized Sharpe and CRRA CE (\(\gamma{=}2\)). Inference: circular block bootstrap (\(n{=}999\), block \(5\)) with stationary-bootstrap confirmation.
+
+\paragraph{RQ1: Does compiled content matter?}
+Ungated mechanism Sharpe/CE \(0.767/0.132\) vs.\ momentum \(0.101/-0.202\). Headline \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\); stationary \(p{=}0.022\)). Relative gap remains significant at \(10\)--\(25\)bps costs even though absolute mechanism CE turns negative---content value, not a frictionless mandate.
+
+\paragraph{RQ2: Content vs.\ gating.}
+Under the ungated mechanism, deleting macro or alternative collapses the rule onto momentum (\(\Delta\mathrm{CE}{=}-0.334\), \(p{=}0.034\)); content share of LOBO loss is \(1.0\) and gating residual is \(0\). This identifies the content channel of the world state; denser archives are needed for nontrivial gating identification.
+
+\paragraph{RQ3: Agent interface.}
+Compiled-versus-Raw offline consumers keep the protocol executable without API keys. We report protocol smoke results and evidence-binding (EAR\({\approx}1\)); we do \emph{not} claim live LLM trading alpha. The estimand is unchanged when live vendors replace mocks.
+
+\paragraph{RQ4: External audit.}
+On \(2017\)--\(2026\) without vintaged band archives, the return-based core shows no hidden edge over momentum; joint unsigned content proxies can fire signals without recreating the PIT CE gap. Gains load on compiled PIT content, not a secret return rule.
+
+\begin{table}[t]
+\centering
+\small
+\caption{OOS economic value (content validation).}
+\label{tab:econ}
+\begin{tabular}{lrrrr}
+\toprule
+Policy & Sharpe & CE & Abstain & \(N\) \\
+\midrule
+Always long & $-1.399$ & $-1.157$ & $0.00$ & 200 \\
+Momentum always & $0.101$ & $-0.202$ & $0.00$ & 200 \\
+Thick ungated (mech.) & $0.767$ & $0.132$ & $0.075$ & 200 \\
+ACWMI (IS-frozen) & $0.654$ & $0.076$ & $0.127$ & 200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Pre-specified contrast and LOBO (ungated mechanism).}
+\label{tab:boot}
+\begin{tabular}{lrrr}
+\toprule
+Contrast / deletion & \(\Delta\)CE & \(p\) & Note \\
+\midrule
+Mechanism $-$ Momentum & $0.334$ & $0.034$ & headline \\
+Drop macro content & $-0.334$ & $0.034$ & \(\to\) momentum \\
+Drop alternative & $-0.334$ & $0.034$ & \(\to\) momentum \\
+Content share of LOBO & $1.0$ & --- & gating resid.\ $0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Limitations}
+\label{sec:limit}
+
+The archive is sparse outside exchange/macro/alternative bands; WMI thresholds must be support-matched. Absolute CE is cost-fragile. Consumer tests are protocol-first (mocks). We provide an observation-side world-model runtime, not a full generative dynamics model. Menu-wide superiority versus always-long is not claimed.
+
+\section{Conclusion}
+\label{sec:conc}
+
+Financial AI agents need a world to read. We formalize and implement a world-model runtime that compiles asynchronous evidence into an analyzable, abstention-aware, tradeable state, and we show that compiled band content is economically nonempty under a disciplined PIT design. Generative dynamics and live multi-vendor LLM consumers are natural next layers on the same interface.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
