@@ -49,6 +49,12 @@ split_is_oos = _jf.split_is_oos
 strategy_positions = _jf.strategy_positions
 from logic_layer.asset_readiness.service import AssetReadinessService
 from logic_layer.ai_market_context.service import AIMarketContextService
+from pdf.sci.experiment_config import (
+    config_manifest,
+    content_bands,
+    hist_bands,
+    load_experiment_config,
+)
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 TAB = Path(__file__).resolve().parents[1] / "tables"
@@ -57,9 +63,10 @@ OUT = Path(__file__).resolve().parent
 TAB.mkdir(parents=True, exist_ok=True)
 FIG.mkdir(parents=True, exist_ok=True)
 
+_CFG = load_experiment_config()
 BANDS = list(AssetReadinessService.BAND_WEIGHTS.keys())
-HIST_BANDS = ["exchange", "macro", "alternative"]  # durable history in archive
-CONTENT_BANDS = {"macro": "macro_tilt", "alternative": "alt_tilt"}
+HIST_BANDS = hist_bands()  # durable history in archive
+CONTENT_BANDS = content_bands()
 DB_DIR = ROOT / "database"
 
 
@@ -264,12 +271,139 @@ def attach_engines(pit: pd.DataFrame, content: pd.DataFrame | None = None) -> pd
             rows.append(rec)
             hist.append(float(r["ret"]))
     df = pd.DataFrame(rows)
-    # Relative scarcity shock: top quintile of thinness (1-B_hier) within sample
-    thr = df["B_hier"].quantile(0.20)
-    df["scarce"] = (df["B_hier"] <= thr).astype(int)
+    df = assign_scarce_expanding(df)
     # Prefer scarce days as identifying states when hard outages are rare in continuous backfills
     df["outage_id"] = ((df["outage"] == 1) | (df["scarce"] == 1)).astype(int)
     return df
+
+
+def assign_scarce_expanding(df: pd.DataFrame) -> pd.DataFrame:
+    """Label scarce-world days with an expanding (causal) B_hier quantile.
+
+    Avoids full-sample look-ahead that would contaminate event-study labels.
+    """
+    out = df.copy()
+    scarce_cfg = _CFG["scarce_world"]
+    q = float(scarce_cfg["quantile"])
+    min_hist = int(scarce_cfg["min_history_days"])
+    daily = (
+        out.groupby("date", sort=True)["B_hier"]
+        .mean()
+        .rename("B_mkt")
+        .to_frame()
+        .sort_index()
+    )
+    thr = []
+    vals = daily["B_mkt"].to_numpy()
+    for i in range(len(daily)):
+        if i < min_hist:
+            thr.append(np.nan)
+        else:
+            thr.append(float(np.nanquantile(vals[:i], q)))
+    daily["scarce_thr"] = thr
+    daily["scarce"] = ((daily["B_mkt"] <= daily["scarce_thr"]) & daily["scarce_thr"].notna()).astype(int)
+    out = out.merge(daily[["scarce", "scarce_thr"]], left_on="date", right_index=True, how="left")
+    out["scarce"] = out["scarce"].fillna(0).astype(int)
+    return out
+
+
+def scramble_band_content(df: pd.DataFrame, seed: int = 17) -> pd.DataFrame:
+    """Date-scramble macro/alt tilts (preserve marginals, destroy timing).
+
+    Placebo for the content channel: if OOS value survives scrambling, the
+    apparent band MIG is not coming from correctly timed compiled content.
+    """
+    out = df.copy()
+    dates = np.array(sorted(out["date"].unique()))
+    rng = np.random.default_rng(seed)
+    perm = dates.copy()
+    rng.shuffle(perm)
+    mapping = dict(zip(dates, perm))
+    tilt_src = (
+        out.groupby("date", sort=True)[["macro_tilt", "alt_tilt"]]
+        .mean()
+        .to_dict(orient="index")
+    )
+    new_m, new_a, new_C, new_sig, new_ac = [], [], [], [], []
+    for _, r in out.iterrows():
+        src = tilt_src[mapping[r["date"]]]
+        m_tilt = float(src["macro_tilt"])
+        a_tilt = float(src["alt_tilt"])
+        # Respect PIT readiness after scramble (content unusable if band not ready)
+        if str(r.get("st_macro", "missing")) != "ready":
+            m_tilt = 0.0
+        if str(r.get("st_alternative", "missing")) != "ready":
+            a_tilt = 0.0
+        base_signs = json.loads(r["signs_json"]) if isinstance(r.get("signs_json"), str) else []
+        ext = base_signs + [t for t in (m_tilt, a_tilt) if t != 0]
+        C = consistency_from_signs(ext) if len(ext) >= 2 else float(r["C_base"])
+        eng = {
+            "detected_regime": r["detected_regime"],
+            "cascade_p": float(r["cascade_p"]),
+            "mom5": float(r["mom5"]),
+            "macro_tilt": m_tilt,
+            "alt_tilt": a_tilt,
+        }
+        sig = directional_signal(eng)
+        gamma = REGIME_GAMMA.get(r["detected_regime"], REGIME_GAMMA["range"])
+        ac = acwmi(r["B_hier"], r["U"], r["H_cont"], r["S"], C, gamma)
+        new_m.append(m_tilt)
+        new_a.append(a_tilt)
+        new_C.append(C)
+        new_sig.append(sig)
+        new_ac.append(ac)
+    out["macro_tilt"], out["alt_tilt"] = new_m, new_a
+    out["C"], out["signal"], out["ACWMI"] = new_C, new_sig, new_ac
+    return out
+
+
+def event_study_availability(df: pd.DataFrame) -> pd.DataFrame:
+    """Event study around hard availability shocks (outage==1), not scarce proxies."""
+    agg = {
+        "ret": ("ret", "mean"),
+        "WMI": ("WMI", "mean"),
+        "ACWMI": ("ACWMI", "mean"),
+        "outage": ("outage", "max"),
+        "B": ("B_hier", "mean"),
+    }
+    if "market_outage" in df.columns:
+        agg["market_outage"] = ("market_outage", "max")
+    daily = df.groupby("date").agg(**agg).sort_index()
+    if "market_outage" not in daily.columns:
+        daily["market_outage"] = 0
+    events = daily.index[(daily["outage"] == 1) | (daily["market_outage"] == 1)]
+    gap = int(_CFG["scarce_world"]["event_gap_days"])
+    kept = []
+    last = None
+    for e in events:
+        if last is None or (pd.Timestamp(e) - pd.Timestamp(last)).days >= gap:
+            kept.append(e)
+            last = e
+    rows = []
+    for k in range(-3, 4):
+        vals = []
+        for e in kept:
+            idx = daily.index.get_indexer([e])[0]
+            j = idx + k
+            if 0 <= j < len(daily):
+                vals.append(daily.iloc[j][["ret", "WMI", "ACWMI", "B"]].to_dict())
+        if not vals:
+            continue
+        m = pd.DataFrame(vals).mean()
+        rows.append(
+            {
+                "k": k,
+                "ret": round(float(m["ret"]), 5),
+                "WMI": round(float(m["WMI"]), 4),
+                "ACWMI": round(float(m["ACWMI"]), 4),
+                "B_hier": round(float(m["B"]), 4),
+                "N": len(vals),
+                "n_events": len(kept),
+            }
+        )
+    out = pd.DataFrame(rows)
+    out.to_csv(TAB / "table_ot_availability_event_study.csv", index=False)
+    return out
 
 
 def delete_band_content(df: pd.DataFrame, bands: list[str]) -> pd.DataFrame:
@@ -508,12 +642,75 @@ def main() -> None:
                 "p_gating": stats["gating"][1].get("p_CE"),
             }
         )
+
+    # Joint content+gating deletion of macro AND alternative (orthogonality check)
+    d_joint_g = recompute_world(df, drop_band="macro")
+    d_joint_g = recompute_world(d_joint_g, drop_band="alternative")
+    d_joint = delete_band_content(d_joint_g, ["macro", "alternative"])
+    d_joint = rebuild_acwmi(d_joint)
+    _, oos_j, _ = split_is_oos(d_joint)
+    st_j = portfolio_stats(oos_j, strategy_positions(oos_j, "ac", params))
+    bp_j = bootstrap_delta_pvalues(st_j["daily"], base_daily, n_boot=_CFG["inference"]["n_boot"], block=_CFG["inference"]["block"])
+    lobo_rows.append(
+        {
+            "band_dropped": "macro+alternative",
+            "Sharpe": round(st_j["Sharpe"], 3),
+            "CE": round(st_j["CE"], 4),
+            "abstain_rate": round(st_j["abstain_rate"], 3),
+            "dCE": round(st_j["CE"] - base["CE"], 4),
+            "p_dCE": bp_j.get("p_CE"),
+        }
+    )
+    d_joint_content = delete_band_content(df, ["macro", "alternative"])
+    _, oos_jc, _ = split_is_oos(d_joint_content)
+    st_jc = portfolio_stats(oos_jc, strategy_positions(oos_jc, "ac", params))
+    bp_jc = bootstrap_delta_pvalues(st_jc["daily"], base_daily, n_boot=_CFG["inference"]["n_boot"], block=_CFG["inference"]["block"])
+    decomp_rows.append(
+        {
+            "band": "macro+alternative",
+            "dCE_total": round(st_j["CE"] - base["CE"], 4),
+            "p_total": bp_j.get("p_CE"),
+            "dCE_content_only": round(st_jc["CE"] - base["CE"], 4),
+            "p_content": bp_jc.get("p_CE"),
+            "dCE_gating_only": None,
+            "p_gating": None,
+        }
+    )
+
     lobo = pd.DataFrame(lobo_rows)
     lobo.to_csv(TAB / "table_lobo.csv", index=False)
     print(lobo)
     lobo_decomp = pd.DataFrame(decomp_rows)
     lobo_decomp.to_csv(TAB / "table_lobo_decomposition.csv", index=False)
     print(lobo_decomp)
+
+    # Scrambled-content placebo: destroy tilt timing, keep marginals
+    print("Scrambled content placebo...")
+    d_scr = scramble_band_content(df, seed=17)
+    _, oos_scr, _ = split_is_oos(d_scr)
+    st_scr = portfolio_stats(oos_scr, strategy_positions(oos_scr, "thick_ungated", params))
+    st_base_ungated = portfolio_stats(oos0, strategy_positions(oos0, "thick_ungated", params))
+    bp_scr = bootstrap_delta_pvalues(
+        st_scr["daily"],
+        st_base_ungated["daily"],
+        n_boot=_CFG["inference"]["n_boot"],
+        block=_CFG["inference"]["block"],
+    )
+    placebo = {
+        "design": "date-scramble macro_tilt/alt_tilt (seed=17)",
+        "base_CE": round(st_base_ungated["CE"], 4),
+        "scrambled_CE": round(st_scr["CE"], 4),
+        "dCE_scrambled_minus_base": round(st_scr["CE"] - st_base_ungated["CE"], 4),
+        "p_CE": bp_scr.get("p_CE"),
+        "interpretation": (
+            "Placebo should not beat the timed-content rule; "
+            "negative dCE supports correctly timed compiled content."
+        ),
+    }
+    (TAB / "table_content_scramble_placebo.json").write_text(
+        json.dumps(placebo, indent=2), encoding="utf-8"
+    )
+    print(placebo)
 
     # Thin vs thick using real statuses. Thin world deletes BOTH the gating
     # channel (band statuses → missing) and the content channel (tilts zeroed):
@@ -686,6 +883,8 @@ def main() -> None:
 
     ev = event_study_scarce(df)
     print(ev)
+    ev_ot = event_study_availability(df)
+    print("O_t availability event study rows", len(ev_ot))
 
     # archive inventory for paper
     summary = json.loads((DATA / "pit_archive_summary.json").read_text())
@@ -696,6 +895,10 @@ def main() -> None:
         "frozen_thresholds": params,
         "hist_bands": HIST_BANDS,
         "timeslice_months": int(len(ts_grid)),
+        "experiment_config": config_manifest(),
+        "pre_specified_contrast": _CFG["pre_specified_contrast"],
+        "scarce_world_method": _CFG["scarce_world"]["method"],
+        "content_scramble_placebo": placebo,
     }
     (TAB / "table1_project_inventory.json").write_text(json.dumps(inv, indent=2, default=str), encoding="utf-8")
 
@@ -793,8 +996,12 @@ def main() -> None:
         "- Exchange/macro/alternative have durable DB history; news/onchain/options/tokenomics are mostly collection-day right-censored.",
         "- Band content (macro_tilt from vintaged VIX/DXY; alt_tilt from stablecoin 7d net supply) enters R2/R2b/R3 and C directly;",
         "  tilts are forced to 0 whenever the band is not PIT-ready, so LOBO deletes content, not only gating.",
-        "- Natural hard outages are rare in continuous OKX backfill; scarce-world states use bottom B_hier quintile for event study.",
+        "- Natural hard outages are rare in continuous OKX backfill; scarce-world states use expanding B_hier quantile (no full-sample look-ahead).",
+        "- Hard O_t availability event study exported to table_ot_availability_event_study.csv.",
+        "- Joint macro+alternative LOBO and date-scrambled content placebo are reported.",
         "- Mechanism signal is the deterministic R1–R3 rule in `directional_signal` (no latent model).",
+        "- Timing protocol: decision_at_prev_close (features at t-1 23:59; payoff = day-t close-to-close).",
+        f"- Experiment config: `{config_manifest()}`.",
         "- time_slice grid exported to table_timeslice_grid.csv (analytics snapshots still sparse historically).",
     ]
     (OUT / "EXPERIMENT_RESULTS.md").write_text("\n".join(lines), encoding="utf-8")
@@ -817,6 +1024,9 @@ def main() -> None:
                 "mechanism_definition": mech_def.to_dict(orient="records"),
                 "mechanism_by_regime": mech_sum.to_dict(orient="records"),
                 "event_study": ev.to_dict(orient="records"),
+                "ot_availability_event_study": ev_ot.to_dict(orient="records"),
+                "content_scramble_placebo": placebo,
+                "experiment_config": config_manifest(),
             },
             indent=2,
             default=str,

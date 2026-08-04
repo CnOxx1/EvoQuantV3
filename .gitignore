@@ -36,3 +36,6 @@ database/*.db-wal
 *.sqlite3
 
 papers/
+
+# LLM consumer full transcripts (summaries live under pdf/tables/)
+pdf/sci/llm_consumer/transcripts/*.jsonl

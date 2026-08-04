@@ -1,4 +1,4 @@
-.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-full paper-core paper-bootstrap test-paper
+.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-full paper-core paper-bootstrap paper-llm-consumer paper-reconcile test-paper
 
 PYTHON ?= python
 export PYTHONPATH := $(CURDIR)
@@ -16,8 +16,8 @@ test-all: ## 运行全部测试
 test-fast: ## 只运行集成测试和新模块测试
 	$(PYTHON) -m pytest tests/integration tests/test_*.py -q
 
-test-paper: ## 论文服务相关单元测试
-	$(PYTHON) -m pytest tests/test_paper_lab.py tests/ai_market_context tests/time_slice -q
+test-paper: ## 论文服务相关单元测试（含 JF 识别不变量与 LLM consumer）
+	$(PYTHON) -m pytest tests/test_paper_lab.py tests/test_jf_inference.py tests/test_jf_identification.py tests/test_llm_consumer.py tests/ai_market_context tests/time_slice -q
 
 lint: ## 代码检查（ruff）
 	$(PYTHON) -m ruff check .
@@ -59,7 +59,13 @@ paper-core: ## World-Model-First 核心中文稿：补图 + PDF
 	$(PYTHON) pdf/sci/generate_core_figures.py
 	$(PYTHON) pdf/sci/generate_core_manuscript_pdf.py
 
-paper-lab: ## 一键：PIT → JF 实证 → 核心稿 PDF（加 WITH_BOOTSTRAP=1 先采集）
+paper-reconcile: ## Yahoo vs 交易所收益对账审计
+	$(PYTHON) pdf/sci/reconcile_returns.py
+
+paper-llm-consumer: ## Compiled vs Raw AI-consumer 验证（默认 mock，无 API key）
+	$(PYTHON) -m pdf.sci.llm_consumer.eval
+
+paper-lab: ## 一键：PIT → JF 实证 → LLM consumer → 核心稿 PDF（加 WITH_BOOTSTRAP=1 先采集）
 	@if [ "$(WITH_BOOTSTRAP)" = "1" ]; then \
 		$(PYTHON) pdf/sci/paper_lab.py all --with-bootstrap; \
 	else \

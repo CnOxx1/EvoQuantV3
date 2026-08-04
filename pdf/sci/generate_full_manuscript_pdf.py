@@ -266,13 +266,14 @@ def build():
         S["abs"],
     ))
     story.append(P(
-        f"Empirically, on a {pit.get('n_days', 400)}-day, 10-asset PIT panel ({pit.get('n_rows', 4000)} asset-days), vintage-safe "
-        "macro (VIX/DXY) and stablecoin-flow content enters a fully transparent action rule. Deleting the macro or alternative band "
-        "destroys OOS certainty-equivalent returns (ΔCE −0.42 / −0.40; block-bootstrap p = 0.010 / 0.008), and a decomposition shows "
-        "the loss operates through the <i>content</i> channel, not only through abstention gating. The transparent rule beats momentum "
-        "out of sample (ΔCE 0.334, p = 0.034, CI excludes zero) while a 2017–2026 long-span audit shows it has no unconditional edge "
-        "over momentum — evidence that gains come from compiled band content, not from a hidden return predictor. Results survive "
-        "10 bps costs and perpetual-funding adjustments; inference carries block-length sensitivity and a reality-check correction.",
+        f"Empirically, on a real PIT multi-band panel ({pit.get('n_days', 400)} days × 10 assets; durable bands: exchange, macro, "
+        "alternative), vintage-safe macro and stablecoin-flow <i>content</i> enters a transparent action rule under a previous-close "
+        "decision clock. The pre-specified contrast—mechanism versus same-input momentum—is positive OOS (ΔCE 0.334, p = 0.034). "
+        "LOBO deletions of macro or alternative destroy value (ΔCE −0.42 / −0.40; p = 0.010 / 0.008), mainly through the content "
+        "channel; joint deletion and a date-scrambled content placebo discipline redundancy and timing. A 2017–2026 audit shows no "
+        "unconditional edge over momentum when band archives are absent. Menu-wide claims versus always-long remain weaker after a "
+        "reality-check correction. A pre-registered multi-model AI-consumer protocol (Compiled vs Raw) is secondary validation of "
+        "the theory’s AI interface, not primary identification.",
         S["abs"],
     ))
     story.append(P(
@@ -716,8 +717,34 @@ def build():
     ))
 
     story.append(PageBreak())
-    # 8 Robustness
-    story.append(P("8. Robustness, threats, and the JF/RFS agenda", S["h1"]))
+    # 8 AI-consumer validation (secondary)
+    story.append(P("8. AI-consumer validation (secondary)", S["h1"]))
+    story.append(P(
+        "The SDF interface and world-conditional abstention are statements about agents that condition on "
+        "ℱ<sup>AI</sup><sub>t</sub>. We pre-register a <i>within-model</i> Compiled versus Raw protocol: for each model m, "
+        "Δ<sub>m</sub> = V<sub>m</sub>(Compiled) − V<sub>m</sub>(Raw), with frozen prompts, temperature 0, and the same action "
+        "schema {bullish, bearish, neutral, abstain}. Compiled bundles expose PIT-safe epistemic fields and abstention guidance; "
+        "Raw bundles expose only thin return/momentum views. The estimand is the cross-model mean Δ̄, not a vendor leaderboard. "
+        "Offline deterministic mock consumers ship in the replication package (pdf/sci/llm_consumer/) so the protocol is "
+        "CI-testable without API keys; live vendors may be substituted behind the same interface. This design is deliberately "
+        "secondary to PIT/LOBO identification.",
+        S["body"],
+    ))
+    llm_path = TAB / "table_llm_consumer_summary.json"
+    if llm_path.exists():
+        try:
+            llm = json.loads(llm_path.read_text(encoding="utf-8"))
+            story.append(P(
+                f"Offline mock suite on the current OOS window: mean ΔCE(Compiled−Raw) = {llm.get('mean_dCE')}; "
+                f"models = {', '.join(llm.get('models') or [])}. Interpret as protocol smoke / calibration check, not as "
+                "unconditional LLM alpha.",
+                S["body"],
+            ))
+        except Exception:
+            pass
+
+    # 9 Robustness
+    story.append(P("9. Robustness, threats, and the JF/RFS agenda", S["h1"]))
     for line in [
         "<b>Right-censored bands.</b> News/on-chain/options/tokenomics lack durable history; continuous multi-year collection is required.",
         "<b>Content vintages.</b> Band-content identification rests on a single 400-day archive window; extend content calendars to multiple regimes.",
@@ -728,8 +755,14 @@ def build():
     ]:
         story.append(P(line, S["body"]))
 
-    # 9 Conclusion
-    story.append(P("9. Conclusion", S["h1"]))
+    story.append(P(
+        "<b>Timing / ACWMI disclosure.</b> Features for earning r<sub>t</sub> are evaluated at (t−1) 23:59. Live API bundles "
+        "disclose acwmi_input_source ∈ {paper_engines, production_proxy}; paper empirics use engine (S,C).",
+        S["body"],
+    ))
+
+    # 10 Conclusion
+    story.append(P("10. Conclusion", S["h1"]))
     story.append(P(
         "Information-set compilation is a first-order object in cryptocurrency markets. This paper develops the RCA-WM / ACWMI theory "
         "as a proposition chain — compilation ≠ feature expansion, an SDF interface, reconstruction bounds, world-conditional "

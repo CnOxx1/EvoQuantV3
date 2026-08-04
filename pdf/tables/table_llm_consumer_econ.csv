@@ -1,0 +1,7 @@
+model,treatment,ann_return,Sharpe,CE,abstain_rate,prompt_hash
+mock-compiled-aware,compiled,0.0156,1.351,0.0155,0.995,26821a1714b401b1
+mock-compiled-aware,raw,0.0506,0.101,-0.2019,0.0,c581dfee8ae10e94
+mock-momentum,compiled,0.0506,0.101,-0.2019,0.0,26821a1714b401b1
+mock-momentum,raw,0.0506,0.101,-0.2019,0.0,c581dfee8ae10e94
+mock-noisy,compiled,0.0156,1.351,0.0155,0.0,26821a1714b401b1
+mock-noisy,raw,0.0754,0.314,0.0181,0.0,c581dfee8ae10e94
