@@ -415,7 +415,7 @@ Ungated rationales cite disclosed world fields on \(53\)--\(93\%\) of days, so m
 World-honoring offline followers abstain at \(1.0\) on full OOS; momentum-only mocks ignore thin-world flags (thin-abs.\ \(0\)). Offline results are protocol checks; live vendors are the main claim.
 
 \paragraph{When would the contract open?}
-Compiled never trades on this OOS panel because \(\max\mathrm{WMI}\approx 0.093\) lies below the production threshold \(0.2\). That is the scarce-support stress test. The contract is not permanently closed: a counterfactual threshold of \(0.05\) would mark \(61\%\) of OOS asset-days as open---exactly the band-thick archive slice---and Sec.~\ref{sec:econ} shows the same vintaged tilts are economically nonempty on that slice (\(\Delta\mathrm{CE}\) vs.\ momentum \(0.316\)). Live LLM trading under an opened contract is left to denser vintages; here we validate refuse reliability under sparse support and content nonemptiness without an LLM in the loop.
+Compiled never trades on this OOS panel because \(\max\mathrm{WMI}\approx 0.093\) lies below the production threshold \(0.2\). That is the scarce-support stress test. The contract is not permanently closed. A counterfactual open rule \(\mathrm{WMI}\ge 0.05\) marks \(n{=}1224\) asset-days (\(61\%\) of OOS)---identical to the band-thick archive slice. On those open days alone, the same no-LLM content rule \emph{acts} on \(92\%\) of days and beats momentum (CE \(+0.061\) vs.\ \(-0.254\); \(\Delta\mathrm{CE}{=}0.315\); Table~\ref{tab:dense}). So when the contract would open, the compiled world is not an empty refuse switch: it carries tradable tilts. Live LLM trading under an opened contract is left to denser vintages; here we validate refuse reliability under sparse support and content nonemptiness without an LLM in the loop.
 
 \subsection{RQ2: Non-trading cognition---grounding workflow}
 \label{sec:grounding}
@@ -444,8 +444,8 @@ The compiled world should also support analysis, not only trade/abstain decision
 \label{sec:econ}
 RQ1--RQ2 concern the interface. RQ3 asks whether the compiled tilts are economically nonempty. A transparent rule shares return inputs with momentum and adds vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\)---no LLM in the loop. Out-of-sample (\(199\) days \(\times\) \(10\) assets) this content rule beats the baselines (Table~\ref{tab:econ}, Figure~\ref{fig:econ}): Sharpe \(0.764\) / CE \(+0.130\) versus momentum (\(0.096\), \(-0.206\)) and buy-and-hold (\(-1.404\), \(-1.163\)). The pre-specified contrast mechanism $-$ momentum is significant under block bootstrap (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\)). \(\Delta\mathrm{CE}\) is positive for all ten assets (Figure~\ref{fig:econ}, right). LOBO (Prop.~\ref{prop:lobo}) attributes the gain to band content (deleting macro/alternative collapses to momentum); gaps survive \(10\)--\(25\)bps costs. A \(2017\)--\(2026\) audit with non-vintaged proxy tilts shows no edge (\(\Delta\mathrm{CE}\approx 0\), \(p{=}0.81\)): value appears where the vintage-compiled world exists. The result supports nonempty tilts, not an LLM trading ranking.
 
-\paragraph{Within-archive dense world.}
-Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\) ready) and \(39\%\) are band-thin (exchange gap; Figure~\ref{fig:ready}). Table~\ref{tab:dense}: the mechanism$-$momentum gap is stronger on band-thick days (\(\Delta\mathrm{CE}{=}0.316\)) than on exchange-gap days (\(0.129\))---the content channel pays most when the archive is populated, complementary to RQ1's refuse-under-thin stress test.
+\paragraph{Within-archive dense / open world.}
+Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\) ready) and \(39\%\) are band-thin (exchange gap; Figure~\ref{fig:ready}). On this panel, band-thick coincides with the counterfactual open set \(\mathrm{WMI}\ge 0.05\). Table~\ref{tab:dense}: on that open/thick slice the content rule acts and the mechanism$-$momentum gap is \(\Delta\mathrm{CE}{=}0.315\) (CE \(+0.061\) vs.\ \(-0.254\)), stronger than on exchange-gap days (\(0.129\))---complementary to RQ1's refuse-under-thin stress test.
 
 \begin{table}[t]
   \caption{Secondary content probe: world-model rule vs.\ traditional baselines (no LLM).}
@@ -463,7 +463,7 @@ Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\
 \end{table}
 
 \begin{table}[t]
-  \caption{Dense-world split of the content probe (OOS; three archive bands).}
+  \caption{Open/dense split of the content probe (OOS). Open $=$ $\mathrm{WMI}\ge 0.05$ $\equiv$ $3/3$ bands ready.}
   \label{tab:dense}
   \small
   \begin{tabular}{lrrr}
@@ -471,7 +471,7 @@ Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\
     Slice & Share & Mech CE & \(\Delta\)CE vs mom \\
     \midrule
     All OOS & $1.00$ & $0.130$ & $0.336$ \\
-    Thick ($3/3$ ready) & $0.61$ & $0.059$ & $0.316$ \\
+    Open / thick ($n{=}1224$) & $0.61$ & $0.061$ & $0.315$ \\
     Thin (exchange gap) & $0.39$ & $1.048$ & $0.129$ \\
     \bottomrule
   \end{tabular}
@@ -493,8 +493,11 @@ Relative to FinMem / FinAgent-style systems~\cite{yu2023finmem,zhang2024finagent
 \paragraph{Design rationale.}
 Three choices are deliberate. (i)~Export gates, not only features: completeness, honesty, and \texttt{should\_ai\_abstain} make refusal machine-readable rather than a free-text apology. (ii)~Previous-close PIT over wall-clock streaming: every live decision cites a recomputable \texttt{decision\_asof}, avoiding same-day look-ahead. (iii)~Four arms instead of one Sharpe number: Compiled / Ungated / Raw / Blind separates typed enforcement, soft judgment, thin integrations, and no feed.
 
-\paragraph{Validity, scope, and limits.}
-(1)~\emph{Prompt contract}---Compiled refusal is the enforceable interface; Ungated is the same-content soft control. (2)~\emph{Three-band archive}---band-thick vs.\ band-thin separates archive coverage from WMI thinness; news/on-chain/options await vintages. (3)~\emph{Baselines}---Raw is the common mom-only integration (missing the contract, not missing features); RQ3 uses momentum/buy-and-hold only for the content check. (4)~\emph{Sampling}---\(100\)-day headline ranking plus full-OOS checkpoints (\(n{=}2000\); GLM Raw incomplete). (5)~\emph{Threshold}---refuse at \(\mathrm{WMI}<0.2\) never opens on this panel (\(\max\mathrm{WMI}\approx 0.093\)); counterfactual \(0.05\) opens the band-thick \(61\%\) slice where content \(\Delta\mathrm{CE}\) remains positive. (6)~\emph{Limits}---no LLM trading SOTA, no generative dynamics, and no claim of spontaneous thinness discovery without the boolean. Natural extensions include richer bands and thick-regime live trading once WMI leaves the scarce floor. Camera-ready will restore author identity and release the anonymized harness deferred during review.
+\paragraph{Threats to validity.}
+Compiled thin-world abstention is prompt-contract obedience by design---the product interface---not evidence that models spontaneously discover thinness; Ungated is the control that removes the boolean. The evaluation archive is scarce (three public bands; \(\max\mathrm{WMI}\approx 0.093\)), so live Compiled never opens at the production threshold \(0.2\); open-day economics use a no-LLM content rule on the counterfactual \(\mathrm{WMI}\ge 0.05\) slice, not live LLM trading under an opened gate. Vendors are flash/mini-class IDs at temperature \(0\); results may shift for larger models or nonzero temperature. The full-OOS Raw scrap for GLM is incomplete, and news/on-chain/options vintages are absent. Act-conditional Ungated CE is negative for three of four vendors, underscoring that disclosure without enforcement is unstable.
+
+\paragraph{Scope.}
+We do not claim LLM trading SOTA or generative dynamics. Natural extensions include richer bands and thick-regime live trading once WMI leaves the scarce floor. Camera-ready will restore author identity and release the anonymized harness deferred during review.
 
 \section{Conclusion}
 \label{sec:conc}
