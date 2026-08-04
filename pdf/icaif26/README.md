@@ -39,6 +39,7 @@ pdflatex main && bibtex main && pdflatex main && pdflatex main
 | --- | --- |
 | `main.tex` | **Canonical ACM anonymous submission source** |
 | `main.pdf` / `main_icaif26.pdf` | Compiled PDF |
+| `main_zh.md` | Full Chinese translation (internal reading; not for CMT) |
 | `refs.bib` | Bibliography |
 | `acmart.cls` | Vendored ACM class |
 | `ACM-Reference-Format.bst` | ACM bib style |
