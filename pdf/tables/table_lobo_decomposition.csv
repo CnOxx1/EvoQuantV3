@@ -2,3 +2,4 @@ band,dCE_total,p_total,dCE_content_only,p_content,dCE_gating_only,p_gating
 exchange,-0.056,0.394,,,-0.056,0.394
 macro,-0.418,0.01,-0.3339,0.034,-0.0658,0.026
 alternative,-0.4019,0.008,-0.3339,0.034,-0.0404,0.044
+macro+alternative,-0.3934,0.018,-0.3341,0.034,,

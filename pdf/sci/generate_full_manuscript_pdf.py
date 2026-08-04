@@ -242,7 +242,7 @@ def build():
 
     story.append(P("Working paper draft — Journal of Finance / Review of Financial Studies", S["journal"]))
     story.append(P(
-        "Compiling the Market Information Set: World-Model Quality, Selective Prediction, "
+        "Compiling the Market Information Set: Band Content, Point-in-Time Measurement, "
         "and Economic Value in Cryptocurrency Markets",
         S["title"],
     ))

@@ -1,0 +1,4 @@
+contrast,cost_bps,mech_CE,mom_CE,dCE,p_CE,ci95_excludes_0,mech_Sharpe,mom_Sharpe
+Mechanism − Momentum,0.0,0.132,-0.2019,0.3339,0.034,True,0.767,0.101
+Mechanism − Momentum,10.0,-0.0191,-0.3522,0.3331,0.034,True,0.467,-0.198
+Mechanism − Momentum,25.0,-0.246,-0.578,0.332,0.038,True,0.017,-0.646

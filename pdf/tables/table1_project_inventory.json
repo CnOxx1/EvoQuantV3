@@ -1,30 +1,52 @@
 {
   "design": "real multi-band PIT from SQLite history + Yahoo returns",
   "pit": {
-    "n_rows": 4000,
-    "n_days": 400,
-    "start": "2025-06-30",
+    "n_rows": 3990,
+    "n_days": 399,
+    "start": "2025-07-01",
     "end": "2026-08-03",
-    "mean_ready": 3.0175,
+    "mean_ready": 3.007518796992481,
     "outage_rate": 0.0,
     "band_ready_rates": {
       "exchange": 1.0,
-      "news": 0.01,
+      "news": 0.007518796992481203,
       "event_calendar": 0.0,
-      "onchain": 0.0025,
-      "tokenomics": 0.0025,
-      "options": 0.0025,
+      "onchain": 0.0,
+      "tokenomics": 0.0,
+      "options": 0.0,
       "alternative": 1.0,
       "macro": 1.0
-    }
+    },
+    "experiment_config": {
+      "name": "jf_rfs_pit_identification",
+      "version": "2.0.0",
+      "content_hash": "cd968df719b0601b",
+      "path": "/workspace/pdf/sci/experiment_config.json",
+      "pre_specified_contrast": {
+        "name": "Mechanism \u2212 Momentum",
+        "treatment": "Thick ungated",
+        "control": "Momentum always",
+        "metric": "CE"
+      },
+      "timing": {
+        "protocol": "decision_at_prev_close",
+        "decision_asof_offset_days": -1,
+        "decision_asof_clock": "23:59:00",
+        "payoff": "same_calendar_day_close_to_close",
+        "notes": "Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t."
+      }
+    },
+    "timing_protocol": "decision_at_prev_close",
+    "timing_migration": "shift_status_from_prev_calendar_day",
+    "note": "Migrated from archived same-day-asof panel because local SQLite history was empty; statuses for day t are taken from archived day t-1 EOD."
   },
   "is_oos_cut": "2026-01-16",
   "frozen_thresholds": {
     "ac_thr": 0.25,
     "c_thr": 0.25,
-    "is_ce": -0.47933518100200356,
-    "is_abstain": 0.06,
-    "is_sharpe": -0.322149901168874,
+    "is_ce": -0.4467303855536908,
+    "is_abstain": 0.05628140703517588,
+    "is_sharpe": -0.2603324435708088,
     "casc_only_thr": 0.7,
     "wmi_thr": 0.2
   },
@@ -33,5 +55,157 @@
     "macro",
     "alternative"
   ],
-  "timeslice_months": 14
+  "timeslice_months": 14,
+  "experiment_config": {
+    "name": "jf_rfs_pit_identification",
+    "version": "2.0.0",
+    "content_hash": "cd968df719b0601b",
+    "path": "/workspace/pdf/sci/experiment_config.json",
+    "pre_specified_contrast": {
+      "name": "Mechanism \u2212 Momentum",
+      "treatment": "Thick ungated",
+      "control": "Momentum always",
+      "metric": "CE"
+    },
+    "timing": {
+      "protocol": "decision_at_prev_close",
+      "decision_asof_offset_days": -1,
+      "decision_asof_clock": "23:59:00",
+      "payoff": "same_calendar_day_close_to_close",
+      "notes": "Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t."
+    }
+  },
+  "pre_specified_contrast": {
+    "name": "Mechanism \u2212 Momentum",
+    "treatment": "Thick ungated",
+    "control": "Momentum always",
+    "metric": "CE"
+  },
+  "scarce_world_method": "expanding_quantile",
+  "content_scramble_placebo": {
+    "design": "date-scramble macro_tilt/alt_tilt (seed=17)",
+    "base_CE": 0.132,
+    "scrambled_CE": -0.2537,
+    "dCE_scrambled_minus_base": -0.3857,
+    "p_CE": 0.082,
+    "interpretation": "Placebo should not beat the timed-content rule; negative dCE supports correctly timed compiled content."
+  },
+  "macro_component_lobo": [
+    {
+      "component_zeroed": "vix",
+      "CE": -0.2019,
+      "dCE_vs_base": -0.3339,
+      "p_CE": 0.034,
+      "Sharpe": 0.101
+    },
+    {
+      "component_zeroed": "dxy",
+      "CE": -0.2019,
+      "dCE_vs_base": -0.3339,
+      "p_CE": 0.034,
+      "Sharpe": 0.101
+    }
+  ],
+  "prespec_cost_contrast": [
+    {
+      "contrast": "Mechanism \u2212 Momentum",
+      "cost_bps": 0.0,
+      "mech_CE": 0.132,
+      "mom_CE": -0.2019,
+      "dCE": 0.3339,
+      "p_CE": 0.034,
+      "ci95_excludes_0": true,
+      "mech_Sharpe": 0.767,
+      "mom_Sharpe": 0.101
+    },
+    {
+      "contrast": "Mechanism \u2212 Momentum",
+      "cost_bps": 10.0,
+      "mech_CE": -0.0191,
+      "mom_CE": -0.3522,
+      "dCE": 0.3331,
+      "p_CE": 0.034,
+      "ci95_excludes_0": true,
+      "mech_Sharpe": 0.467,
+      "mom_Sharpe": -0.198
+    },
+    {
+      "contrast": "Mechanism \u2212 Momentum",
+      "cost_bps": 25.0,
+      "mech_CE": -0.246,
+      "mom_CE": -0.578,
+      "dCE": 0.332,
+      "p_CE": 0.038,
+      "ci95_excludes_0": true,
+      "mech_Sharpe": 0.017,
+      "mom_Sharpe": -0.646
+    }
+  ],
+  "compilation_wedge_bridge": {
+    "status": "ok",
+    "compiled": {
+      "r2_oos": -0.025598,
+      "ann_mean": -0.0396,
+      "Sharpe": -0.11,
+      "CE_daily": -0.000467,
+      "n_oos": 1990
+    },
+    "thin": {
+      "r2_oos": -0.006678,
+      "ann_mean": -0.8215,
+      "Sharpe": -1.404,
+      "CE_daily": -0.003188,
+      "n_oos": 1990
+    },
+    "dR2_compiled_minus_thin": -0.01892,
+    "dSharpe_compiled_minus_thin": 1.294,
+    "features_compiled": [
+      "mom5",
+      "macro_tilt",
+      "alt_tilt",
+      "cascade_p",
+      "B_hier",
+      "WMI"
+    ],
+    "features_thin": [
+      "mom5"
+    ],
+    "note": "IS-fit OLS, OOS evaluate; transparent bridge for compilation wedge, not a trading claim"
+  },
+  "planted_ot_shocks": {
+    "rate": 0.05,
+    "bands": [
+      "macro",
+      "alternative"
+    ],
+    "seed": 42,
+    "n_shock_dates": 20,
+    "shock_dates": [
+      "2025-08-03",
+      "2025-08-06",
+      "2025-08-20",
+      "2025-09-17",
+      "2025-12-14",
+      "2025-12-16",
+      "2025-12-27",
+      "2026-01-20",
+      "2026-01-22",
+      "2026-03-08",
+      "2026-03-27",
+      "2026-04-09",
+      "2026-04-15",
+      "2026-04-21",
+      "2026-04-26",
+      "2026-05-07",
+      "2026-05-27",
+      "2026-05-31",
+      "2026-07-17",
+      "2026-07-21"
+    ],
+    "base_CE": 0.132,
+    "planted_CE": 0.1026,
+    "dCE_planted_minus_base": -0.0294,
+    "p_CE": 0.762,
+    "interpretation": "Negative dCE indicates planted missingness destroys value (O_t channel)."
+  }
 }

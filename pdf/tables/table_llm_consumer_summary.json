@@ -8,13 +8,13 @@
     "mock-momentum",
     "mock-noisy"
   ],
-  "mean_dCE": 0.0716,
+  "mean_dCE": 0.0552,
   "deltas": [
     {
       "model": "mock-compiled-aware",
-      "dCE_compiled_minus_raw": 0.2174,
-      "dSharpe_compiled_minus_raw": 1.25,
-      "compiled_abstain_rate": 0.995,
+      "dCE_compiled_minus_raw": 0.2019,
+      "dSharpe_compiled_minus_raw": -0.101,
+      "compiled_abstain_rate": 1.0,
       "raw_abstain_rate": 0.0
     },
     {
@@ -26,8 +26,8 @@
     },
     {
       "model": "mock-noisy",
-      "dCE_compiled_minus_raw": -0.0026,
-      "dSharpe_compiled_minus_raw": 1.037,
+      "dCE_compiled_minus_raw": -0.0364,
+      "dSharpe_compiled_minus_raw": -0.39,
       "compiled_abstain_rate": 0.0,
       "raw_abstain_rate": 0.0
     }

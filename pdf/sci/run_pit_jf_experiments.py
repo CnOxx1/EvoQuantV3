@@ -90,23 +90,39 @@ def load_band_content_features() -> pd.DataFrame:
 
     cache = DATA / "band_content_features.csv"
     db = DB_DIR / "market_data.db"
+
+    def _from_cache() -> pd.DataFrame:
+        if not cache.exists():
+            raise SystemExit("Neither usable market_data.db history nor band_content_features.csv available")
+        out = pd.read_csv(cache, parse_dates=["date"])
+        # Drop placeholder rows with no usable tilt inputs
+        if "vix_chg5" in out.columns:
+            usable = out.dropna(subset=["vix_chg5", "dxy_chg5"], how="all")
+            if len(usable):
+                out = usable
+        if len(out) == 0 or (out[["macro_tilt", "alt_tilt"]].abs().sum().sum() == 0 and "vix_chg5" not in out.columns):
+            raise SystemExit("band_content_features.csv is empty/unusable")
+        return out
+
     if not db.exists():
-        if cache.exists():
-            out = pd.read_csv(cache, parse_dates=["date"])
-            return out
-        raise SystemExit("Neither market_data.db nor band_content_features.csv available")
+        return _from_cache()
 
     con = sqlite3.connect(str(db))
 
     def asof_daily(table: str, factor: str, value_col: str = "value") -> pd.Series:
         cols = {r[1] for r in con.execute(f"PRAGMA table_info({table})").fetchall()}
+        if not cols:
+            return pd.Series(dtype=float)
         avail_expr = "available_at" if "available_at" in cols else "observation_time"
         q = f"""
             SELECT observation_time, {avail_expr} AS available_at, {value_col} AS v
             FROM {table} WHERE factor_id = ? AND {value_col} IS NOT NULL
             ORDER BY observation_time
         """
-        raw = pd.read_sql(q, con, params=(factor,))
+        try:
+            raw = pd.read_sql(q, con, params=(factor,))
+        except Exception:
+            return pd.Series(dtype=float)
         if raw.empty:
             return pd.Series(dtype=float)
         avail = pd.to_datetime(raw["available_at"].fillna(raw["observation_time"]), format="mixed")
@@ -120,6 +136,11 @@ def load_band_content_features() -> pd.DataFrame:
     dxy = asof_daily("macro_timeseries", "dxy")
     ssc = asof_daily("alternative_timeseries", "stablecoin_net_supply_change_7d")
     con.close()
+
+    # Empty schema / empty history must not overwrite the checked-in cache.
+    if vix.empty and dxy.empty and ssc.empty:
+        print("band content: SQLite history empty — using cached band_content_features.csv")
+        return _from_cache()
 
     df = pd.DataFrame({"vix": vix, "dxy": dxy, "ssc7": ssc})
     # tilts computed on information available before t: shift by one day
@@ -140,6 +161,9 @@ def load_band_content_features() -> pd.DataFrame:
             "alt_tilt": alt_tilt.to_numpy(),
         }
     ).dropna(subset=["macro_tilt", "alt_tilt"])
+    if len(out) == 0 or out[["vix_chg5", "dxy_chg5"]].notna().sum().sum() == 0:
+        print("band content: DB rebuild unusable — falling back to cache")
+        return _from_cache()
     out.to_csv(cache, index=False)
     return out
 
@@ -222,10 +246,18 @@ def recompute_world(
 def attach_engines(pit: pd.DataFrame, content: pd.DataFrame | None = None) -> pd.DataFrame:
     pit = pit.sort_values(["asset", "date"]).copy()
     tilt_by_date: dict = {}
+    content_by_date: dict = {}
     if content is not None and len(content):
         c = content.set_index(pd.to_datetime(content["date"]).dt.normalize())
         tilt_by_date = {
             d: (float(r["macro_tilt"]), float(r["alt_tilt"])) for d, r in c.iterrows()
+        }
+        content_by_date = {
+            d: (
+                float(r.get("vix_chg5") or 0.0) if pd.notna(r.get("vix_chg5")) else 0.0,
+                float(r.get("dxy_chg5") or 0.0) if pd.notna(r.get("dxy_chg5")) else 0.0,
+            )
+            for d, r in c.iterrows()
         }
     rows = []
     for asset, g in pit.groupby("asset"):
@@ -234,10 +266,12 @@ def attach_engines(pit: pd.DataFrame, content: pd.DataFrame | None = None) -> pd
             eng = run_engines(asset, np.array(hist, dtype=float))
             d = pd.Timestamp(r["date"]).normalize()
             m_tilt, a_tilt = tilt_by_date.get(d, (0.0, 0.0))
+            vix_chg, dxy_chg = content_by_date.get(d, (0.0, 0.0))
             # Content is usable only when the band is PIT-ready at t: this makes
             # leave-one-band-out a true deletion of content, not only of gating.
             if str(r.get("st_macro", "missing")) != "ready":
                 m_tilt = 0.0
+                vix_chg, dxy_chg = 0.0, 0.0
             if str(r.get("st_alternative", "missing")) != "ready":
                 a_tilt = 0.0
             eng["macro_tilt"] = m_tilt
@@ -264,6 +298,8 @@ def attach_engines(pit: pd.DataFrame, content: pd.DataFrame | None = None) -> pd
                     "mom5": eng["mom5"],
                     "macro_tilt": m_tilt,
                     "alt_tilt": a_tilt,
+                    "vix_chg5": vix_chg,
+                    "dxy_chg5": dxy_chg,
                     "signs_json": json.dumps(base_signs),
                     "ACWMI": ac,
                 }
@@ -355,6 +391,176 @@ def scramble_band_content(df: pd.DataFrame, seed: int = 17) -> pd.DataFrame:
     out["macro_tilt"], out["alt_tilt"] = new_m, new_a
     out["C"], out["signal"], out["ACWMI"] = new_C, new_sig, new_ac
     return out
+
+
+def _macro_tilt_from_chgs(vix_chg: float, dxy_chg: float) -> float:
+    if vix_chg < 0 and dxy_chg < 0:
+        return 1.0
+    if vix_chg > 0 and dxy_chg > 0:
+        return -1.0
+    return 0.0
+
+
+def delete_macro_component(df: pd.DataFrame, component: str) -> pd.DataFrame:
+    """Zero one leg of macro_tilt (vix or dxy) and recompute signal/C/ACWMI.
+
+    Identifies whether LOBO macro value is VIX-driven, DXY-driven, or requires conjunction.
+    """
+    if component not in {"vix", "dxy"}:
+        raise ValueError(component)
+    out = df.copy()
+    new_m, new_C, new_sig, new_ac = [], [], [], []
+    for _, r in out.iterrows():
+        vix = 0.0 if component == "vix" else float(r.get("vix_chg5") or 0.0)
+        dxy = 0.0 if component == "dxy" else float(r.get("dxy_chg5") or 0.0)
+        if str(r.get("st_macro", "missing")) != "ready":
+            m_tilt = 0.0
+        else:
+            m_tilt = _macro_tilt_from_chgs(vix, dxy)
+        a_tilt = float(r["alt_tilt"])
+        base_signs = json.loads(r["signs_json"]) if isinstance(r.get("signs_json"), str) else []
+        ext = base_signs + [t for t in (m_tilt, a_tilt) if t != 0]
+        C = consistency_from_signs(ext) if len(ext) >= 2 else float(r["C_base"])
+        eng = {
+            "detected_regime": r["detected_regime"],
+            "cascade_p": float(r["cascade_p"]),
+            "mom5": float(r["mom5"]),
+            "macro_tilt": m_tilt,
+            "alt_tilt": a_tilt,
+        }
+        sig = directional_signal(eng)
+        gamma = REGIME_GAMMA.get(r["detected_regime"], REGIME_GAMMA["range"])
+        ac = acwmi(r["B_hier"], r["U"], r["H_cont"], r["S"], C, gamma)
+        new_m.append(m_tilt)
+        new_C.append(C)
+        new_sig.append(sig)
+        new_ac.append(ac)
+    out["macro_tilt"] = new_m
+    out["C"], out["signal"], out["ACWMI"] = new_C, new_sig, new_ac
+    return out
+
+
+def plant_availability_shocks(
+    df: pd.DataFrame,
+    *,
+    rate: float = 0.05,
+    bands: list[str] | None = None,
+    seed: int = 42,
+) -> pd.DataFrame:
+    """Plant random band-missing shocks (pre-registered rate) for O_t designs.
+
+    Shocks are applied to calendar dates (same mask for all assets on that day).
+    Content tilts for shocked bands are zeroed and world metrics recomputed.
+    """
+    bands = bands or ["macro", "alternative"]
+    out = df.copy()
+    dates = np.array(sorted(out["date"].unique()))
+    rng = np.random.default_rng(seed)
+    n_shock = max(1, int(round(len(dates) * rate)))
+    shocked = set(rng.choice(dates, size=min(n_shock, len(dates)), replace=False))
+    for band in bands:
+        col = f"st_{band}"
+        if col in out.columns:
+            out.loc[out["date"].isin(shocked), col] = "missing"
+    # Recompute world metrics under planted missingness, then wipe shocked content.
+    out = recompute_world(out)
+    if "macro" in bands:
+        out.loc[out["date"].isin(shocked), "macro_tilt"] = 0.0
+        out.loc[out["date"].isin(shocked), "vix_chg5"] = 0.0
+        out.loc[out["date"].isin(shocked), "dxy_chg5"] = 0.0
+    if "alternative" in bands:
+        out.loc[out["date"].isin(shocked), "alt_tilt"] = 0.0
+    # Rebuild signals/ACWMI from (possibly zeroed) tilts
+    new_C, new_sig, new_ac = [], [], []
+    for _, r in out.iterrows():
+        m_tilt = float(r["macro_tilt"])
+        a_tilt = float(r["alt_tilt"])
+        base_signs = json.loads(r["signs_json"]) if isinstance(r.get("signs_json"), str) else []
+        ext = base_signs + [t for t in (m_tilt, a_tilt) if t != 0]
+        C = consistency_from_signs(ext) if len(ext) >= 2 else float(r["C_base"])
+        eng = {
+            "detected_regime": r["detected_regime"],
+            "cascade_p": float(r["cascade_p"]),
+            "mom5": float(r["mom5"]),
+            "macro_tilt": m_tilt,
+            "alt_tilt": a_tilt,
+        }
+        sig = directional_signal(eng)
+        gamma = REGIME_GAMMA.get(r["detected_regime"], REGIME_GAMMA["range"])
+        ac = acwmi(r["B_hier"], r["U"], r["H_cont"], r["S"], C, gamma)
+        new_C.append(C)
+        new_sig.append(sig)
+        new_ac.append(ac)
+    out["C"], out["signal"], out["ACWMI"] = new_C, new_sig, new_ac
+    out["planted_shock"] = out["date"].isin(shocked).astype(int)
+    out.attrs["planted_shock_dates"] = [str(pd.Timestamp(d).date()) for d in sorted(shocked)]
+    out.attrs["planted_shock_rate"] = rate
+    return out
+
+
+def compilation_wedge_bridge(df: pd.DataFrame, cut) -> dict:
+    """OOS predictive bridge: compiled features vs thin (momentum-only).
+
+    Estimates a simple linear projection of next-day asset returns on
+    pre-specified compiled features vs mom5 alone (IS-fit, OOS-eval).
+    This is a transparent stand-in for the compilation wedge / MIG idea:
+    does F^AI span incremental return variation beyond the thin set?
+    """
+    panel = df.sort_values(["asset", "date"]).copy()
+    panel["y"] = panel.groupby("asset")["ret"].shift(-1)
+    feats_compiled = ["mom5", "macro_tilt", "alt_tilt", "cascade_p", "B_hier", "WMI"]
+    feats_thin = ["mom5"]
+    is_mask = panel["date"] < cut
+    oos_mask = panel["date"] >= cut
+    train = panel.loc[is_mask].dropna(subset=["y"] + feats_compiled)
+    test = panel.loc[oos_mask].dropna(subset=["y"] + feats_compiled)
+    if len(train) < 50 or len(test) < 50:
+        return {"status": "insufficient_rows", "n_train": int(len(train)), "n_test": int(len(test))}
+
+    def _fit_predict(cols: list[str]):
+        x_tr = train[cols].to_numpy(dtype=float)
+        y_tr = train["y"].to_numpy(dtype=float)
+        x_te = test[cols].to_numpy(dtype=float)
+        y_te = test["y"].to_numpy(dtype=float)
+        # add intercept
+        x_tr = np.column_stack([np.ones(len(x_tr)), x_tr])
+        x_te = np.column_stack([np.ones(len(x_te)), x_te])
+        beta, *_ = np.linalg.lstsq(x_tr, y_tr, rcond=None)
+        pred = x_te @ beta
+        ss_res = float(np.sum((y_te - pred) ** 2))
+        ss_tot = float(np.sum((y_te - y_te.mean()) ** 2))
+        r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+        # Directional CE proxy: trade sign(pred), equal-weight daily
+        tmp = test[["date", "asset", "y"]].copy()
+        tmp["pos"] = np.sign(pred)
+        daily = tmp.groupby("date").apply(lambda g: float((g["pos"] * g["y"]).mean()), include_groups=False)
+        mu = float(daily.mean())
+        sig = float(daily.std(ddof=1)) if len(daily) > 2 else np.nan
+        sharpe = mu / sig * np.sqrt(365) if sig and sig > 0 else 0.0
+        # CRRA CE γ=2 on daily (annualize roughly by *365 for level comparability)
+        wealth = 1.0 + daily.to_numpy()
+        wealth = np.clip(wealth, 1e-8, None)
+        ce_daily = float(np.mean(wealth ** (-1)) ** (-1) - 1.0)  # γ=2 ⇒ 1-γ=-1
+        return {
+            "r2_oos": round(r2, 6),
+            "ann_mean": round(mu * 365, 4),
+            "Sharpe": round(sharpe, 3),
+            "CE_daily": round(ce_daily, 6),
+            "n_oos": int(len(test)),
+        }
+
+    thick = _fit_predict(feats_compiled)
+    thin = _fit_predict(feats_thin)
+    return {
+        "status": "ok",
+        "compiled": thick,
+        "thin": thin,
+        "dR2_compiled_minus_thin": round(thick["r2_oos"] - thin["r2_oos"], 6),
+        "dSharpe_compiled_minus_thin": round(thick["Sharpe"] - thin["Sharpe"], 3),
+        "features_compiled": feats_compiled,
+        "features_thin": feats_thin,
+        "note": "IS-fit OLS, OOS evaluate; transparent bridge for compilation wedge, not a trading claim",
+    }
 
 
 def event_study_availability(df: pd.DataFrame) -> pd.DataFrame:
@@ -712,6 +918,97 @@ def main() -> None:
     )
     print(placebo)
 
+    # Orthogonal macro components: VIX-only vs DXY-only content deletion
+    print("Macro component LOBO (VIX / DXY)...")
+    comp_rows = []
+    for comp in ("vix", "dxy"):
+        d_comp = delete_macro_component(df, comp)
+        _, oos_c, _ = split_is_oos(d_comp)
+        st_c = portfolio_stats(oos_c, strategy_positions(oos_c, "thick_ungated", params))
+        bp_c = bootstrap_delta_pvalues(
+            st_c["daily"],
+            st_base_ungated["daily"],
+            n_boot=_CFG["inference"]["n_boot"],
+            block=_CFG["inference"]["block"],
+        )
+        comp_rows.append(
+            {
+                "component_zeroed": comp,
+                "CE": round(st_c["CE"], 4),
+                "dCE_vs_base": round(st_c["CE"] - st_base_ungated["CE"], 4),
+                "p_CE": bp_c.get("p_CE"),
+                "Sharpe": round(st_c["Sharpe"], 3),
+            }
+        )
+    comp_lobo = pd.DataFrame(comp_rows)
+    comp_lobo.to_csv(TAB / "table_macro_component_lobo.csv", index=False)
+    print(comp_lobo)
+
+    # Cost-aware pre-specified contrast (mechanism − momentum at 10 bps)
+    print("Cost-aware pre-specified contrast...")
+    pos_mech = strategy_positions(oos, "thick_ungated", params)
+    pos_mom = strategy_positions(oos, "mom_always", params)
+    cost_headline = []
+    for cost in (0.0, 10.0, 25.0):
+        st_m = portfolio_stats(oos, pos_mech, cost_bps=cost)
+        st_o = portfolio_stats(oos, pos_mom, cost_bps=cost)
+        bp = bootstrap_delta_pvalues(
+            st_m["daily"],
+            st_o["daily"],
+            n_boot=_CFG["inference"]["n_boot"],
+            block=_CFG["inference"]["block"],
+        )
+        cost_headline.append(
+            {
+                "contrast": "Mechanism − Momentum",
+                "cost_bps": cost,
+                "mech_CE": round(st_m["CE"], 4),
+                "mom_CE": round(st_o["CE"], 4),
+                "dCE": round(st_m["CE"] - st_o["CE"], 4),
+                "p_CE": bp.get("p_CE"),
+                "ci95_excludes_0": bp.get("ci95_excludes_0_CE"),
+                "mech_Sharpe": round(st_m["Sharpe"], 3),
+                "mom_Sharpe": round(st_o["Sharpe"], 3),
+            }
+        )
+    cost_pre = pd.DataFrame(cost_headline)
+    cost_pre.to_csv(TAB / "table_prespec_cost_contrast.csv", index=False)
+    print(cost_pre)
+
+    # Compilation wedge / predictive bridge
+    print("Compilation wedge bridge...")
+    wedge = compilation_wedge_bridge(df, cut)
+    (TAB / "table_compilation_wedge_bridge.json").write_text(
+        json.dumps(wedge, indent=2), encoding="utf-8"
+    )
+    print(wedge)
+
+    # Planted O_t availability shocks (5% dates, macro+alternative)
+    print("Planted O_t shocks...")
+    d_plant = plant_availability_shocks(df, rate=0.05, bands=["macro", "alternative"], seed=42)
+    _, oos_p, _ = split_is_oos(d_plant)
+    st_p = portfolio_stats(oos_p, strategy_positions(oos_p, "thick_ungated", params))
+    bp_p = bootstrap_delta_pvalues(
+        st_p["daily"],
+        st_base_ungated["daily"],
+        n_boot=_CFG["inference"]["n_boot"],
+        block=_CFG["inference"]["block"],
+    )
+    planted = {
+        "rate": 0.05,
+        "bands": ["macro", "alternative"],
+        "seed": 42,
+        "n_shock_dates": len(d_plant.attrs.get("planted_shock_dates", [])),
+        "shock_dates": d_plant.attrs.get("planted_shock_dates", []),
+        "base_CE": round(st_base_ungated["CE"], 4),
+        "planted_CE": round(st_p["CE"], 4),
+        "dCE_planted_minus_base": round(st_p["CE"] - st_base_ungated["CE"], 4),
+        "p_CE": bp_p.get("p_CE"),
+        "interpretation": "Negative dCE indicates planted missingness destroys value (O_t channel).",
+    }
+    (TAB / "table_planted_ot_shocks.json").write_text(json.dumps(planted, indent=2), encoding="utf-8")
+    print(planted)
+
     # Thin vs thick using real statuses. Thin world deletes BOTH the gating
     # channel (band statuses → missing) and the content channel (tilts zeroed):
     # an exchange-only observer has no macro/alternative information at all.
@@ -899,6 +1196,10 @@ def main() -> None:
         "pre_specified_contrast": _CFG["pre_specified_contrast"],
         "scarce_world_method": _CFG["scarce_world"]["method"],
         "content_scramble_placebo": placebo,
+        "macro_component_lobo": comp_lobo.to_dict(orient="records"),
+        "prespec_cost_contrast": cost_pre.to_dict(orient="records"),
+        "compilation_wedge_bridge": wedge,
+        "planted_ot_shocks": planted,
     }
     (TAB / "table1_project_inventory.json").write_text(json.dumps(inv, indent=2, default=str), encoding="utf-8")
 
@@ -999,9 +1300,11 @@ def main() -> None:
         "- Natural hard outages are rare in continuous OKX backfill; scarce-world states use expanding B_hier quantile (no full-sample look-ahead).",
         "- Hard O_t availability event study exported to table_ot_availability_event_study.csv.",
         "- Joint macro+alternative LOBO and date-scrambled content placebo are reported.",
+        "- Macro component LOBO (VIX vs DXY), cost-aware pre-specified contrast, compilation-wedge bridge, planted O_t shocks exported.",
         "- Mechanism signal is the deterministic R1–R3 rule in `directional_signal` (no latent model).",
         "- Timing protocol: decision_at_prev_close (features at t-1 23:59; payoff = day-t close-to-close).",
         f"- Experiment config: `{config_manifest()}`.",
+        "- Selective prediction / ACWMI gating is secondary on this sparse archive (often equals ungated).",
         "- time_slice grid exported to table_timeslice_grid.csv (analytics snapshots still sparse historically).",
     ]
     (OUT / "EXPERIMENT_RESULTS.md").write_text("\n".join(lines), encoding="utf-8")
@@ -1026,6 +1329,10 @@ def main() -> None:
                 "event_study": ev.to_dict(orient="records"),
                 "ot_availability_event_study": ev_ot.to_dict(orient="records"),
                 "content_scramble_placebo": placebo,
+                "macro_component_lobo": comp_lobo.to_dict(orient="records"),
+                "prespec_cost_contrast": cost_pre.to_dict(orient="records"),
+                "compilation_wedge_bridge": wedge,
+                "planted_ot_shocks": planted,
                 "experiment_config": config_manifest(),
             },
             indent=2,

@@ -47,6 +47,7 @@ make test-paper
 
 Versioned design knobs live in `pdf/sci/experiment_config.json` (content hash recorded in experiment outputs).
 Timing protocol: **decision at previous close** (features at \(t-1\) 23:59; payoff = day-\(t\) return).
+If local SQLite history is empty, `build_pit_archive.py` / `migrate_pit_to_prev_close.py` migrate the checked-in panel by shifting statuses from calendar day \(t-1\) (and never overwrite `band_content_features.csv` with empty DB pulls).
 
 > Paper lab forces `DB_SPLIT_ENABLED=1` so readiness is read from
 > `exchange_data.db` / `market_data.db` / `analytics.db` (not empty `crypto_data.db`).

@@ -1,6 +1,6 @@
 {
   "name": "jf_rfs_pit_identification",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Versioned JF/RFS experiment configuration. Empirics must load this file and record its content hash.",
   "assets": ["BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "AVAX", "LINK", "DOT", "NEAR"],
   "asset_to_symbol": {
