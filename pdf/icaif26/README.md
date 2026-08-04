@@ -2,7 +2,9 @@
 
 **Thesis:** Quant stacks start from *strategy*; this runtime starts from *understanding* — a complete, honest, auditable crypto cognition base for public LLMs (GPT / DeepSeek / GLM / Gemini).
 
-**Primary evidence (RQ1):** live Compiled vs.\ Raw on four public LLMs (`tables/table_llm_*_live.*`); Ungated ablation (`*_ungated.*`) removes the hard abstain flag. CE is secondary. Offline mocks remain diagnostic.
+**Primary evidence (RQ1):** live three-arm ladder — Compiled / Ungated / Raw
+(`tables/table_llm_three_arm_summary.csv`, `*_live.*`, `*_ungated.*`).
+CE is secondary. System section documents anonymized runtime architecture.
 
 **Isolated from** `pdf/sci/` (JF/RFS). Submit **only** artifacts from this folder.
 
