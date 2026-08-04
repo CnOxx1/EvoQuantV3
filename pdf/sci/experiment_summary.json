@@ -2,30 +2,52 @@
   "inventory": {
     "design": "real multi-band PIT from SQLite history + Yahoo returns",
     "pit": {
-      "n_rows": 4000,
-      "n_days": 400,
-      "start": "2025-06-30",
+      "n_rows": 3990,
+      "n_days": 399,
+      "start": "2025-07-01",
       "end": "2026-08-03",
-      "mean_ready": 3.0175,
+      "mean_ready": 3.007518796992481,
       "outage_rate": 0.0,
       "band_ready_rates": {
         "exchange": 1.0,
-        "news": 0.01,
+        "news": 0.007518796992481203,
         "event_calendar": 0.0,
-        "onchain": 0.0025,
-        "tokenomics": 0.0025,
-        "options": 0.0025,
+        "onchain": 0.0,
+        "tokenomics": 0.0,
+        "options": 0.0,
         "alternative": 1.0,
         "macro": 1.0
-      }
+      },
+      "experiment_config": {
+        "name": "jf_rfs_pit_identification",
+        "version": "2.0.0",
+        "content_hash": "cd968df719b0601b",
+        "path": "/workspace/pdf/sci/experiment_config.json",
+        "pre_specified_contrast": {
+          "name": "Mechanism \u2212 Momentum",
+          "treatment": "Thick ungated",
+          "control": "Momentum always",
+          "metric": "CE"
+        },
+        "timing": {
+          "protocol": "decision_at_prev_close",
+          "decision_asof_offset_days": -1,
+          "decision_asof_clock": "23:59:00",
+          "payoff": "same_calendar_day_close_to_close",
+          "notes": "Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t."
+        }
+      },
+      "timing_protocol": "decision_at_prev_close",
+      "timing_migration": "shift_status_from_prev_calendar_day",
+      "note": "Migrated from archived same-day-asof panel because local SQLite history was empty; statuses for day t are taken from archived day t-1 EOD."
     },
     "is_oos_cut": "2026-01-16",
     "frozen_thresholds": {
       "ac_thr": 0.25,
       "c_thr": 0.25,
-      "is_ce": -0.47933518100200356,
-      "is_abstain": 0.06,
-      "is_sharpe": -0.322149901168874,
+      "is_ce": -0.4467303855536908,
+      "is_abstain": 0.05628140703517588,
+      "is_sharpe": -0.2603324435708088,
       "casc_only_thr": 0.7,
       "wmi_thr": 0.2
     },
@@ -34,7 +56,159 @@
       "macro",
       "alternative"
     ],
-    "timeslice_months": 14
+    "timeslice_months": 14,
+    "experiment_config": {
+      "name": "jf_rfs_pit_identification",
+      "version": "2.0.0",
+      "content_hash": "cd968df719b0601b",
+      "path": "/workspace/pdf/sci/experiment_config.json",
+      "pre_specified_contrast": {
+        "name": "Mechanism \u2212 Momentum",
+        "treatment": "Thick ungated",
+        "control": "Momentum always",
+        "metric": "CE"
+      },
+      "timing": {
+        "protocol": "decision_at_prev_close",
+        "decision_asof_offset_days": -1,
+        "decision_asof_clock": "23:59:00",
+        "payoff": "same_calendar_day_close_to_close",
+        "notes": "Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t."
+      }
+    },
+    "pre_specified_contrast": {
+      "name": "Mechanism \u2212 Momentum",
+      "treatment": "Thick ungated",
+      "control": "Momentum always",
+      "metric": "CE"
+    },
+    "scarce_world_method": "expanding_quantile",
+    "content_scramble_placebo": {
+      "design": "date-scramble macro_tilt/alt_tilt (seed=17)",
+      "base_CE": 0.132,
+      "scrambled_CE": -0.2537,
+      "dCE_scrambled_minus_base": -0.3857,
+      "p_CE": 0.082,
+      "interpretation": "Placebo should not beat the timed-content rule; negative dCE supports correctly timed compiled content."
+    },
+    "macro_component_lobo": [
+      {
+        "component_zeroed": "vix",
+        "CE": -0.2019,
+        "dCE_vs_base": -0.3339,
+        "p_CE": 0.034,
+        "Sharpe": 0.101
+      },
+      {
+        "component_zeroed": "dxy",
+        "CE": -0.2019,
+        "dCE_vs_base": -0.3339,
+        "p_CE": 0.034,
+        "Sharpe": 0.101
+      }
+    ],
+    "prespec_cost_contrast": [
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "cost_bps": 0.0,
+        "mech_CE": 0.132,
+        "mom_CE": -0.2019,
+        "dCE": 0.3339,
+        "p_CE": 0.034,
+        "ci95_excludes_0": true,
+        "mech_Sharpe": 0.767,
+        "mom_Sharpe": 0.101
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "cost_bps": 10.0,
+        "mech_CE": -0.0191,
+        "mom_CE": -0.3522,
+        "dCE": 0.3331,
+        "p_CE": 0.034,
+        "ci95_excludes_0": true,
+        "mech_Sharpe": 0.467,
+        "mom_Sharpe": -0.198
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "cost_bps": 25.0,
+        "mech_CE": -0.246,
+        "mom_CE": -0.578,
+        "dCE": 0.332,
+        "p_CE": 0.038,
+        "ci95_excludes_0": true,
+        "mech_Sharpe": 0.017,
+        "mom_Sharpe": -0.646
+      }
+    ],
+    "compilation_wedge_bridge": {
+      "status": "ok",
+      "compiled": {
+        "r2_oos": -0.025598,
+        "ann_mean": -0.0396,
+        "Sharpe": -0.11,
+        "CE_daily": -0.000467,
+        "n_oos": 1990
+      },
+      "thin": {
+        "r2_oos": -0.006678,
+        "ann_mean": -0.8215,
+        "Sharpe": -1.404,
+        "CE_daily": -0.003188,
+        "n_oos": 1990
+      },
+      "dR2_compiled_minus_thin": -0.01892,
+      "dSharpe_compiled_minus_thin": 1.294,
+      "features_compiled": [
+        "mom5",
+        "macro_tilt",
+        "alt_tilt",
+        "cascade_p",
+        "B_hier",
+        "WMI"
+      ],
+      "features_thin": [
+        "mom5"
+      ],
+      "note": "IS-fit OLS, OOS evaluate; transparent bridge for compilation wedge, not a trading claim"
+    },
+    "planted_ot_shocks": {
+      "rate": 0.05,
+      "bands": [
+        "macro",
+        "alternative"
+      ],
+      "seed": 42,
+      "n_shock_dates": 20,
+      "shock_dates": [
+        "2025-08-03",
+        "2025-08-06",
+        "2025-08-20",
+        "2025-09-17",
+        "2025-12-14",
+        "2025-12-16",
+        "2025-12-27",
+        "2026-01-20",
+        "2026-01-22",
+        "2026-03-08",
+        "2026-03-27",
+        "2026-04-09",
+        "2026-04-15",
+        "2026-04-21",
+        "2026-04-26",
+        "2026-05-07",
+        "2026-05-27",
+        "2026-05-31",
+        "2026-07-17",
+        "2026-07-21"
+      ],
+      "base_CE": 0.132,
+      "planted_CE": 0.1026,
+      "dCE_planted_minus_base": -0.0294,
+      "p_CE": 0.762,
+      "interpretation": "Negative dCE indicates planted missingness destroys value (O_t channel)."
+    }
   },
   "econ_oos": [
     {
@@ -89,12 +263,12 @@
     },
     {
       "policy": "WMI threshold (0.2)",
-      "ann_return": 0.0156,
-      "ann_vol": 0.0116,
-      "Sharpe": 1.351,
-      "CE": 0.0155,
+      "ann_return": 0.0,
+      "ann_vol": 0.0,
+      "Sharpe": 0.0,
+      "CE": 0.0,
       "max_DD": 0.0,
-      "abstain_rate": 0.995,
+      "abstain_rate": 1.0,
       "N_days": 200
     },
     {
@@ -176,16 +350,16 @@
     {
       "contrast": "ACWMI \u2212 WMI threshold (0.2)",
       "n_days": 200,
-      "dSharpe": -0.5836,
-      "dCE": 0.1165,
-      "p_Sharpe": 0.86,
-      "p_CE": 0.828,
+      "dSharpe": 0.7674,
+      "dCE": 0.132,
+      "p_Sharpe": 0.534,
+      "p_CE": 0.802,
       "n_boot": 999,
       "block": 5,
-      "ci_dSharpe_05": -3.4034,
-      "ci_dSharpe_95": 2.803,
-      "ci_dCE_05": -1.2108,
-      "ci_dCE_95": 1.3089,
+      "ci_dSharpe_05": -1.839,
+      "ci_dSharpe_95": 3.3599,
+      "ci_dCE_05": -1.1986,
+      "ci_dCE_95": 1.3193,
       "ci95_excludes_0_CE": false,
       "ci95_excludes_0_Sharpe": false
     }
@@ -222,6 +396,14 @@
       "abstain_rate": 0.021,
       "dCE": -0.4019,
       "p_dCE": 0.008
+    },
+    {
+      "band_dropped": "macro+alternative",
+      "Sharpe": -0.025,
+      "CE": -0.2614,
+      "abstain_rate": 0.021,
+      "dCE": -0.3934,
+      "p_dCE": 0.018
     }
   ],
   "lobo_decomposition": [
@@ -251,6 +433,15 @@
       "p_content": 0.034,
       "dCE_gating_only": -0.0404,
       "p_gating": 0.044
+    },
+    {
+      "band": "macro+alternative",
+      "dCE_total": -0.3934,
+      "p_total": 0.018,
+      "dCE_content_only": -0.3341,
+      "p_content": 0.034,
+      "dCE_gating_only": NaN,
+      "p_gating": NaN
     }
   ],
   "thin_thick": [
@@ -265,18 +456,18 @@
     },
     {
       "world": "Thick real PIT (ex+macro+alt\u2026)",
-      "mean_B": 0.358,
-      "mean_H": 0.69,
-      "mean_ACWMI": 0.369,
+      "mean_B": 0.356,
+      "mean_H": 0.688,
+      "mean_ACWMI": 0.368,
       "Sharpe": 0.767,
       "CE": 0.132,
       "abstain_rate": 0.075
     },
     {
       "world": "Thick gated AC (real PIT)",
-      "mean_B": 0.358,
-      "mean_H": 0.69,
-      "mean_ACWMI": 0.369,
+      "mean_B": 0.356,
+      "mean_H": 0.688,
+      "mean_ACWMI": 0.368,
       "Sharpe": 0.767,
       "CE": 0.132,
       "abstain_rate": 0.075
@@ -331,7 +522,7 @@
     "deltas": {
       "Momentum always": 0.9549,
       "Thick ungated": 1.2887,
-      "WMI threshold (0.2)": 1.1723,
+      "WMI threshold (0.2)": 1.1568,
       "ACWMI (IS-frozen)": 1.2887
     }
   },
@@ -368,8 +559,8 @@
       "policy": "Thick ungated",
       "cost_bps": 10.0,
       "funding": "yes (where archived)",
-      "Sharpe": 0.463,
-      "CE": -0.0209
+      "Sharpe": 0.467,
+      "CE": -0.0191
     },
     {
       "policy": "ACWMI (IS-frozen)",
@@ -403,8 +594,8 @@
       "policy": "ACWMI (IS-frozen)",
       "cost_bps": 10.0,
       "funding": "yes (where archived)",
-      "Sharpe": 0.463,
-      "CE": -0.0209
+      "Sharpe": 0.467,
+      "CE": -0.0191
     },
     {
       "policy": "Momentum always",
@@ -438,8 +629,8 @@
       "policy": "Momentum always",
       "cost_bps": 10.0,
       "funding": "yes (where archived)",
-      "Sharpe": -0.204,
-      "CE": -0.3551
+      "Sharpe": -0.198,
+      "CE": -0.3522
     },
     {
       "policy": "Always long",
@@ -473,8 +664,8 @@
       "policy": "Always long",
       "cost_bps": 10.0,
       "funding": "yes (where archived)",
-      "Sharpe": -1.423,
-      "CE": -1.1705
+      "Sharpe": -1.402,
+      "CE": -1.1586
     }
   ],
   "regime_stratified": [
@@ -530,9 +721,9 @@
   "explanation_metrics": {
     "EAR": 1.0,
     "UCR": 0.0,
-    "ECP_rate_detect_conf": 0.6873,
+    "ECP_rate_detect_conf": 0.6882,
     "ECP_rate_cascade_conf": 0.0,
-    "n_active_asset_days": 3762
+    "n_active_asset_days": 3752
   },
   "weight_sensitivity": [
     {
@@ -620,9 +811,9 @@
     {
       "detected_regime": "crisis",
       "n": 3266,
-      "mean_cascade_p": 0.31639176362522964,
-      "mean_S": 0.08120411859021226,
-      "mean_C": 0.5550520514390692,
+      "mean_cascade_p": 0.3164410593998775,
+      "mean_S": 0.08094947399555695,
+      "mean_C": 0.5549704021228822,
       "mean_macro_tilt": -0.009797917942437232,
       "mean_alt_tilt": -0.050826699326393145,
       "mean_signal": -0.192896509491733,
@@ -632,84 +823,230 @@
     {
       "detected_regime": "range",
       "n": 508,
-      "mean_cascade_p": 0.20583818897637796,
-      "mean_S": 0.13193903407560445,
-      "mean_C": 0.5816272965879264,
+      "mean_cascade_p": 0.20563562992125986,
+      "mean_S": 0.13173964132742882,
+      "mean_C": 0.5796587926509186,
       "mean_macro_tilt": 0.045275590551181105,
       "mean_alt_tilt": 0.4566929133858268,
-      "mean_signal": 0.24015748031496062,
-      "share_long": 0.6181102362204725,
-      "share_short": 0.3779527559055118
+      "mean_signal": 0.24803149606299213,
+      "share_long": 0.6220472440944882,
+      "share_short": 0.37401574803149606
     },
     {
       "detected_regime": "trend",
-      "n": 226,
-      "mean_cascade_p": 0.21908849557522125,
-      "mean_S": 0.06946273766874478,
-      "mean_C": 0.6539823008849558,
-      "mean_macro_tilt": 0.2168141592920354,
-      "mean_alt_tilt": 0.23893805309734514,
-      "mean_signal": 0.04424778761061947,
-      "share_long": 0.49557522123893805,
-      "share_short": 0.45132743362831856
+      "n": 216,
+      "mean_cascade_p": 0.21717037037037037,
+      "mean_S": 0.06959669083870686,
+      "mean_C": 0.6472222222222223,
+      "mean_macro_tilt": 0.18055555555555555,
+      "mean_alt_tilt": 0.2037037037037037,
+      "mean_signal": 0.05555555555555555,
+      "share_long": 0.5,
+      "share_short": 0.4444444444444444
     }
   ],
   "event_study": [
     {
       "k": -3,
-      "ret": -0.00231,
+      "ret": -0.00142,
       "WMI": 0.0929,
-      "ACWMI": 0.3715,
-      "B_hier": 0.3538,
-      "N": 131
+      "ACWMI": 0.3702,
+      "B_hier": 0.3537,
+      "N": 112
     },
     {
       "k": -2,
-      "ret": -0.00064,
+      "ret": -0.00198,
       "WMI": 0.0929,
-      "ACWMI": 0.3701,
-      "B_hier": 0.3538,
-      "N": 131
+      "ACWMI": 0.3673,
+      "B_hier": 0.3537,
+      "N": 112
     },
     {
       "k": -1,
-      "ret": -0.00032,
+      "ret": -0.00338,
       "WMI": 0.0929,
-      "ACWMI": 0.3616,
-      "B_hier": 0.3538,
-      "N": 131
+      "ACWMI": 0.372,
+      "B_hier": 0.3537,
+      "N": 112
     },
     {
       "k": 0,
-      "ret": -0.00224,
+      "ret": -0.0014,
       "WMI": 0.0929,
-      "ACWMI": 0.3717,
-      "B_hier": 0.3538,
-      "N": 132
+      "ACWMI": 0.37,
+      "B_hier": 0.3537,
+      "N": 112
     },
     {
       "k": 1,
-      "ret": -0.00067,
+      "ret": -0.00202,
       "WMI": 0.0929,
-      "ACWMI": 0.37,
-      "B_hier": 0.3538,
-      "N": 132
+      "ACWMI": 0.3675,
+      "B_hier": 0.3537,
+      "N": 112
     },
     {
       "k": 2,
-      "ret": -0.00018,
+      "ret": -0.00316,
       "WMI": 0.0929,
-      "ACWMI": 0.3617,
-      "B_hier": 0.3538,
-      "N": 132
+      "ACWMI": 0.3724,
+      "B_hier": 0.3537,
+      "N": 112
     },
     {
       "k": 3,
-      "ret": -0.00226,
-      "WMI": 0.0935,
-      "ACWMI": 0.3715,
-      "B_hier": 0.3548,
-      "N": 132
+      "ret": -0.00142,
+      "WMI": 0.0936,
+      "ACWMI": 0.3709,
+      "B_hier": 0.355,
+      "N": 112
     }
-  ]
+  ],
+  "ot_availability_event_study": [],
+  "content_scramble_placebo": {
+    "design": "date-scramble macro_tilt/alt_tilt (seed=17)",
+    "base_CE": 0.132,
+    "scrambled_CE": -0.2537,
+    "dCE_scrambled_minus_base": -0.3857,
+    "p_CE": 0.082,
+    "interpretation": "Placebo should not beat the timed-content rule; negative dCE supports correctly timed compiled content."
+  },
+  "macro_component_lobo": [
+    {
+      "component_zeroed": "vix",
+      "CE": -0.2019,
+      "dCE_vs_base": -0.3339,
+      "p_CE": 0.034,
+      "Sharpe": 0.101
+    },
+    {
+      "component_zeroed": "dxy",
+      "CE": -0.2019,
+      "dCE_vs_base": -0.3339,
+      "p_CE": 0.034,
+      "Sharpe": 0.101
+    }
+  ],
+  "prespec_cost_contrast": [
+    {
+      "contrast": "Mechanism \u2212 Momentum",
+      "cost_bps": 0.0,
+      "mech_CE": 0.132,
+      "mom_CE": -0.2019,
+      "dCE": 0.3339,
+      "p_CE": 0.034,
+      "ci95_excludes_0": true,
+      "mech_Sharpe": 0.767,
+      "mom_Sharpe": 0.101
+    },
+    {
+      "contrast": "Mechanism \u2212 Momentum",
+      "cost_bps": 10.0,
+      "mech_CE": -0.0191,
+      "mom_CE": -0.3522,
+      "dCE": 0.3331,
+      "p_CE": 0.034,
+      "ci95_excludes_0": true,
+      "mech_Sharpe": 0.467,
+      "mom_Sharpe": -0.198
+    },
+    {
+      "contrast": "Mechanism \u2212 Momentum",
+      "cost_bps": 25.0,
+      "mech_CE": -0.246,
+      "mom_CE": -0.578,
+      "dCE": 0.332,
+      "p_CE": 0.038,
+      "ci95_excludes_0": true,
+      "mech_Sharpe": 0.017,
+      "mom_Sharpe": -0.646
+    }
+  ],
+  "compilation_wedge_bridge": {
+    "status": "ok",
+    "compiled": {
+      "r2_oos": -0.025598,
+      "ann_mean": -0.0396,
+      "Sharpe": -0.11,
+      "CE_daily": -0.000467,
+      "n_oos": 1990
+    },
+    "thin": {
+      "r2_oos": -0.006678,
+      "ann_mean": -0.8215,
+      "Sharpe": -1.404,
+      "CE_daily": -0.003188,
+      "n_oos": 1990
+    },
+    "dR2_compiled_minus_thin": -0.01892,
+    "dSharpe_compiled_minus_thin": 1.294,
+    "features_compiled": [
+      "mom5",
+      "macro_tilt",
+      "alt_tilt",
+      "cascade_p",
+      "B_hier",
+      "WMI"
+    ],
+    "features_thin": [
+      "mom5"
+    ],
+    "note": "IS-fit OLS, OOS evaluate; transparent bridge for compilation wedge, not a trading claim"
+  },
+  "planted_ot_shocks": {
+    "rate": 0.05,
+    "bands": [
+      "macro",
+      "alternative"
+    ],
+    "seed": 42,
+    "n_shock_dates": 20,
+    "shock_dates": [
+      "2025-08-03",
+      "2025-08-06",
+      "2025-08-20",
+      "2025-09-17",
+      "2025-12-14",
+      "2025-12-16",
+      "2025-12-27",
+      "2026-01-20",
+      "2026-01-22",
+      "2026-03-08",
+      "2026-03-27",
+      "2026-04-09",
+      "2026-04-15",
+      "2026-04-21",
+      "2026-04-26",
+      "2026-05-07",
+      "2026-05-27",
+      "2026-05-31",
+      "2026-07-17",
+      "2026-07-21"
+    ],
+    "base_CE": 0.132,
+    "planted_CE": 0.1026,
+    "dCE_planted_minus_base": -0.0294,
+    "p_CE": 0.762,
+    "interpretation": "Negative dCE indicates planted missingness destroys value (O_t channel)."
+  },
+  "experiment_config": {
+    "name": "jf_rfs_pit_identification",
+    "version": "2.0.0",
+    "content_hash": "cd968df719b0601b",
+    "path": "/workspace/pdf/sci/experiment_config.json",
+    "pre_specified_contrast": {
+      "name": "Mechanism \u2212 Momentum",
+      "treatment": "Thick ungated",
+      "control": "Momentum always",
+      "metric": "CE"
+    },
+    "timing": {
+      "protocol": "decision_at_prev_close",
+      "decision_asof_offset_days": -1,
+      "decision_asof_clock": "23:59:00",
+      "payoff": "same_calendar_day_close_to_close",
+      "notes": "Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t."
+    }
+  }
 }

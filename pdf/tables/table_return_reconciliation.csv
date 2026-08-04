@@ -1,0 +1,11 @@
+asset,symbol,n_overlap,corr,mae,median_abs_diff,status
+BTC,BTC/USDT,0,,,,no_exchange_series
+ETH,ETH/USDT,0,,,,no_exchange_series
+SOL,SOL/USDT,0,,,,no_exchange_series
+XRP,XRP/USDT,0,,,,no_exchange_series
+BNB,BNB/USDT,0,,,,no_exchange_series
+ADA,ADA/USDT,0,,,,no_exchange_series
+AVAX,AVAX/USDT,0,,,,no_exchange_series
+LINK,LINK/USDT,0,,,,no_exchange_series
+DOT,DOT/USDT,0,,,,no_exchange_series
+NEAR,NEAR/USDT,0,,,,no_exchange_series

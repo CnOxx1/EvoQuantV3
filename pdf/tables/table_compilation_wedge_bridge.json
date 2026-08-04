@@ -1,0 +1,31 @@
+{
+  "status": "ok",
+  "compiled": {
+    "r2_oos": -0.025598,
+    "ann_mean": -0.0396,
+    "Sharpe": -0.11,
+    "CE_daily": -0.000467,
+    "n_oos": 1990
+  },
+  "thin": {
+    "r2_oos": -0.006678,
+    "ann_mean": -0.8215,
+    "Sharpe": -1.404,
+    "CE_daily": -0.003188,
+    "n_oos": 1990
+  },
+  "dR2_compiled_minus_thin": -0.01892,
+  "dSharpe_compiled_minus_thin": 1.294,
+  "features_compiled": [
+    "mom5",
+    "macro_tilt",
+    "alt_tilt",
+    "cascade_p",
+    "B_hier",
+    "WMI"
+  ],
+  "features_thin": [
+    "mom5"
+  ],
+  "note": "IS-fit OLS, OOS evaluate; transparent bridge for compilation wedge, not a trading claim"
+}

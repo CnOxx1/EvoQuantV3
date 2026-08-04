@@ -1,18 +1,40 @@
 {
-  "n_rows": 4000,
-  "n_days": 400,
-  "start": "2025-06-30",
+  "n_rows": 3990,
+  "n_days": 399,
+  "start": "2025-07-01",
   "end": "2026-08-03",
-  "mean_ready": 3.0175,
+  "mean_ready": 3.007518796992481,
   "outage_rate": 0.0,
   "band_ready_rates": {
     "exchange": 1.0,
-    "news": 0.01,
+    "news": 0.007518796992481203,
     "event_calendar": 0.0,
-    "onchain": 0.0025,
-    "tokenomics": 0.0025,
-    "options": 0.0025,
+    "onchain": 0.0,
+    "tokenomics": 0.0,
+    "options": 0.0,
     "alternative": 1.0,
     "macro": 1.0
-  }
+  },
+  "experiment_config": {
+    "name": "jf_rfs_pit_identification",
+    "version": "2.0.0",
+    "content_hash": "cd968df719b0601b",
+    "path": "/workspace/pdf/sci/experiment_config.json",
+    "pre_specified_contrast": {
+      "name": "Mechanism \u2212 Momentum",
+      "treatment": "Thick ungated",
+      "control": "Momentum always",
+      "metric": "CE"
+    },
+    "timing": {
+      "protocol": "decision_at_prev_close",
+      "decision_asof_offset_days": -1,
+      "decision_asof_clock": "23:59:00",
+      "payoff": "same_calendar_day_close_to_close",
+      "notes": "Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t."
+    }
+  },
+  "timing_protocol": "decision_at_prev_close",
+  "timing_migration": "shift_status_from_prev_calendar_day",
+  "note": "Migrated from archived same-day-asof panel because local SQLite history was empty; statuses for day t are taken from archived day t-1 EOD."
 }

@@ -3,3 +3,4 @@ band_dropped,Sharpe,CE,abstain_rate,dCE,p_dCE
 exchange,0.65,0.076,0.158,-0.056,0.394
 macro,-0.08,-0.286,0.06,-0.418,0.01
 alternative,-0.042,-0.2699,0.021,-0.4019,0.008
+macro+alternative,-0.025,-0.2614,0.021,-0.3934,0.018

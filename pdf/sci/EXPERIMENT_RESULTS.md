@@ -1,9 +1,9 @@
 # Real PIT multi-band experiment results
 
-- PIT archive: **2025-06-30 → 2026-08-03**, 4000 rows
-- Band ready rates: `{'exchange': 1.0, 'news': 0.01, 'event_calendar': 0.0, 'onchain': 0.0025, 'tokenomics': 0.0025, 'options': 0.0025, 'alternative': 1.0, 'macro': 1.0}`
+- PIT archive: **2025-07-01 → 2026-08-03**, 3990 rows
+- Band ready rates: `{'exchange': 1.0, 'news': 0.007518796992481203, 'event_calendar': 0.0, 'onchain': 0.0, 'tokenomics': 0.0, 'options': 0.0, 'alternative': 1.0, 'macro': 1.0}`
 - IS/OOS cut: **2026-01-16**
-- Frozen: `{'ac_thr': 0.25, 'c_thr': 0.25, 'is_ce': -0.47933518100200356, 'is_abstain': 0.06, 'is_sharpe': -0.322149901168874, 'casc_only_thr': 0.7, 'wmi_thr': 0.2}`
+- Frozen: `{'ac_thr': 0.25, 'c_thr': 0.25, 'is_ce': -0.4467303855536908, 'is_abstain': 0.05628140703517588, 'is_sharpe': -0.2603324435708088, 'casc_only_thr': 0.7, 'wmi_thr': 0.2}`
 - Bootstrap: circular block, n_boot=999, block=5 trading days
 
 ## OOS economic value
@@ -15,7 +15,7 @@
 | Thick ungated       |       0.3846 |    0.5012 |    0.767 |  0.132  |  -0.4378 |          0.075 |      200 |
 | Simple outage rule  |       0.3846 |    0.5012 |    0.767 |  0.132  |  -0.4378 |          0.075 |      200 |
 | Simple cascade rule |       0.3846 |    0.5012 |    0.767 |  0.132  |  -0.4378 |          0.075 |      200 |
-| WMI threshold (0.2) |       0.0156 |    0.0116 |    1.351 |  0.0155 |   0      |          0.995 |      200 |
+| WMI threshold (0.2) |       0      |    0      |    0     |  0      |   0      |          1     |      200 |
 | ACWMI (IS-frozen)   |       0.3846 |    0.5012 |    0.767 |  0.132  |  -0.4378 |          0.075 |      200 |
 
 ## OOS block-bootstrap contrasts
@@ -26,32 +26,34 @@
 | ACWMI − Always long         |      200 |    2.1664 | 1.2887 |      0.296 |  0.246 |      999 |       5 |         -2.2354 |          6.3169 |     -0.9963 |      3.5152 | False                | False                    |
 | ACWMI − Momentum always     |      200 |    0.6664 | 0.3339 |      0.034 |  0.034 |      999 |       5 |          0.0552 |          1.4781 |      0.028  |      0.6768 | True                 | True                     |
 | Thick ungated − ACWMI       |      200 |    0      | 0      |      1     |  1     |      999 |       5 |          0      |          0      |      0      |      0      | False                | False                    |
-| ACWMI − WMI threshold (0.2) |      200 |   -0.5836 | 0.1165 |      0.86  |  0.828 |      999 |       5 |         -3.4034 |          2.803  |     -1.2108 |      1.3089 | False                | False                    |
+| ACWMI − WMI threshold (0.2) |      200 |    0.7674 | 0.132  |      0.534 |  0.802 |      999 |       5 |         -1.839  |          3.3599 |     -1.1986 |      1.3193 | False                | False                    |
 
 ## LOBO (durable bands, content+gating deletion)
 
-| band_dropped   |   Sharpe |      CE |   abstain_rate |     dCE |   p_dCE |
-|:---------------|---------:|--------:|---------------:|--------:|--------:|
-| (none)         |    0.767 |  0.132  |          0.075 |  0      | nan     |
-| exchange       |    0.65  |  0.076  |          0.158 | -0.056  |   0.394 |
-| macro          |   -0.08  | -0.286  |          0.06  | -0.418  |   0.01  |
-| alternative    |   -0.042 | -0.2699 |          0.021 | -0.4019 |   0.008 |
+| band_dropped      |   Sharpe |      CE |   abstain_rate |     dCE |   p_dCE |
+|:------------------|---------:|--------:|---------------:|--------:|--------:|
+| (none)            |    0.767 |  0.132  |          0.075 |  0      | nan     |
+| exchange          |    0.65  |  0.076  |          0.158 | -0.056  |   0.394 |
+| macro             |   -0.08  | -0.286  |          0.06  | -0.418  |   0.01  |
+| alternative       |   -0.042 | -0.2699 |          0.021 | -0.4019 |   0.008 |
+| macro+alternative |   -0.025 | -0.2614 |          0.021 | -0.3934 |   0.018 |
 
 ## LOBO decomposition (content vs gating channel)
 
-| band        |   dCE_total |   p_total |   dCE_content_only |   p_content |   dCE_gating_only |   p_gating |
-|:------------|------------:|----------:|-------------------:|------------:|------------------:|-----------:|
-| exchange    |     -0.056  |     0.394 |           nan      |     nan     |           -0.056  |      0.394 |
-| macro       |     -0.418  |     0.01  |            -0.3339 |       0.034 |           -0.0658 |      0.026 |
-| alternative |     -0.4019 |     0.008 |            -0.3339 |       0.034 |           -0.0404 |      0.044 |
+| band              |   dCE_total |   p_total |   dCE_content_only |   p_content |   dCE_gating_only |   p_gating |
+|:------------------|------------:|----------:|-------------------:|------------:|------------------:|-----------:|
+| exchange          |     -0.056  |     0.394 |           nan      |     nan     |           -0.056  |      0.394 |
+| macro             |     -0.418  |     0.01  |            -0.3339 |       0.034 |           -0.0658 |      0.026 |
+| alternative       |     -0.4019 |     0.008 |            -0.3339 |       0.034 |           -0.0404 |      0.044 |
+| macro+alternative |     -0.3934 |     0.018 |            -0.3341 |       0.034 |          nan      |    nan     |
 
 ## Thin vs thick (real PIT statuses; thin deletes content AND gating)
 
 | world                          |   mean_B |   mean_H |   mean_ACWMI |   Sharpe |      CE |   abstain_rate |
 |:-------------------------------|---------:|---------:|-------------:|---------:|--------:|---------------:|
 | Thin (exchange only, real PIT) |    0.201 |    0.562 |        0.261 |   -0.85  | -0.3883 |          0.454 |
-| Thick real PIT (ex+macro+alt…) |    0.358 |    0.69  |        0.369 |    0.767 |  0.132  |          0.075 |
-| Thick gated AC (real PIT)      |    0.358 |    0.69  |        0.369 |    0.767 |  0.132  |          0.075 |
+| Thick real PIT (ex+macro+alt…) |    0.356 |    0.688 |        0.368 |    0.767 |  0.132  |          0.075 |
+| Thick gated AC (real PIT)      |    0.356 |    0.688 |        0.368 |    0.767 |  0.132  |          0.075 |
 
 - Thick − Thin bootstrap: `{'n_days': 200, 'dSharpe': 1.6178, 'dCE': 0.5202, 'p_Sharpe': 0.044, 'p_CE': 0.22, 'n_boot': 999, 'block': 5, 'ci_dSharpe_05': 0.0938, 'ci_dSharpe_95': 3.7252, 'ci_dCE_05': -0.3617, 'ci_dCE_95': 1.373, 'ci95_excludes_0_CE': False, 'ci95_excludes_0_Sharpe': True}`
 
@@ -65,7 +67,7 @@
 
 ## White (2000) reality check vs Always long
 
-`{'benchmark': 'Always long', 'best_strategy': 'Thick ungated', 'max_dCE': 1.2887, 'p_reality_check': 0.144, 'n_boot': 999, 'block': 5, 'n_days': 200, 'deltas': {'Momentum always': 0.9549, 'Thick ungated': 1.2887, 'WMI threshold (0.2)': 1.1723, 'ACWMI (IS-frozen)': 1.2887}}`
+`{'benchmark': 'Always long', 'best_strategy': 'Thick ungated', 'max_dCE': 1.2887, 'p_reality_check': 0.144, 'n_boot': 999, 'block': 5, 'n_days': 200, 'deltas': {'Momentum always': 0.9549, 'Thick ungated': 1.2887, 'WMI threshold (0.2)': 1.1568, 'ACWMI (IS-frozen)': 1.2887}}`
 
 ## Transaction costs and funding
 
@@ -75,22 +77,22 @@
 | Thick ungated     |         10 | no                   |    0.467 | -0.0191 |
 | Thick ungated     |         25 | no                   |    0.017 | -0.246  |
 | Thick ungated     |         50 | no                   |   -0.725 | -0.6251 |
-| Thick ungated     |         10 | yes (where archived) |    0.463 | -0.0209 |
+| Thick ungated     |         10 | yes (where archived) |    0.467 | -0.0191 |
 | ACWMI (IS-frozen) |          0 | no                   |    0.767 |  0.132  |
 | ACWMI (IS-frozen) |         10 | no                   |    0.467 | -0.0191 |
 | ACWMI (IS-frozen) |         25 | no                   |    0.017 | -0.246  |
 | ACWMI (IS-frozen) |         50 | no                   |   -0.725 | -0.6251 |
-| ACWMI (IS-frozen) |         10 | yes (where archived) |    0.463 | -0.0209 |
+| ACWMI (IS-frozen) |         10 | yes (where archived) |    0.467 | -0.0191 |
 | Momentum always   |          0 | no                   |    0.101 | -0.2019 |
 | Momentum always   |         10 | no                   |   -0.198 | -0.3522 |
 | Momentum always   |         25 | no                   |   -0.646 | -0.578  |
 | Momentum always   |         50 | no                   |   -1.386 | -0.9552 |
-| Momentum always   |         10 | yes (where archived) |   -0.204 | -0.3551 |
+| Momentum always   |         10 | yes (where archived) |   -0.198 | -0.3522 |
 | Always long       |          0 | no                   |   -1.399 | -1.1568 |
 | Always long       |         10 | no                   |   -1.402 | -1.1586 |
 | Always long       |         25 | no                   |   -1.407 | -1.1613 |
 | Always long       |         50 | no                   |   -1.415 | -1.1659 |
-| Always long       |         10 | yes (where archived) |   -1.423 | -1.1705 |
+| Always long       |         10 | yes (where archived) |   -1.402 | -1.1586 |
 
 ## Regime-stratified OOS performance
 
@@ -105,7 +107,7 @@
 
 ## Explanation / calibration metrics
 
-`{'EAR': 1.0, 'UCR': 0.0, 'ECP_rate_detect_conf': 0.6873, 'ECP_rate_cascade_conf': 0.0, 'n_active_asset_days': 3762}`
+`{'EAR': 1.0, 'UCR': 0.0, 'ECP_rate_detect_conf': 0.6882, 'ECP_rate_cascade_conf': 0.0, 'n_active_asset_days': 3752}`
 
 ## B_hier weight sensitivity (AC policy, frozen thresholds)
 
@@ -132,14 +134,20 @@
 
 | detected_regime   |    n |   mean_cascade_p |    mean_S |   mean_C |   mean_macro_tilt |   mean_alt_tilt |   mean_signal |   share_long |   share_short |
 |:------------------|-----:|-----------------:|----------:|---------:|------------------:|----------------:|--------------:|-------------:|--------------:|
-| crisis            | 3266 |         0.316392 | 0.0812041 | 0.555052 |       -0.00979792 |      -0.0508267 |    -0.192897  |     0.369259 |      0.562156 |
-| range             |  508 |         0.205838 | 0.131939  | 0.581627 |        0.0452756  |       0.456693  |     0.240157  |     0.61811  |      0.377953 |
-| trend             |  226 |         0.219088 | 0.0694627 | 0.653982 |        0.216814   |       0.238938  |     0.0442478 |     0.495575 |      0.451327 |
+| crisis            | 3266 |         0.316441 | 0.0809495 | 0.55497  |       -0.00979792 |      -0.0508267 |    -0.192897  |     0.369259 |      0.562156 |
+| range             |  508 |         0.205636 | 0.13174   | 0.579659 |        0.0452756  |       0.456693  |     0.248031  |     0.622047 |      0.374016 |
+| trend             |  216 |         0.21717  | 0.0695967 | 0.647222 |        0.180556   |       0.203704  |     0.0555556 |     0.5      |      0.444444 |
 
 ## Notes
 - Exchange/macro/alternative have durable DB history; news/onchain/options/tokenomics are mostly collection-day right-censored.
 - Band content (macro_tilt from vintaged VIX/DXY; alt_tilt from stablecoin 7d net supply) enters R2/R2b/R3 and C directly;
   tilts are forced to 0 whenever the band is not PIT-ready, so LOBO deletes content, not only gating.
-- Natural hard outages are rare in continuous OKX backfill; scarce-world states use bottom B_hier quintile for event study.
+- Natural hard outages are rare in continuous OKX backfill; scarce-world states use expanding B_hier quantile (no full-sample look-ahead).
+- Hard O_t availability event study exported to table_ot_availability_event_study.csv.
+- Joint macro+alternative LOBO and date-scrambled content placebo are reported.
+- Macro component LOBO (VIX vs DXY), cost-aware pre-specified contrast, compilation-wedge bridge, planted O_t shocks exported.
 - Mechanism signal is the deterministic R1–R3 rule in `directional_signal` (no latent model).
+- Timing protocol: decision_at_prev_close (features at t-1 23:59; payoff = day-t close-to-close).
+- Experiment config: `{'name': 'jf_rfs_pit_identification', 'version': '2.0.0', 'content_hash': 'cd968df719b0601b', 'path': '/workspace/pdf/sci/experiment_config.json', 'pre_specified_contrast': {'name': 'Mechanism − Momentum', 'treatment': 'Thick ungated', 'control': 'Momentum always', 'metric': 'CE'}, 'timing': {'protocol': 'decision_at_prev_close', 'decision_asof_offset_days': -1, 'decision_asof_clock': '23:59:00', 'payoff': 'same_calendar_day_close_to_close', 'notes': 'Position for calendar day t uses band statuses and content known at (t-1) 23:59; payoff is Yahoo close-to-close return on day t.'}}`.
+- Selective prediction / ACWMI gating is secondary on this sparse archive (often equals ungated).
 - time_slice grid exported to table_timeslice_grid.csv (analytics snapshots still sparse historically).

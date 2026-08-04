@@ -1,0 +1,101 @@
+{
+  "summary": {
+    "n_assets": 10,
+    "n_ok": 0,
+    "n_divergent": 0,
+    "n_missing": 10,
+    "mean_corr_ok": null
+  },
+  "rows": [
+    {
+      "asset": "BTC",
+      "symbol": "BTC/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    },
+    {
+      "asset": "ETH",
+      "symbol": "ETH/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    },
+    {
+      "asset": "SOL",
+      "symbol": "SOL/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    },
+    {
+      "asset": "XRP",
+      "symbol": "XRP/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    },
+    {
+      "asset": "BNB",
+      "symbol": "BNB/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    },
+    {
+      "asset": "ADA",
+      "symbol": "ADA/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    },
+    {
+      "asset": "AVAX",
+      "symbol": "AVAX/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    },
+    {
+      "asset": "LINK",
+      "symbol": "LINK/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    },
+    {
+      "asset": "DOT",
+      "symbol": "DOT/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    },
+    {
+      "asset": "NEAR",
+      "symbol": "NEAR/USDT",
+      "n_overlap": 0,
+      "corr": null,
+      "mae": null,
+      "median_abs_diff": null,
+      "status": "no_exchange_series"
+    }
+  ]
+}

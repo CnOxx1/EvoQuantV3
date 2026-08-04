@@ -17,7 +17,7 @@ test-fast: ## 只运行集成测试和新模块测试
 	$(PYTHON) -m pytest tests/integration tests/test_*.py -q
 
 test-paper: ## 论文服务相关单元测试（含 JF 识别不变量与 LLM consumer）
-	$(PYTHON) -m pytest tests/test_paper_lab.py tests/test_jf_inference.py tests/test_jf_identification.py tests/test_llm_consumer.py tests/ai_market_context tests/time_slice -q
+	$(PYTHON) -m pytest tests/test_paper_lab.py tests/test_jf_inference.py tests/test_jf_identification.py tests/test_jf_extras.py tests/test_llm_consumer.py tests/ai_market_context tests/time_slice -q
 
 lint: ## 代码检查（ruff）
 	$(PYTHON) -m ruff check .

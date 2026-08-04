@@ -378,4 +378,29 @@ def build_panel() -> pd.DataFrame:
 
 
 if __name__ == "__main__":
+    # If domain DBs have no history (fresh VM), fall back to protocol migration
+    # of the checked-in archive rather than writing an all-missing panel.
+    try:
+        from database.router import DatabaseRouter, Domain
+        import sqlite3
+
+        r = DatabaseRouter()
+        ex = r.get_manager(Domain.EXCHANGE_DATA).conn
+        n_klines = 0
+        try:
+            n_klines = int(ex.execute("SELECT COUNT(*) FROM klines").fetchone()[0])
+        except Exception:
+            n_klines = 0
+        if n_klines == 0 and (DATA / "pit_multiband_panel.csv").exists():
+            print("SQLite exchange history empty — migrating checked-in PIT panel to previous-close clock")
+            from pdf.sci.migrate_pit_to_prev_close import main as migrate_main
+
+            raise SystemExit(migrate_main())
+    except SystemExit:
+        raise
+    except Exception as e:
+        print("DB probe failed, attempting migration fallback:", e)
+        from pdf.sci.migrate_pit_to_prev_close import main as migrate_main
+
+        raise SystemExit(migrate_main())
     build_panel()

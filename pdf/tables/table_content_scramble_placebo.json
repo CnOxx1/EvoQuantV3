@@ -1,0 +1,8 @@
+{
+  "design": "date-scramble macro_tilt/alt_tilt (seed=17)",
+  "base_CE": 0.132,
+  "scrambled_CE": -0.2537,
+  "dCE_scrambled_minus_base": -0.3857,
+  "p_CE": 0.082,
+  "interpretation": "Placebo should not beat the timed-content rule; negative dCE supports correctly timed compiled content."
+}
