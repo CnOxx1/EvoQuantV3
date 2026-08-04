@@ -17,7 +17,8 @@
 | Return reconciliation | `make paper-reconcile` (graceful if DBs empty) |
 | Bootstrap archive (OKX runtime patch only) | `make paper-bootstrap` — do not commit exchange config |
 | AI-consumer transcripts | `make paper-llm-consumer` |
-| Manuscript PDF after TeX/generator edits | `python pdf/sci/generate_full_manuscript_pdf.py` |
+| Manuscript PDF after TeX/generator edits | `python pdf/sci/generate_full_manuscript_pdf.py` (JF + AI-WM) |
+| AI-for-finance framing PDF only | `make paper-ai-wm` → `pdf/sci/main_ai_world_model.pdf` (`main_ai_wm.tex`) |
 | Regression tests | `make test-paper` |
 
 ## Core theory that must not be deleted
