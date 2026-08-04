@@ -79,10 +79,17 @@
   },
   "llm_consumer": {
     "enabled": true,
-    "models": ["mock-compiled-aware", "mock-momentum", "mock-noisy"],
+    "models": [
+      "public-llm-compiled-follower",
+      "mock-compiled-aware",
+      "mock-momentum",
+      "mock-noisy"
+    ],
     "temperature": 0.0,
     "action_space": ["bullish", "bearish", "neutral", "abstain"],
     "treatments": ["compiled", "raw"],
-    "protocol_path": "pdf/sci/llm_consumer/protocol.md"
+    "protocol_path": "pdf/sci/llm_consumer/protocol.md",
+    "role": "understanding_first_world_model_for_public_llms",
+    "live_vendor_env": ["OPENAI_API_KEY", "DEEPSEEK_API_KEY", "GLM_API_KEY", "LLM_API_KEY"]
   }
 }

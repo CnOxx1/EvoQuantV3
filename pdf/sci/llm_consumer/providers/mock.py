@@ -113,14 +113,45 @@ class MockNoisyProvider:
         )
 
 
+class PublicLLMCompiledFollower:
+    """Stylized public-LLM consumer: follows compiled world guidance when present.
+
+    Named to represent the intended GLM/DeepSeek/GPT usage pattern in offline
+    replication (not a claim about any vendor's weights). Prefer live adapters
+    in ``openai_compatible`` when API keys exist.
+    """
+
+    name = "public-llm-compiled-follower"
+
+    def decide(self, *, treatment: str, prompt: str, bundle: dict[str, Any]) -> ConsumerDecision:
+        # Delegate to compiled-aware semantics — public LLMs are instructed to
+        # honor should_ai_abstain and band roles in the frozen compiled prompt.
+        return MockCompiledAwareProvider().decide(treatment=treatment, prompt=prompt, bundle=bundle)
+
+
 PROVIDERS = {
     MockCompiledAwareProvider.name: MockCompiledAwareProvider,
     MockMomentumProvider.name: MockMomentumProvider,
     MockNoisyProvider.name: MockNoisyProvider,
+    PublicLLMCompiledFollower.name: PublicLLMCompiledFollower,
 }
 
 
 def get_provider(name: str):
+    # Live public LLMs: gpt-*, deepseek-*, glm-* when keys are configured
+    live_prefixes = ("gpt-", "deepseek", "glm", "openai:", "live:")
+    lname = name.lower()
+    if lname.startswith(live_prefixes) or lname in {"gpt", "deepseek-chat", "glm-4"}:
+        from pdf.sci.llm_consumer.providers.openai_compatible import (
+            OpenAICompatibleProvider,
+            live_llm_configured,
+        )
+
+        if not live_llm_configured():
+            # Fall back to stylized public follower so the pipeline still runs
+            return PublicLLMCompiledFollower()
+        return OpenAICompatibleProvider(name.replace("openai:", "").replace("live:", ""))
+
     cls = PROVIDERS.get(name)
     if cls is None:
         raise KeyError(f"Unknown mock provider: {name}")

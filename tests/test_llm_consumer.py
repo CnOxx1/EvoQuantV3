@@ -43,12 +43,30 @@ def test_raw_bundle_has_no_world_model_index():
             "ret": 0.01,
             "WMI": 0.5,
             "ACWMI": 0.5,
+            "U": 0.9,
+            "H_cont": 0.8,
+            "B_hier": 0.5,
+            "n_ready": 3,
+            "n_missing": 4,
+            "n_limited": 0,
+            "st_exchange": "ready",
+            "st_macro": "ready",
+            "st_alternative": "ready",
         }
     )
     raw = build_raw_bundle(row)
     compiled = build_compiled_bundle(row)
     assert "world_model_index" not in raw
     assert "world_model_index" in compiled
+    assert "completeness" in compiled
+    assert "honesty" in compiled
+    assert "audit" in compiled
+    assert compiled["audit"]["ear_required"] is True
+
+
+def test_public_llm_follower_registered():
+    p = get_provider("public-llm-compiled-follower")
+    assert p.name == "public-llm-compiled-follower"
 
 
 def test_within_model_delta_runs_on_tiny_panel():
