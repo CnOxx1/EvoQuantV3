@@ -1,4 +1,4 @@
-.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-full paper-bootstrap test-paper
+.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-full paper-core paper-bootstrap test-paper
 
 PYTHON ?= python
 export PYTHONPATH := $(CURDIR)
@@ -55,12 +55,18 @@ paper-pdf: ## 编译 SCI/JF 稿 PDF
 paper-full: ## 生成完整顶刊工作论文 PDF（英+中）
 	$(PYTHON) pdf/sci/generate_full_manuscript_pdf.py
 
-paper-lab: ## 一键：PIT → JF 实证 → PDF（加 WITH_BOOTSTRAP=1 先采集）
+paper-core: ## World-Model-First 核心中文稿：补图 + PDF
+	$(PYTHON) pdf/sci/generate_core_figures.py
+	$(PYTHON) pdf/sci/generate_core_manuscript_pdf.py
+
+paper-lab: ## 一键：PIT → JF 实证 → 核心稿 PDF（加 WITH_BOOTSTRAP=1 先采集）
 	@if [ "$(WITH_BOOTSTRAP)" = "1" ]; then \
 		$(PYTHON) pdf/sci/paper_lab.py all --with-bootstrap; \
 	else \
 		$(PYTHON) pdf/sci/paper_lab.py all; \
 	fi
+	$(PYTHON) pdf/sci/generate_core_figures.py
+	$(PYTHON) pdf/sci/generate_core_manuscript_pdf.py
 
 clean: ## 清理临时文件
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

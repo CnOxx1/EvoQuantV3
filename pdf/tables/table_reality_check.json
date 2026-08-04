@@ -9,7 +9,7 @@
   "deltas": {
     "Momentum always": 0.9549,
     "Thick ungated": 1.2887,
-    "WMI threshold (0.2)": 1.1568,
+    "WMI threshold (0.2)": 1.1723,
     "ACWMI (IS-frozen)": 1.2887
   }
 }

@@ -24,6 +24,10 @@ def _run(script: str, extra: list[str] | None = None) -> int:
     print("+", " ".join(cmd), flush=True)
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT)
+    # Paper archives live in domain-split SQLite files (exchange/market/analytics).
+    # Cloud envs sometimes export DB_SPLIT_ENABLED=0, which collapses all domains
+    # onto empty crypto_data.db and zeros band readiness — force split for paper lab.
+    env["DB_SPLIT_ENABLED"] = "1"
     return subprocess.call(cmd, cwd=str(ROOT), env=env)
 
 
@@ -128,6 +132,9 @@ def main() -> int:
         [
             "build_pit_archive.py",
             "run_pit_jf_experiments.py",
+            "run_longspan_backtest.py",
+            "generate_core_figures.py",
+            "generate_core_manuscript_pdf.py",
             "generate_sci_pdf.py",
         ]
     )
