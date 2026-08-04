@@ -1,7 +1,9 @@
-%% ICAIF '26 — ACM acmart sigconf + anonymous (+ review line numbers)
-%% CFP: latest ACM template, sigconf two-column, anonymous, ≤8 pages, no appendix.
+%% ICAIF '26 — ACM acmart sigconf + anonymous
+%% CFP (icaif2026.org/call-for-papers): latest ACM template, sigconf two-column
+%% with the "anonymous" parameter, ≤8 pages, no appendix/supplement.
+%% Do NOT enable "review" (line numbers): CFP specifies only sigconf+anonymous.
 %% Isolated from pdf/sci/ JF-RFS materials.
-\documentclass[sigconf,anonymous,review]{acmart}
+\documentclass[sigconf,anonymous]{acmart}
 
 %% Rights / metadata (anonymous submission)
 \setcopyright{none}
@@ -15,16 +17,13 @@
 
 %% Only packages not already pulled by acmart. Do NOT load amsthm/enumitem:
 %% acmart enables acmthm by default; enumitem would alter ACM list spacing.
+%% Do NOT load geometry or tweak headheight/topmargin — stock acmart owns layout.
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{listings}
 \graphicspath{{figures/}{figures_src/}}
-
-%% Slightly taller header for review line-number / fancyhdr warning.
-\setlength{\headheight}{15.2pt}
-\addtolength{\topmargin}{-2.2pt}
 
 \lstset{
   basicstyle=\ttfamily\scriptsize,
@@ -56,8 +55,10 @@
 
 \begin{document}
 
-\title{A Market World Model for Public LLMs:\\
-A Typed Observation Contract before Decision}
+%% Optional short title keeps the running head to one line (stock acmart).
+\title[A Market World Model for Public LLMs]{%
+  A Market World Model for Public LLMs:\\
+  A Typed Observation Contract before Decision}
 
 \begin{abstract}
 Public LLMs asked to analyze or trade crypto markets fail before strategy: they lack a complete, honest, auditable \emph{market observation interface}. We present an anonymized \emph{world-model runtime} that compiles asynchronous multi-band evidence into a point-in-time (PIT) world bundle with a typed abstention contract. Epistemic observations \(O_{j,t}=(x,\tau,q,g,r)\) and compilation \(\Pi_t\) yield \(\mathcal{F}^{\mathrm{AI}}_t\); completeness, honesty \((B,U,H)\), and WMI/ACWMI expose machine-readable refusal; evidence IDs make actions auditable. The primary claim is \emph{trustworthy interfacing}, not a new trading agent: on identical \(100\) OOS asset-days, four live public LLMs (temperature \(0\)) form a behavior ladder---asked \emph{blind}, every model refuses (\(1.0\)); given a momentum fragment they over-trade (abstain \(0.04\)--\(0.75\)) and lose; given the compiled world with a hard flag they abstain on every thin day (\(1.0\)); Ungated (same content, no hard flag) averages only \(0.68\). A full-OOS checkpointed sweep (\(n{=}2000\)) keeps Compiled at \(1.000\) for all vendors. Even on archive-thick days (all three evaluation bands ready), Raw still over-acts and often loses while Compiled continues to refuse---readiness counts alone do not replace the typed contract. A grounding workflow recovers ready/missing/tilt answers at mean F1/acc.\ \(0.97\) from Compiled vs.\ \(0.04\)--\(0.23\) from Raw. As a secondary \emph{content} probe (not an LLM leaderboard), a transparent world-model rule that reads the same vintaged tilts beats momentum and buy-and-hold out-of-sample (Sharpe \(0.76\) vs.\ \(0.10\) / \(-1.40\); \(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\)). We detail the runtime (collectors, vintage store, BandPIT, bundle schema, LLM adapter) as an ICAIF systems contribution.
@@ -105,7 +106,7 @@ RQ1 tests whether a typed world interface can \emph{enforce} world-conditional a
 \paragraph{Contributions.}
 \begin{enumerate}
 \item \textbf{Cognition semantics.} Epistemic observations, compilation \(\Pi_t\), a lag reconstruction bound, completeness/honesty fields, WMI/ACWMI abstention, evidence-bound actions.
-\item \textbf{Anonymized runtime architecture.} Vintage-aware collectors, BandPIT previous-close clock, quality-tagged bundles, availability shocks \(O_t\), OpenAI-compatible multi-vendor adapter, and a frozen Compiled / Ungated / Raw / Blind consumer protocol.
+\item \textbf{Anonymized runtime architecture.} Vintage-aware collectors, BandPIT previous-close clock, quality-tagged bundles, availability shocks \(O_t\), a multi-vendor OpenAI-compatible adapter, and a frozen Compiled / Ungated / Raw / Blind consumer protocol.
 \item \textbf{Live interface validation.} Four-arm ladder on identical days: Blind refuses, Raw over-trades and loses, Ungated is vendor-dependent, Compiled enforces thin-world abstain \(1.0\) (replicated on full OOS for all vendors). A band-thick split shows the contract still binds when all archive bands are ready; grounding recovers ready/missing/tilt at \(0.97\) vs.\ \(0.04\)--\(0.23\) raw; a secondary content rule confirms the tilts are economically nonempty.
 \end{enumerate}
 
@@ -116,7 +117,7 @@ RQ1 tests whether a typed world interface can \emph{enforce} world-conditional a
 World models learn compact states and often dynamics~\cite{ha2018world,hafner2020dreamer,lecun2022path}. We address the complementary \emph{observation-side} problem: a PIT-safe, quality-tagged crypto world \emph{before} dynamics or LLM policy. We claim the missing systems layer generative WMs usually assume---not a Dreamer/JEPA simulator.
 
 \paragraph{LLM agents in finance.}
-ChatGPT return prediction~\cite{lopez2023chatgpt}, open financial LLMs~\cite{yang2023fingpt}, memory-augmented trading agents~\cite{yu2023finmem,li2023tradinggpt}, and tool-augmented agents~\cite{zhang2024finagent,yao2023react} advance agent skill and orchestration. Recent ICAIF-facing lines further emphasize agent benchmarks, retrieval, and research-judge protocols. We deliberately do \emph{not} propose another memory router or debate society: we evaluate within-model Compiled vs.\ Ungated vs.\ Raw vs.\ Blind under a frozen schema so the estimand is the \emph{observation contract} those agents still assume.
+ChatGPT return prediction~\cite{lopez2023chatgpt}, open financial LLMs~\cite{yang2023fingpt}, memory-augmented trading agents~\cite{yu2023finmem,li2023tradinggpt}, and tool-augmented agents~\cite{zhang2024finagent,yao2023react} advance agent skill and orchestration. Recent ICAIF work intensifies complementary layers of that stack: FinAgentBench evaluates agentic retrieval for financial QA~\cite{choi2025finagentbench}; FinSearch builds temporal-aware search agents over market and news feeds~\cite{shen2025finsearch}; FinResearchBench judges long-horizon research agents with logic-tree protocols~\cite{sun2025finresearchbench}; FactorMAD uses multi-agent debate for interpretable alpha mining~\cite{duan2025factormad}. Those lines improve \emph{how} agents fetch, debate, and are scored. We address a prior gap they still assume---a PIT-safe, quality-tagged \emph{observation contract} with typed abstention---and deliberately do not propose another memory router, retrieval planner, or debate society. Our estimand is within-model Compiled / Ungated / Raw / Blind under a frozen schema.
 
 \paragraph{Selective prediction and trustworthy AI.}
 Abstention can be optimal under noise~\cite{elyaniv2010,geifman2017}. We tie refusal to world quality via an explicit runtime contract, not classifier confidence alone.
@@ -197,8 +198,8 @@ We describe the anonymized prototype as a layered systems object (Figure~\ref{fi
 \subsection{Layered design}
 \begin{enumerate}
 \item \textbf{Data layer (collectors).} Exchange, macro, and alternative collectors write vintage-aware history: observation timestamps plus macro \texttt{available\_at} vintages.
-\item \textbf{Store layer.} Embedded analytical stores hold raw series, merged market panels, and pipeline outputs (readiness, WMI/ACWMI, paper world snapshots).
-\item \textbf{Logic layer (compilation).} BandPIT reconstructs band readiness on a previous-close clock; honesty/missingness gates and band assembly implement \(\Pi_t\); world-quality indices and availability shocks \(O_t\) are first-class.
+\item \textbf{Store layer.} Embedded analytical stores hold raw series, merged market panels, and pipeline outputs (readiness, WMI / ACWMI, paper world snapshots).
+\item \textbf{Logic layer (compilation).} BandPIT reconstructs band readiness on a previous-close clock; honesty and missingness gates plus band assembly implement \(\Pi_t\); world-quality indices and availability shocks \(O_t\) are first-class.
 \item \textbf{Service layer.} A read API serves quality-tagged AI bundles and health/readiness objects to consumers without requiring collector restarts for newly arrived rows.
 \item \textbf{Consumer layer.} Frozen-prompt LLM / rule agents call an OpenAI-compatible adapter (temperature \(0\)) under Compiled, Ungated, or Raw treatments.
 \end{enumerate}
@@ -231,7 +232,7 @@ We describe the anonymized prototype as a layered systems object (Figure~\ref{fi
 \end{figure*}
 
 \subsection{Data flow: inputs, processing, outputs}
-Table~\ref{tab:dataflow} traces the runtime end-to-end. \emph{Inputs}: the evaluation archive populates three public bands---exchange klines/funding/open-interest via REST, daily macro risk indices (equity volatility, dollar index) with \texttt{available\_at} vintages, and aggregate stablecoin circulation---each row stored with its observation timestamp. \emph{Processing}: for every asset-day, BandPIT selects the latest observation with timestamp \(\le(t{-}1)\,23{:}59\), grades it fresh/stale/missing against per-band age thresholds, aggregates breadth/stability/honesty into WMI and regime-conditional ACWMI, derives content tilts (5-day macro-index changes; 7-day stablecoin-flow slope; return momentum), and logs availability shocks \(O_t\). \emph{Outputs}: a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days), per-day world bundles scoped to these three archive bands (Listing~\ref{lst:bundle}), and the consumer transcripts/tables behind Section~\ref{sec:exp}.
+Table~\ref{tab:dataflow} traces the runtime end-to-end. \emph{Inputs}: the evaluation archive populates three public bands---exchange klines, funding, and open interest via REST; daily macro risk indices (equity volatility, dollar index) with \texttt{available\_at} vintages; and aggregate stablecoin circulation---each row stored with its observation timestamp. \emph{Processing}: for every asset-day, BandPIT selects the latest observation with timestamp \(\le(t{-}1)\,23{:}59\), grades it fresh/stale/missing against per-band age thresholds, aggregates breadth/stability/honesty into WMI and regime-conditional ACWMI, derives content tilts (5-day macro-index changes; 7-day stablecoin-flow slope; return momentum), and logs availability shocks \(O_t\). \emph{Outputs}: a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days), per-day world bundles scoped to these three archive bands (Listing~\ref{lst:bundle}), and the consumer transcripts/tables behind Section~\ref{sec:exp}.
 
 \begin{table}[t]
   \caption{Data flow through the runtime (three-band evaluation archive).}
@@ -484,7 +485,7 @@ Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\
 \subsection{Discussion and threats}
 The product evidence is the interface ladder: Blind refuses (no product), Raw over-acts and loses, Ungated is vendor-dependent (\({\approx}0.68\); GLM \(0.86\) vs.\ Gemini \(0.43\)), Compiled enforces thin-world abstain \(1.0\)---including on band-thick days where a readiness dashboard would look green. Claim: \emph{understanding first, enforced at the contract; content economics are secondary}.
 
-Relative to FinMem / FinAgent-style systems~\cite{yu2023finmem,zhang2024finagent}, we do not propose a new memory or tool router. We propose the observation compiler and refuse SLA those agents need when feeds are asynchronous and quality-heterogeneous. Relative to return-prediction LLM studies~\cite{lopez2023chatgpt}, we score refusal and auditability before PnL.
+Relative to FinMem / FinAgent-style systems~\cite{yu2023finmem,zhang2024finagent} and ICAIF retrieval/debate/judge lines~\cite{choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we do not propose a new memory, search, or debate router. We propose the observation compiler and refuse SLA those stacks need when feeds are asynchronous and quality-heterogeneous. Relative to return-prediction LLM studies~\cite{lopez2023chatgpt}, we score refusal and auditability before PnL.
 
 \paragraph{Design choices and validity.}
 (1)~\emph{Prompt contract}---Compiled refusal is the product SLA; Ungated is the strong same-content control. (2)~\emph{Three-band archive}---every readiness label is verifiable; band-thick vs.\ band-thin separates archive coverage from WMI thinness. (3)~\emph{Baselines}---Raw matches common mom-only wiring; RQ3 baselines are momentum/buy-and-hold for the content probe only. (4)~\emph{Sampling}---\(100\)-day headline ladder plus full-OOS checkpoints (\(n{=}2000\); GLM Raw incomplete). (5)~\emph{What we do not claim}---LLM trading SOTA, generative dynamics, or spontaneous thinness discovery without the boolean.

@@ -182,7 +182,7 @@
 
 ## 8. 匿名与合规（易 desk-reject）
 
-- [ ] `anonymous` 选项；页眉无姓名  
+- [x] `anonymous` 选项（CFP：仅 `sigconf,anonymous`，无 `review` 行号）；页眉无姓名；短标题单行 running head  
 - [ ] 删邮箱、Independent Researcher、仓库链接  
 - [ ] 代码/数据：写 “anonymized repository / will be released”  
 - [ ] 自引第三人称  
