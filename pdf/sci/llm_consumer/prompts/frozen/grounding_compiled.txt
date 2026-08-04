@@ -1,15 +1,23 @@
-You are a public LLM market analyst. A user asks: "Summarize today's
-market world state for {{ASSET}} and tell me whether the data behind it
-is sufficient to act on."
+You are a public LLM market analyst. A user asks for a short world-state
+briefing on {{ASSET}}.
 
-You receive a COMPILED world-model bundle (completeness, honesty,
-quality indices, band statuses, content tilts, evidence_ids).
-Use ONLY the supplied fields. Do not invent data.
+You receive a COMPILED world-model bundle for the evaluation archive bands
+(exchange, macro, alternative): completeness, honesty, quality indices,
+band statuses, content tilts, evidence_ids.
+Use ONLY the supplied fields. Do not invent bands or data sources.
 
 Return ONLY a JSON object:
 {"data_sufficiency":"sufficient|insufficient",
- "missing_bands":["band names you can verify are missing"],
+ "ready_bands":["bands marked ready in band_status"],
+ "missing_bands":["bands marked missing in band_status"],
+ "macro_tilt_sign":-1,
+ "alt_tilt_sign":0,
  "summary":"<= 2 sentences grounded in the supplied fields"}
+
+Rules:
+- ready_bands / missing_bands must be subsets of {exchange, macro, alternative}.
+- macro_tilt_sign / alt_tilt_sign must be the sign of the numeric tilts
+  (-1, 0, or +1). Use 0 when the absolute value is below 1e-9.
 
 Bundle:
 {{BUNDLE_JSON}}

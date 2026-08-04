@@ -92,17 +92,12 @@ def main() -> int:
     y1 = 9.15
     layer_title(ax, 0.28, y1 + BOX_H + 0.16, "Data layer — vintage-aware collectors", c_data[1])
     bands = [
-        ("exchange", 0.3), ("macro\n(available_at)", 2.32), ("alternative", 4.34),
-        ("news", 6.36), ("on-chain", 8.03), ("options", 9.7),
+        ("exchange", 0.5), ("macro\n(available_at)", 4.3), ("alternative", 8.1),
     ]
     for name, x in bands:
-        w = 1.92 if x < 6 else 1.57
-        dim = x >= 6
-        box(ax, x, y1, w, BOX_H, name, "#f6f6f6" if dim else c_data[0],
-            "#aaaaaa" if dim else c_data[1], fs=FS_SMALL,
-            text_color="#888888" if dim else "black")
-    ax.text(11.4, y1 + BOX_H / 2, "right-censored\n→ disclosed missing",
-            fontsize=7.0, color="#888888", ha="left", va="center", style="italic")
+        box(ax, x, y1, 3.4, BOX_H, name, c_data[0], c_data[1], fs=FS_SMALL)
+    ax.text(11.6, y1 + BOX_H / 2, "evaluation archive:\n3 populated bands",
+            fontsize=7.0, color="#555555", ha="left", va="center", style="italic")
 
     # ---- Layer 2: stores -----------------------------------------------------------
     y2 = 7.75

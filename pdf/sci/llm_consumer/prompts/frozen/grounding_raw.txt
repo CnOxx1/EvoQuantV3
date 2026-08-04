@@ -1,14 +1,20 @@
-You are a public LLM market analyst. A user asks: "Summarize today's
-market world state for {{ASSET}} and tell me whether the data behind it
-is sufficient to act on."
+You are a public LLM market analyst. A user asks for a short world-state
+briefing on {{ASSET}}.
 
-You receive a RAW market feed (no world model, no coverage disclosure).
-Use ONLY the supplied fields. Do not invent data.
+You receive a RAW feed only (momentum and a noise bit). There is no
+compiled band readiness, no quality index, and no tilt fields.
 
 Return ONLY a JSON object:
 {"data_sufficiency":"sufficient|insufficient",
- "missing_bands":["band names you can verify are missing"],
- "summary":"<= 2 sentences grounded in the supplied fields"}
+ "ready_bands":["guess which of exchange,macro,alternative are usable"],
+ "missing_bands":["guess which of exchange,macro,alternative are missing"],
+ "macro_tilt_sign":-1,
+ "alt_tilt_sign":0,
+ "summary":"<= 2 sentences; say what you cannot verify"}
 
-Feed:
+Rules:
+- ready_bands / missing_bands must be subsets of {exchange, macro, alternative}.
+- If you cannot verify a tilt, set the sign to 0.
+
+Bundle:
 {{BUNDLE_JSON}}

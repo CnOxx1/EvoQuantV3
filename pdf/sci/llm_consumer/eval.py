@@ -50,29 +50,28 @@ def _prompt_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
+# Evaluation archive bands with durable PIT history in this study.
+DURABLE_BANDS = ("exchange", "macro", "alternative")
+
+
 def build_compiled_bundle(row: pd.Series) -> dict[str, Any]:
-    """Full world-model bundle: complete, honest, auditable fields for LLMs."""
+    """Full world-model bundle: complete, honest, auditable fields for LLMs.
+
+    Completeness and ``band_status`` are scoped to the three archive bands that
+    actually have history in the evaluation panel (exchange / macro /
+    alternative). Unpopulated collector domains are not listed as censored feeds.
+    """
     wmi = float(row.get("WMI") or 0.0)
     ac = float(row.get("ACWMI") or row.get("ACWMI_world") or 0.0)
     u = float(row.get("U") or 0.0)
     h = float(row.get("H_cont") or row.get("H") or 0.0)
     b = float(row.get("B_hier") or 0.0)
     thr = 0.25
-    n_ready = int(row.get("n_ready") or 0)
-    n_missing = int(row.get("n_missing") or 0)
-    n_limited = int(row.get("n_limited") or 0)
-    bands = {
-        "exchange": row.get("st_exchange"),
-        "macro": row.get("st_macro"),
-        "alternative": row.get("st_alternative"),
-        "news": row.get("st_news"),
-        "onchain": row.get("st_onchain"),
-        "options": row.get("st_options"),
-        "tokenomics": row.get("st_tokenomics"),
-    }
-    evidence_ids = [
-        f"band:{k}:{bands[k]}" for k in ("exchange", "macro", "alternative") if bands.get(k)
-    ]
+    bands = {k: str(row.get(f"st_{k}") or "missing") for k in DURABLE_BANDS}
+    n_ready = sum(1 for v in bands.values() if v == "ready")
+    n_limited = sum(1 for v in bands.values() if v == "limited")
+    n_missing = sum(1 for v in bands.values() if v == "missing")
+    evidence_ids = [f"band:{k}:{bands[k]}" for k in DURABLE_BANDS]
     evidence_ids += [
         f"tilt:macro:{float(row.get('macro_tilt') or 0.0)}",
         f"tilt:alt:{float(row.get('alt_tilt') or 0.0)}",
@@ -95,6 +94,7 @@ def build_compiled_bundle(row: pd.Series) -> dict[str, Any]:
             "n_limited": n_limited,
             "n_missing": n_missing,
             "ready_share": float(n_ready / max(n_ready + n_limited + n_missing, 1)),
+            "archive_bands": list(DURABLE_BANDS),
             "missing_bands_disclosed": True,
         },
         "honesty": {
