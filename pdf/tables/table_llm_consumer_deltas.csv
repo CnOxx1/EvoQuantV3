@@ -1,4 +1,5 @@
-model,dCE_compiled_minus_raw,dSharpe_compiled_minus_raw,compiled_abstain_rate,raw_abstain_rate
-mock-compiled-aware,0.2019,-0.101,1.0,0.0
-mock-momentum,0.0,0.0,0.0,0.0
-mock-noisy,-0.0364,-0.39,0.0,0.0
+model,dCE_compiled_minus_raw,dSharpe_compiled_minus_raw,compiled_abstain_rate,raw_abstain_rate,compiled_thin_world_abstain_rate,compiled_ear_proxy
+public-llm-compiled-follower,0.2019,-0.101,1.0,0.0,1.0,1.0
+mock-compiled-aware,0.2019,-0.101,1.0,0.0,1.0,1.0
+mock-momentum,0.0,0.0,0.0,0.0,0.0,1.0
+mock-noisy,0.2117,0.575,0.0,0.0,0.0,1.0

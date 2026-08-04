@@ -1,0 +1,195 @@
+{
+  "role": "market_world_model_bundle_examples",
+  "thesis": "complete_honest_auditable_cognition_base_for_public_llms",
+  "samples": [
+    {
+      "compiled": {
+        "date": "2026-01-27",
+        "asset": "ADA",
+        "decision_asof": "2026-01-26T23:59:00",
+        "timing_protocol": "decision_at_prev_close",
+        "mom5": -1.0,
+        "macro_tilt": 1.0,
+        "alt_tilt": -1.0,
+        "cascade_p": 0.3168,
+        "detected_regime": "crisis",
+        "abstain_threshold": 0.25,
+        "completeness": {
+          "n_ready": 3,
+          "n_limited": 0,
+          "n_missing": 5,
+          "ready_share": 0.375,
+          "missing_bands_disclosed": true
+        },
+        "honesty": {
+          "H": 0.6875,
+          "U": 0.375,
+          "B_hier": 0.35375,
+          "main_view_gated": true,
+          "stale_excluded": true
+        },
+        "world_model_index": {
+          "wmi": 0.0929,
+          "acwmi": 0.374535238177994,
+          "should_ai_abstain": true,
+          "index_mode": "acwmi",
+          "thin_world": true
+        },
+        "band_status": {
+          "exchange": "ready",
+          "macro": "ready",
+          "alternative": "ready",
+          "news": "missing",
+          "onchain": "missing",
+          "options": "missing",
+          "tokenomics": "missing"
+        },
+        "audit": {
+          "evidence_ids": [
+            "band:exchange:ready",
+            "band:macro:ready",
+            "band:alternative:ready",
+            "tilt:macro:1.0",
+            "tilt:alt:-1.0",
+            "engine:mom5:-1.0"
+          ],
+          "ear_required": true,
+          "bundle_role": "market_world_model_for_public_llm"
+        }
+      },
+      "raw": {
+        "date": "2026-01-27",
+        "asset": "ADA",
+        "mom5": -1.0,
+        "noise_bit": 0,
+        "note": "raw_feed_no_world_model"
+      }
+    },
+    {
+      "compiled": {
+        "date": "2026-03-01",
+        "asset": "ADA",
+        "decision_asof": "2026-02-28T23:59:00",
+        "timing_protocol": "decision_at_prev_close",
+        "mom5": 1.0,
+        "macro_tilt": 0.0,
+        "alt_tilt": -1.0,
+        "cascade_p": 0.3168,
+        "detected_regime": "crisis",
+        "abstain_threshold": 0.25,
+        "completeness": {
+          "n_ready": 3,
+          "n_limited": 0,
+          "n_missing": 5,
+          "ready_share": 0.375,
+          "missing_bands_disclosed": true
+        },
+        "honesty": {
+          "H": 0.6875,
+          "U": 0.375,
+          "B_hier": 0.35375,
+          "main_view_gated": true,
+          "stale_excluded": true
+        },
+        "world_model_index": {
+          "wmi": 0.0929,
+          "acwmi": 0.3679023687449517,
+          "should_ai_abstain": true,
+          "index_mode": "acwmi",
+          "thin_world": true
+        },
+        "band_status": {
+          "exchange": "ready",
+          "macro": "ready",
+          "alternative": "ready",
+          "news": "missing",
+          "onchain": "missing",
+          "options": "missing",
+          "tokenomics": "missing"
+        },
+        "audit": {
+          "evidence_ids": [
+            "band:exchange:ready",
+            "band:macro:ready",
+            "band:alternative:ready",
+            "tilt:macro:0.0",
+            "tilt:alt:-1.0",
+            "engine:mom5:1.0"
+          ],
+          "ear_required": true,
+          "bundle_role": "market_world_model_for_public_llm"
+        }
+      },
+      "raw": {
+        "date": "2026-03-01",
+        "asset": "ADA",
+        "mom5": 1.0,
+        "noise_bit": 0,
+        "note": "raw_feed_no_world_model"
+      }
+    },
+    {
+      "compiled": {
+        "date": "2026-03-17",
+        "asset": "ADA",
+        "decision_asof": "2026-03-16T23:59:00",
+        "timing_protocol": "decision_at_prev_close",
+        "mom5": 1.0,
+        "macro_tilt": -1.0,
+        "alt_tilt": 1.0,
+        "cascade_p": 0.3168,
+        "detected_regime": "crisis",
+        "abstain_threshold": 0.25,
+        "completeness": {
+          "n_ready": 3,
+          "n_limited": 0,
+          "n_missing": 5,
+          "ready_share": 0.375,
+          "missing_bands_disclosed": true
+        },
+        "honesty": {
+          "H": 0.6875,
+          "U": 0.375,
+          "B_hier": 0.35375,
+          "main_view_gated": true,
+          "stale_excluded": true
+        },
+        "world_model_index": {
+          "wmi": 0.0929,
+          "acwmi": 0.4121703909526286,
+          "should_ai_abstain": true,
+          "index_mode": "acwmi",
+          "thin_world": true
+        },
+        "band_status": {
+          "exchange": "ready",
+          "macro": "ready",
+          "alternative": "ready",
+          "news": "missing",
+          "onchain": "missing",
+          "options": "missing",
+          "tokenomics": "missing"
+        },
+        "audit": {
+          "evidence_ids": [
+            "band:exchange:ready",
+            "band:macro:ready",
+            "band:alternative:ready",
+            "tilt:macro:-1.0",
+            "tilt:alt:1.0",
+            "engine:mom5:1.0"
+          ],
+          "ear_required": true,
+          "bundle_role": "market_world_model_for_public_llm"
+        }
+      },
+      "raw": {
+        "date": "2026-03-17",
+        "asset": "ADA",
+        "mom5": 1.0,
+        "noise_bit": 0,
+        "note": "raw_feed_no_world_model"
+      }
+    }
+  ]
+}

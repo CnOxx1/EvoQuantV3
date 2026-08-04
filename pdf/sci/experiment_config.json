@@ -79,10 +79,27 @@
   },
   "llm_consumer": {
     "enabled": true,
-    "models": ["mock-compiled-aware", "mock-momentum", "mock-noisy"],
+    "models": [
+      "public-llm-compiled-follower",
+      "mock-compiled-aware",
+      "mock-momentum",
+      "mock-noisy"
+    ],
+    "live_models": [
+      "gpt-5.4-mini",
+      "deepseek-v4-flash",
+      "glm-5.2",
+      "gemini-3.5-flash-lite"
+    ],
     "temperature": 0.0,
     "action_space": ["bullish", "bearish", "neutral", "abstain"],
     "treatments": ["compiled", "raw"],
-    "protocol_path": "pdf/sci/llm_consumer/protocol.md"
+    "protocol_path": "pdf/sci/llm_consumer/protocol.md",
+    "role": "understanding_first_world_model_for_public_llms",
+    "gateway_env": {
+      "OPENAI_BASE_URL": "https://api.teamorouter.com/v1",
+      "OPENAI_API_KEY": "from environment only — never commit"
+    },
+    "live_vendor_env": ["OPENAI_API_KEY", "TEAMOROUTER_API_KEY", "LLM_API_KEY"]
   }
 }
