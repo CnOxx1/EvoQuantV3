@@ -53,8 +53,8 @@
   Wiener}.} \bibinfo{year}{2010}\natexlab{}.
 \newblock \showarticletitle{On the Foundations of Noise-Free Selective
   Classification}.
-\newblock \bibinfo{journal}{\emph{JMLR}}  \bibinfo{volume}{11}
-  (\bibinfo{year}{2010}), \bibinfo{pages}{1605--1641}.
+\newblock \bibinfo{journal}{\emph{Journal of Machine Learning Research}}
+  \bibinfo{volume}{11} (\bibinfo{year}{2010}), \bibinfo{pages}{1605--1641}.
 \newblock
 
 
@@ -63,7 +63,8 @@
 \bibfield{author}{\bibinfo{person}{Yonatan Geifman} {and} \bibinfo{person}{Ran
   El-Yaniv}.} \bibinfo{year}{2017}\natexlab{}.
 \newblock \showarticletitle{Selective Classification for Deep Neural Networks}.
-  In \bibinfo{booktitle}{\emph{NeurIPS}}.
+  In \bibinfo{booktitle}{\emph{Advances in Neural Information Processing
+  Systems}}, Vol.~\bibinfo{volume}{30}. \bibinfo{publisher}{Curran Associates}.
 \newblock
 
 
@@ -82,8 +83,10 @@
         {ha2018world}
 \bibfield{author}{\bibinfo{person}{David Ha} {and} \bibinfo{person}{J{\"u}rgen
   Schmidhuber}.} \bibinfo{year}{2018}\natexlab{}.
-\newblock \showarticletitle{World Models}. In
-  \bibinfo{booktitle}{\emph{NeurIPS}}.
+\newblock \showarticletitle{Recurrent World Models Facilitate Policy
+  Evolution}. In \bibinfo{booktitle}{\emph{Advances in Neural Information
+  Processing Systems}}, Vol.~\bibinfo{volume}{31}. \bibinfo{publisher}{Curran
+  Associates}.
 \newblock
 
 
@@ -93,7 +96,8 @@
   Lillicrap}, \bibinfo{person}{Jimmy Ba}, {and} \bibinfo{person}{Mohammad
   Norouzi}.} \bibinfo{year}{2020}\natexlab{}.
 \newblock \showarticletitle{Dream to Control: Learning Behaviors by Latent
-  Imagination}. In \bibinfo{booktitle}{\emph{ICLR}}.
+  Imagination}. In \bibinfo{booktitle}{\emph{International Conference on
+  Learning Representations}}. \bibinfo{publisher}{OpenReview.net}.
 \newblock
 
 
@@ -125,7 +129,7 @@
 \bibfield{author}{\bibinfo{person}{Yann LeCun}.}
   \bibinfo{year}{2022}\natexlab{}.
 \newblock \showarticletitle{A Path Towards Autonomous Machine Intelligence}.
-\newblock \bibinfo{journal}{\emph{Open Review}} (\bibinfo{year}{2022}).
+\newblock \bibinfo{journal}{\emph{OpenReview preprint}} (\bibinfo{year}{2022}).
 \newblock
 
 
@@ -209,7 +213,7 @@
   Liu}, {and} \bibinfo{person}{Christina~Dan Wang}.}
   \bibinfo{year}{2023}\natexlab{}.
 \newblock \showarticletitle{{FinGPT}: Open-Source Financial Large Language
-  Models}. In \bibinfo{booktitle}{\emph{FinLLM Workshop at IJCAI}}.
+  Models}. In \bibinfo{booktitle}{\emph{FinLLM Symposium at IJCAI}}.
 \newblock
 
 
@@ -220,7 +224,8 @@
   Shafran}, \bibinfo{person}{Karthik Narasimhan}, {and} \bibinfo{person}{Yuan
   Cao}.} \bibinfo{year}{2023}\natexlab{}.
 \newblock \showarticletitle{ReAct: Synergizing Reasoning and Acting in Language
-  Models}. In \bibinfo{booktitle}{\emph{ICLR}}.
+  Models}. In \bibinfo{booktitle}{\emph{International Conference on Learning
+  Representations}}. \bibinfo{publisher}{OpenReview.net}.
 \newblock
 
 
@@ -233,8 +238,9 @@
   \bibinfo{person}{Khaldoun Khashanah}.} \bibinfo{year}{2024}\natexlab{}.
 \newblock \showarticletitle{{FinMem}: A Performance-Enhanced {LLM} Trading
   Agent with Layered Memory and Character Design}.
-\newblock \bibinfo{journal}{\emph{AAAI Symposium Series}} \bibinfo{volume}{3},
-  \bibinfo{number}{1} (\bibinfo{year}{2024}), \bibinfo{pages}{595--597}.
+\newblock \bibinfo{journal}{\emph{Proceedings of the AAAI Symposium Series}}
+  \bibinfo{volume}{3}, \bibinfo{number}{1} (\bibinfo{year}{2024}),
+  \bibinfo{pages}{595--597}.
 \newblock
 
 
@@ -248,7 +254,8 @@
   \bibinfo{year}{2024}\natexlab{}.
 \newblock \showarticletitle{A Multimodal Foundation Agent for Financial
   Trading: Tool-Augmented, Diversified, and Generalist}. In
-  \bibinfo{booktitle}{\emph{KDD}}.
+  \bibinfo{booktitle}{\emph{Proceedings of the 30th ACM SIGKDD Conference on
+  Knowledge Discovery and Data Mining}}. \bibinfo{publisher}{ACM}.
 \newblock
 
 

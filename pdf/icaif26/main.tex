@@ -90,7 +90,7 @@ Public LLMs are increasingly asked to analyze or trade crypto markets. The bottl
 We build a market \emph{world-model runtime} for public LLMs: compile raw multi-band evidence into a PIT-safe cognition bundle that GPT / DeepSeek / GLM / Gemini-class models can call. Understanding is the product objective; strategy metrics then confirm the compiled world carries real economic content---the world-model rule outperforms traditional momentum and buy-and-hold baselines out-of-sample. In slogan form: \emph{quant from strategy; this runtime from understanding}.
 
 \paragraph{What we claim.}
-RQ1 tests whether a typed world interface can \emph{enforce} world-conditional abstention across live public LLMs---a runtime contract, not a claim that models spontaneously discover thinness from raw ticks. RQ2 tests whether the compiled world state delivers economic value over traditional baselines: out-of-sample, the world-model content rule outperforms same-input momentum and buy-and-hold on both Sharpe and certainty-equivalent returns.
+RQ1 tests whether a typed world interface can \emph{enforce} world-conditional abstention across live public LLMs---a runtime contract, not a claim that models spontaneously discover thinness from raw ticks. RQ2 tests whether the compiled world makes analyst-facing epistemic answers verifiable. RQ3 tests whether the compiled world state delivers economic value over traditional baselines: out-of-sample, the world-model content rule outperforms same-input momentum and buy-and-hold on both Sharpe and certainty-equivalent returns.
 
 \paragraph{Contributions.}
 \begin{enumerate}
@@ -106,7 +106,7 @@ RQ1 tests whether a typed world interface can \emph{enforce} world-conditional a
 World models learn compact states and often dynamics~\cite{ha2018world,hafner2020dreamer,lecun2022path}. We address the complementary \emph{observation-side} problem: a PIT-safe, quality-tagged crypto world \emph{before} dynamics or LLM policy. We claim the missing systems layer generative WMs usually assume---not a Dreamer/JEPA simulator.
 
 \paragraph{LLM agents in finance.}
-ChatGPT return prediction~\cite{lopez2023chatgpt}, open financial LLMs~\cite{yang2023fingpt}, memory-augmented trading agents~\cite{yu2023finmem,li2023tradinggpt}, and tool-augmented multimodal agents~\cite{zhang2024finagent} advance agent skill. Agentic tool use~\cite{yao2023react} still assumes aligned inputs. We evaluate within-model Compiled vs.\ Ungated vs.\ Raw under a frozen schema so the estimand is the \emph{world interface}, not a new memory module or prompt trick.
+ChatGPT return prediction~\cite{lopez2023chatgpt}, open financial LLMs~\cite{yang2023fingpt}, memory-augmented trading agents~\cite{yu2023finmem,li2023tradinggpt}, and tool-augmented multimodal agents~\cite{zhang2024finagent} advance agent skill. Agentic tool use~\cite{yao2023react} still assumes aligned inputs. We evaluate within-model Compiled vs.\ Ungated vs.\ Raw vs.\ Blind under a frozen schema so the estimand is the \emph{world interface}, not a new memory module or prompt trick.
 
 \paragraph{Selective prediction and trustworthy AI.}
 Abstention can be optimal under noise~\cite{elyaniv2010,geifman2017}. We tie refusal to world quality via an explicit runtime contract, not classifier confidence alone.
@@ -182,7 +182,7 @@ We do not learn \(p(s_{t+1}\mid s_t,a_t)\). We deliver a \emph{state compiler + 
 \section{Runtime Architecture}
 \label{sec:system}
 
-We describe the anonymized prototype as a layered systems object (Figure~\ref{fig:pipeline}). Source paths and product names are omitted for double-blind review; an anonymized artifact will be released upon acceptance.
+We describe the anonymized prototype as a layered systems object (Figure~\ref{fig:pipeline}; module map in Table~\ref{tab:modules}). Source paths and product names are omitted for double-blind review; an anonymized artifact will be released upon acceptance.
 
 \subsection{Layered design}
 \begin{enumerate}
@@ -381,7 +381,7 @@ Ungated rationales cite disclosed world fields (missingness, readiness, WMI) on 
 \paragraph{Offline diagnostics.}
 World-honoring offline followers abstain at \(1.0\) on full OOS; momentum-only and noisy mocks ignore thin-world flags (thin-abs.\ \(0\))---the Raw failure mode in miniature. Offline results are protocol checks; live vendors are the product claim.
 
-\subsection{RQ3: Non-trading cognition---grounding workflow}
+\subsection{RQ2: Non-trading cognition---grounding workflow}
 \label{sec:grounding}
 The cognition base should serve analysis, not only trade/abstain decisions. We run a live multi-step \emph{grounding workflow} on \(50\) OOS asset-days per arm. Given Compiled or Raw inputs, the model must (i)~list which of \(\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}\) are ready, (ii)~list which are missing, (iii)~report \(\mathrm{sign}(\mathrm{macro\_tilt})\) and \(\mathrm{sign}(\mathrm{alt\_tilt})\), and (iv)~judge sufficiency. Steps (i)--(iii) are scored against PIT ground truth. Table~\ref{tab:grounding}: with the Compiled bundle, mean ready-band F1 \(0.97\), missing-band F1 \(0.97\), and tilt-sign accuracy \(0.97\); with Raw, the same scores collapse to \(0.04\), \(0.23\), and \(0.19\). Sufficiency alone is \emph{not} the discriminator once completeness is scoped to real archive bands---models may call a \(3/3\)-ready day ``sufficient'' while WMI still marks the world thin---so the product claim is \emph{verifiable epistemics}: only the compiled world lets the model say what is ready, what is missing, and which tilts are present, and be checked. This is the analyst-facing counterpart of Prop.~\ref{prop:recon}'s missingness term.
 
@@ -404,7 +404,7 @@ The cognition base should serve analysis, not only trade/abstain decisions. We r
   \end{tabular}
 \end{table}
 
-\subsection{RQ2: Economic value over traditional baselines}
+\subsection{RQ3: Economic value over traditional baselines}
 \label{sec:econ}
 A transparent rule shares return inputs with momentum and adds vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\). Out-of-sample (\(199\) days \(\times\) \(10\) assets, \(1{,}990\) asset-days) the world-model rule beats both traditional baselines (Table~\ref{tab:econ}, Figure~\ref{fig:econ}): Sharpe \(0.764\) and CE \(+0.130\) versus momentum (\(0.096\), \(-0.206\)) and buy-and-hold (\(-1.404\), \(-1.163\)). The pre-specified contrast mechanism $-$ momentum is significant under block bootstrap: \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\); stationary \(p{=}0.022\)). The edge is cross-sectionally uniform---\(\Delta\mathrm{CE}\) is positive for \emph{all ten assets individually} (\(+0.20\) to \(+0.85\); Figure~\ref{fig:econ}, right)---so the result is not driven by one lucky name. LOBO (Prop.~\ref{prop:lobo}) confirms the gain comes from compiled band content: deleting macro or alternative collapses to momentum (content share \(1.0\) under the ungated rule), and the relative gaps survive \(10\)--\(25\)bps transaction costs. A \(2017\)--\(2026\) two-asset audit with non-vintaged proxy tilts shows no such edge (\(\Delta\mathrm{CE}\approx 0\), \(p{=}0.81\)): the outperformance appears exactly where the vintage-compiled world model exists, so the value is attributable to the world model itself rather than to a generic tilt recipe.
 
@@ -450,7 +450,7 @@ Among the three archive bands, \(61\%\) of OOS asset-days are \emph{thick} (exch
 \end{figure}
 
 \subsection{Discussion and threats}
-The live ladder---Blind refuses everything (\(1.0\) abstain, no product), Raw over-acts (\(\mathrm{Abs}_R\in[0.04,0.75]\)), Ungated recovers partially (\(\approx 0.68\)), Compiled acts exactly on world quality (thin-abstain \(1.0\))---is the product evidence: a bare LLM is useless for markets, a fragment-fed LLM is dangerous, and a world-model-fed LLM is both useful and safe. Cross-vendor heterogeneity under Ungated (GLM \(0.86\) vs.\ Gemini \(0.43\), non-overlapping Wilson CIs) is exactly why a typed contract is valuable in production: soft judgment is model-dependent, while Compiled refusal is stable. RQ2 shows the same world state that disciplines refusal also outperforms traditional momentum and buy-and-hold baselines when it acts. Claim: \emph{understanding first, and the returns follow}.
+The live ladder---Blind refuses everything (\(1.0\) abstain, no product), Raw over-acts (\(\mathrm{Abs}_R\in[0.04,0.75]\)), Ungated recovers partially (\(\approx 0.68\)), Compiled acts exactly on world quality (thin-abstain \(1.0\))---is the product evidence: a bare LLM is useless for markets, a fragment-fed LLM is dangerous, and a world-model-fed LLM is both useful and safe. Cross-vendor heterogeneity under Ungated (GLM \(0.86\) vs.\ Gemini \(0.43\), non-overlapping Wilson CIs) is exactly why a typed contract is valuable in production: soft judgment is model-dependent, while Compiled refusal is stable. RQ3 shows the same world state that disciplines refusal also outperforms traditional momentum and buy-and-hold baselines when it acts. Claim: \emph{understanding first, and the returns follow}.
 
 Relative to FinMem / FinAgent-style systems~\cite{yu2023finmem,zhang2024finagent}, we do not propose a new memory or tool router. We propose the observation compiler those agents implicitly need when the market feed is asynchronous and quality-heterogeneous. Relative to return-prediction LLM studies~\cite{lopez2023chatgpt}, we score refusal and auditability before PnL.
 
