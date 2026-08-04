@@ -1,8 +1,9 @@
-%% ICAIF '26 — ACM acmart sigconf + anonymous
-%% Understanding-first market world-model runtime for public LLMs.
+%% ICAIF '26 — ACM acmart sigconf + anonymous (+ review line numbers)
+%% CFP: latest ACM template, sigconf two-column, anonymous, ≤8 pages, no appendix.
 %% Isolated from pdf/sci/ JF-RFS materials.
 \documentclass[sigconf,anonymous,review]{acmart}
 
+%% Rights / metadata (anonymous submission)
 \setcopyright{none}
 \acmConference[ICAIF '26]{7th ACM International Conference on AI in Finance}{November 14--17, 2026}{Milan, Italy}
 \acmBooktitle{Proceedings of the 7th ACM International Conference on AI in Finance (ICAIF '26)}
@@ -10,16 +11,20 @@
 \acmISBN{978-1-4503-XXXX-X/26/11}
 \acmYear{2026}
 \copyrightyear{2026}
+\settopmatter{printfolios=true,printccs=true,printacmref=true}
 
+%% Only packages not already pulled by acmart. Do NOT load amsthm/enumitem:
+%% acmart enables acmthm by default; enumitem would alter ACM list spacing.
 \usepackage{booktabs}
 \usepackage{array}
-\usepackage{amsthm}
 \usepackage{amsmath}
 \usepackage{graphicx}
-\usepackage{enumitem}
 \usepackage{listings}
-\setlist{nosep,leftmargin=*}
 \graphicspath{{figures/}{figures_src/}}
+
+%% Slightly taller header for review line-number / fancyhdr warning.
+\setlength{\headheight}{15.2pt}
+\addtolength{\topmargin}{-2.2pt}
 
 \lstset{
   basicstyle=\ttfamily\scriptsize,
@@ -33,16 +38,21 @@
   belowskip=4pt
 }
 
-\newtheorem{definition}{Definition}
-\newtheorem{proposition}{Proposition}
-\newtheorem{remark}{Remark}
-\newtheorem{assumption}{Assumption}
+%% Extra theorem-like envs on top of acmthm (definition/proposition already provided).
+\makeatletter
+\AtEndPreamble{%
+  \theoremstyle{acmdefinition}%
+  \@ifundefined{assumption}{\newtheorem{assumption}[theorem]{Assumption}}{}%
+  \theoremstyle{acmplain}%
+  \@ifundefined{remark}{\newtheorem{remark}[theorem]{Remark}}{}%
+}
+\makeatother
 
 \author{Anonymous Author(s)}
 \affiliation{%
   \institution{Anonymous Institution}
   \country{}}
-\renewcommand{\shortauthors}{Anonymous}
+\renewcommand{\shortauthors}{Anon.}
 
 \begin{document}
 
@@ -326,7 +336,7 @@ The service layer exposes read-only objects used by the consumer harness: (i)~qu
 \label{sec:exp}
 
 \subsection{Setup}
-PIT panel \(\sim\)399 days (\(\approx\)13 months), 10 liquid names, previous-close clock, chronological IS/OOS \(200/200\) days (\(\approx\)2{,}000 OOS asset-days). Live RQ1 headline uses the \emph{same} stratified \(100\) OOS asset-days across all four arms (same sampling seed), temperature \(0\), frozen prompts, OpenAI-compatible gateway; a checkpointed full-OOS sweep then stress-tests the data arms at population scale. Models: \texttt{gpt-5.4-mini}, \texttt{deepseek-v4-flash}, \texttt{glm-5.2}, \texttt{gemini-3.5-flash-lite}. Scarce/thin labels bind on OOS by design, stress-testing honesty under sparse support; the dense-world split in Sec.~\ref{sec:econ} covers fully populated days.
+PIT panel \(\sim\)399 days, 10 liquid names, previous-close clock, chronological IS/OOS \(200/200\) days (\(\approx\)2{,}000 OOS asset-days). Live RQ1 uses the \emph{same} stratified \(100\) OOS asset-days across arms (seed fixed), temperature \(0\), frozen prompts, and an OpenAI-compatible gateway; a checkpointed full-OOS sweep tests population scale. Vendor models are GPT-, DeepSeek-, GLM-, and Gemini-class flash/mini IDs listed in Table~\ref{tab:llm}. Scarce/thin labels bind on OOS by design; Sec.~\ref{sec:econ} covers fully populated days.
 
 \subsection{RQ1 (primary): Live interface behavior across information arms}
 Table~\ref{tab:llm} and Figure~\ref{fig:und} are the headline result; all arms share the same \(100\) OOS asset-days. Under Compiled, all four models abstain on every thin-world day (thin-abs.\ \(1.0\)); rationales cite world fields on \(93\)--\(99\%\) of days---this is prompt-contract obedience by design (the product SLA), not a claim of spontaneous thinness discovery. Under Ungated, mean thin-abs.\ falls to \(0.68\) (range \(0.43\)--\(0.86\)): DeepSeek and GLM stay above \(0.80\), GPT drops to \(0.63\), and \texttt{gemini-3.5-flash-lite} falls to \(0.43\) and trades. When Ungated models do act on this \(100\)-day draw, they lose (CE \(-1.04\) to \(+0.02\))---soft judgment is unstable exactly where enforcement matters. Under Raw, abstain rates are \(0.04\)--\(0.75\) with substantial directional mass (Table~\ref{tab:mix}). Safety side-effect: mean \(\Delta\)CE (Compiled$-$Raw) \(=+1.07\), positive for every vendor, because Compiled sits out the losses Raw incurs on sparse support.
