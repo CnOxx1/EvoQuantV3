@@ -1,0 +1,13 @@
+contrast,risk_aversion,cost_bps,mech_CE,mom_CE,dCE,mech_Sharpe,mom_Sharpe
+Mechanism − Momentum,1.0,0.0,0.259,-0.075,0.334,0.767,0.101
+Mechanism − Momentum,1.0,10.0,0.1082,-0.2252,0.3334,0.467,-0.198
+Mechanism − Momentum,1.0,25.0,-0.1181,-0.4507,0.3326,0.017,-0.646
+Mechanism − Momentum,2.0,0.0,0.132,-0.2019,0.3339,0.767,0.101
+Mechanism − Momentum,2.0,10.0,-0.0191,-0.3522,0.3331,0.467,-0.198
+Mechanism − Momentum,2.0,25.0,-0.246,-0.578,0.332,0.017,-0.646
+Mechanism − Momentum,4.0,0.0,-0.128,-0.4614,0.3334,0.767,0.101
+Mechanism − Momentum,4.0,10.0,-0.2795,-0.6118,0.3323,0.467,-0.198
+Mechanism − Momentum,4.0,25.0,-0.5074,-0.8379,0.3306,0.017,-0.646
+Mechanism − Momentum,6.0,0.0,-0.3995,-0.7321,0.3326,0.767,0.101
+Mechanism − Momentum,6.0,10.0,-0.5511,-0.8822,0.3311,0.467,-0.198
+Mechanism − Momentum,6.0,25.0,-0.7796,-1.1084,0.3288,0.017,-0.646

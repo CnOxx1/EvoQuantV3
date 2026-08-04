@@ -52,11 +52,17 @@ def fig9_lobo_decomposition() -> None:
     w = 0.27
     fig, ax = plt.subplots(figsize=(7.6, 4.0))
     total = df["dCE_total"].fillna(0).to_numpy()
-    content = df["dCE_content_only"].fillna(0).to_numpy()
-    gating = df["dCE_gating_only"].fillna(0).to_numpy()
+    content_col = "dCE_content" if "dCE_content" in df.columns else "dCE_content_only"
+    gating_col = (
+        "dCE_gating_residual"
+        if "dCE_gating_residual" in df.columns
+        else "dCE_gating_only"
+    )
+    content = df[content_col].fillna(0).to_numpy()
+    gating = df[gating_col].fillna(0).to_numpy()
     ax.bar(x - w, total, w, label="Total ΔCE", color=C_NAVY)
     ax.bar(x, content, w, label="Content channel", color=C_ORANGE)
-    ax.bar(x + w, gating, w, label="Gating channel", color=C_GREEN)
+    ax.bar(x + w, gating, w, label="Gating residual", color=C_GREEN)
     ax.axhline(0, color=C_GRAY, lw=1)
     ax.set_xticks(x)
     ax.set_xticklabels(bands)

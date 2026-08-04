@@ -501,12 +501,15 @@ def plant_availability_shocks(
 
 
 def compilation_wedge_bridge(df: pd.DataFrame, cut) -> dict:
-    """OOS predictive bridge: compiled features vs thin (momentum-only).
+    """OOS bridge for the compilation / SDF interface.
 
-    Estimates a simple linear projection of next-day asset returns on
-    pre-specified compiled features vs mom5 alone (IS-fit, OOS-eval).
-    This is a transparent stand-in for the compilation wedge / MIG idea:
-    does F^AI span incremental return variation beyond the thin set?
+    Two transparent stand-ins (IS-fit, OOS-eval), both comparing compiled
+    features to a thin momentum-only set:
+
+    1. Linear projection R² / sign-projection Sharpe (predictive MIG proxy).
+    2. Sign-hit and mean signed payoff (pricing-action proxy): does F^AI
+       improve the implementable sign map that would enter an SDF-constrained
+       agent, even when linear R² stays near zero?
     """
     panel = df.sort_values(["asset", "date"]).copy()
     panel["y"] = panel.groupby("asset")["ret"].shift(-1)
@@ -524,7 +527,6 @@ def compilation_wedge_bridge(df: pd.DataFrame, cut) -> dict:
         y_tr = train["y"].to_numpy(dtype=float)
         x_te = test[cols].to_numpy(dtype=float)
         y_te = test["y"].to_numpy(dtype=float)
-        # add intercept
         x_tr = np.column_stack([np.ones(len(x_tr)), x_tr])
         x_te = np.column_stack([np.ones(len(x_te)), x_te])
         beta, *_ = np.linalg.lstsq(x_tr, y_tr, rcond=None)
@@ -532,37 +534,108 @@ def compilation_wedge_bridge(df: pd.DataFrame, cut) -> dict:
         ss_res = float(np.sum((y_te - pred) ** 2))
         ss_tot = float(np.sum((y_te - y_te.mean()) ** 2))
         r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
-        # Directional CE proxy: trade sign(pred), equal-weight daily
         tmp = test[["date", "asset", "y"]].copy()
         tmp["pos"] = np.sign(pred)
-        daily = tmp.groupby("date").apply(lambda g: float((g["pos"] * g["y"]).mean()), include_groups=False)
+        # Sign-hit among non-zero forecasts
+        active = tmp["pos"] != 0
+        hit = float((np.sign(tmp.loc[active, "y"]) == tmp.loc[active, "pos"]).mean()) if active.any() else 0.0
+        daily = tmp.groupby("date").apply(
+            lambda g: float((g["pos"] * g["y"]).mean()), include_groups=False
+        )
         mu = float(daily.mean())
         sig = float(daily.std(ddof=1)) if len(daily) > 2 else np.nan
         sharpe = mu / sig * np.sqrt(365) if sig and sig > 0 else 0.0
-        # CRRA CE γ=2 on daily (annualize roughly by *365 for level comparability)
-        wealth = 1.0 + daily.to_numpy()
-        wealth = np.clip(wealth, 1e-8, None)
-        ce_daily = float(np.mean(wealth ** (-1)) ** (-1) - 1.0)  # γ=2 ⇒ 1-γ=-1
+        wealth = np.clip(1.0 + daily.to_numpy(), 1e-8, None)
+        ce_daily = float(np.mean(wealth ** (-1)) ** (-1) - 1.0)  # γ=2
         return {
             "r2_oos": round(r2, 6),
             "ann_mean": round(mu * 365, 4),
             "Sharpe": round(sharpe, 3),
             "CE_daily": round(ce_daily, 6),
+            "CE_ann": round(ce_daily * 365, 4),
+            "sign_hit": round(hit, 4),
             "n_oos": int(len(test)),
+            "daily": daily,
         }
 
     thick = _fit_predict(feats_compiled)
     thin = _fit_predict(feats_thin)
+    # Bootstrap ΔCE of sign-projection policies (compiled − thin)
+    bp = bootstrap_delta_pvalues(thick["daily"], thin["daily"], n_boot=399, block=5)
+    # Drop non-JSON daily series from exported objects
+    thick_out = {k: v for k, v in thick.items() if k != "daily"}
+    thin_out = {k: v for k, v in thin.items() if k != "daily"}
     return {
         "status": "ok",
-        "compiled": thick,
-        "thin": thin,
+        "compiled": thick_out,
+        "thin": thin_out,
         "dR2_compiled_minus_thin": round(thick["r2_oos"] - thin["r2_oos"], 6),
         "dSharpe_compiled_minus_thin": round(thick["Sharpe"] - thin["Sharpe"], 3),
+        "dCE_ann_compiled_minus_thin": round(thick["CE_ann"] - thin["CE_ann"], 4),
+        "d_sign_hit_compiled_minus_thin": round(thick["sign_hit"] - thin["sign_hit"], 4),
+        "bootstrap_dCE": {
+            "dCE": bp.get("dCE"),
+            "p_CE": bp.get("p_CE"),
+            "ci_dCE_05": bp.get("ci_dCE_05"),
+            "ci_dCE_95": bp.get("ci_dCE_95"),
+        },
         "features_compiled": feats_compiled,
         "features_thin": feats_thin,
-        "note": "IS-fit OLS, OOS evaluate; transparent bridge for compilation wedge, not a trading claim",
+        "note": (
+            "IS-fit OLS + OOS sign-projection; SDF-interface bridge showing "
+            "compiled features can raise implementable signed payoffs even when "
+            "linear R² stays near zero. Not a trading claim."
+        ),
     }
+
+
+def leave_one_asset_jackknife(oos: pd.DataFrame, params: dict) -> pd.DataFrame:
+    """Leave-one-asset jackknife of the pre-specified mechanism − momentum ΔCE."""
+    assets = sorted(oos["asset"].unique())
+    rows = []
+    for drop in assets + [None]:
+        sub = oos if drop is None else oos[oos["asset"] != drop]
+        if sub["date"].nunique() < 30 or sub["asset"].nunique() < 2:
+            continue
+        st_m = portfolio_stats(sub, strategy_positions(sub, "thick_ungated", params))
+        st_o = portfolio_stats(sub, strategy_positions(sub, "mom_always", params))
+        rows.append(
+            {
+                "asset_dropped": "(none)" if drop is None else drop,
+                "n_assets": int(sub["asset"].nunique()),
+                "n_days": int(sub["date"].nunique()),
+                "mech_CE": round(st_m["CE"], 4),
+                "mom_CE": round(st_o["CE"], 4),
+                "dCE": round(st_m["CE"] - st_o["CE"], 4),
+                "mech_Sharpe": round(st_m["Sharpe"], 3),
+                "mom_Sharpe": round(st_o["Sharpe"], 3),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def ce_gamma_sensitivity(oos: pd.DataFrame, params: dict) -> pd.DataFrame:
+    """Pre-specified mechanism − momentum under CRRA γ ∈ {1,2,4,6} and costs."""
+    rows = []
+    pos_m = strategy_positions(oos, "thick_ungated", params)
+    pos_o = strategy_positions(oos, "mom_always", params)
+    for gamma in (1.0, 2.0, 4.0, 6.0):
+        for cost in (0.0, 10.0, 25.0):
+            st_m = portfolio_stats(oos, pos_m, cost_bps=cost, risk_aversion=gamma)
+            st_o = portfolio_stats(oos, pos_o, cost_bps=cost, risk_aversion=gamma)
+            rows.append(
+                {
+                    "contrast": "Mechanism − Momentum",
+                    "risk_aversion": gamma,
+                    "cost_bps": cost,
+                    "mech_CE": round(st_m["CE"], 4),
+                    "mom_CE": round(st_o["CE"], 4),
+                    "dCE": round(st_m["CE"] - st_o["CE"], 4),
+                    "mech_Sharpe": round(st_m["Sharpe"], 3),
+                    "mom_Sharpe": round(st_o["Sharpe"], 3),
+                }
+            )
+    return pd.DataFrame(rows)
 
 
 def event_study_availability(df: pd.DataFrame) -> pd.DataFrame:
@@ -781,11 +854,13 @@ def main() -> None:
     print(mech_def)
     print(mech_sum)
 
-    # Block-bootstrap p-values on OOS daily curves (n_boot=999, block=5)
+    # Block-bootstrap p-values on OOS daily curves (n_boot=999, block=5).
+    # Pre-specified headline contrast is first.
     print("Bootstrap OOS deltas...")
     boot_rows = []
     comparisons = [
-        ("Thick ungated − Always long", "Thick ungated", "Always long"),
+        ("Mechanism − Momentum", "Thick ungated", "Momentum always"),
+        ("Mechanism − Always long", "Thick ungated", "Always long"),
         ("ACWMI − Always long", "ACWMI (IS-frozen)", "Always long"),
         ("ACWMI − Momentum always", "ACWMI (IS-frozen)", "Momentum always"),
         ("Thick ungated − ACWMI", "Thick ungated", "ACWMI (IS-frozen)"),
@@ -800,13 +875,15 @@ def main() -> None:
     boot_df.to_csv(TAB / "table_bootstrap_oos.csv", index=False)
     print(boot_df)
 
-    # LOBO on historically durable bands, decomposed into content vs gating channels.
-    # Content channel: zero the band's tilt in signals/C (information deletion in the
-    # action rule). Gating channel: band status → missing (B/U/H/WMI/ACWMI fall, so
-    # abstention pattern changes). "both" is the full information-set deletion I\E_k.
+    # LOBO on durable bands under the *ungated* mechanism (headline policy).
+    # Telescoping identity (Prop. LOBO):
+    #   Δ_total = V(full) − V(content+gating deleted)
+    #   Δ_content = V(full) − V(content deleted)
+    #   Δ_gating_residual = V(content deleted) − V(both) = Δ_total − Δ_content
+    # Standalone gating (status→missing, content kept) is also reported for disclosure.
     _, oos0, _ = split_is_oos(df)
-    base_pos = strategy_positions(oos0, "ac", params)
-    base = portfolio_stats(oos0, base_pos)
+    lobo_policy = "thick_ungated"
+    base = portfolio_stats(oos0, strategy_positions(oos0, lobo_policy, params))
     base_daily = base["daily"]
     lobo_rows = [{
         "band_dropped": "(none)",
@@ -815,28 +892,71 @@ def main() -> None:
         "abstain_rate": round(base["abstain_rate"], 3),
         "dCE": 0.0,
         "p_dCE": None,
+        "policy": lobo_policy,
     }]
     decomp_rows = []
+    n_boot = int(_CFG["inference"]["n_boot"])
+    block = int(_CFG["inference"]["block"])
+
+    def _lobo_stats(panel: pd.DataFrame):
+        _, oos_v, _ = split_is_oos(panel)
+        st = portfolio_stats(oos_v, strategy_positions(oos_v, lobo_policy, params))
+        bp = bootstrap_delta_pvalues(st["daily"], base_daily, n_boot=n_boot, block=block)
+        return st, bp
+
     for band in HIST_BANDS:
-        variants = {}
         # gating-only: status deleted, content kept
         d_g = rebuild_acwmi(recompute_world(df, drop_band=band))
-        variants["gating"] = d_g
-        # content-only (macro/alternative only; exchange content is the return data itself)
+        st_g, bp_g = _lobo_stats(d_g)
         if band in CONTENT_BANDS:
             d_c = delete_band_content(df, [band])
-            variants["content"] = d_c
+            st_c, bp_c = _lobo_stats(d_c)
             d_b = delete_band_content(recompute_world(df, drop_band=band), [band])
-            variants["both"] = d_b
+            d_b = rebuild_acwmi(d_b)
+            st_b, bp_b = _lobo_stats(d_b)
+            # residual gating after content deletion (exact telescope)
+            bp_res = bootstrap_delta_pvalues(st_b["daily"], st_c["daily"], n_boot=n_boot, block=block)
+            d_content = st_c["CE"] - base["CE"]
+            d_total = st_b["CE"] - base["CE"]
+            d_resid = st_b["CE"] - st_c["CE"]
+            decomp_rows.append(
+                {
+                    "band": band,
+                    "dCE_total": round(d_total, 4),
+                    "p_total": bp_b.get("p_CE"),
+                    "dCE_content": round(d_content, 4),
+                    "p_content": bp_c.get("p_CE"),
+                    "dCE_gating_residual": round(d_resid, 4),
+                    "p_gating_residual": bp_res.get("p_CE"),
+                    "dCE_gating_standalone": round(st_g["CE"] - base["CE"], 4),
+                    "p_gating_standalone": bp_g.get("p_CE"),
+                    "telescope_ok": bool(abs((d_content + d_resid) - d_total) < 1e-8),
+                    "content_share_of_total": (
+                        round(float(d_content / d_total), 3)
+                        if abs(d_total) > 1e-9
+                        else None
+                    ),
+                }
+            )
+            st_full, bp_full = st_b, bp_b
         else:
-            variants["both"] = d_g
-        stats = {}
-        for label, dv in variants.items():
-            _, oos_v, _ = split_is_oos(dv)
-            st = portfolio_stats(oos_v, strategy_positions(oos_v, "ac", params))
-            bp = bootstrap_delta_pvalues(st["daily"], base_daily, n_boot=999, block=5)
-            stats[label] = (st, bp)
-        st_full, bp_full = stats["both"]
+            # exchange: content is the return data itself — gating-only = total
+            decomp_rows.append(
+                {
+                    "band": band,
+                    "dCE_total": round(st_g["CE"] - base["CE"], 4),
+                    "p_total": bp_g.get("p_CE"),
+                    "dCE_content": None,
+                    "p_content": None,
+                    "dCE_gating_residual": round(st_g["CE"] - base["CE"], 4),
+                    "p_gating_residual": bp_g.get("p_CE"),
+                    "dCE_gating_standalone": round(st_g["CE"] - base["CE"], 4),
+                    "p_gating_standalone": bp_g.get("p_CE"),
+                    "telescope_ok": True,
+                    "content_share_of_total": None,
+                }
+            )
+            st_full, bp_full = st_g, bp_g
         lobo_rows.append(
             {
                 "band_dropped": band,
@@ -845,28 +965,15 @@ def main() -> None:
                 "abstain_rate": round(st_full["abstain_rate"], 3),
                 "dCE": round(st_full["CE"] - base["CE"], 4),
                 "p_dCE": bp_full.get("p_CE"),
-            }
-        )
-        decomp_rows.append(
-            {
-                "band": band,
-                "dCE_total": round(st_full["CE"] - base["CE"], 4),
-                "p_total": bp_full.get("p_CE"),
-                "dCE_content_only": round(stats["content"][0]["CE"] - base["CE"], 4) if "content" in stats else None,
-                "p_content": stats["content"][1].get("p_CE") if "content" in stats else None,
-                "dCE_gating_only": round(stats["gating"][0]["CE"] - base["CE"], 4),
-                "p_gating": stats["gating"][1].get("p_CE"),
+                "policy": lobo_policy,
             }
         )
 
-    # Joint content+gating deletion of macro AND alternative (orthogonality check)
+    # Joint content+gating deletion of macro AND alternative
     d_joint_g = recompute_world(df, drop_band="macro")
     d_joint_g = recompute_world(d_joint_g, drop_band="alternative")
-    d_joint = delete_band_content(d_joint_g, ["macro", "alternative"])
-    d_joint = rebuild_acwmi(d_joint)
-    _, oos_j, _ = split_is_oos(d_joint)
-    st_j = portfolio_stats(oos_j, strategy_positions(oos_j, "ac", params))
-    bp_j = bootstrap_delta_pvalues(st_j["daily"], base_daily, n_boot=_CFG["inference"]["n_boot"], block=_CFG["inference"]["block"])
+    d_joint = rebuild_acwmi(delete_band_content(d_joint_g, ["macro", "alternative"]))
+    st_j, bp_j = _lobo_stats(d_joint)
     lobo_rows.append(
         {
             "band_dropped": "macro+alternative",
@@ -875,21 +982,29 @@ def main() -> None:
             "abstain_rate": round(st_j["abstain_rate"], 3),
             "dCE": round(st_j["CE"] - base["CE"], 4),
             "p_dCE": bp_j.get("p_CE"),
+            "policy": lobo_policy,
         }
     )
-    d_joint_content = delete_band_content(df, ["macro", "alternative"])
-    _, oos_jc, _ = split_is_oos(d_joint_content)
-    st_jc = portfolio_stats(oos_jc, strategy_positions(oos_jc, "ac", params))
-    bp_jc = bootstrap_delta_pvalues(st_jc["daily"], base_daily, n_boot=_CFG["inference"]["n_boot"], block=_CFG["inference"]["block"])
+    st_jc, bp_jc = _lobo_stats(delete_band_content(df, ["macro", "alternative"]))
+    bp_jres = bootstrap_delta_pvalues(st_j["daily"], st_jc["daily"], n_boot=n_boot, block=block)
+    d_content_j = st_jc["CE"] - base["CE"]
+    d_total_j = st_j["CE"] - base["CE"]
+    d_resid_j = st_j["CE"] - st_jc["CE"]
     decomp_rows.append(
         {
             "band": "macro+alternative",
-            "dCE_total": round(st_j["CE"] - base["CE"], 4),
+            "dCE_total": round(d_total_j, 4),
             "p_total": bp_j.get("p_CE"),
-            "dCE_content_only": round(st_jc["CE"] - base["CE"], 4),
+            "dCE_content": round(d_content_j, 4),
             "p_content": bp_jc.get("p_CE"),
-            "dCE_gating_only": None,
-            "p_gating": None,
+            "dCE_gating_residual": round(d_resid_j, 4),
+            "p_gating_residual": bp_jres.get("p_CE"),
+            "dCE_gating_standalone": None,
+            "p_gating_standalone": None,
+            "telescope_ok": bool(abs((d_content_j + d_resid_j) - d_total_j) < 1e-8),
+            "content_share_of_total": (
+                round(float(d_content_j / d_total_j), 3) if abs(d_total_j) > 1e-9 else None
+            ),
         }
     )
 
@@ -1008,13 +1123,25 @@ def main() -> None:
     cost_pre.to_csv(TAB / "table_prespec_cost_contrast.csv", index=False)
     print(cost_pre)
 
+    # CRRA-γ / cost grid for the pre-specified contrast
+    print("CE gamma sensitivity...")
+    gamma_sens = ce_gamma_sensitivity(oos, params)
+    gamma_sens.to_csv(TAB / "table_ce_gamma_sensitivity.csv", index=False)
+    print(gamma_sens.to_string(index=False))
+
+    # Leave-one-asset jackknife of the headline contrast
+    print("Leave-one-asset jackknife...")
+    jack = leave_one_asset_jackknife(oos, params)
+    jack.to_csv(TAB / "table_asset_jackknife.csv", index=False)
+    print(jack.to_string(index=False))
+
     # Compilation wedge / predictive bridge
     print("Compilation wedge bridge...")
     wedge = compilation_wedge_bridge(df, cut)
     (TAB / "table_compilation_wedge_bridge.json").write_text(
         json.dumps(wedge, indent=2), encoding="utf-8"
     )
-    print(wedge)
+    print(json.dumps({k: v for k, v in wedge.items()}, indent=2, default=str))
 
     # Planted O_t availability shocks (5% dates, macro+alternative)
     print("Planted O_t shocks...")
@@ -1231,9 +1358,12 @@ def main() -> None:
         "content_scramble_placebo": placebo,
         "macro_component_lobo": comp_lobo.to_dict(orient="records"),
         "prespec_cost_contrast": cost_pre.to_dict(orient="records"),
+        "ce_gamma_sensitivity": gamma_sens.to_dict(orient="records"),
+        "asset_jackknife": jack.to_dict(orient="records"),
         "compilation_wedge_bridge": wedge,
         "planted_ot_shocks": planted,
         "stationary_bootstrap": stat_rows,
+        "lobo_policy": lobo_policy,
     }
     (TAB / "table1_project_inventory.json").write_text(json.dumps(inv, indent=2, default=str), encoding="utf-8")
 

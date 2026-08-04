@@ -151,6 +151,240 @@
         "mom_Sharpe": -0.646
       }
     ],
+    "ce_gamma_sensitivity": [
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 1.0,
+        "cost_bps": 0.0,
+        "mech_CE": 0.259,
+        "mom_CE": -0.075,
+        "dCE": 0.334,
+        "mech_Sharpe": 0.767,
+        "mom_Sharpe": 0.101
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 1.0,
+        "cost_bps": 10.0,
+        "mech_CE": 0.1082,
+        "mom_CE": -0.2252,
+        "dCE": 0.3334,
+        "mech_Sharpe": 0.467,
+        "mom_Sharpe": -0.198
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 1.0,
+        "cost_bps": 25.0,
+        "mech_CE": -0.1181,
+        "mom_CE": -0.4507,
+        "dCE": 0.3326,
+        "mech_Sharpe": 0.017,
+        "mom_Sharpe": -0.646
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 2.0,
+        "cost_bps": 0.0,
+        "mech_CE": 0.132,
+        "mom_CE": -0.2019,
+        "dCE": 0.3339,
+        "mech_Sharpe": 0.767,
+        "mom_Sharpe": 0.101
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 2.0,
+        "cost_bps": 10.0,
+        "mech_CE": -0.0191,
+        "mom_CE": -0.3522,
+        "dCE": 0.3331,
+        "mech_Sharpe": 0.467,
+        "mom_Sharpe": -0.198
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 2.0,
+        "cost_bps": 25.0,
+        "mech_CE": -0.246,
+        "mom_CE": -0.578,
+        "dCE": 0.332,
+        "mech_Sharpe": 0.017,
+        "mom_Sharpe": -0.646
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 4.0,
+        "cost_bps": 0.0,
+        "mech_CE": -0.128,
+        "mom_CE": -0.4614,
+        "dCE": 0.3334,
+        "mech_Sharpe": 0.767,
+        "mom_Sharpe": 0.101
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 4.0,
+        "cost_bps": 10.0,
+        "mech_CE": -0.2795,
+        "mom_CE": -0.6118,
+        "dCE": 0.3323,
+        "mech_Sharpe": 0.467,
+        "mom_Sharpe": -0.198
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 4.0,
+        "cost_bps": 25.0,
+        "mech_CE": -0.5074,
+        "mom_CE": -0.8379,
+        "dCE": 0.3306,
+        "mech_Sharpe": 0.017,
+        "mom_Sharpe": -0.646
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 6.0,
+        "cost_bps": 0.0,
+        "mech_CE": -0.3995,
+        "mom_CE": -0.7321,
+        "dCE": 0.3326,
+        "mech_Sharpe": 0.767,
+        "mom_Sharpe": 0.101
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 6.0,
+        "cost_bps": 10.0,
+        "mech_CE": -0.5511,
+        "mom_CE": -0.8822,
+        "dCE": 0.3311,
+        "mech_Sharpe": 0.467,
+        "mom_Sharpe": -0.198
+      },
+      {
+        "contrast": "Mechanism \u2212 Momentum",
+        "risk_aversion": 6.0,
+        "cost_bps": 25.0,
+        "mech_CE": -0.7796,
+        "mom_CE": -1.1084,
+        "dCE": 0.3288,
+        "mech_Sharpe": 0.017,
+        "mom_Sharpe": -0.646
+      }
+    ],
+    "asset_jackknife": [
+      {
+        "asset_dropped": "ADA",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.0444,
+        "mom_CE": -0.3026,
+        "dCE": 0.3469,
+        "mech_Sharpe": 0.587,
+        "mom_Sharpe": -0.113
+      },
+      {
+        "asset_dropped": "AVAX",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.2225,
+        "mom_CE": -0.0931,
+        "dCE": 0.3156,
+        "mech_Sharpe": 0.948,
+        "mom_Sharpe": 0.319
+      },
+      {
+        "asset_dropped": "BNB",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.1418,
+        "mom_CE": -0.2068,
+        "dCE": 0.3486,
+        "mech_Sharpe": 0.798,
+        "mom_Sharpe": 0.131
+      },
+      {
+        "asset_dropped": "BTC",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.1025,
+        "mom_CE": -0.2422,
+        "dCE": 0.3447,
+        "mech_Sharpe": 0.72,
+        "mom_Sharpe": 0.053
+      },
+      {
+        "asset_dropped": "DOT",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.2014,
+        "mom_CE": -0.1506,
+        "dCE": 0.352,
+        "mech_Sharpe": 0.901,
+        "mom_Sharpe": 0.196
+      },
+      {
+        "asset_dropped": "ETH",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.1437,
+        "mom_CE": -0.1852,
+        "dCE": 0.3289,
+        "mech_Sharpe": 0.791,
+        "mom_Sharpe": 0.134
+      },
+      {
+        "asset_dropped": "LINK",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.1714,
+        "mom_CE": -0.1624,
+        "dCE": 0.3338,
+        "mech_Sharpe": 0.845,
+        "mom_Sharpe": 0.174
+      },
+      {
+        "asset_dropped": "NEAR",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.0169,
+        "mom_CE": -0.2849,
+        "dCE": 0.3018,
+        "mech_Sharpe": 0.532,
+        "mom_Sharpe": -0.068
+      },
+      {
+        "asset_dropped": "SOL",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.1199,
+        "mom_CE": -0.2074,
+        "dCE": 0.3272,
+        "mech_Sharpe": 0.743,
+        "mom_Sharpe": 0.086
+      },
+      {
+        "asset_dropped": "XRP",
+        "n_assets": 9,
+        "n_days": 200,
+        "mech_CE": 0.1338,
+        "mom_CE": -0.2096,
+        "dCE": 0.3434,
+        "mech_Sharpe": 0.773,
+        "mom_Sharpe": 0.09
+      },
+      {
+        "asset_dropped": "(none)",
+        "n_assets": 10,
+        "n_days": 200,
+        "mech_CE": 0.132,
+        "mom_CE": -0.2019,
+        "dCE": 0.3339,
+        "mech_Sharpe": 0.767,
+        "mom_Sharpe": 0.101
+      }
+    ],
     "compilation_wedge_bridge": {
       "status": "ok",
       "compiled": {
@@ -158,6 +392,8 @@
         "ann_mean": -0.0057,
         "Sharpe": -0.014,
         "CE_daily": -0.00047,
+        "CE_ann": -0.1714,
+        "sign_hit": 0.495,
         "n_oos": 1990
       },
       "thin": {
@@ -165,10 +401,20 @@
         "ann_mean": -0.8215,
         "Sharpe": -1.404,
         "CE_daily": -0.003188,
+        "CE_ann": -1.1635,
+        "sign_hit": 0.4452,
         "n_oos": 1990
       },
       "dR2_compiled_minus_thin": -0.954039,
       "dSharpe_compiled_minus_thin": 1.39,
+      "dCE_ann_compiled_minus_thin": 0.9921,
+      "d_sign_hit_compiled_minus_thin": 0.0498,
+      "bootstrap_dCE": {
+        "dCE": 0.992,
+        "p_CE": 0.02,
+        "ci_dCE_05": 0.1824,
+        "ci_dCE_95": 1.7995
+      },
       "features_compiled": [
         "mom5",
         "macro_tilt",
@@ -180,7 +426,7 @@
       "features_thin": [
         "mom5"
       ],
-      "note": "IS-fit OLS, OOS evaluate; transparent bridge for compilation wedge, not a trading claim"
+      "note": "IS-fit OLS + OOS sign-projection; SDF-interface bridge showing compiled features can raise implementable signed payoffs even when linear R\u00b2 stays near zero. Not a trading claim."
     },
     "planted_ot_shocks": {
       "rate": 0.05,
@@ -287,7 +533,8 @@
           "ci95_excludes_0_Sharpe": false
         }
       }
-    }
+    },
+    "lobo_policy": "thick_ungated"
   },
   "econ_oos": [
     {
@@ -363,7 +610,24 @@
   ],
   "bootstrap_oos": [
     {
-      "contrast": "Thick ungated \u2212 Always long",
+      "contrast": "Mechanism \u2212 Momentum",
+      "n_days": 200,
+      "method": "circular",
+      "dSharpe": 0.6664,
+      "dCE": 0.3339,
+      "p_Sharpe": 0.034,
+      "p_CE": 0.034,
+      "n_boot": 999,
+      "block": 5,
+      "ci_dSharpe_05": 0.0552,
+      "ci_dSharpe_95": 1.4781,
+      "ci_dCE_05": 0.028,
+      "ci_dCE_95": 0.6768,
+      "ci95_excludes_0_CE": true,
+      "ci95_excludes_0_Sharpe": true
+    },
+    {
+      "contrast": "Mechanism \u2212 Always long",
       "n_days": 200,
       "method": "circular",
       "dSharpe": 2.1664,
@@ -451,81 +715,102 @@
   "lobo": [
     {
       "band_dropped": "(none)",
-      "Sharpe": 0.654,
-      "CE": 0.0764,
-      "abstain_rate": 0.127,
+      "Sharpe": 0.767,
+      "CE": 0.132,
+      "abstain_rate": 0.075,
       "dCE": 0.0,
-      "p_dCE": NaN
+      "p_dCE": NaN,
+      "policy": "thick_ungated"
     },
     {
       "band_dropped": "exchange",
-      "Sharpe": 0.634,
-      "CE": 0.0682,
-      "abstain_rate": 0.16,
-      "dCE": -0.0082,
-      "p_dCE": 0.832
+      "Sharpe": 0.767,
+      "CE": 0.132,
+      "abstain_rate": 0.075,
+      "dCE": 0.0,
+      "p_dCE": 1.0,
+      "policy": "thick_ungated"
     },
     {
       "band_dropped": "macro",
-      "Sharpe": -0.834,
-      "CE": -0.5746,
-      "abstain_rate": 0.392,
-      "dCE": -0.651,
-      "p_dCE": 0.012
+      "Sharpe": 0.101,
+      "CE": -0.2019,
+      "abstain_rate": 0.0,
+      "dCE": -0.3339,
+      "p_dCE": 0.034,
+      "policy": "thick_ungated"
     },
     {
       "band_dropped": "alternative",
-      "Sharpe": -0.575,
-      "CE": -0.4746,
-      "abstain_rate": 0.311,
-      "dCE": -0.551,
-      "p_dCE": 0.014
+      "Sharpe": 0.101,
+      "CE": -0.2019,
+      "abstain_rate": 0.0,
+      "dCE": -0.3339,
+      "p_dCE": 0.034,
+      "policy": "thick_ungated"
     },
     {
       "band_dropped": "macro+alternative",
-      "Sharpe": -0.774,
-      "CE": -0.5691,
-      "abstain_rate": 0.292,
-      "dCE": -0.6455,
-      "p_dCE": 0.01
+      "Sharpe": 0.101,
+      "CE": -0.2019,
+      "abstain_rate": 0.0,
+      "dCE": -0.3339,
+      "p_dCE": 0.034,
+      "policy": "thick_ungated"
     }
   ],
   "lobo_decomposition": [
     {
       "band": "exchange",
-      "dCE_total": -0.0082,
-      "p_total": 0.832,
-      "dCE_content_only": NaN,
+      "dCE_total": 0.0,
+      "p_total": 1.0,
+      "dCE_content": NaN,
       "p_content": NaN,
-      "dCE_gating_only": -0.0082,
-      "p_gating": 0.832
+      "dCE_gating_residual": 0.0,
+      "p_gating_residual": 1.0,
+      "dCE_gating_standalone": 0.0,
+      "p_gating_standalone": 1.0,
+      "telescope_ok": true,
+      "content_share_of_total": NaN
     },
     {
       "band": "macro",
-      "dCE_total": -0.651,
-      "p_total": 0.012,
-      "dCE_content_only": -0.3456,
-      "p_content": 0.026,
-      "dCE_gating_only": -0.3651,
-      "p_gating": 0.17
+      "dCE_total": -0.3339,
+      "p_total": 0.034,
+      "dCE_content": -0.3339,
+      "p_content": 0.034,
+      "dCE_gating_residual": 0.0,
+      "p_gating_residual": 1.0,
+      "dCE_gating_standalone": 0.0,
+      "p_gating_standalone": 1.0,
+      "telescope_ok": true,
+      "content_share_of_total": 1.0
     },
     {
       "band": "alternative",
-      "dCE_total": -0.551,
-      "p_total": 0.014,
-      "dCE_content_only": -0.3606,
+      "dCE_total": -0.3339,
+      "p_total": 0.034,
+      "dCE_content": -0.3339,
       "p_content": 0.034,
-      "dCE_gating_only": -0.3846,
-      "p_gating": 0.128
+      "dCE_gating_residual": 0.0,
+      "p_gating_residual": 1.0,
+      "dCE_gating_standalone": 0.0,
+      "p_gating_standalone": 1.0,
+      "telescope_ok": true,
+      "content_share_of_total": 1.0
     },
     {
       "band": "macro+alternative",
-      "dCE_total": -0.6455,
-      "p_total": 0.01,
-      "dCE_content_only": -0.4831,
-      "p_content": 0.016,
-      "dCE_gating_only": NaN,
-      "p_gating": NaN
+      "dCE_total": -0.3339,
+      "p_total": 0.034,
+      "dCE_content": -0.3339,
+      "p_content": 0.034,
+      "dCE_gating_residual": 0.0,
+      "p_gating_residual": 1.0,
+      "dCE_gating_standalone": NaN,
+      "p_gating_standalone": NaN,
+      "telescope_ok": true,
+      "content_share_of_total": 1.0
     }
   ],
   "thin_thick": [
@@ -1119,6 +1404,8 @@
       "ann_mean": -0.0057,
       "Sharpe": -0.014,
       "CE_daily": -0.00047,
+      "CE_ann": -0.1714,
+      "sign_hit": 0.495,
       "n_oos": 1990
     },
     "thin": {
@@ -1126,10 +1413,20 @@
       "ann_mean": -0.8215,
       "Sharpe": -1.404,
       "CE_daily": -0.003188,
+      "CE_ann": -1.1635,
+      "sign_hit": 0.4452,
       "n_oos": 1990
     },
     "dR2_compiled_minus_thin": -0.954039,
     "dSharpe_compiled_minus_thin": 1.39,
+    "dCE_ann_compiled_minus_thin": 0.9921,
+    "d_sign_hit_compiled_minus_thin": 0.0498,
+    "bootstrap_dCE": {
+      "dCE": 0.992,
+      "p_CE": 0.02,
+      "ci_dCE_05": 0.1824,
+      "ci_dCE_95": 1.7995
+    },
     "features_compiled": [
       "mom5",
       "macro_tilt",
@@ -1141,7 +1438,7 @@
     "features_thin": [
       "mom5"
     ],
-    "note": "IS-fit OLS, OOS evaluate; transparent bridge for compilation wedge, not a trading claim"
+    "note": "IS-fit OLS + OOS sign-projection; SDF-interface bridge showing compiled features can raise implementable signed payoffs even when linear R\u00b2 stays near zero. Not a trading claim."
   },
   "planted_ot_shocks": {
     "rate": 0.05,

@@ -29,4 +29,6 @@
 6. WMI/ACWMI + world-conditional abstention (keep as apparatus; empirics may be secondary)
 
 ## Headline empirical claim (lock)
-Pre-specified **mechanism − momentum** on PIT band content, plus content-dominant LOBO; long-span audit rules out hidden return-rule alpha.
+Pre-specified **mechanism − momentum** on PIT band content, plus content-dominant LOBO
+(telescoping identity under the ungated mechanism); long-span audit rules out hidden
+return-rule alpha. Relative CE gap survives costs and CRRA γ ∈ {1,2,4,6}.
