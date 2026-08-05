@@ -54,12 +54,12 @@
   An Observation Layer that Compiles World Bundles}
 
 \begin{abstract}
-\textbf{Purpose.} End-to-end crypto quant for public LLMs needs a \emph{data end} before decision or execution.
-We build that layer as an anonymized observation runtime: multi-band evidence \(\to\) BandPIT/WMI \(\to\) a point-in-time (PIT) \emph{world bundle}, with hard refusal when support is thin.
+\textbf{Purpose.} AI-in-finance agents and public LLMs need a typed market view before they can decide or trade.
+We contribute that missing \emph{data end}: an anonymized observation runtime that turns multi-band crypto evidence into a point-in-time (PIT) \emph{world bundle} (BandPIT/WMI) with hard refusal when support is thin---a substrate for evaluating whether models \emph{understand} the market state, not a trading bot.
 \textbf{Evidence.} Primary---seeing: grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ \({\lesssim}0.23\) under Raw, while sufficiency chat alone is unreliable (Compiled mean \(0.60\)).
 Secondary---valve: under a \emph{frozen full-schema} stress gate (\(\max\mathrm{WMI}\approx 0.093{<}0.2\)), Compiled thin-abstain is \(1.0\) (100-day and full OOS \(n{=}2000\)) while Ungated soft judgment is only \({\approx}0.68\) / \({\approx}0.56\); Raw over-trades.
 Secondary---handoff: the \emph{scoped-archive production valve} opens on \({\approx}61\%\) OOS days; live LLMs abstain \(1.0\) on closed days and act on \({\approx}89\%\) of open days, while a no-LLM tilt rule remains nonempty (Sharpe \(0.77\)).
-\textbf{Claim.} Build the quant data end first: compile so models can see; refuse when they must not act.
+\textbf{Claim.} For LLM/agent finance stacks, build the quant data end first: compile so models can see; refuse when they must not act.
 \end{abstract}
 
 \begin{CCSXML}
@@ -86,7 +86,7 @@ Secondary---handoff: the \emph{scoped-archive production valve} opens on \({\app
 \ccsdesc[300]{Computing methodologies~Machine learning}
 \ccsdesc[300]{Applied computing~Economics}
 
-\keywords{data end, observation layer, world bundle, grounding, public LLMs, cryptocurrency, point-in-time, quality-gated refusal, systems}
+\keywords{AI in finance, LLM agents, data end, observation layer, world bundle, grounding, market understanding, cryptocurrency, point-in-time, quality-gated refusal}
 
 \maketitle
 
@@ -94,14 +94,14 @@ Secondary---handoff: the \emph{scoped-archive production valve} opens on \({\app
 \label{sec:intro}
 
 \paragraph{Purpose (read this first).}
-Build the \emph{data end} of end-to-end crypto quant for public LLMs.
+At the methodology--application interface of AI and finance, LLM/agent stacks need a \emph{data end} before decision or execution.
 The stack is \textbf{data/observation} \(\to\) \textbf{decision} \(\to\) \textbf{execution} (Table~\ref{tab:stack}); agents and generative world models~\cite{yao2023react,yu2023finmem,zhang2024finagent,ha2018world,hafner2020dreamer,lecun2022path} typically assume the first stage.
 Crypto violates that assumption: exchange, macro, and alternative evidence arrive on incompatible clocks~\cite{makarov2020,liu2022}.
-We own only the data end---compile a PIT world bundle so models can \emph{see}, and hard-refuse when the view is too thin.
-Refusal is a safety valve, not the product and not a trading claim.
+We build the missing substrate---compile a PIT world bundle so models can \emph{see} the market, evaluate that seeing with checkable grounding, and hard-refuse when the view is too thin.
+Refusal is a safety valve for agent stacks, not a trading claim.
 
 \begin{table}[t]
-  \caption{End-to-end quant stack; this paper owns only the data end.}
+  \caption{AI-finance stack; this paper supplies the data end for LLM/agent consumers.}
   \label{tab:stack}
   \small
   \begin{tabular}{llp{0.42\linewidth}}
@@ -117,12 +117,13 @@ Refusal is a safety valve, not the product and not a trading claim.
 
 \paragraph{Failure modes.}
 No feed \(\to\) refuse (safe, useless as a data end).
-Thin price fragment \(\to\) trade and lose (unsafe for any downstream stack).
+Thin price fragment \(\to\) trade and lose (unsafe for any downstream agent).
 Disclosed but ungated world \(\to\) read fields, disagree on action.
-So the data end must (i)~make the market legible and (ii)~enforce a quality valve before decision/execution.
+So the data end must (i)~make the market legible to LLMs/agents and (ii)~enforce a quality valve before decision/execution.
 
 \paragraph{What we build.}
-An anonymized runtime (Section~\ref{sec:system}): multi-band evidence \(\to\) BandPIT/WMI \(\to\) JSON world bundle for GPT~/DeepSeek~/GLM~/Gemini-class models, served through a read API a decision layer can call.
+An anonymized \emph{data-provision runtime for public LLMs and finance agents} (Section~\ref{sec:system}): multi-band evidence \(\to\) BandPIT/WMI \(\to\) JSON world bundle for GPT~/DeepSeek~/GLM~/Gemini-class consumers, served through a read API.
+It is also an evaluation substrate: the same bundle supports grounding and gated-action protocols that test whether a model understands disclosed market state.
 ``World model'' means state compiler + quality gate (Section~\ref{sec:method}), not dynamics and not a decision engine.
 The bundle is complete, honest, and auditable; \texttt{should\_ai\_abstain} is the machine-readable valve.
 
@@ -134,10 +135,10 @@ Four arms: Compiled, Ungated (same content, no flag), Raw (\texttt{mom5}), Blind
 \textbf{RQ3b (content):} On the same vintaged tilts, does an ungated content probe beat momentum (\(\Delta\mathrm{CE}\); LOBO)?
 
 \paragraph{Contributions.}
-(1)~Data-end semantics: epistemic observations, compilation \(\Pi_t\), world-quality index with band scope, and seeing vs.\ gating with a lag--missingness bound.
-(2)~Anonymized PIT compile path: collectors\(\to\)BandPIT\(\to\)service surface (bundle~/health~/handoff reads)\(\to\)world bundles; frozen four-arm harness.
-(3)~Live validation: grounding \({\approx}0.97\); full-schema stress abstain \(1.0\); scoped production valve with live LLM obedience (closed abstain \(1.0\); open act \({\approx}0.89\)) plus no-LLM tilt handoff (Sharpe \(0.77\); LOBO content share \(1.0\)).
-Estimand: data-end legibility, valve reliability, and handoff usability.
+(1)~AI--finance data-end semantics: epistemic observations, compilation \(\Pi_t\), world-quality index with band scope, and seeing vs.\ gating---interfaces that let LLM/agent stacks consume crypto markets safely.
+(2)~An anonymized data-provision path for agents: collectors\(\to\)BandPIT\(\to\)service surface (bundle~/health~/handoff)\(\to\)world bundles, plus a frozen four-arm harness to \emph{evaluate} market understanding.
+(3)~Live LLM evidence that the substrate works: grounding \({\approx}0.97\); stress-gate abstain \(1.0\); scoped production valve obedience (closed \(1.0\); open act \({\approx}0.89\)); nonempty tilt handoff (Sharpe \(0.77\); LOBO \(1.0\)).
+Estimand: whether public models can see a typed market world, refuse when thin, and hand off when ready---not portfolio alpha.
 
 \section{Related Work}
 \label{sec:related}
@@ -146,11 +147,11 @@ Estimand: data-end legibility, valve reliability, and handoff usability.
 World models learn compact states and often dynamics~\cite{ha2018world,hafner2020dreamer,lecun2022path}.
 We address the complementary observation-side problem: a PIT-safe, quality-tagged crypto world \emph{before} dynamics or LLM policy---not a Dreamer/JEPA simulator.
 
-\paragraph{LLM agents in finance.}
+\paragraph{LLM agents in finance (ICAIF intersection).}
 Return prediction~\cite{lopez2023chatgpt}, open financial LLMs~\cite{yang2023fingpt}, memory- and tool-augmented agents~\cite{yu2023finmem,li2023tradinggpt,zhang2024finagent,yao2023react}, and ICAIF retrieval/debate/judge systems~\cite{choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad} improve how agents fetch, debate, and are scored.
-They still assume a usable observation stream at the data end of the stack.
-We study that prior stage: compile a world bundle, measure whether models can \emph{see} it, then gate action when they must not act.
-Our estimand is therefore orthogonal to memory routers and debate judges: without a typed PIT world, those stacks consume whatever fragment the tool dump provides.
+Methodologically they still assume a usable observation stream; application stacks then conflate bad market context with bad policy.
+We target that gap: a data-provision layer that compiles a typed PIT world for LLM/agent consumers, and a protocol that \emph{scores market understanding} (grounding, gated refusal) before debating alpha.
+The estimand is orthogonal to memory routers and debate judges: without a typed world, those systems evaluate agents on tool fragments, not on whether the market view was legible.
 
 \paragraph{Selective prediction and PIT.}
 Abstention can be optimal under noise~\cite{elyaniv2010,geifman2017}; we attach refusal to \emph{world} quality \(q(W_t)\) via a runtime field, not classifier confidence alone (Prop.~\ref{prop:abstain}).
@@ -243,8 +244,8 @@ We do not learn \(p(s_{t+1}\mid s_t,a_t)\). We deliver a state compiler with a q
 \section{Runtime: Data-End Compile Path}
 \label{sec:system}
 
-The anonymized prototype implements the data end as a layered compile path (Figure~\ref{fig:pipeline}, Table~\ref{tab:modules}).
-Decision and execution sit downstream; this paper does not claim them.
+The anonymized prototype implements the data end as a layered compile path for LLM/agent consumers (Figure~\ref{fig:pipeline}, Table~\ref{tab:modules}).
+Decision and execution sit downstream; this paper supplies their market context and the protocols that test whether that context was understood.
 Paths and product names are omitted for double-blind review.
 
 \subsection{Layered design}
@@ -253,7 +254,7 @@ Paths and product names are omitted for double-blind review.
 \item \textbf{Store layer.} Embedded stores hold raw series, merged market panels, and compiled analytics (readiness, WMI/ACWMI, world snapshots).
 \item \textbf{Logic layer.} BandPIT reconstructs readiness on a previous-close clock; honesty/missingness gates implement \(\Pi_t\); WMI/ACWMI and availability shocks \(O_t\) (band outage events for quasi-exogenous levers) are first-class.
 \item \textbf{Service layer.} A read API serves quality-tagged bundles and health objects without restarting collectors for newly arrived rows. Anonymized surface includes world-bundle reads, \texttt{/bundle/\{symbol\}/handoff} (valve-gated tilt action, no LLM), health exposing \texttt{should\_ai\_abstain} with \texttt{band\_scope}, a paper world-model time slice, and availability-shock queries.
-\item \textbf{Consumer layer.} Frozen-prompt LLM/rule agents call an OpenAI-compatible adapter at temperature \(0\) under four arms.
+\item \textbf{Consumer~/eval layer.} Frozen-prompt public LLMs (and rule agents) call an OpenAI-compatible adapter at temperature \(0\) under four arms---the harness that scores market understanding against the supplied world.
 \end{enumerate}
 
 \begin{figure*}[t]
@@ -747,10 +748,10 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
 \label{sec:disc}
 
 \paragraph{What carries the paper.}
-(i)~The data end is legible: grounding \({\approx}0.97\), with sufficiency chat a poor substitute (RQ1 / Props.~\ref{prop:recon}--\ref{prop:compile}).
+(i)~As an AI--finance data substrate, the compiled world is legible: grounding \({\approx}0.97\), with sufficiency chat a poor substitute (RQ1 / Props.~\ref{prop:recon}--\ref{prop:compile}).
 (ii)~Under the full-schema stress gate, soft text fails at scale; Blind refuses with no feed; Raw acts on fragments and loses; the hard flag works (RQ2 / Prop.~\ref{prop:abstain}).
 (iii)~Scoped production WMI opens on band-thick days; live LLMs abstain \(1.0\) when closed and act when open, while open-day CE does not beat Raw---observation usability \(\neq\) policy alpha (RQ3a / Def.~\ref{def:wmi}+Prop.~\ref{prop:abstain}); a no-LLM tilt rule and LOBO content share \(1.0\) keep fields nonempty (RQ3b / Prop.~\ref{prop:lobo}).
-Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume.
+Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply---and evaluate---the observation stage those systems assume: data for agents, and a yardstick for whether agents understood the market.
 
 \paragraph{Architecture.}
 Semantics (Section~\ref{sec:method}) define the interfaces; Runtime (Section~\ref{sec:system}) implements \(\Pi_t\) and the service handoff; Experiments (Section~\ref{sec:exp}) test seeing, stress gating, then scoped handoff and content in that order.
@@ -773,10 +774,10 @@ Open-day LLM CE is reported as a usability check, not an alpha claim---policy sk
 \section{Conclusion}
 \label{sec:conc}
 
-End-to-end crypto quant for public LLMs needs a reliable data end before decision or execution.
-We contribute that observation layer: compile asynchronous evidence into a consumable PIT world bundle, disclose structural missingness, and hard-refuse when the view is too thin.
+AI-in-finance LLM/agent stacks need a reliable data end before decision or execution.
+We contribute that observation layer---a data-provision and market-understanding substrate: compile asynchronous evidence into a consumable PIT world bundle, disclose structural missingness, and hard-refuse when the view is too thin.
 Grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; sufficiency chat alone fails; the full-schema stress gate abstains \(1.0\) where soft judgment does not; under the scoped production valve live LLMs abstain \(1.0\) on closed days and act when open, while a no-LLM tilt rule stays nonempty (Sharpe \(0.77\)).
-Build the quant data end first: compile so models can see; refuse when they must not act.
+For public LLMs and agents: build the quant data end first---compile so models can see; refuse when they must not act.
 
 \begin{acks}
 Omitted for anonymous review.
