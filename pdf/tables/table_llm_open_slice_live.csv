@@ -1,0 +1,9 @@
+model,treatment,n,abstain,CE,Sharpe,act_conditional_CE,n_act,frac_counterfactual_open
+gpt-5.4-mini,compiled,1224,1.0,0.0,0.0,,0,1.0
+gpt-5.4-mini,ungated,1224,0.5776,0.4159,1.936,0.3198,517,1.0
+deepseek-v4-flash,compiled,1224,1.0,0.0,0.0,,0,1.0
+deepseek-v4-flash,ungated,1224,0.4232,0.2077,0.92,0.4497,706,1.0
+glm-5.2,compiled,1224,1.0,0.0,0.0,,0,1.0
+glm-5.2,ungated,932,0.5815,0.242,1.01,0.1051,390,1.0
+gemini-3.5-flash-lite,compiled,1224,1.0,0.0,0.0,,0,1.0
+gemini-3.5-flash-lite,ungated,1224,0.3366,0.3078,1.125,0.0649,812,1.0

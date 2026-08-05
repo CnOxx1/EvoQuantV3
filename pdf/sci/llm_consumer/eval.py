@@ -53,6 +53,25 @@ def _prompt_hash(text: str) -> str:
 # Evaluation archive bands with durable PIT history in this study.
 DURABLE_BANDS = ("exchange", "macro", "alternative")
 
+# Production defaults (config/settings.py WMI_ABSTAIN_THRESHOLD=0.2).
+# Overridable for counterfactual open-gate probes via set_bundle_thresholds().
+_BUNDLE_THRESHOLDS: dict[str, float] = {
+    "wmi_abstain_thr": 0.2,
+    "acwmi_abstain_thr": 0.25,
+}
+
+
+def set_bundle_thresholds(
+    *,
+    wmi_abstain_thr: float | None = None,
+    acwmi_abstain_thr: float | None = None,
+) -> None:
+    """Set abstain thresholds used by build_compiled_bundle (process-local)."""
+    if wmi_abstain_thr is not None:
+        _BUNDLE_THRESHOLDS["wmi_abstain_thr"] = float(wmi_abstain_thr)
+    if acwmi_abstain_thr is not None:
+        _BUNDLE_THRESHOLDS["acwmi_abstain_thr"] = float(acwmi_abstain_thr)
+
 
 def build_compiled_bundle(row: pd.Series) -> dict[str, Any]:
     """Full world-model bundle: complete, honest, auditable fields for LLMs.
@@ -66,7 +85,8 @@ def build_compiled_bundle(row: pd.Series) -> dict[str, Any]:
     u = float(row.get("U") or 0.0)
     h = float(row.get("H_cont") or row.get("H") or 0.0)
     b = float(row.get("B_hier") or 0.0)
-    thr = 0.25
+    thr = float(_BUNDLE_THRESHOLDS["acwmi_abstain_thr"])
+    wmi_thr = float(_BUNDLE_THRESHOLDS["wmi_abstain_thr"])
     bands = {k: str(row.get(f"st_{k}") or "missing") for k in DURABLE_BANDS}
     n_ready = sum(1 for v in bands.values() if v == "ready")
     n_limited = sum(1 for v in bands.values() if v == "limited")
@@ -77,7 +97,7 @@ def build_compiled_bundle(row: pd.Series) -> dict[str, Any]:
         f"tilt:alt:{float(row.get('alt_tilt') or 0.0)}",
         f"engine:mom5:{float(row.get('mom5') or 0.0)}",
     ]
-    should_abs = bool(ac < thr or wmi < 0.2)
+    should_abs = bool(ac < thr or wmi < wmi_thr)
     return {
         "date": str(pd.Timestamp(row["date"]).date()),
         "asset": row["asset"],
@@ -89,6 +109,7 @@ def build_compiled_bundle(row: pd.Series) -> dict[str, Any]:
         "cascade_p": float(row.get("cascade_p") or 0.0),
         "detected_regime": row.get("detected_regime"),
         "abstain_threshold": thr,
+        "wmi_abstain_threshold": wmi_thr,
         "completeness": {
             "n_ready": n_ready,
             "n_limited": n_limited,
@@ -108,6 +129,8 @@ def build_compiled_bundle(row: pd.Series) -> dict[str, Any]:
             "wmi": wmi,
             "acwmi": ac,
             "should_ai_abstain": should_abs,
+            "wmi_abstain_threshold": wmi_thr,
+            "acwmi_abstain_threshold": thr,
             "index_mode": "acwmi",
             "thin_world": should_abs,
         },
@@ -427,6 +450,24 @@ def main(argv: list[str] | None = None) -> int:
         default="compiled,raw",
         help="Comma-separated treatments: compiled,raw,ungated",
     )
+    parser.add_argument(
+        "--min-wmi",
+        type=float,
+        default=None,
+        help="Keep only OOS rows with WMI >= this value (counterfactual open slice)",
+    )
+    parser.add_argument(
+        "--wmi-abstain-thr",
+        type=float,
+        default=None,
+        help="Override WMI abstain threshold in compiled bundles (default 0.2)",
+    )
+    parser.add_argument(
+        "--acwmi-abstain-thr",
+        type=float,
+        default=None,
+        help="Override ACWMI abstain threshold in compiled bundles (default 0.25)",
+    )
     args = parser.parse_args(argv)
 
     cfg = load_experiment_config()
@@ -441,8 +482,20 @@ def main(argv: list[str] | None = None) -> int:
 
         models = [m for m in models if _is_live_model_name(m)]
     treatments = tuple(t.strip() for t in args.treatments.split(",") if t.strip())
+    if args.wmi_abstain_thr is not None or args.acwmi_abstain_thr is not None:
+        set_bundle_thresholds(
+            wmi_abstain_thr=args.wmi_abstain_thr,
+            acwmi_abstain_thr=args.acwmi_abstain_thr,
+        )
     df = _ensure_panel()
     _, oos, cut = split_is_oos(df, is_frac=float(cfg["split"]["is_frac"]))
+    if args.min_wmi is not None:
+        oos = oos[oos["WMI"].astype(float) >= float(args.min_wmi)].copy()
+        print(
+            f"Filtered OOS to WMI>={args.min_wmi}: n={len(oos)} "
+            f"(wmi_thr={_BUNDLE_THRESHOLDS['wmi_abstain_thr']}, "
+            f"acwmi_thr={_BUNDLE_THRESHOLDS['acwmi_abstain_thr']})"
+        )
     oos = _sample_oos(oos, args.sample_n if args.sample_n > 0 else None)
     print("LLM consumer OOS from", cut, "n=", len(oos), "models=", models, "treatments=", treatments)
 
@@ -513,6 +566,9 @@ def main(argv: list[str] | None = None) -> int:
         "is_oos_cut": str(pd.Timestamp(cut).date()),
         "n_oos_rows": int(len(oos)),
         "sample_n": int(args.sample_n or 0),
+        "min_wmi": args.min_wmi,
+        "wmi_abstain_thr": _BUNDLE_THRESHOLDS["wmi_abstain_thr"],
+        "acwmi_abstain_thr": _BUNDLE_THRESHOLDS["acwmi_abstain_thr"],
         "models": models,
         "treatments": list(treatments),
         "mean_dCE": _mean_or_none("dCE_compiled_minus_raw"),

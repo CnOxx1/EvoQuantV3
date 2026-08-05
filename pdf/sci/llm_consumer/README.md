@@ -13,6 +13,8 @@ make paper-llm-consumer
   `OPENAI_API_KEY` (or `TEAMOROUTER_API_KEY` / vendor keys). Never commit keys.
   Example: `python -m pdf.sci.llm_consumer.eval --live-only --sample-n 100 --tag live --workers 6`
   Ungated ablation (same 100 days): `--treatments ungated --sample-n 100 --tag ungated100`
+  Counterfactual open slice (WMI≥0.05, open Compiled gate):  
+  `--treatments compiled,ungated --min-wmi 0.05 --wmi-abstain-thr 0.05 --sample-n 100 --tag open05`
 - Outputs: `pdf/tables/table_llm_*.csv` (+ `*_live.*` when `--tag live`),
   `table_llm_understanding.csv`, `table_world_bundle_examples.json`
   (also copied under `pdf/icaif26/tables/`). Transcripts are gitignored.
