@@ -1,0 +1,4 @@
+threshold,open_share,wmi_max,wmi_median,note,band_scope,bands
+0.2,0.612,1.0,1.0,production scoped valve (complete∧WMI≥0.2),eval_archive,"exchange,macro,alternative"
+0.05,1.0,1.0,1.0,counterfactual WMI-only (no completeness∧),eval_archive,"exchange,macro,alternative"
+0.01,1.0,1.0,1.0,near-floor WMI-only,eval_archive,"exchange,macro,alternative"

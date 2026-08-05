@@ -804,7 +804,8 @@ class AIMarketContextService:
             asset_readiness_row=asset_readiness_row,
             data_quality_flags=data_quality_flags,
         )
-        bundle["world_model_index"] = self._compute_world_model_index(
+        bundle["world_model_index"] = self._build_world_model_index_for_row(
+            asset_readiness_row=asset_readiness_row,
             coverage_score=coverage_score,
             pipeline_latency_context=bundle.get("pipeline_latency_context") or {},
             data_quality_flag=data_quality_flag,
@@ -813,7 +814,82 @@ class AIMarketContextService:
             cross_evidence=cross_evidence,
             acwmi_input_source=acwmi_source,
         )
+        # Promote PIT tilts to top-level so a decision layer can read them
+        # without digging into paper-engine snapshots.
+        snap = (asset_readiness_row or {}).get("paper_world_model_snapshot") or {}
+        if isinstance(snap, dict):
+            if bundle.get("macro_tilt") is None and snap.get("macro_tilt") is not None:
+                bundle["macro_tilt"] = snap.get("macro_tilt")
+            if bundle.get("alt_tilt") is None and snap.get("alt_tilt") is not None:
+                bundle["alt_tilt"] = snap.get("alt_tilt")
         return bundle
+
+    def _build_world_model_index_for_row(
+        self,
+        *,
+        asset_readiness_row: dict,
+        coverage_score: float,
+        pipeline_latency_context: dict,
+        data_quality_flag: str,
+        data_quality_flags: list[str],
+        signal_integrity: float | None = None,
+        cross_evidence: float | None = None,
+        acwmi_input_source: str | None = None,
+    ) -> dict:
+        """Build WMI/ACWMI, scoping breadth to the declared consumer archive when configured."""
+        from config.settings import WORLD_MODEL_BAND_SCOPE
+        from logic_layer.time_slice.world_quality import scoped_wmi_from_statuses
+
+        full_idx = self._compute_world_model_index(
+            coverage_score=coverage_score,
+            pipeline_latency_context=pipeline_latency_context,
+            data_quality_flag=data_quality_flag,
+            data_quality_flags=data_quality_flags,
+            signal_integrity=signal_integrity,
+            cross_evidence=cross_evidence,
+            acwmi_input_source=acwmi_input_source,
+        )
+        scope = (WORLD_MODEL_BAND_SCOPE or "full").strip().lower()
+        if scope not in {"eval_archive", "declared", "archive", "consumer"}:
+            full_idx["band_scope"] = "full"
+            return full_idx
+
+        bands = asset_readiness_row.get("bands") or {}
+        statuses = {
+            str(name): str((detail or {}).get("status") or "missing")
+            for name, detail in bands.items()
+        }
+        # Also accept flat status maps if callers attach them.
+        for key, value in (asset_readiness_row or {}).items():
+            if str(key).startswith("st_") and isinstance(value, str):
+                statuses[str(key)[3:]] = value
+
+        scoped = scoped_wmi_from_statuses(statuses, scope=scope)
+        out = dict(full_idx)
+        out.update(
+            {
+                "wmi": scoped["wmi"],
+                "breadth": scoped["breadth"],
+                "stability": scoped["stability"],
+                "honesty": scoped["honesty"],
+                "should_ai_abstain": scoped["should_ai_abstain"],
+                "thin_world": scoped["thin_world"],
+                "interpretation": scoped["interpretation"],
+                "band_scope": scoped["band_scope"],
+                "active_bands": list(scoped["active_bands"]),
+                "archive_complete": bool(scoped["archive_complete"]),
+                "full_schema_wmi": full_idx.get("wmi"),
+                "full_schema_should_ai_abstain": full_idx.get("should_ai_abstain"),
+            }
+        )
+        # Decision index follows scoped WMI unless ACWMI mode is explicitly on.
+        if out.get("index_mode") == "acwmi" and out.get("acwmi") is not None:
+            thr = float(out.get("abstain_threshold") or 0.35)
+            out["should_ai_abstain"] = float(out["acwmi"]) < thr
+            out["thin_world"] = bool(out["should_ai_abstain"])
+        else:
+            out["abstain_threshold"] = scoped["abstain_threshold"]
+        return out
 
     def _build_risk_flags(self, bundle: dict) -> list[str]:
         flags: list[str] = []

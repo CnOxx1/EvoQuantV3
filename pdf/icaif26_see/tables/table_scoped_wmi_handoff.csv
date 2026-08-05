@@ -1,0 +1,6 @@
+policy,Sharpe,CE,n_days,abstain_rate,open_share,note
+WMI gate 0.2 (full-schema legacy),0.0,0.0,200,1.0,0.0,max full-schema WMI≈0.093
+WMI gate 0.2 (scoped archive) + tilt handoff,0.7724,0.2532,200,0.388,0.612,Compiled-open proxy on declared bands
+Tilt handoff on open days only,0.7145,0.2364,200,0.0,1.0,condition on valve_open
+Momentum (mom5),0.1009,-0.0749,200,0.0,1.0,always-on baseline
+Buy-and-hold,-1.399,-0.9867,200,0.0,1.0,always-on baseline

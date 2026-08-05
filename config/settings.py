@@ -47,6 +47,19 @@ WMI_ABSTAIN_THRESHOLD = float(os.getenv("WMI_ABSTAIN_THRESHOLD", "0.2"))
 # Optional ACWMI path: "wmi" (default product) or "acwmi" (geometric mean with S/C).
 WORLD_MODEL_INDEX_MODE = os.getenv("WORLD_MODEL_INDEX_MODE", "wmi").strip().lower()
 ACWMI_ABSTAIN_THRESHOLD = float(os.getenv("ACWMI_ABSTAIN_THRESHOLD", "0.35"))
+# Band scope for WMI breadth/stability:
+# - full: all schema bands (empty slots outside the consumer contract still drag B/U)
+# - eval_archive / declared: only the declared consumer-archive bands (default for
+#   paper handoff). Quality is relative to the world the bundle claims to deliver.
+WORLD_MODEL_BAND_SCOPE = os.getenv("WORLD_MODEL_BAND_SCOPE", "eval_archive").strip().lower()
+EVAL_ARCHIVE_BANDS = tuple(
+    b.strip()
+    for b in os.getenv(
+        "EVAL_ARCHIVE_BANDS",
+        "exchange,macro,alternative",
+    ).split(",")
+    if b.strip()
+)
 
 
 def _default_tracked_asset_entity_keys() -> str:

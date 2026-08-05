@@ -36,7 +36,9 @@ def cmd_smoke() -> int:
     sys.path.insert(0, str(ROOT))
     from config.settings import (
         ACWMI_ABSTAIN_THRESHOLD,
+        EVAL_ARCHIVE_BANDS,
         WMI_ABSTAIN_THRESHOLD,
+        WORLD_MODEL_BAND_SCOPE,
         WORLD_MODEL_INDEX_MODE,
     )
     from data_layer.data_quality.availability import (
@@ -44,8 +46,10 @@ def cmd_smoke() -> int:
         tag_availability_shock_metadata,
     )
     from logic_layer.ai_market_context.service import AIMarketContextService
+    from logic_layer.decision_handoff.service import DecisionHandoffService
     from logic_layer.time_slice.band_pit import BandPITService
     from logic_layer.time_slice.service import TimeSliceService
+    from logic_layer.time_slice.world_quality import scoped_wmi_from_statuses
 
     assert "band_readiness" in TimeSliceService.DOMAINS
     meta = tag_availability_shock_metadata(band="macro", planted=False)
@@ -68,6 +72,30 @@ def cmd_smoke() -> int:
         data_quality_flags=[],
     )
     assert src == "production_proxy" and 0 < s <= 1 and 0 < c <= 1
+    # Scoped archive opens; full schema stays closed on the same statuses.
+    ready3 = {
+        "exchange": "ready",
+        "macro": "ready",
+        "alternative": "ready",
+        "news": "missing",
+        "onchain": "missing",
+        "options": "missing",
+        "tokenomics": "missing",
+        "event_calendar": "missing",
+    }
+    scoped_open = scoped_wmi_from_statuses(ready3, scope="eval_archive")
+    full_closed = scoped_wmi_from_statuses(ready3, scope="full")
+    assert scoped_open["should_ai_abstain"] is False
+    assert full_closed["should_ai_abstain"] is True
+    handoff = DecisionHandoffService().act(
+        {
+            "macro_tilt": 1.0,
+            "alt_tilt": 1.0,
+            "world_model_index": scoped_open,
+            "audit": {"evidence_ids": ["band:exchange:ready"]},
+        }
+    )
+    assert handoff["handoff"] == "acted"
     # BandPIT + shocks tolerate empty DBs
     _ = BandPITService().get_band_readiness_at("2026-01-01T00:00:00", symbols=["BTC/USDT"])
     _ = load_availability_shocks(limit=5)
@@ -76,9 +104,20 @@ def cmd_smoke() -> int:
             {
                 "ok": True,
                 "WORLD_MODEL_INDEX_MODE": WORLD_MODEL_INDEX_MODE,
+                "WORLD_MODEL_BAND_SCOPE": WORLD_MODEL_BAND_SCOPE,
+                "EVAL_ARCHIVE_BANDS": list(EVAL_ARCHIVE_BANDS),
                 "WMI_ABSTAIN_THRESHOLD": WMI_ABSTAIN_THRESHOLD,
                 "ACWMI_ABSTAIN_THRESHOLD": ACWMI_ABSTAIN_THRESHOLD,
                 "wmi_sample": wmi,
+                "scoped_wmi_open": {
+                    "wmi": scoped_open["wmi"],
+                    "should_ai_abstain": scoped_open["should_ai_abstain"],
+                },
+                "full_schema_closed": {
+                    "wmi": full_closed["wmi"],
+                    "should_ai_abstain": full_closed["should_ai_abstain"],
+                },
+                "handoff_sample": handoff,
                 "acwmi_proxy_smoke": {"S": s, "C": c, "source": src},
                 "data_dir": str(DATA),
             },
@@ -103,6 +142,7 @@ def main() -> int:
             "yahoo-exp",
             "reconcile",
             "llm-consumer",
+            "scoped-handoff",
             "pdf",
             "experiments",
         ],
@@ -134,6 +174,8 @@ def main() -> int:
         env["PYTHONPATH"] = str(ROOT)
         env["DB_SPLIT_ENABLED"] = "1"
         return subprocess.call(cmd, cwd=str(ROOT), env=env)
+    if args.step == "scoped-handoff":
+        return _run("scoped_wmi_handoff.py")
     if args.step == "pdf":
         # Prefer the complete JF/RFS manuscript renderer when present.
         full = SCI / "generate_full_manuscript_pdf.py"

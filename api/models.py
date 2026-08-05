@@ -15,6 +15,9 @@ class HealthSummary(BaseModel):
     index_mode: str | None = None
     interpretation: str | None = None
     should_ai_abstain: bool | None = None
+    band_scope: str | None = None
+    archive_complete: bool | None = None
+    full_schema_wmi: float | None = None
     measured_at: str | None = None
     domains: dict[str, Any] = {}
     summary: dict[str, Any] = {}

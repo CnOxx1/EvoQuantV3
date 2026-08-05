@@ -1,0 +1,26 @@
+{
+  "protocol": "scoped_archive_production_valve_llm",
+  "band_scope": "eval_archive",
+  "n_open_target": 70,
+  "n_closed_target": 30,
+  "n_sample": 100,
+  "models": [
+    "gpt-5.4-mini",
+    "deepseek-v4-flash",
+    "glm-5.2",
+    "gemini-3.5-flash-lite"
+  ],
+  "treatments": [
+    "compiled",
+    "ungated",
+    "raw"
+  ],
+  "mean_dCE_C_minus_R_open": -4.2111,
+  "mean_abs_C_closed": 1.0,
+  "mean_abs_C_open": 0.1143,
+  "claim_boundary": "Open-day LLM usability under scoped production valve; not a generative world-model or alpha claim.",
+  "mean_act_rate_C_open": 0.8857,
+  "mean_CE_R_closed": -1.5915,
+  "mean_avoided_loss_closed_dCE": 1.5915,
+  "interpretation": "Production valve obeyed (Compiled closed abstain=1.0). Models act on open days. Open-day LLM CE does not beat Raw (policy skill downstream). Closed-day refusal avoids Raw losses. No-LLM tilt handoff remains the nonempty content probe."
+}

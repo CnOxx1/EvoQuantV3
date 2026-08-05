@@ -17,7 +17,7 @@ test-fast: ## 只运行集成测试和新模块测试
 	$(PYTHON) -m pytest tests/integration tests/test_*.py -q
 
 test-paper: ## 论文服务相关单元测试（含 JF 识别不变量与 LLM consumer）
-	$(PYTHON) -m pytest tests/test_paper_lab.py tests/test_jf_inference.py tests/test_jf_identification.py tests/test_jf_extras.py tests/test_jf_theory_align.py tests/test_paper_e2e.py tests/test_raw_pit_and_reconcile.py tests/test_llm_consumer.py tests/ai_market_context tests/time_slice -q
+	$(PYTHON) -m pytest tests/test_paper_lab.py tests/test_jf_inference.py tests/test_jf_identification.py tests/test_jf_extras.py tests/test_jf_theory_align.py tests/test_paper_e2e.py tests/test_raw_pit_and_reconcile.py tests/test_llm_consumer.py tests/test_scoped_wmi_handoff.py tests/ai_market_context tests/time_slice -q
 
 lint: ## 代码检查（ruff）
 	$(PYTHON) -m ruff check .
@@ -40,8 +40,14 @@ modules: ## 列出已注册模块
 validate: ## 语法检查所有 Python 文件
 	find . -name "*.py" -not -path "./.venv/*" | xargs -P4 -I{} $(PYTHON) -c "import ast; ast.parse(open('{}').read())"
 
-paper-smoke: ## 论文生产 API 冒烟（BandPIT / ACWMI / O_t）
+paper-smoke: ## 论文生产 API 冒烟（BandPIT / ACWMI / O_t / scoped handoff）
 	$(PYTHON) pdf/sci/paper_lab.py smoke
+
+paper-scoped-handoff: ## 重建 scoped-WMI 开阀占比 + Compiled-open 交接表
+	$(PYTHON) pdf/sci/paper_lab.py scoped-handoff
+
+paper-scoped-open-llm: ## 公开 LLM：scoped 生产阀开/关日对照（需 OPENAI_*）
+	$(PYTHON) -m pdf.sci.llm_consumer.scoped_open_eval --n-open 70 --n-closed 30 --workers 8 --tag scoped_open
 
 paper-bootstrap: ## 拉取多带历史档案（需可达交易所；本环境多为 OKX）
 	$(PYTHON) pdf/sci/paper_lab.py bootstrap
