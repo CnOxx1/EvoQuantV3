@@ -58,7 +58,7 @@
 We build that layer as an anonymized observation runtime: multi-band evidence \(\to\) BandPIT/WMI \(\to\) a point-in-time (PIT) \emph{world bundle}, with hard refusal when support is thin.
 \textbf{Evidence.} Primary---seeing: grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ \({\lesssim}0.23\) under Raw, while sufficiency chat alone is unreliable (Compiled mean \(0.60\)).
 Secondary---valve: under a \emph{frozen full-schema} stress gate (\(\max\mathrm{WMI}\approx 0.093{<}0.2\)), Compiled thin-abstain is \(1.0\) (100-day and full OOS \(n{=}2000\)) while Ungated soft judgment is only \({\approx}0.68\) / \({\approx}0.56\); Raw over-trades.
-Secondary---handoff: the \emph{scoped-archive production valve} opens on \({\approx}61\%\) OOS days; a no-LLM tilt rule then acts (Sharpe \(0.77\), CE \({+}0.25\)).
+Secondary---handoff: the \emph{scoped-archive production valve} opens on \({\approx}61\%\) OOS days; live LLMs abstain \(1.0\) on closed days and act on \({\approx}89\%\) of open days, while a no-LLM tilt rule remains nonempty (Sharpe \(0.77\)).
 \textbf{Claim.} Build the quant data end first: compile so models can see; refuse when they must not act.
 \end{abstract}
 
@@ -130,13 +130,13 @@ The bundle is complete, honest, and auditable; \texttt{should\_ai\_abstain} is t
 \textbf{RQ1 (primary---seeing):} Are ready~/missing~/tilt answers verifiable against PIT ground truth under Compiled vs.\ Raw?
 \textbf{RQ2 (valve):} Under a \emph{frozen full-schema stress gate} (WMI over all schema bands; never clears \(0.2\) on this panel), does a hard flag enforce thin abstention where soft disclosure does not?
 Four arms: Compiled, Ungated (same content, no flag), Raw (\texttt{mom5}), Blind.
-\textbf{RQ3a (handoff):} Under the \emph{scoped-archive production valve} (declared bands only; open iff archive-complete and \(\mathrm{WMI}\ge 0.2\)), can a transparent no-LLM rule act when the valve opens?
+\textbf{RQ3a (handoff):} Under the \emph{scoped-archive production valve}, do live LLMs obey closed days and act when open? Does a transparent no-LLM rule remain callable?
 \textbf{RQ3b (content):} On the same vintaged tilts, does an ungated content probe beat momentum (\(\Delta\mathrm{CE}\); LOBO)?
 
 \paragraph{Contributions.}
 (1)~Data-end semantics: epistemic observations, compilation \(\Pi_t\), world-quality index with band scope, and seeing vs.\ gating with a lag--missingness bound.
 (2)~Anonymized PIT compile path: collectors\(\to\)BandPIT\(\to\)service surface (bundle~/health~/handoff reads)\(\to\)world bundles; frozen four-arm harness.
-(3)~Live + handoff validation: grounding \({\approx}0.97\); full-schema stress thin-abstain \(1.0\); scoped Compiled-open handoff (open \({\approx}0.61\), Sharpe \(0.77\)); ungated tilt contrast (\(\Delta\mathrm{CE}{=}0.334\); LOBO content share \(1.0\)).
+(3)~Live validation: grounding \({\approx}0.97\); full-schema stress abstain \(1.0\); scoped production valve with live LLM obedience (closed abstain \(1.0\); open act \({\approx}0.89\)) plus no-LLM tilt handoff (Sharpe \(0.77\); LOBO content share \(1.0\)).
 Estimand: data-end legibility, valve reliability, and handoff usability.
 
 \section{Related Work}
@@ -414,8 +414,8 @@ Actions \(\in\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstai
 \textbf{Ungated:} same content, completeness, and numeric WMI; \emph{no} hard flag; soft prompt asks the model to judge thinness.
 \textbf{Raw:} \(\mathrm{mom5}\) only---thin price wiring for the ladder.
 \textbf{Blind:} ``Today is \(d\). How should I trade \(a\)?'' with no feed.
-\textbf{Dual protocol.} Live LLM arms (RQ1--RQ2) freeze \emph{full-schema} bundles (\(\max\mathrm{WMI}\approx 0.093\)), so Compiled abstains every OOS day---a closed stress test of the hard flag.
-RQ3a uses the \emph{scoped production valve} (default band scope) on the same panel: open on band-thick days, then hand off without an LLM.
+\textbf{Dual protocol.} RQ1--RQ2 freeze \emph{full-schema} bundles (\(\max\mathrm{WMI}\approx 0.093\)), so Compiled abstains every OOS day---a closed stress test of the hard flag.
+RQ3a switches the same vendors to \emph{scoped production} bundles: the valve opens on archive-complete days; we measure closed-day obedience, open-day action, and a parallel no-LLM tilt rule.
 Compiled vs.\ Ungated differ only in enforcement (Listings~\ref{lst:prompt-c}--\ref{lst:prompt-u}); prompts, IS/OOS cut, and seeds are frozen.
 On thin Compiled days the evidence-alignment proxy (EAR) is \(1.0\) across vendors: rationales stay bound to disclosed \texttt{evidence\_ids}.
 
@@ -451,7 +451,7 @@ Availability shocks \(O_t\) are queryable on the service surface.
 PIT panel \(\sim\)399 days \(\times\) 10 liquid names (\({\approx}3990\) asset-days; 2025-07--2026-08), chronological IS/OOS \(200/200\) days (cut \(2026\)-\(01\)-\(16\)).
 Unless noted, live arms share the same stratified \(100\) OOS asset-days (seed fixed), temperature \(0\), and four flash/mini vendors (gpt-5.4-mini, deepseek-v4-flash, glm-5.2, gemini-3.5-flash-lite) via an OpenAI-compatible adapter.
 Grounding uses \(50\) OOS days; full-OOS abstention uses \(n{=}2000\); no-LLM probes use \({\approx}200\) OOS days after return alignment.
-Primary metrics: RQ1 grounding F1/tilt accuracy (sufficiency chat secondary); RQ2 thin-world abstain under the \emph{full-schema stress gate} (CE as avoided loss, not alpha); RQ3a scoped Compiled-open handoff Sharpe/CE; RQ3b ungated tilt \(\Delta\)CE vs.\ momentum.
+Primary metrics: RQ1 grounding F1/tilt accuracy (sufficiency chat secondary); RQ2 thin-world abstain under the \emph{full-schema stress gate} (CE as avoided loss, not alpha); RQ3a scoped production-valve LLM obedience plus no-LLM tilt handoff; RQ3b ungated tilt \(\Delta\)CE vs.\ momentum.
 
 \subsection{RQ1 (primary): Seeing---grounding workflow}
 \label{sec:grounding}
@@ -602,7 +602,7 @@ Soft disclosure without a hard flag is not a free lunch: the same readable world
 \paragraph{Open slice (still under full-schema LLM arms).}
 Table~\ref{tab:thick}: on the band-thick subset (\(3/3\) ready \(\equiv\) full-schema \(\mathrm{WMI}\ge 0.05\); \({\approx}61\%\) OOS; \(n{\approx}1224\)) Ungated keeps compiled content without the hard boolean---mean abs.\ \({\approx}0.48\), CE positive for every vendor (mean \({\approx}{+}0.29\); bootstrap \({\approx}{+}0.31\), CIs include 0).
 Full-schema Compiled still abstains at \(1.0\) here; Raw stays risky (GPT/Gemini abs.\ \(0.0\), CE negative).
-The same thick days are where the \emph{scoped production valve} opens; Compiled-open handoff on those days is RQ3a.
+The same thick days are where the \emph{scoped production valve} opens; live scoped LLM handoff is RQ3a.
 
 \begin{table}[t]
   \caption{Open slice under full-schema LLM arms ($3/3$ ready; $n{\approx}1224$). Soft-judgment lower bound.}
@@ -621,16 +621,41 @@ The same thick days are where the \emph{scoped production valve} opens; Compiled
   {\scriptsize $^*$Raw GLM $n{=}398$; Ungated GLM $n{=}932$; others $n{=}1224$. Bootstrap mean CE ${\approx}{+}0.31$ ($B{=}5$, $999$ reps; one-sided $p{\approx}0.21$).}
 \end{table}
 
-\subsection{RQ3a (handoff): Scoped Compiled-open proof}
+\subsection{RQ3a (handoff): Scoped production valve with live LLMs}
 \label{sec:econ}
-Having established seeing (RQ1) and stress-gate refusal (RQ2), we ask whether the production valve yields a \emph{callable} handoff object.
-The full-schema stress gate never clears \(0.2\), so it is the wrong instrument for handoff---by design in RQ2.
-The scoped production valve opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready); a bundle-reading rule abstains when closed and otherwise acts on disclosed \(\mathrm{macro\_tilt}\)~/~\(\mathrm{alt\_tilt}\) (service handoff read).
-This isolates observation usability from LLM policy skill on open days.
-Table~\ref{tab:handoff}: scoped Compiled-open Sharpe \(0.772\) / CE \({+}0.253\) (abstain \(0.39\)) vs.\ momentum and buy-and-hold; full-schema stress remains fully closed.
+Having established seeing (RQ1) and stress-gate refusal (RQ2), we ask whether the \emph{production} valve is callable.
+The full-schema stress gate never clears \(0.2\), so it cannot open---by design in RQ2.
+Scoped production WMI opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready).
+We re-run the same four vendors on a stratified sample of \(70\) open + \(30\) closed OOS asset-days with scoped bundles (seed fixed; temp.\ \(0\)).
+
+Table~\ref{tab:scopedllm}: on closed days Compiled abstains \(1.0\) for every vendor (Ungated soft rates \({\approx}0.87\)--\(0.97\); Raw often keeps trading).
+On open days Compiled acts on a mean \({\approx}89\%\) of days---the valve opens and models consume the bundle.
+Open-day CE does \emph{not} beat Raw (mean \(\Delta\mathrm{CE}{\approx}{-}4.2\)): opening the data-end valve is not an LLM alpha claim; policy skill remains downstream.
+Closed-day refusal avoids Raw losses (mean \(\Delta\mathrm{CE}{\approx}{+}1.6\) vs.\ Raw on the closed slice).
 
 \begin{table}[t]
-  \caption{RQ3a handoff (no LLM). Scoped production valve vs.\ full-schema stress.}
+  \caption{RQ3a live LLMs under scoped production valve ($70$ open + $30$ closed).}
+  \label{tab:scopedllm}
+  \small
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Model & Abs.\ C$_\mathrm{cl}$ & Abs.\ C$_\mathrm{op}$ & CE C$_\mathrm{op}$ & CE R$_\mathrm{op}$ & $\Delta$CE$_\mathrm{cl}$ \\
+    \midrule
+    gpt-5.4-mini & $1.00$ & $0.03$ & $-4.00$ & $+0.09$ & $+0.49$ \\
+    deepseek-v4-flash & $1.00$ & $0.24$ & $-5.22$ & $-0.21$ & $+0.17$ \\
+    glm-5.2 & $1.00$ & $0.11$ & $-4.31$ & $-0.39$ & $+3.06$ \\
+    gemini-3.5-flash-lite & $1.00$ & $0.07$ & $-4.27$ & $-0.46$ & $+2.64$ \\
+    \midrule
+    Mean & $1.00$ & $0.11$ & --- & --- & $+1.59$ \\
+    \bottomrule
+  \end{tabular}\\[-2pt]
+  {\scriptsize Abs.\ C$_{cl/op}$: Compiled abstain on closed/open days. $\Delta$CE$_{cl}=$ avoided loss vs.\ Raw on closed days.}
+\end{table}
+
+A transparent no-LLM rule on the same vintaged tilts remains the clean nonempty-field handoff (Table~\ref{tab:handoff}): Sharpe \(0.772\) / CE \({+}0.253\) when the scoped valve is applied, versus momentum and buy-and-hold; full-schema stress stays fully closed.
+
+\begin{table}[t]
+  \caption{RQ3a no-LLM handoff. Scoped production valve vs.\ full-schema stress.}
   \label{tab:handoff}
   \small
   \begin{tabular}{lrrr}
@@ -724,7 +749,7 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
 \paragraph{What carries the paper.}
 (i)~The data end is legible: grounding \({\approx}0.97\), with sufficiency chat a poor substitute (RQ1 / Props.~\ref{prop:recon}--\ref{prop:compile}).
 (ii)~Under the full-schema stress gate, soft text fails at scale; Blind refuses with no feed; Raw acts on fragments and loses; the hard flag works (RQ2 / Prop.~\ref{prop:abstain}).
-(iii)~Scoped production WMI opens on band-thick days; a no-LLM handoff acts on disclosed tilts (RQ3a / Def.~\ref{def:wmi}+Prop.~\ref{prop:abstain}); ungated tilts are nonempty (RQ3b / Prop.~\ref{prop:lobo}; LOBO share \(1.0\)).
+(iii)~Scoped production WMI opens on band-thick days; live LLMs abstain \(1.0\) when closed and act when open, while open-day CE does not beat Raw---observation usability \(\neq\) policy alpha (RQ3a / Def.~\ref{def:wmi}+Prop.~\ref{prop:abstain}); a no-LLM tilt rule and LOBO content share \(1.0\) keep fields nonempty (RQ3b / Prop.~\ref{prop:lobo}).
 Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume.
 
 \paragraph{Architecture.}
@@ -741,16 +766,16 @@ Prompts, IS/OOS cut, seeds, and vendor IDs are fixed; credentials stay in enviro
 An anonymized harness ships on acceptance.
 
 \paragraph{Estimand and scope.}
-This paper measures data-end legibility, stress-gate reliability, and whether a scoped production valve yields a callable handoff object.
-LLM arms isolate seeing and hard refusal under the full-schema stress protocol; RQ3a reads the same vintaged fields through a transparent rule when the production valve opens---separating observation quality from downstream policy skill.
-Decision/execution strategies (including any LLM policy on open days) sit downstream of the data end.
+This paper measures data-end legibility, stress-gate reliability, and whether a scoped production valve is obeyed and callable.
+RQ1--RQ2 isolate seeing and hard refusal under the full-schema stress protocol; RQ3a switches to scoped production bundles for live LLM obedience and a parallel no-LLM tilt rule.
+Open-day LLM CE is reported as a usability check, not an alpha claim---policy skill sits downstream of the data end.
 
 \section{Conclusion}
 \label{sec:conc}
 
 End-to-end crypto quant for public LLMs needs a reliable data end before decision or execution.
 We contribute that observation layer: compile asynchronous evidence into a consumable PIT world bundle, disclose structural missingness, and hard-refuse when the view is too thin.
-Grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; sufficiency chat alone fails; the full-schema stress gate abstains \(1.0\) where soft judgment does not; the scoped production valve opens Compiled handoff on band-thick days (Sharpe \(0.77\)).
+Grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; sufficiency chat alone fails; the full-schema stress gate abstains \(1.0\) where soft judgment does not; under the scoped production valve live LLMs abstain \(1.0\) on closed days and act when open, while a no-LLM tilt rule stays nonempty (Sharpe \(0.77\)).
 Build the quant data end first: compile so models can see; refuse when they must not act.
 
 \begin{acks}

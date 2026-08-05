@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Frozen protocol stub: scoped-open LLM arms (not run in Paper B main results).
+"""Protocol card for scoped-open LLM arms (Paper B RQ3a).
 
-Paper B's live LLM arms freeze full-schema stress bundles (RQ1--RQ2).
-This module documents the orthogonal protocol for a future / optional
-Compiled-scoped arm on archive-complete days only. It does not claim
-results and does not require API keys unless executed explicitly.
+RQ1--RQ2 freeze full-schema stress bundles. RQ3a runs the orthogonal
+scoped production-valve protocol via
+``python -m pdf.sci.llm_consumer.scoped_open_eval``.
 """
 
 from __future__ import annotations

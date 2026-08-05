@@ -46,6 +46,9 @@ paper-smoke: ## 论文生产 API 冒烟（BandPIT / ACWMI / O_t / scoped handoff
 paper-scoped-handoff: ## 重建 scoped-WMI 开阀占比 + Compiled-open 交接表
 	$(PYTHON) pdf/sci/paper_lab.py scoped-handoff
 
+paper-scoped-open-llm: ## 公开 LLM：scoped 生产阀开/关日对照（需 OPENAI_*）
+	$(PYTHON) -m pdf.sci.llm_consumer.scoped_open_eval --n-open 70 --n-closed 30 --workers 8 --tag scoped_open
+
 paper-bootstrap: ## 拉取多带历史档案（需可达交易所；本环境多为 OKX）
 	$(PYTHON) pdf/sci/paper_lab.py bootstrap
 
