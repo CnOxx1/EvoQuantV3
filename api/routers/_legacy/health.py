@@ -48,7 +48,7 @@ def get_health() -> HealthSummary:
     wmi_data: dict[str, Any] = {}
     try:
         svc = get_ai_market_context_service()
-        bundle = svc.build_bundle_for_entity("BTC/USDT")
+        bundle = svc.build_bundle_for_entity("BTC")
         wmi_data = bundle.get("world_model_index") or {}
     except Exception as e:
         logger.warning("health WMI check failed: {}: {}", type(e).__name__, e)
@@ -61,6 +61,9 @@ def get_health() -> HealthSummary:
         index_mode=wmi_data.get("index_mode"),
         interpretation=wmi_data.get("interpretation"),
         should_ai_abstain=wmi_data.get("should_ai_abstain"),
+        band_scope=wmi_data.get("band_scope"),
+        archive_complete=wmi_data.get("archive_complete"),
+        full_schema_wmi=wmi_data.get("full_schema_wmi"),
         measured_at=summary.get("measured_at") or report.measured_at if 'report' in dir() else None,
         domains=domains,
         summary=summary,

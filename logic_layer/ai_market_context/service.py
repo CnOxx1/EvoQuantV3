@@ -814,6 +814,14 @@ class AIMarketContextService:
             cross_evidence=cross_evidence,
             acwmi_input_source=acwmi_source,
         )
+        # Promote PIT tilts to top-level so a decision layer can read them
+        # without digging into paper-engine snapshots.
+        snap = (asset_readiness_row or {}).get("paper_world_model_snapshot") or {}
+        if isinstance(snap, dict):
+            if bundle.get("macro_tilt") is None and snap.get("macro_tilt") is not None:
+                bundle["macro_tilt"] = snap.get("macro_tilt")
+            if bundle.get("alt_tilt") is None and snap.get("alt_tilt") is not None:
+                bundle["alt_tilt"] = snap.get("alt_tilt")
         return bundle
 
     def _build_world_model_index_for_row(

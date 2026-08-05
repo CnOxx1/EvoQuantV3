@@ -40,8 +40,11 @@ modules: ## 列出已注册模块
 validate: ## 语法检查所有 Python 文件
 	find . -name "*.py" -not -path "./.venv/*" | xargs -P4 -I{} $(PYTHON) -c "import ast; ast.parse(open('{}').read())"
 
-paper-smoke: ## 论文生产 API 冒烟（BandPIT / ACWMI / O_t）
+paper-smoke: ## 论文生产 API 冒烟（BandPIT / ACWMI / O_t / scoped handoff）
 	$(PYTHON) pdf/sci/paper_lab.py smoke
+
+paper-scoped-handoff: ## 重建 scoped-WMI 开阀占比 + Compiled-open 交接表
+	$(PYTHON) pdf/sci/paper_lab.py scoped-handoff
 
 paper-bootstrap: ## 拉取多带历史档案（需可达交易所；本环境多为 OKX）
 	$(PYTHON) pdf/sci/paper_lab.py bootstrap

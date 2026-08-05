@@ -75,3 +75,23 @@ def test_decision_handoff_acts_only_when_valve_open():
     out = svc.act(opened)
     assert out["handoff"] == "acted"
     assert out["action"] == "neutral"  # +1 + -1
+
+
+def test_decision_handoff_reads_nested_paper_tilts():
+    svc = DecisionHandoffService(require_open_valve=True)
+    nested = {
+        "data_readiness": {
+            "paper_world_model_snapshot": {"macro_tilt": -1.0, "alt_tilt": -1.0}
+        },
+        "world_model_index": {
+            "wmi": 1.0,
+            "should_ai_abstain": False,
+            "band_scope": "eval_archive",
+            "archive_complete": True,
+        },
+        "audit": {"evidence_ids": []},
+    }
+    out = svc.act(nested)
+    assert out["action"] == "bearish"
+    assert out["band_scope"] == "eval_archive"
+    assert out["archive_complete"] is True

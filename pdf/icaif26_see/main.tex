@@ -130,7 +130,7 @@ The bundle is complete, honest, and auditable; \texttt{should\_ai\_abstain} is t
 \textbf{RQ1 (primary---seeing):} Are ready~/missing~/tilt answers verifiable against PIT ground truth under Compiled vs.\ Raw?
 \textbf{RQ2 (valve):} Does a hard flag enforce thin abstention where soft disclosure does not?
 Four arms: Compiled, Ungated (same content, no flag), Raw (\texttt{mom5}), Blind.
-\textbf{RQ3 (secondary):} Can a transparent no-LLM rule hand off from the bundle (production refuse vs.\ nonempty tilts)?
+\textbf{RQ3 (secondary):} Under scoped-archive WMI, can a transparent no-LLM rule act when the valve opens (and refuse when it does not)?
 
 \paragraph{Contributions.}
 (1)~Data-end semantics: epistemic observations, compilation \(\Pi_t\), world-quality index, and seeing vs.\ gating with a lag--missingness bound.
@@ -248,7 +248,7 @@ Paths and product names are omitted for double-blind review.
 \item \textbf{Data layer.} Exchange, macro, and alternative collectors write vintage-aware history (observation timestamps; macro \texttt{available\_at}).
 \item \textbf{Store layer.} Embedded stores hold raw series, merged market panels, and compiled analytics (readiness, WMI/ACWMI, world snapshots).
 \item \textbf{Logic layer.} BandPIT reconstructs readiness on a previous-close clock; honesty/missingness gates implement \(\Pi_t\); WMI/ACWMI and availability shocks \(O_t\) (band outage events for quasi-exogenous levers) are first-class.
-\item \textbf{Service layer.} A read API serves quality-tagged bundles and health objects without restarting collectors for newly arrived rows. Anonymized surface includes world-bundle and decision-bundle reads, health exposing \texttt{should\_ai\_abstain}, a paper world-model time slice, and availability-shock queries---the machine-readable handoff a decision layer would call.
+\item \textbf{Service layer.} A read API serves quality-tagged bundles and health objects without restarting collectors for newly arrived rows. Anonymized surface includes world-bundle reads, \texttt{/bundle/\{symbol\}/handoff} (valve-gated tilt action, no LLM), health exposing \texttt{should\_ai\_abstain} with \texttt{band\_scope}, a paper world-model time slice, and availability-shock queries.
 \item \textbf{Consumer layer.} Frozen-prompt LLM/rule agents call an OpenAI-compatible adapter at temperature \(0\) under four arms.
 \end{enumerate}
 
@@ -595,12 +595,12 @@ On the mixed \(100\)-day sample, when Ungated \emph{does} act, act-conditional C
 Soft disclosure without a hard flag is not a free lunch: the same readable world that RQ1 scores can still harm decisions when the valve is removed.
 
 \paragraph{Open slice.}
-Table~\ref{tab:thick}: on \(\mathrm{WMI}\ge 0.05\) (\({\approx}61\%\) OOS; \(n{\approx}1224\)) Ungated keeps compiled content without the hard boolean---mean abs.\ \({\approx}0.48\), CE positive for every vendor (mean \({\approx}{+}0.29\); bootstrap \({\approx}{+}0.31\), CIs include 0).
-Production Compiled still abstains at \(1.0\); Raw stays risky (GPT/Gemini abs.\ \(0.0\), CE negative).
-Point-positive open-slice CE and negative mixed-sample act-conditional CE can coexist: regime and act selection matter.
+Table~\ref{tab:thick}: on the band-thick subset (\(3/3\) ready \(\equiv\) full-schema \(\mathrm{WMI}\ge 0.05\); \({\approx}61\%\) OOS; \(n{\approx}1224\)) Ungated keeps compiled content without the hard boolean---mean abs.\ \({\approx}0.48\), CE positive for every vendor (mean \({\approx}{+}0.29\); bootstrap \({\approx}{+}0.31\), CIs include 0).
+Frozen full-schema Compiled still abstains at \(1.0\) on this LLM arm; Raw stays risky (GPT/Gemini abs.\ \(0.0\), CE negative).
+Scoped-archive Compiled-open handoff on the same thick days is deferred to Section~\ref{sec:econ}.
 
 \begin{table}[t]
-  \caption{Open slice ($3/3$ ready $\equiv$ $\mathrm{WMI}\ge 0.05$; $n{\approx}1224$). Field lower bound under soft judgment.}
+  \caption{Open slice ($3/3$ ready $\equiv$ full-schema $\mathrm{WMI}\ge 0.05$; $n{\approx}1224$). Soft-judgment lower bound.}
   \label{tab:thick}
   \small
   \begin{tabular}{lrrrrr}
