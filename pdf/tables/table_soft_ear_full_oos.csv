@@ -1,0 +1,13 @@
+model,treatment,tag,n,soft_ear,abstain_rate
+deepseek-v4-flash,compiled,full,2000,0.99,1.0
+deepseek-v4-flash,ungated,full,2000,0.5685,0.5395
+deepseek-v4-flash,raw,full,1999,0.5563,0.7574
+gemini-3.5-flash-lite,compiled,full,2000,0.9995,1.0
+gemini-3.5-flash-lite,ungated,full,2000,0.9895,0.3585
+gemini-3.5-flash-lite,raw,full,2000,1.0,0.0
+glm-5.2,compiled,full,2000,0.9995,1.0
+glm-5.2,ungated,full,1450,0.6634,0.6897
+glm-5.2,raw,full,735,0.8925,0.151
+gpt-5.4-mini,compiled,full,2000,0.9995,1.0
+gpt-5.4-mini,ungated,full,2000,0.9975,0.666
+gpt-5.4-mini,raw,full,2000,0.997,0.0

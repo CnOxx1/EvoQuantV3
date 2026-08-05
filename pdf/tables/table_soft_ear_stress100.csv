@@ -1,0 +1,13 @@
+model,treatment,n,soft_ear,abstain_rate,source
+gpt-5.4-mini,compiled,200,0.49,0.52,gpt-5.4-mini.jsonl
+gpt-5.4-mini,ungated,100,0.96,0.63,gpt-5.4-mini_ungated100.jsonl
+gpt-5.4-mini,raw,100,0.03,0.0,gpt-5.4-mini_full_raw.ckpt.jsonl
+deepseek-v4-flash,compiled,200,0.52,0.875,deepseek-v4-flash.jsonl
+deepseek-v4-flash,ungated,100,0.53,0.81,deepseek-v4-flash_ungated100.jsonl
+deepseek-v4-flash,raw,100,0.02,0.71,deepseek-v4-flash_full_raw.ckpt.jsonl
+glm-5.2,compiled,200,0.955,0.555,glm-5.2.jsonl
+glm-5.2,ungated,100,0.78,0.86,glm-5.2_ungated100.jsonl
+glm-5.2,raw,100,0.98,0.01,glm-5.2_full_raw.ckpt.jsonl
+gemini-3.5-flash-lite,compiled,200,0.695,0.535,gemini-3.5-flash-lite.jsonl
+gemini-3.5-flash-lite,ungated,100,0.89,0.43,gemini-3.5-flash-lite_ungated100.jsonl
+gemini-3.5-flash-lite,raw,100,0.48,0.0,gemini-3.5-flash-lite_full_raw.ckpt.jsonl

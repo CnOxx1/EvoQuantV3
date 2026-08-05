@@ -1,0 +1,6 @@
+threshold,rule,open_share,abstain_rate,Sharpe,CE,n_days
+0.1,complete∧WMI≥q*,0.612,0.388,0.7724,0.2532,200
+0.15,complete∧WMI≥q*,0.612,0.388,0.7724,0.2532,200
+0.2,complete∧WMI≥q*,0.612,0.388,0.7724,0.2532,200
+0.25,complete∧WMI≥q*,0.612,0.388,0.7724,0.2532,200
+0.3,complete∧WMI≥q*,0.612,0.388,0.7724,0.2532,200

@@ -1,0 +1,5 @@
+model,treatment,ann_return,Sharpe,CE,abstain_rate,thin_world_abstain_rate,ear_proxy,prompt_hash
+gpt-5.4-mini,hpo,0.0,0.0,0.0,1.0,1.0,1.0,b4dd7fc24abc05cf
+deepseek-v4-flash,hpo,0.0,0.0,0.0,1.0,1.0,1.0,b4dd7fc24abc05cf
+glm-5.2,hpo,0.0,0.0,0.0,1.0,1.0,1.0,b4dd7fc24abc05cf
+gemini-3.5-flash-lite,hpo,0.0,0.0,0.0,1.0,1.0,1.0,b4dd7fc24abc05cf

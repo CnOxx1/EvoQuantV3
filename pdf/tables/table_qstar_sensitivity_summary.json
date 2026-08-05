@@ -1,0 +1,7 @@
+{
+  "cut": "2026-01-16",
+  "gap_day_share": 0.388,
+  "gap_wmi_scoped_median": 0.1389,
+  "thick_wmi_scoped_median": 1.0,
+  "interpretation": "Production valve (complete\u2227WMI\u2265q*) is flat for q*\u2208[0.10,0.30] because thick days have scoped WMI\u22481.0 and gap days fail completeness. WMI-only counterfactual moves when q* crosses the gap-day WMI mass (~0.14). Full-schema open share stays 0 for all q*\u22650.10."
+}

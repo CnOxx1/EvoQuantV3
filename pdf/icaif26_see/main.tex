@@ -100,6 +100,7 @@ Secondary---handoff: the \emph{scoped-archive production valve} opens on \({\app
 At the methodology--application interface of AI and finance, many LLM/agent failures are not ``the model is not smart enough,'' but ``the market worldview is too thin.''
 The stack is \textbf{data/observation} \(\to\) \textbf{decision} \(\to\) \textbf{execution} (Table~\ref{tab:stack}); agents and generative world models~\cite{yao2023react,yu2023finmem,zhang2024finagent,ha2018world,hafner2020dreamer,lecun2022path} typically assume the first stage.
 Crypto violates that assumption: exchange, macro, and alternative evidence arrive on incompatible clocks~\cite{makarov2020,liu2022}.
+Stress episodes with multi-hour exchange outages make the gap concrete: an agent that sees only lagged momentum can act while the observation set is incomplete.
 We build the missing substrate---compile a PIT world bundle so models can \emph{see} the market, evaluate that seeing with checkable grounding, and hard-refuse when the view is too thin.
 The product is reduced world-model error and auditable AI judgments, not trading answers.
 
@@ -132,8 +133,8 @@ The bundle is complete, honest, and auditable; the hard abstain flag is the mach
 
 \paragraph{How we evaluate (dual protocol)}
 \textbf{RQ1 (primary---seeing):} Are ready~/missing~/tilt answers verifiable against PIT ground truth under Compiled vs.\ Raw?
-\textbf{RQ2 (valve):} Under a \emph{frozen full-schema stress gate} (WMI over all schema bands; never clears \(0.2\) on this panel), does a hard flag enforce thin abstention where soft disclosure does not?
-Four arms: Compiled, Ungated (same content, no flag), Raw (\texttt{mom5}), Blind.
+\textbf{RQ2 (valve):} Under a \emph{frozen full-schema stress gate} (never clears \(0.2\)), does hard policy enforce thin abstention where soft MAY does not?
+Arms: Compiled, HPO (hard prompt on numeric WMI, no boolean), Ungated, Raw, Blind.
 \textbf{RQ3a (handoff):} Under the \emph{scoped-archive production valve}, do live LLMs obey closed days and act when open? Does a transparent no-LLM rule remain callable?
 \textbf{RQ3b (content):} On the same vintaged tilts, does an ungated content probe beat momentum (\(\Delta\mathrm{CE}\); LOBO)?
 
@@ -199,14 +200,22 @@ The Compiled interface exposes a hard abstain boolean
 The bundle is what the model \emph{sees}; the hard flag \emph{blocks} action when \(q(W_t)<q^\star\).
 Tilts without a gate are a dump; a gate without a readable bundle is only a switch.
 The two interfaces are separable: Ungated keeps \(W_t\) and numeric \(q(W_t)\) but removes the hard boolean.
+This is not feature engineering: a feature vector asks the model to infer reliability; a world bundle \emph{states} clocks, missingness, and a machine-readable valve.
 
 \begin{assumption}[Bounded lag and increments]
+\label{asm:lag}
 Band \(j\) has max observation lag \(\Delta_j\); latent increments satisfy \(\|S_u-S_{u-1}\|\le\bar\delta\).
+\end{assumption}
+
+\begin{assumption}[Multiplicative quality independence]
+\label{asm:mult}
+World availability requires breadth, stability, and honesty \emph{jointly}: if any factor is \(0\), then \(q(W_t)=0\).
+The product \(\mathrm{WMI}=BUH\) is the simplest continuous \([0,1]\) score obeying this axiom; averages can stay large when one factor vanishes.
 \end{assumption}
 
 \begin{proposition}[Lag--missingness reconstruction bound]
 \label{prop:recon}
-Under Assumption~1, any compiler that uses only in-clock observations satisfies
+Under Assumption~\ref{asm:lag}, any compiler that uses only in-clock observations satisfies
 \[
 \|\widetilde S_t-S_t\|
 \;\le\;
@@ -228,8 +237,15 @@ Enlarging raw span without \(\Pi_t\) need not enlarge usable \(\mathcal{F}^{\mat
 Let \(c_{\mathrm{act}}(W_t)\) be the expected cost of acting and \(c_{\mathrm{abs}}\) the abstain cost.
 If \(c_{\mathrm{act}}(W_t)>c_{\mathrm{abs}}\) and \(c_{\mathrm{act}}\) is nonincreasing in \(q(W_t)\),
 the Bayes action is abstain on \(\{W:q(W)<q^\star\}\)~\cite{elyaniv2010}.
-A hard runtime flag implements that set; soft text does not.
+A hard runtime contract implements that set; soft ``you may abstain'' text does not.
 \end{proposition}
+\begin{remark}[Threshold \(q^\star=0.2\)]
+\label{rem:qstar}
+Production valve: archive complete and \(\mathrm{WMI}\ge q^\star\).
+For \(q^\star\in[0.10,0.30]\) open share stays \({\approx}0.61\) (thick days \(\approx 1\); gap days fail completeness; gap median \({\approx}0.14\)).
+A WMI-only counterfactual moves when \(q^\star\) crosses that gap mass.
+We keep \(0.2\) above gap-day WMI---also where Ungated soft thin-abstain fails (\({\approx}0.68\); Sec.~\ref{sec:gate}).
+\end{remark}
 
 \begin{proposition}[LOBO content vs.\ gating]
 \label{prop:lobo}
@@ -238,10 +254,10 @@ Under an ungated rule the gating channel is shut, so the value gap identifies no
 \end{proposition}
 
 \paragraph{Theory \(\rightarrow\) protocol}
-Prop.~\ref{prop:recon}--\ref{prop:compile} \(\Rightarrow\) RQ1 (recover disclosed readiness/tilts).
-Prop.~\ref{prop:abstain} \(\Rightarrow\) RQ2 (hard flag vs.\ soft judgment under the full-schema stress gate).
-Def.~\ref{def:wmi} (band scope) + Prop.~\ref{prop:abstain} \(\Rightarrow\) RQ3a (scoped production valve opens; handoff acts).
-Prop.~\ref{prop:lobo} \(\Rightarrow\) RQ3b (ungated content / LOBO share).
+Prop.~\ref{prop:recon}--\ref{prop:compile} \(\Rightarrow\) RQ1.
+Prop.~\ref{prop:abstain} \(\Rightarrow\) RQ2 (Compiled/HPO hard policy vs.\ Ungated soft MAY).
+Def.~\ref{def:wmi}+Rem.~\ref{rem:qstar} \(\Rightarrow\) RQ3a (scoped valve).
+Prop.~\ref{prop:lobo} \(\Rightarrow\) RQ3b.
 
 \begin{remark}[Not a generative WM]
 We do not learn \(p(s_{t+1}\mid s_t,a_t)\).
@@ -416,36 +432,31 @@ Listing~\ref{lst:bundle-thick}: \(3/3\)-ready day where scoped WMI\({=}1.0\) ope
  "macro_tilt":1.0,"alt_tilt":-1.0}
 \end{lstlisting}
 
-\subsection{Four arms and frozen prompts}
+\subsection{Arms and frozen prompts}
 Actions \(\in\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}\).
-\textbf{Compiled:} full bundle; frozen prompt \emph{requires} abstain when \texttt{should\_ai\_abstain} is true (and when the world is judged thin).
-\textbf{Ungated:} same content, completeness, and numeric WMI; \emph{no} hard flag; soft prompt asks the model to judge thinness.
-\textbf{Raw:} \(\mathrm{mom5}\) only---thin price wiring for the ladder.
-\textbf{Blind:} ``Today is \(d\). How should I trade \(a\)?'' with no feed.
-\textbf{Dual protocol.} RQ1--RQ2 freeze \emph{full-schema} bundles (\(\max\mathrm{WMI}\approx 0.093\)), so Compiled abstains every OOS day---a closed stress test of the hard flag.
-RQ3a switches the same vendors to \emph{scoped production} bundles: the valve opens on archive-complete days; we measure closed-day obedience, open-day action, and a parallel no-LLM tilt rule.
-Compiled vs.\ Ungated differ only in enforcement (Listings~\ref{lst:prompt-c}--\ref{lst:prompt-u}); prompts, IS/OOS cut, and seeds are frozen.
-On thin Compiled days the evidence-alignment proxy (EAR) is \(1.0\) across vendors: rationales stay bound to disclosed \texttt{evidence\_ids}.
+\textbf{Compiled:} full bundle; prompt \emph{requires} abstain when the hard boolean is true.
+\textbf{HPO} (hard-prompt-only): same numeric fields as Ungated (\emph{no} boolean); prompt \emph{requires} abstain if \(\mathrm{WMI}<0.2\).
+\textbf{Ungated:} same content and numeric WMI; soft prompt (\emph{may} abstain).
+\textbf{Raw:} \(\mathrm{mom5}\) only.
+\textbf{Blind:} date+asset, no feed.
+\textbf{Dual protocol.} RQ1--RQ2 freeze full-schema bundles (\(\max\mathrm{WMI}\approx 0.093\)); RQ3a switches to scoped production bundles.
+Prompts, IS/OOS cut, and seeds are frozen (Listings~\ref{lst:prompt-c}--\ref{lst:prompt-u}).
 
-\begin{lstlisting}[caption={Compiled (excerpt): hard valve.},label={lst:prompt-c}]
+\begin{lstlisting}[caption={Compiled (excerpt): hard boolean.},label={lst:prompt-c}]
 1. If should_ai_abstain is true OR the world is thin,
    you MUST "abstain".
-2. Prefer band content over raw momentum
-   (macro_tilt, alt_tilt are PIT-safe).
-3. Rationale must match evidence_ids.
+2. Prefer band content over raw momentum.
 \end{lstlisting}
 
 \begin{lstlisting}[caption={Ungated (excerpt): soft judgment.},label={lst:prompt-u}]
-1. Judge whether low WMI / missingness makes action
-   unsafe; you MAY "abstain".
-2. Prefer band content when you act.
-NO hard abstain boolean; NO forced policy.
+1. Judge whether low WMI makes action unsafe;
+   you MAY "abstain".
+NO hard boolean; NO forced policy.
 \end{lstlisting}
 
 \paragraph{Why the hard valve is not a confound}
-Compiled abstention is partly prompt obedience, and that is intentional: the data end's job on thin days is to \emph{block} action, not to hope the model discovers thinness (Prop.~\ref{prop:abstain}).
-Ungated measures soft judgment from the same disclosed bundle; Raw measures fragment wiring; Blind measures no feed.
-The gating result is that the hard flag is reliable across vendors; soft refusal is not---which is why half-baked context remains dangerous without the valve.
+The data end must \emph{block} thin-day action (Prop.~\ref{prop:abstain}).
+HPO separates hard \emph{prompt} obedience on numeric WMI from the typed boolean; Ungated removes both; Raw/Blind bound the ladder.
 
 \subsection{Systems validation (engines)}
 Paper-lab smoke wires BandPIT/WMI/ACWMI and checks the dual gate: scoped archive opens on \(3/3\)-ready statuses while full-schema stays closed; a handoff rule acts only when the scoped valve is open.
@@ -531,25 +542,28 @@ action (2026-01-17): bullish
 \subsection{RQ2 (safety valve): Hard refuse when the view is thin}
 \label{sec:gate}
 Legibility does not imply safe action.
-All live LLM arms in this subsection freeze \emph{full-schema} bundles, so every OOS day is thin under the stress gate \(0.2\).
-Table~\ref{tab:llm} and Figure~\ref{fig:und}: on the same \(100\) days, Compiled abstains on every thin day (\(1.0\)); Ungated soft-judges at mean \(0.68\) (Gemini \(0.43\)); Raw over-trades (Table~\ref{tab:mix}); Blind abstains \(1.0\) with no feed---safe but useless as a data end.
-The costly failure mode is the middle case: half-baked Raw context makes models act and lose.
-Mean \(\Delta\)CE (Compiled$-$Raw) \({+}1.07\) is avoided loss under the stress valve, not an alpha claim.
+All live LLM arms here freeze \emph{full-schema} bundles, so every OOS day is thin under the stress gate \(0.2\).
+Table~\ref{tab:llm} and Figure~\ref{fig:und}: on the same \(100\) days, Compiled and HPO abstain \(1.0\); Ungated soft-judges at mean \(0.68\) (Gemini \(0.43\)); Raw over-trades (Table~\ref{tab:mix}); Blind abstains \(1.0\) with no feed---safe but useless as a data end.
+HPO shows hard \emph{numeric} prompting recovers perfect thin abstention when \(\mathrm{WMI}\) is unambiguously below \(0.2\); Ungated shows soft MAY does not.
+The typed boolean remains the API/non-LLM contract; the ladder shows that \emph{hard policy}, not soft disclosure, is what binds.
+Offline soft evidence-alignment (rationale cues to disclosed bands/tilts/quality) averages \({\approx}0.998\) Compiled / \(0.993\) HPO vs.\ \(0.80\) Ungated and \(0.38\) Raw on matched \(100\)-day slices.
+Mean \(\Delta\)CE (Compiled$-$Raw) \({+}1.07\) is avoided loss, not alpha.
 
 \begin{table}[t]
-  \caption{Thin abstention on identical $100$ OOS days under full-schema stress (Wilson 95\% CIs). Blind $=1.0$.}
+  \caption{Thin abstention on identical $100$ OOS days under full-schema stress. Blind $=1.0$; HPO $=$ hard prompt on numeric WMI, no boolean.}
   \label{tab:llm}
   \small
-  \begin{tabular}{lrrrr}
+  \setlength{\tabcolsep}{3.2pt}
+  \begin{tabular}{@{}lrrrrr@{}}
     \toprule
-    Model & Thin C & Thin U {\scriptsize[CI]} & Abs.\ R {\scriptsize[CI]} & \(\Delta\)CE \\
+    Model & C & HPO & U & Abs.\ R & \(\Delta\)CE \\
     \midrule
-    gpt-5.4-mini & $1.00$ & $0.63$ {\scriptsize[.53,.72]} & $0.04$ {\scriptsize[.02,.10]} & $+0.73$ \\
-    deepseek-v4-flash & $1.00$ & $0.81$ {\scriptsize[.72,.87]} & $0.75$ {\scriptsize[.66,.82]} & $+1.22$ \\
-    glm-5.2 & $1.00$ & $0.86$ {\scriptsize[.78,.91]} & $0.11$ {\scriptsize[.06,.19]} & $+1.04$ \\
-    gemini-3.5-flash-lite & $1.00$ & $0.43$ {\scriptsize[.34,.53]} & $0.07$ {\scriptsize[.03,.14]} & $+1.30$ \\
+    gpt-5.4-mini & $1.00$ & $1.00$ & $0.63$ & $0.04$ & $+0.73$ \\
+    deepseek-v4-flash & $1.00$ & $1.00$ & $0.81$ & $0.75$ & $+1.22$ \\
+    glm-5.2 & $1.00$ & $1.00$ & $0.86$ & $0.11$ & $+1.04$ \\
+    gemini-3.5-flash-lite & $1.00$ & $1.00$ & $0.43$ & $0.07$ & $+1.30$ \\
     \midrule
-    Mean & $1.00$ & $0.68$ & --- & $+1.07$ \\
+    Mean & $1.00$ & $1.00$ & $0.68$ & --- & $+1.07$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -558,7 +572,7 @@ Mean \(\Delta\)CE (Compiled$-$Raw) \({+}1.07\) is avoided loss under the stress 
   \centering
   \includegraphics[width=\linewidth]{fig_four_arm_ladder.pdf}
   \Description{Four-arm abstain rates with Wilson error bars.}
-  \caption{Safety valve: Blind refuses; Raw over-trades; Ungated is unstable; Compiled enforces the hard gate.}
+  \caption{Safety valve: Blind refuses; Raw over-trades; Ungated is unstable; Compiled/HPO enforce hard policy.}
   \label{fig:und}
 \end{figure}
 
@@ -756,37 +770,28 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
 \label{sec:disc}
 
 \paragraph{What carries the paper}
-(i)~As an AI--finance data substrate, the compiled world is legible: grounding \({\approx}0.97\), with sufficiency chat a poor substitute (RQ1 / Props.~\ref{prop:recon}--\ref{prop:compile}).
-(ii)~Under the full-schema stress gate, soft text fails at scale; Blind refuses with no feed; Raw acts on fragments and loses; the hard flag works (RQ2 / Prop.~\ref{prop:abstain}).
-(iii)~Scoped production WMI opens on band-thick days; live LLMs abstain \(1.0\) when closed and act when open, while open-day CE does not beat Raw---observation usability \(\neq\) policy alpha (RQ3a / Def.~\ref{def:wmi}+Prop.~\ref{prop:abstain}); a no-LLM tilt rule and LOBO content share \(1.0\) keep fields nonempty (RQ3b / Prop.~\ref{prop:lobo}).
-Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply---and evaluate---the observation stage those systems assume: data for agents, and a yardstick for whether agents understood the market.
+(i)~The compiled world is legible (grounding \({\approx}0.97\); sufficiency chat is not a substitute).
+(ii)~Hard policy binds on thin days (Compiled/HPO \(1.0\)); soft MAY does not (\({\approx}0.68\)).
+(iii)~Scoped production opens \({\approx}61\%\) OOS days; LLMs obey the valve; open-day CE \(\neq\) alpha; no-LLM tilts stay nonempty.
+Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume.
 
-\paragraph{Architecture}
-Semantics (Section~\ref{sec:method}) define the interfaces; Runtime (Section~\ref{sec:system}) implements \(\Pi_t\) and the service handoff; Experiments (Section~\ref{sec:exp}) test seeing, stress gating, then scoped handoff and content in that order.
-Trading PnL is intentionally secondary: it confounds observation quality with policy skill.
+\paragraph{Deployment path}
+Level~1: observation API (PIT world bundles; this paper).
+Level~2: community benchmark for market understanding (grounding, gated action, soft EAR).
+Level~3: compliance logging of abstain decisions for algorithmic accountability.
+We do not claim to solve crypto prediction or open-day LLM alpha; seeing a typed world reduces decision risk before models get ``smarter.''
 
-\paragraph{Design}
-World bundle not feature dump; previous-close PIT with explicit freshness; four arms separate seeing+gating, seeing without gating, thin wiring, and no feed.
-Dual WMI scope separates stress audit from production readiness; health/bundle/handoff reads make both callable.
-Evaluative objects stay world-centric: grounding and evidence-alignment (EAR) for understanding; thin-abstain for honesty; open-day usability without claiming a predictive Pareto win.
-
-\paragraph{Reproducibility}
-Paper-lab smoke checks BandPIT/WMI/ACWMI and scoped-vs-full gates; PIT rebuild and the frozen four-arm harness regenerate the panel and live transcripts used here.
-Prompts, IS/OOS cut, seeds, and vendor IDs are fixed; credentials stay in environment variables.
-An anonymized harness ships on acceptance.
-
-\paragraph{Estimand and scope}
-This paper measures data-end legibility, stress-gate reliability, and whether a scoped production valve is obeyed and callable.
-RQ1--RQ2 isolate seeing and hard refusal under the full-schema stress protocol; RQ3a switches to scoped production bundles for live LLM obedience and a parallel no-LLM tilt rule.
-Open-day LLM CE is reported as a usability check, not an alpha claim---policy skill sits downstream of the data end.
+\paragraph{Design and scope}
+World bundle \(\neq\) feature dump; previous-close PIT; dual WMI scope; HPO separates hard prompt from hard boolean.
+Open-day LLM CE is a usability check---policy skill sits downstream of the data end.
+Prompts, cut, and seeds are frozen; an anonymized harness ships on acceptance.
 
 \balance
 \section{Conclusion}
 \label{sec:conc}
 
 AI-in-finance LLM/agent stacks need a reliable data end before decision or execution.
-We contribute that observation layer---data world-model infrastructure for market analysis: compile asynchronous evidence into a consumable PIT world bundle, disclose structural missingness, and hard-refuse when the view is too thin.
-Grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; sufficiency chat alone fails; the full-schema stress gate abstains \(1.0\) where soft judgment does not; under the scoped production valve live LLMs abstain \(1.0\) on closed days and act when open, while a no-LLM tilt rule stays nonempty (Sharpe \(0.77\)).
+We formalize that observation layer and show: grounding \({\approx}0.97\); hard policy (Compiled/HPO) thin-abstains \(1.0\) while soft Ungated does not; scoped production opens and is obeyed; tilts remain nonempty without claiming open-day LLM alpha.
 Move from model-first to data-end-first: compile so models can see; refuse when they must not act.
 
 \begin{acks}
