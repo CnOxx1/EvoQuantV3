@@ -61,7 +61,15 @@
   A Typed Observation Contract before Decision}
 
 \begin{abstract}
-Public LLMs asked to analyze or trade crypto markets often fail before strategy: they lack a complete, honest, auditable \emph{market observation interface}. We present an anonymized \emph{world-model runtime} that compiles asynchronous multi-band evidence into a point-in-time (PIT) world bundle with a typed abstention contract. Epistemic observations \(O_{j,t}=(x,\tau,q,g,r)\) and compilation \(\Pi_t\) yield \(\mathcal{F}^{\mathrm{AI}}_t\); completeness, honesty \((B,U,H)\), and WMI/ACWMI expose machine-readable refusal; evidence IDs bind actions to disclosed fields. The main claim is interface reliability under thin support, not a new trading agent. On identical OOS asset-days, four live public LLMs (temperature \(0\)) rank as Blind refuses, Raw over-trades and loses, Ungated abstains only partially (\({\approx}0.68\)), and Compiled with a hard flag abstains on every thin day (\(1.0\)); a full-OOS sweep and a band-thick split reproduce the same ranking. The panel never exceeds the production WMI refuse threshold (\(\max\mathrm{WMI}\approx 0.093{<}0.2\)), so Compiled's full refusal is the scarce-support stress test; a lower counterfactual threshold would open the band-thick slice where content remains nonempty. A grounding workflow recovers ready/missing/tilt answers at mean F1/acc.\ \({\approx}0.97\) from Compiled vs.\ \({\lesssim}0.23\) from Raw. As a secondary content check, a transparent no-LLM rule on the same vintaged tilts beats momentum and buy-and-hold out-of-sample (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\)). We detail the runtime (collectors, vintage store, BandPIT, bundle schema, LLM adapter) as an ICAIF systems contribution.
+\textbf{Claim.} Public LLMs fail on crypto markets for want of a reliable \emph{observation interface}, not for want of another trading strategy.
+We contribute a typed observation contract---an anonymized \emph{world-model runtime} (state compiler + hard refuse flag, not a generative simulator)---that turns asynchronous multi-band evidence into a point-in-time (PIT) world bundle.
+Epistemic observations \(O_{j,t}=(x,\tau,q,g,r)\) and compilation \(\Pi_t\) yield \(\mathcal{F}^{\mathrm{AI}}_t\); completeness, honesty \((B,U,H)\), and WMI/ACWMI expose machine-readable refusal; evidence IDs bind actions to disclosed fields.
+\textbf{Evidence.} On identical OOS asset-days, four live public LLMs (temperature \(0\)) form a four-arm ranking: Blind refuses; Raw over-trades and loses; Ungated abstains only partially (\({\approx}0.68\)); Compiled with a hard flag abstains on every thin day (\(1.0\)).
+Full-OOS and band-thick splits reproduce the ranking.
+This panel never exceeds the production refuse threshold (\(\max\mathrm{WMI}\approx 0.093{<}0.2\)), so Compiled's full refusal is a scarce-support stress test; a lower counterfactual opens the band-thick slice where content stays nonempty.
+A grounding workflow recovers ready/missing/tilt answers at mean F1/acc.\ \({\approx}0.97\) (Compiled) vs.\ \({\lesssim}0.23\) (Raw).
+A secondary no-LLM content check shows the same vintaged tilts beat momentum and buy-and-hold OOS (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\)).
+We detail the runtime (collectors, vintage store, BandPIT, bundle schema, LLM adapter) as an ICAIF systems contribution.
 \end{abstract}
 
 \begin{CCSXML}
@@ -95,20 +103,27 @@ Public LLMs asked to analyze or trade crypto markets often fail before strategy:
 \section{Introduction}
 \label{sec:intro}
 
-Public LLMs are increasingly asked to analyze or trade crypto markets. The bottleneck is not another alpha signal. It is \emph{understanding}: before decision, an agent needs a market world that is \textbf{complete} (missingness disclosed), \textbf{honest} (stale or role-incoherent evidence gated), and \textbf{auditable} (actions bound to evidence). Venue fragmentation, derivatives, on-chain flows, news, and macro vintages arrive on incompatible clocks~\cite{makarov2020,liu2022}. Generative world models~\cite{ha2018world,hafner2020dreamer,lecun2022path} and tool-using finance agents~\cite{yao2023react,yu2023finmem,zhang2024finagent} typically assume a usable observation stream. Crypto agents often do not have one.
+\paragraph{Core claim (read this first).}
+Public LLMs fail on crypto \emph{before} strategy: they lack a complete, honest, auditable \emph{market observation interface}.
+Venue fragmentation, derivatives, on-chain flows, news, and macro vintages arrive on incompatible clocks~\cite{makarov2020,liu2022}, while generative world models~\cite{ha2018world,hafner2020dreamer,lecun2022path} and tool-using finance agents~\cite{yao2023react,yu2023finmem,zhang2024finagent} typically \emph{assume} a usable observation stream.
+This paper builds the missing interface---a typed observation contract with a hard refuse flag---not a new trading agent and not a generative simulator.
+In one line: \emph{compile asynchronous evidence into a PIT world bundle; refuse when the world is thin; show that live LLMs obey the hard contract and fail without it.}
 
-\paragraph{Thesis.}
-We build a market \emph{world-model runtime} for public LLMs: compile raw multi-band evidence into a PIT-safe bundle that GPT / DeepSeek / GLM / Gemini-class models can call under a typed refuse contract. The goal is reliable observation under sparse and asynchronous feeds, not a new portfolio policy. Strategy metrics appear only as a secondary check that the compiled fields are nonempty.
+\paragraph{What we build.}
+We implement the contract as an anonymized market \emph{world-model runtime}: a state compiler from raw multi-band evidence to a PIT-safe bundle for GPT~/DeepSeek~/GLM~/Gemini-class models under a typed refuse boolean.
+``World model'' here means \emph{observation compiler + abstention runtime} (Section~\ref{sec:method}), not a next-state dynamics model.
+The compiled world must be \textbf{complete} (missingness disclosed), \textbf{honest} (stale or role-incoherent evidence gated), and \textbf{auditable} (actions bound to evidence).
 
-\paragraph{What we claim.}
-RQ1 tests whether a typed world interface can \emph{enforce} world-conditional abstention across live public LLMs (a runtime contract, not spontaneous thinness discovery from raw ticks). RQ2 tests whether the compiled world makes analyst-facing epistemic answers verifiable. RQ3 asks whether a transparent rule on the same vintaged tilts beats momentum and buy-and-hold---a content check, not an LLM trading leaderboard.
+\paragraph{How we evaluate.}
+\textbf{RQ1 (primary):} Can the hard contract \emph{enforce} thin-world abstention across live public LLMs?
+Four arms on identical days---Compiled (hard flag), Ungated (same content, no flag), Raw (momentum fragment), Blind (no feed).
+\textbf{RQ2:} Does the compiled bundle make analyst answers (ready~/missing~/tilt) verifiable?
+\textbf{RQ3 (secondary):} Are the vintaged tilts economically nonempty under a transparent no-LLM rule vs.\ momentum~/buy-and-hold?
 
 \paragraph{Contributions.}
-\begin{enumerate}
-\item \textbf{Cognition semantics.} Epistemic observations, compilation \(\Pi_t\), a lag reconstruction bound, completeness/honesty fields, WMI/ACWMI abstention, evidence-bound actions.
-\item \textbf{Anonymized runtime architecture.} Vintage-aware collectors, BandPIT previous-close clock, quality-tagged bundles, availability shocks \(O_t\), a multi-vendor OpenAI-compatible adapter, and a frozen Compiled / Ungated / Raw / Blind consumer protocol.
-\item \textbf{Live interface validation.} On identical days: Blind refuses, Raw over-trades and loses, Ungated is vendor-dependent, and Compiled enforces thin-world abstain \(1.0\) (replicated on full OOS for all vendors). A band-thick split shows the contract still binds when all archive bands are ready; grounding recovers ready/missing/tilt at \(0.97\) vs.\ \(0.04\)--\(0.23\) raw; a no-LLM content rule confirms the tilts are economically nonempty.
-\end{enumerate}
+(1)~\textbf{Interface semantics:} epistemic observations, \(\Pi_t\), lag reconstruction, completeness/honesty, WMI/ACWMI abstention, evidence-bound actions---enough to define the contract, not a pricing theorem.
+(2)~\textbf{Runtime:} vintage collectors, BandPIT previous-close clock, quality-tagged bundles, shocks \(O_t\), multi-vendor adapter, frozen Compiled~/Ungated~/Raw~/Blind protocol.
+(3)~\textbf{Live validation:} Blind refuses; Raw over-trades and loses; Ungated \(\approx 0.68\); Compiled thin-abstain \(1.0\) (full OOS too). Grounding \(0.97\) vs.\ Raw \(0.04\)--\(0.23\); secondary content rule shows tilts nonempty.
 
 \section{Related Work}
 \label{sec:related}
@@ -127,6 +142,8 @@ Macro vintages~\cite{croushore2001} and crypto microstructure~\cite{makarov2020,
 
 \section{Market World-Model Semantics}
 \label{sec:method}
+
+This section defines the observation contract formally. Readers who want the systems object first may skim to Section~\ref{sec:system}; the empirical estimand is the four-arm protocol in Section~\ref{sec:exp}.
 
 \begin{definition}[Epistemic observation]
 An epistemic observation is
@@ -415,7 +432,17 @@ Compiled never trades on this OOS panel because \(\max\mathrm{WMI}\approx 0.093\
 
 \subsection{RQ2: Non-trading cognition---grounding workflow}
 \label{sec:grounding}
-The compiled world should also support analysis, not only trade/abstain decisions. We run a live multi-step \emph{grounding workflow} on \(50\) OOS asset-days per arm. Given Compiled or Raw inputs, the model must (i)~list which of \(\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}\) are ready, (ii)~list which are missing, (iii)~report \(\mathrm{sign}(\mathrm{macro\_tilt})\) and \(\mathrm{sign}(\mathrm{alt\_tilt})\), and (iv)~judge sufficiency. Steps (i)--(iii) are scored against PIT ground truth. Table~\ref{tab:grounding}: with the Compiled bundle, mean ready-band F1 \(0.97\), missing-band F1 \(0.97\), and tilt-sign accuracy \(0.97\); with Raw, the same scores collapse to \(0.04\), \(0.23\), and \(0.19\). Sufficiency judgments alone are weak once completeness is scoped to real archive bands---models may call a \(3/3\)-ready day ``sufficient'' while WMI still marks the world thin. The sharper claim is verifiability: only the compiled world lets the model state what is ready, missing, and signed, in a form that can be checked. This is the analyst-facing counterpart of Prop.~\ref{prop:recon}'s missingness term.
+The compiled world should also support analysis, not only trade/abstain decisions.
+We run a live multi-step \emph{grounding workflow} on \(50\) OOS asset-days per arm.
+Given Compiled or Raw inputs, the model must (i)~list which of \(\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}\) are ready,
+(ii)~list which are missing, (iii)~report \(\mathrm{sign}(\mathrm{macro\_tilt})\) and \(\mathrm{sign}(\mathrm{alt\_tilt})\),
+and (iv)~judge sufficiency.
+Steps (i)--(iii) are scored against PIT ground truth.
+Table~\ref{tab:grounding}: with the Compiled bundle, mean ready-band F1 \(0.97\), missing-band F1 \(0.97\), and tilt-sign accuracy \(0.97\);
+with Raw, the same scores collapse to \(0.04\), \(0.23\), and \(0.19\).
+Sufficiency judgments alone are weak once completeness is scoped to real archive bands---models may call a \(3/3\)-ready day ``sufficient'' while WMI still marks the world thin.
+The sharper claim is verifiability: only the compiled world lets the model state what is ready, missing, and signed, in a form that can be checked.
+This is the analyst-facing counterpart of Prop.~\ref{prop:recon}'s missingness term.
 
 \begin{table}[t]
   \caption{Grounding workflow ($50$ days): ready / missing / tilt signs.}
@@ -482,9 +509,15 @@ Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\
 \end{figure}
 
 \subsection{Discussion and threats}
-The main evidence is the arm ranking: Blind refuses, Raw over-acts and loses, Ungated is vendor-dependent (\({\approx}0.68\); GLM \(0.86\) vs.\ Gemini \(0.43\)), and Compiled enforces thin-world abstain \(1.0\)---including on band-thick days where a readiness dashboard would look green. Content economics are secondary.
+\paragraph{What the results mean.}
+Thin days must refuse; soft ``consider abstaining'' text does not.
+Compiled's hard gate delivers that under live LLMs (RQ1--RQ2).
+Ungated still acts on most days (\({\approx}0.68\) abstain; GLM \(0.86\) vs.\ Gemini \(0.43\)) and often destroys CE versus cash when it acts.
+Raw and Blind show unstructured or empty context cannot replace typed readiness.
+RQ3 is secondary: a looser open-day counterfactual shows nonempty economics without live LLM trading under an open gate.
+We claim a typed observation interface---not LLM trading SOTA, not a generative simulator, not a full causal theory of crypto markets.
 
-Relative to FinMem / FinAgent-style systems~\cite{yu2023finmem,zhang2024finagent} and ICAIF retrieval/debate/judge lines~\cite{choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we contribute an observation compiler and refuse interface for asynchronous, quality-heterogeneous feeds, not a new memory, search, or debate router. Relative to return-prediction LLM studies~\cite{lopez2023chatgpt}, we score refusal and auditability before PnL.
+Relative to FinMem~/FinAgent~\cite{yu2023finmem,zhang2024finagent} and ICAIF retrieval/debate/judge lines~\cite{choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we contribute an observation compiler and refuse interface, not a new memory/search/debate router. Relative to return-prediction LLM studies~\cite{lopez2023chatgpt}, we score refusal and auditability before PnL.
 
 \paragraph{Design rationale.}
 Three choices are deliberate. (i)~Export gates, not only features: completeness, honesty, and \texttt{should\_ai\_abstain} make refusal machine-readable rather than a free-text apology. (ii)~Previous-close PIT over wall-clock streaming: every live decision cites a recomputable \texttt{decision\_asof}, avoiding same-day look-ahead. (iii)~Four arms instead of one Sharpe number: Compiled / Ungated / Raw / Blind separates typed enforcement, soft judgment, thin integrations, and no feed.
@@ -498,7 +531,7 @@ We do not claim LLM trading SOTA or generative dynamics. Natural extensions incl
 \section{Conclusion}
 \label{sec:conc}
 
-We contribute a typed observation contract and anonymized runtime for public LLMs under asynchronous crypto feeds. Live arms show Blind refuses, Raw over-trades and loses, Ungated is vendor-dependent, and Compiled enforces thin-world abstain \(1.0\) even on band-thick days; grounding recovers ready/missing/tilt answers at \({\approx}0.97\) vs.\ Raw \({\lesssim}0.23\). A secondary no-LLM content rule shows the tilts are economically nonempty versus momentum and buy-and-hold.
+Public LLMs need a market they can safely observe before they decide. We contribute a typed observation contract---an anonymized state-compiler runtime with a hard refuse flag---for asynchronous crypto feeds. Live arms make the point concrete: Blind refuses, Raw over-trades and loses, Ungated is vendor-dependent, and Compiled enforces thin-world abstain \(1.0\) even on band-thick days; grounding recovers ready/missing/tilt answers at \({\approx}0.97\) vs.\ Raw \({\lesssim}0.23\). A secondary no-LLM content rule shows the tilts are economically nonempty. The contribution is the interface, not a trading leaderboard.
 
 \begin{acks}
 Omitted for anonymous review.
