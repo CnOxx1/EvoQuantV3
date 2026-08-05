@@ -1,4 +1,6 @@
-# ICAIF ’26 — Paper B: Data End of Crypto Quant
+# ICAIF ’26 — Paper B: See First, Refuse When Thin
+
+**Title:** *See First, Refuse When Thin: Compiling Point-in-Time World Bundles for LLM Agents in Crypto Markets*
 
 **Purpose (locked):**
 Build the **data end** of end-to-end crypto quant for public LLMs (observation layer + world bundle).
@@ -9,7 +11,7 @@ Stack framing: **data/observation → decision → execution**; this paper owns 
 | --- | --- | --- |
 | Spine | Observation layer with **quality-gated refusal** as primary live ranking | **Data-end seeing** (grounding / legibility) first; refusal = valve |
 | Primary RQ | RQ1 gating ladder | RQ1 grounding workflow |
-| Title focus | Compiling bundles **with** quality-gated refusal | Data end that compiles bundles **so LLMs can see** |
+| Title focus | Compiling bundles **with** quality-gated refusal | See first; compile PIT world bundles for LLM agents |
 | Shared | Same anonymized runtime, PIT panel, four arms, vendor IDs | Same |
 | Differentiated claim | Soft disclosure does not enforce thin abstention | Compiled data end makes ready/missing/tilt verifiable |
 | Length | ~8 pp | **~8 pp** systems + seeing empirics (≤8) |
