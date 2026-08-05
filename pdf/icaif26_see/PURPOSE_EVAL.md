@@ -23,9 +23,10 @@
 | Purpose in title/abstract/conclusion | High | “Seeing… Compiles World Bundles” |
 | RQ1 = grounding | High | See-first estimand |
 | RQ2 = hard refuse | Medium length | Safety valve, one scarce-panel note |
-| Page budget | ~4 pp | Under 8; intentionally lean |
+| Page budget | ~5–6 pp after optimize | Under 8; grounding defended as primary metric |
 
 **Verdict:** Submit as the **see-market** paper if you want the purpose-aligned narrative.
+Optimization pass: expanded runtime (dataflow/schema), failure-mode intro, grounding non-triviality defense, frozen prompt excerpts, econ table.
 
 ## Dual-submission caution
 
