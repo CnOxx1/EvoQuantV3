@@ -58,7 +58,7 @@
 We build that layer as an anonymized observation runtime: multi-band evidence \(\to\) BandPIT/WMI \(\to\) a point-in-time (PIT) \emph{world bundle}, with hard refusal when support is thin.
 \textbf{Evidence.} Primary---seeing: grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ \({\lesssim}0.23\) under Raw, while sufficiency chat alone is unreliable (Compiled mean \(0.60\)).
 Secondary---valve: Compiled thin-abstain is \(1.0\) (100-day and full OOS \(n{=}2000\)) while Ungated soft judgment is only \({\approx}0.68\) / \({\approx}0.56\); Raw over-trades.
-Secondary---content: vintaged tilts beat momentum (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\); LOBO content share \(1.0\)); open-slice Ungated CE is point-positive as a field lower bound.
+Secondary---handoff: vintaged tilts beat momentum under a no-LLM rule (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\); LOBO content share \(1.0\)).
 On this panel \(\max\mathrm{WMI}\approx 0.093{<}0.2\), so production Compiled never opens---a valve stress test.
 \textbf{Claim.} Build the quant data end first: compile so models can see; refuse when they must not act.
 \end{abstract}
@@ -135,9 +135,9 @@ Four arms: Compiled, Ungated (same content, no flag), Raw (\texttt{mom5}), Blind
 
 \paragraph{Contributions.}
 (1)~Data-end semantics: epistemic observations, lag reconstruction, \(\Pi_t\), and seeing vs.\ gating.
-(2)~Anonymized PIT compile path: layered collectors\(\to\)BandPIT\(\to\)service surface\(\to\)bundles; schema honesty (eight bands, three live); frozen four-arm harness.
-(3)~Live + handoff validation: grounding \({\approx}0.97\) with sufficiency dissociation; thin-abstain \(1.0\) at \(100\)-day and full-OOS scale; no-LLM handoff (production refuse vs.\ nonempty tilts, \(\Delta\mathrm{CE}{=}0.334\); LOBO content share \(1.0\)) and an open-slice lower bound.
-Estimand: legibility and valve reliability---not decision SOTA, execution, or Compiled-open alpha.
+(2)~Anonymized PIT compile path: collectors\(\to\)BandPIT\(\to\)service surface\(\to\)world bundles; frozen four-arm harness.
+(3)~Live + handoff validation: grounding \({\approx}0.97\) with sufficiency dissociation; thin-abstain \(1.0\) at \(100\)-day and full-OOS scale; no-LLM handoff (production refuse vs.\ nonempty tilts, \(\Delta\mathrm{CE}{=}0.334\); LOBO content share \(1.0\)).
+Estimand: data-end legibility, valve reliability, and handoff usability.
 
 \section{Related Work}
 \label{sec:related}
@@ -390,9 +390,9 @@ Listing~\ref{lst:bundle} shows an exchange-gap day; Listing~\ref{lst:bundle-thic
 Actions \(\in\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}\).
 \textbf{Compiled:} full bundle; frozen prompt \emph{requires} abstain when \texttt{should\_ai\_abstain} is true (and when the world is judged thin).
 \textbf{Ungated:} same content, completeness, and numeric WMI; \emph{no} hard flag; soft prompt asks the model to judge thinness.
-\textbf{Raw:} \(\mathrm{mom5}\) only---common price-only wiring for the ladder, not an exhaustive tool-agent baseline; the estimand is the four-arm ranking of the data end, not \(\Delta\)CE vs.\ the strongest agent.
+\textbf{Raw:} \(\mathrm{mom5}\) only---thin price wiring for the ladder.
 \textbf{Blind:} ``Today is \(d\). How should I trade \(a\)?'' with no feed.
-\(\max\mathrm{WMI}\approx 0.093\), so production Compiled abstains on every OOS day---a scarce-support stress test of the valve, not a claim the data end never allows action.
+\(\max\mathrm{WMI}\approx 0.093\), so production Compiled abstains on every OOS day---a valve stress test under thin support.
 Compiled vs.\ Ungated differ only in enforcement (Listings~\ref{lst:prompt-c}--\ref{lst:prompt-u}); prompts, IS/OOS cut, and seeds are frozen.
 On thin Compiled days the evidence-alignment proxy (EAR) is \(1.0\) across vendors: rationales stay bound to disclosed \texttt{evidence\_ids}.
 
@@ -417,9 +417,8 @@ Ungated measures soft judgment from the same disclosed bundle; Raw measures frag
 The gating result is that the hard flag is reliable across vendors; soft refusal is not---which is why half-baked context remains dangerous without the valve.
 
 \subsection{Systems validation (engines)}
-Paper-lab smoke against the production engines (same thresholds as the live service) returns a wired WMI/ACWMI sample with \texttt{should\_ai\_abstain} consistent with the configured index mode and abstain cutoffs (\(\mathrm{WMI}\) gate \(0.2\); ACWMI gate \(0.35\)).
-That check is not a substitute for the four-arm OOS evaluation below; it confirms the data-end indices the consumer bundle exposes are the same objects the runtime compiles.
-Availability shocks \(O_t\) are queryable on the service surface for event-study levers; this paper uses them as schema honesty, not as a trading identification claim.
+Paper-lab smoke against the production engines returns a wired WMI/ACWMI sample with \texttt{should\_ai\_abstain} consistent with the configured index mode (\(\mathrm{WMI}\) gate \(0.2\); ACWMI gate \(0.35\)).
+The same indices appear in the consumer bundle; availability shocks \(O_t\) are queryable on the service surface.
 
 \FloatBarrier
 \section{Experiments}
@@ -576,13 +575,13 @@ Blind refuses everywhere with no feed on the paired \(100\)-day sample (abstain 
 On the mixed \(100\)-day sample, when Ungated \emph{does} act, act-conditional CE is sharply negative for three of four vendors (DeepSeek \(-3.12\), GLM \(-4.28\), Gemini \(-1.67\)) while GPT is positive on its smaller act set.
 Soft disclosure without a hard flag is not a free lunch: the same readable world that RQ1 scores can still harm decisions when the valve is removed.
 
-\paragraph{Open slice (content lower bound).}
+\paragraph{Open slice.}
 Table~\ref{tab:thick}: on \(\mathrm{WMI}\ge 0.05\) (\({\approx}61\%\) OOS; \(n{\approx}1224\)) Ungated keeps compiled content without the hard boolean---mean abs.\ \({\approx}0.48\), CE positive for every vendor (mean \({\approx}{+}0.29\); bootstrap \({\approx}{+}0.31\), CIs include 0).
 Production Compiled still abstains at \(1.0\); Raw stays risky (GPT/Gemini abs.\ \(0.0\), CE negative).
-Point-positive open-slice CE and negative mixed-sample act-conditional CE can coexist: regime and act selection matter; neither is a Compiled-open claim.
+Point-positive open-slice CE and negative mixed-sample act-conditional CE can coexist: regime and act selection matter.
 
 \begin{table}[t]
-  \caption{Open slice ($3/3$ ready $\equiv$ $\mathrm{WMI}\ge 0.05$; $n{\approx}1224$). Content lower bound, not Compiled-open.}
+  \caption{Open slice ($3/3$ ready $\equiv$ $\mathrm{WMI}\ge 0.05$; $n{\approx}1224$). Field lower bound under soft judgment.}
   \label{tab:thick}
   \small
   \begin{tabular}{lrrrrr}
@@ -601,14 +600,9 @@ Point-positive open-slice CE and negative mixed-sample act-conditional CE can co
 \subsection{RQ3 (secondary): Handoff backtest---nonempty fields}
 \label{sec:econ}
 The data end must be usable by a downstream decision rule without an LLM in the loop.
-Table~\ref{tab:handoff} reads the same compiled panel under four handoff policies:
-(i)~production WMI gate \(0.2\) (always abstain on this scarce archive);
-(ii)~momentum on \(\mathrm{mom5}\);
-(iii)~buy-and-hold;
-(iv)~thick-ungated content rule on vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\).
+Table~\ref{tab:handoff} reads the same compiled panel under four handoff policies: production WMI gate \(0.2\), momentum on \(\mathrm{mom5}\), buy-and-hold, and a thick-ungated content rule on vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\).
 Production refuse is complete (Sharpe/CE \(0\), abstain \(1.0\)); the content handoff is nonempty vs.\ momentum (Table~\ref{tab:econ}, Figure~\ref{fig:econ}): Sharpe \(0.764\) / CE \({+}0.130\) vs.\ \(0.096\) / \(-0.206\); block-bootstrap \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\)).
-This is a decision-layer \emph{proxy} on disclosed fields---not production Compiled-open LLM trading.
-A \(2017\)--\(2026\) audit with non-vintaged proxy tilts shows no edge; a date-scramble placebo on tilts flips CE from \(+0.132\) to \(-0.254\) (supports timing, not a random dump).
+A \(2017\)--\(2026\) non-vintaged audit shows no edge; a date-scramble placebo flips CE from \(+0.132\) to \(-0.254\), supporting timed content.
 
 \begin{table}[t]
   \caption{Handoff backtest on the compiled OOS panel (no LLM). Production gate vs.\ content rule.}
@@ -651,8 +645,8 @@ A \(2017\)--\(2026\) audit with non-vintaged proxy tilts shows no edge; a date-s
 \end{figure}
 
 \paragraph{Density split and LOBO channel.}
-Table~\ref{tab:dense}: on the open/thick slice \(\Delta\mathrm{CE}{=}0.315\); on exchange-gap days the rule abstains more (\(\Delta\mathrm{CE}{=}0.129\))---complementary to the valve test.
-Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting macro or alternative collapses the gap through the \emph{content} channel (content share \(1.0\); gating residual \(0\))---fields are nonempty, and the refuse flag is not what creates the edge.
+Table~\ref{tab:dense}: open/thick \(\Delta\mathrm{CE}{=}0.315\); exchange-gap days abstain more (\(\Delta\mathrm{CE}{=}0.129\)).
+Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting macro or alternative collapses the gap through the content channel (share \(1.0\); gating residual \(0\)).
 
 \begin{table}[t]
   \caption{Content probe by archive density (OOS).}
@@ -695,10 +689,10 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
 
 \subsection{Discussion}
 \paragraph{What carries the paper.}
-(i)~The data end is legible: checkable grounding at \({\approx}0.97\), with sufficiency chat shown to be a poor substitute (RQ1).
-(ii)~Thin views must not drive action: soft text fails at \(100\)-day and full-OOS scale; Blind shows models can refuse with no feed, but Raw shows thin fragments make them act and lose; the hard valve works (RQ2).
-(iii)~A no-LLM handoff backtest shows production refuse vs.\ nonempty content on the same bundle (RQ3); LOBO content share \(1.0\); open-slice Ungated is a lower bound, not Compiled-open.
-Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume---not a competing decision or execution layer.
+(i)~The data end is legible: grounding \({\approx}0.97\), with sufficiency chat a poor substitute (RQ1).
+(ii)~Thin views must not drive action: soft text fails at \(100\)-day and full-OOS scale; Blind refuses with no feed; Raw acts on fragments and loses; the hard valve works (RQ2).
+(iii)~A no-LLM handoff shows production refuse vs.\ nonempty content on the same bundle (RQ3); LOBO content share \(1.0\).
+Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume.
 
 \paragraph{Why grounding first.}
 Trading PnL confounds observation quality with policy skill.
@@ -717,8 +711,7 @@ Prompts, IS/OOS cut, seeds, and vendor IDs are fixed; credentials stay in enviro
 An anonymized harness ships on acceptance.
 
 \paragraph{Scope.}
-Estimand is data-end legibility, valve reliability, and a no-LLM handoff probe on the evaluation archive---not decision-layer SOTA, not execution, and not production Compiled-open alpha.
-Decision and execution stacks sit downstream of this observation layer.
+We evaluate the data end on the PIT archive above; decision and execution sit downstream.
 
 \section{Conclusion}
 \label{sec:conc}
