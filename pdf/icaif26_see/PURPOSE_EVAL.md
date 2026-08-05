@@ -1,8 +1,9 @@
-# Paper B — purpose evaluation (opt2)
+# Paper B — purpose evaluation (data-end framing)
 
 ## Locked purpose
 
-- **Goal:** Let public LLMs **see** the market (observation layer + world bundle).
+- **Goal:** Build the **data end** of end-to-end crypto quant for public LLMs (observation layer + world bundle).
+- **Stack:** data/observation → decision → execution; this paper owns only the data end.
 - **Valve:** Hard refuse when the view is too thin to act.
 
 ## Opt2 enrichment (existing data only)
@@ -15,16 +16,16 @@
 | LOBO content share | `table_lobo_decomposition.csv` | Tilts nonempty via content channel |
 | Archive scope honesty | panel statuses | Only 3 bands live; others missing |
 
-## Fit scores (post-opt2)
+## Fit scores (post data-end reframe)
 
 | Criterion | Score |
 | --- | --- |
-| Purpose alignment | High |
+| Purpose alignment (data end of E2E quant) | High |
 | Spine clarity (see → valve → content) | High |
 | Empiric thickness with available data | High (for what data allows) |
-| Production Compiled-open claim | None (correctly refused) |
+| Production Compiled-open / decision SOTA claim | None (correctly scoped out) |
 | Pages | ~6 / ≤8 |
 
 ## Dual-submission
 
-Still sibling of Paper A (`pdf/icaif26/`). Prefer submitting **B** for the see-market pitch.
+Still sibling of Paper A (`pdf/icaif26/`). Prefer submitting **B** for the data-end / see-market pitch.
