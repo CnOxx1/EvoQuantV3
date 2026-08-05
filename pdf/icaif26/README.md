@@ -1,10 +1,8 @@
-# ICAIF '26 — Market World Model for Public LLMs
+# ICAIF '26 — Crypto Observation Layer for Public LLMs
 
-**Thesis:** Quant stacks start from *strategy*; this runtime starts from *understanding* — a complete, honest, auditable crypto cognition base for public LLMs (GPT / DeepSeek / GLM / Gemini).
+**Thesis:** Give public LLMs a crypto market observation layer: compile asynchronous evidence into a consumable world bundle; force abstention when quality is insufficient so half-baked context cannot harm decisions.
 
-**Primary evidence (RQ1):** live three-arm ladder — Compiled / Ungated / Raw
-(`tables/table_llm_three_arm_summary.csv`, `*_live.*`, `*_ungated.*`).
-CE is secondary. System section documents anonymized runtime architecture.
+**Evidence faces:** (RQ2) seeing — grounding on the compiled bundle; (RQ1) gating — four-arm ladder Compiled / Ungated / Raw / Blind; (RQ3) nonempty tilts — no-LLM content probe. CE is secondary to the layer ranking. System section documents anonymized runtime architecture.
 
 **Isolated from** `pdf/sci/` (JF/RFS). Submit **only** artifacts from this folder.
 
