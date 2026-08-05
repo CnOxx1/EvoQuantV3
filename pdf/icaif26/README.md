@@ -1,8 +1,11 @@
-# ICAIF '26 — Crypto Observation Layer for Public LLMs
+# ICAIF '26 — Paper A: Observation Layer + Quality-Gated Refusal
 
 **Thesis:** Give public LLMs a crypto market observation layer: compile asynchronous evidence into a consumable world bundle; force abstention when quality is insufficient so half-baked context cannot harm decisions.
 
-**Evidence faces:** (RQ2) seeing — grounding on the compiled bundle; (RQ1) gating — four-arm ladder Compiled / Ungated / Raw / Blind; (RQ3) nonempty tilts — no-LLM content probe. CE is secondary to the layer ranking. System section documents anonymized runtime architecture.
+**Primary ranking in this folder:** RQ1 gating ladder (Compiled / Ungated / Raw / Blind). Seeing (grounding) and nonempty tilts are supporting faces.
+
+**Sibling Paper B** (cleaner see-market spine; grounding primary): [`pdf/icaif26_see/`](../icaif26_see/).
+Do **not** dual-submit A and B to the same venue as if they were unrelated works—they share the runtime and panel; they differ in primary estimand and narrative spine.
 
 **Isolated from** `pdf/sci/` (JF/RFS). Submit **only** artifacts from this folder.
 

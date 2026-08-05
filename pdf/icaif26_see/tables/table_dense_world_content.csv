@@ -1,0 +1,4 @@
+slice,n_asset_days,share_of_oos,mech_CE,mom_CE,dCE,mech_Sharpe,mom_Sharpe
+All OOS,1990,1.0,0.13,-0.206,0.336,0.764,0.096
+Thick (3/3 ready),1214,0.61,0.059,-0.258,0.316,0.627,0.022
+Thin (exchange gap),776,0.39,1.048,0.918,0.129,3.253,3.039

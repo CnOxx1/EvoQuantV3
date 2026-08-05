@@ -1,0 +1,9 @@
+model,treatment,ann_return,Sharpe,CE,abstain_rate,thin_world_abstain_rate,ear_proxy,prompt_hash
+public-llm-compiled-follower,compiled,0.0,0.0,0.0,1.0,1.0,1.0,1b3837719ae9d6b3
+public-llm-compiled-follower,raw,0.0506,0.101,-0.2019,0.0,,1.0,5bbb78d665f58924
+mock-compiled-aware,compiled,0.0,0.0,0.0,1.0,1.0,1.0,1b3837719ae9d6b3
+mock-compiled-aware,raw,0.0506,0.101,-0.2019,0.0,,1.0,5bbb78d665f58924
+mock-momentum,compiled,0.0506,0.101,-0.2019,0.0,0.0,1.0,1b3837719ae9d6b3
+mock-momentum,raw,0.0506,0.101,-0.2019,0.0,,1.0,5bbb78d665f58924
+mock-noisy,compiled,0.0,0.0,0.0,0.0,0.0,1.0,1b3837719ae9d6b3
+mock-noisy,raw,-0.1468,-0.575,-0.2117,0.0,,1.0,5bbb78d665f58924
