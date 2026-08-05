@@ -153,11 +153,24 @@ def build_scoped_ungated_bundle(row: pd.Series) -> dict[str, Any]:
     return bundle
 
 
+def build_scoped_hpo_bundle(row: pd.Series) -> dict[str, Any]:
+    """Hard-prompt-only on scoped numeric WMI (no boolean / thin_world)."""
+    bundle = build_scoped_ungated_bundle(row)
+    wmi = dict(bundle.get("world_model_index") or {})
+    wmi["note"] = "hpo_hard_prompt_numeric_threshold_no_boolean"
+    # Ensure threshold fields remain readable for the frozen HPO prompt.
+    wmi.setdefault("wmi_abstain_threshold", 0.2)
+    bundle["world_model_index"] = wmi
+    return bundle
+
+
 def _build(treatment: str, row: pd.Series) -> dict[str, Any]:
     if treatment == "compiled":
         return build_scoped_compiled_bundle(row)
     if treatment == "ungated":
         return build_scoped_ungated_bundle(row)
+    if treatment == "hpo":
+        return build_scoped_hpo_bundle(row)
     if treatment == "raw":
         return build_raw_bundle(row)
     raise KeyError(treatment)
@@ -385,14 +398,17 @@ def main(argv: list[str] | None = None) -> int:
             return hit.iloc[0].to_dict() if len(hit) else {}
 
         c, u, r = _get("compiled"), _get("ungated"), _get("raw")
+        h = _get("hpo")
         c_closed = _get("compiled", "closed")
+        h_closed = _get("hpo", "closed")
         contrast_rows.append(
             {
                 "model": model,
-                "n_open": int(c.get("n") or 0),
+                "n_open": int(c.get("n") or h.get("n") or 0),
                 "abs_C_open": c.get("abstain"),
                 "CE_C_open": c.get("CE"),
                 "Sharpe_C_open": c.get("Sharpe"),
+                "abs_HPO_open": h.get("abstain"),
                 "abs_U_open": u.get("abstain"),
                 "CE_U_open": u.get("CE"),
                 "abs_R_open": r.get("abstain"),
@@ -403,10 +419,17 @@ def main(argv: list[str] | None = None) -> int:
                     else round(float(c["CE"]) - float(r["CE"]), 4)
                 ),
                 "abs_C_closed": c_closed.get("abstain"),
-                "n_closed": int(c_closed.get("n") or 0),
+                "abs_HPO_closed": h_closed.get("abstain"),
+                "n_closed": int(c_closed.get("n") or h_closed.get("n") or 0),
             }
         )
-    contrast = pd.DataFrame(contrast_rows)
+    contrast = pd.DataFrame(contrast_rows) if contrast_rows else pd.DataFrame()
+
+    def _mean_col(name: str):
+        if contrast.empty or name not in contrast.columns:
+            return None
+        s = contrast[name].dropna()
+        return None if s.empty else round(float(s.mean()), 4)
 
     summary = {
         "protocol": "scoped_archive_production_valve_llm",
@@ -416,21 +439,11 @@ def main(argv: list[str] | None = None) -> int:
         "n_sample": int(len(sample)),
         "models": models,
         "treatments": list(treatments),
-        "mean_dCE_C_minus_R_open": (
-            None
-            if contrast["dCE_C_minus_R_open"].dropna().empty
-            else round(float(contrast["dCE_C_minus_R_open"].mean()), 4)
-        ),
-        "mean_abs_C_closed": (
-            None
-            if contrast["abs_C_closed"].dropna().empty
-            else round(float(contrast["abs_C_closed"].mean()), 4)
-        ),
-        "mean_abs_C_open": (
-            None
-            if contrast["abs_C_open"].dropna().empty
-            else round(float(contrast["abs_C_open"].mean()), 4)
-        ),
+        "mean_dCE_C_minus_R_open": _mean_col("dCE_C_minus_R_open"),
+        "mean_abs_C_closed": _mean_col("abs_C_closed"),
+        "mean_abs_HPO_closed": _mean_col("abs_HPO_closed"),
+        "mean_abs_C_open": _mean_col("abs_C_open"),
+        "mean_abs_HPO_open": _mean_col("abs_HPO_open"),
         "claim_boundary": (
             "Open-day LLM usability under scoped production valve; "
             "not a generative world-model or alpha claim."
