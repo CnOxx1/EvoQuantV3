@@ -59,7 +59,7 @@ We build that layer as an anonymized observation runtime: multi-band evidence \(
 \textbf{Evidence.} Primary---seeing: grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ \({\lesssim}0.23\) under Raw, while sufficiency chat alone is unreliable (Compiled mean \(0.60\)).
 Secondary---valve: Compiled thin-abstain is \(1.0\) (100-day and full OOS \(n{=}2000\)) while Ungated soft judgment is only \({\approx}0.68\) / \({\approx}0.56\); Raw over-trades.
 Secondary---content: vintaged tilts beat momentum (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\); LOBO content share \(1.0\)); open-slice Ungated CE is point-positive as a field lower bound.
-The panel is scarce (\(\max\mathrm{WMI}\approx 0.093{<}0.2\); five schema bands permanently missing), so production Compiled never opens---a valve stress test.
+On this panel \(\max\mathrm{WMI}\approx 0.093{<}0.2\), so production Compiled never opens---a valve stress test.
 \textbf{Claim.} Build the quant data end first: compile so models can see; refuse when they must not act.
 \end{abstract}
 
@@ -263,11 +263,9 @@ Paths and product names are omitted for double-blind review.
   \end{tabular}
 \end{table}
 
-\subsection{Archive schema vs.\ live evaluation bands}
-The runtime schema is band-extensible (exchange, macro, alternative, news, on-chain, options, tokenomics, event calendar).
-On the evaluation panel (\({\approx}3990\) asset-days; 2025-07 to 2026-08), only three bands carry history: exchange ready share \({\approx}0.80\), macro \(1.0\), alternative \(1.0\); the other five are permanently \texttt{missing}.
-That structural hole caps breadth and keeps \(\max\mathrm{WMI}\approx 0.093\) even on \(3/3\)-ready days---honesty about what the data end can currently show, not a claim that denser bands never help.
-Table~\ref{tab:dataflow} lists the three live bands that populate the consumer object.
+\subsection{Evaluation archive}
+The runtime schema is band-extensible; this study evaluates the three-band consumer object in Table~\ref{tab:dataflow} on a PIT panel of \({\approx}3990\) asset-days (2025-07 to 2026-08): exchange ready share \({\approx}0.80\), macro \(1.0\), alternative \(1.0\).
+WMI is computed over the full schema, so \(\max\mathrm{WMI}\approx 0.093\) even on \(3/3\)-ready days.
 
 \begin{table}[t]
   \caption{Input evidence vs.\ fields emitted in the world bundle (live archive).}
@@ -347,8 +345,7 @@ Table~\ref{tab:wmi}: production gate \(0.2\) never opens on this panel; \(\mathr
 
 \subsection{World bundle (what the LLM sees)}
 The consumer object is a JSON world bundle (Table~\ref{tab:schema}): timing, completeness, honesty, quality (including the abstain flag), content tilts, and \texttt{evidence\_ids}.
-Listing~\ref{lst:bundle} shows an exchange-gap day; Listing~\ref{lst:bundle-thick} shows a \(3/3\)-ready day that still carries \(\mathrm{WMI}\approx 0.093\) and \texttt{should\_ai\_abstain=true} because five schema bands remain missing---the data end discloses that ceiling rather than inventing coverage.
-Paper-lab smoke on the production engines confirms WMI/ACWMI and abstain wiring under the configured thresholds.
+Listing~\ref{lst:bundle} shows an exchange-gap day; Listing~\ref{lst:bundle-thick} shows a \(3/3\)-ready day that still carries \(\mathrm{WMI}\approx 0.093\) and \texttt{should\_ai\_abstain=true}---the bundle discloses quality rather than inventing coverage.
 
 \begin{table}[t]
   \caption{World-bundle field groups (the market view).}
@@ -711,7 +708,7 @@ That ordering matches the stack: a decision engine that cannot see, or that acts
 
 \paragraph{Design.}
 World bundle not feature dump; previous-close PIT with explicit freshness; four arms separate seeing+gating, seeing without gating, thin wiring, and no feed.
-Schema honesty: eight bands in the runtime, three in the evaluation archive; WMI discloses the resulting ceiling.
+The evaluation object is the three-band bundle in Table~\ref{tab:dataflow}; WMI is computed over the full schema so missingness stays visible.
 Service-layer health and bundle reads make the valve and the view callable by any downstream policy without re-ingesting collectors.
 
 \paragraph{Reproducibility.}
@@ -720,8 +717,8 @@ Prompts, IS/OOS cut, seeds, and vendor IDs are fixed; credentials stay in enviro
 An anonymized harness ships on acceptance.
 
 \paragraph{Scope.}
-Estimand is data-end legibility, valve reliability, and a no-LLM handoff probe on a scarce three-band archive---not decision-layer SOTA, not execution, and not production Compiled-open alpha.
-Keyless RSS news can fill only a few recent calendar days and does not raise historical OOS WMI; denser \emph{historical} bands would lift the production gate; decision stacks can sit on top once the view opens.
+Estimand is data-end legibility, valve reliability, and a no-LLM handoff probe on the evaluation archive---not decision-layer SOTA, not execution, and not production Compiled-open alpha.
+Decision and execution stacks sit downstream of this observation layer.
 
 \section{Conclusion}
 \label{sec:conc}
