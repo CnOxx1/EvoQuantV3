@@ -795,7 +795,7 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
 (i)~Machine-native legibility for an LLM-consumable data end: grounding \({\approx}0.97\) from a typed, auditable object---not a human-simplified view (sufficiency chat is not a substitute).
 (ii)~Hard policy binds on thin days (Compiled/HPO \(1.0\)); soft MAY does not (\({\approx}0.68\)).
 (iii)~Scoped production opens \({\approx}61\%\) OOS days; LLMs obey the valve; open-day CE \(\neq\) alpha; no-LLM tilts stay nonempty.
-Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume.
+Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, the proposed data end supplies the observation stage those systems assume.
 
 \paragraph{Deployment path}
 Level~1: observation API (PIT world bundles; this paper).
@@ -807,7 +807,7 @@ We do not claim to solve crypto prediction or open-day LLM alpha; seeing a typed
 \paragraph{Design and scope}
 World bundle \(\neq\) feature dump; previous-close PIT; dual WMI scope; HPO separates hard prompt from hard boolean.
 Feature engineering outputs vectors; we output typed worlds with clocks, missingness, and a machine-readable valve.
-Prompts, cut, and seeds are frozen; an anonymized harness ships on acceptance.
+Prompts, cut, and seeds are frozen and specified in Section~\ref{sec:system}.
 
 \balance
 \section{Conclusion}
