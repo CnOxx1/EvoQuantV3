@@ -107,10 +107,10 @@ With a disclosed but ungated world, they read fields yet disagree on whether to 
 The observation layer must therefore (i)~make the market \emph{legible} and (ii)~attach an enforceable quality valve.
 
 \paragraph{What we build.}
-An anonymized \emph{world-model runtime} emits a JSON world bundle for GPT~/DeepSeek~/GLM~/Gemini-class models.
+An anonymized \emph{world-model runtime} (Section~\ref{sec:system}) turns multi-band market evidence into a JSON \emph{world bundle} that GPT~/DeepSeek~/GLM~/Gemini-class models can read.
 ``World model'' here means observation compiler + quality-gated runtime (Section~\ref{sec:method}), not next-state dynamics.
-The bundle is \textbf{complete} (missingness disclosed), \textbf{honest} (stale or role-incoherent evidence gated), and \textbf{auditable} (actions bound to evidence IDs).
-WMI/ACWMI and \texttt{should\_ai\_abstain} make thin worlds machine-readable.
+The bundle is \textbf{complete} (missingness disclosed), \textbf{honest} (stale or role-incoherent evidence gated), and \textbf{auditable} (actions bound to evidence IDs)---that package is the market view.
+WMI/ACWMI and \texttt{should\_ai\_abstain} attach a machine-readable valve when the view is too thin to act.
 
 \paragraph{How we evaluate.}
 \textbf{RQ1 (primary---seeing):} Does the Compiled bundle make ready~/missing~/tilt answers verifiable against PIT ground truth?
@@ -178,51 +178,52 @@ If non-abstain actions exceed a world-dependent cost, the Bayes action is abstai
 We do not learn \(p(s_{t+1}\mid s_t,a_t)\). We deliver a state compiler with a quality-gated refuse interface.
 \end{remark}
 
-\section{Runtime}
+\section{Runtime: From Market Evidence to a World Bundle}
 \label{sec:system}
 
-Figure~\ref{fig:pipeline} and Table~\ref{tab:modules} summarize the anonymized prototype (paths omitted for double-blind review).
-Five stages map raw evidence to a consumable bundle; frozen-prompt consumers call an OpenAI-compatible adapter at temperature \(0\).
+The system object is an observation layer whose job is to make the market \emph{visible} to public LLMs.
+Figure~\ref{fig:pipeline} and Table~\ref{tab:modules} summarize the anonymized prototype (paths omitted for double-blind review): vintage collectors write multi-band history; BandPIT compiles a PIT world state; a service emits a JSON \emph{world bundle}; frozen-prompt consumers read that bundle at temperature \(0\).
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.92\textwidth]{fig_runtime_architecture.pdf}
   \Description{Layered observation runtime from collectors to world-bundle consumers.}
-  \caption{Observation-layer runtime: collectors and stores $\rightarrow$ BandPIT compilation $\rightarrow$ world-bundle service $\rightarrow$ Compiled / Ungated / Raw / Blind consumers.}
+  \caption{See-first pipeline: raw multi-band evidence $\rightarrow$ BandPIT compilation $\rightarrow$ world bundle (what the LLM sees) $\rightarrow$ Compiled / Ungated / Raw / Blind consumers.}
   \label{fig:pipeline}
 \end{figure*}
 
 \begin{table}[t]
-  \caption{Module map (systems view).}
+  \caption{Modules that build the view (not a full product inventory).}
   \label{tab:modules}
   \small
   \begin{tabular}{p{0.28\linewidth}p{0.62\linewidth}}
     \toprule
-    Module & Role \\
+    Module & Role in seeing the market \\
     \midrule
-    Collectors / stores & Vintage multi-band history \\
-    BandPIT compiler & Previous-close \(\Pi_t\), WMI/ACWMI \\
-    Bundle builder & Complete / honest / auditable JSON \\
-    LLM adapter & Frozen prompts; temp.\ \(0\) \\
-    Eval harness & Four-arm sampling and tables \\
+    Collectors / stores & Ingest timestamped / vintaged band history \\
+    BandPIT compiler & Align clocks; grade ready/stale/missing; \(\Pi_t\) \\
+    Quality indices & \(B,U,H\rightarrow\mathrm{WMI}\); abstain flag \\
+    Bundle builder & Emit complete / honest / auditable JSON \\
+    Consumer harness & Four-arm LLM protocol; temp.\ \(0\) \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{Data flow.}
-Table~\ref{tab:dataflow} traces the \emph{evaluation} archive used in this paper: three public bands with non-empty coverage.
-The runtime schema also admits news, on-chain, options, and tokenomics bands; they are missing throughout this panel and therefore do not enter WMI or tilts here.
-\emph{Inputs:} exchange klines/funding/OI; vintaged macro risk indices; aggregate stablecoin circulation---each with observation timestamps.
-\emph{Processing:} BandPIT keeps the latest observation with timestamp \(\le(t{-}1)\,23{:}59\), grades fresh/stale/missing, builds WMI/ACWMI, and derives PIT-safe tilts.
-\emph{Outputs:} a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days; 2025-07 to 2026-08) and per-day world bundles.
+\paragraph{What enters the view.}
+This paper evaluates three bands that populate the consumer object (Table~\ref{tab:dataflow}).
+\emph{Exchange:} OHLCV klines, funding, open interest.
+\emph{Macro:} equity-volatility and dollar indices with \texttt{available\_at} vintages.
+\emph{Alternative:} aggregate stablecoin circulation.
+Every row carries an observation timestamp so compilation can enforce a previous-close information set.
+The schema is band-extensible; the experiments below score the view built from these three feeds.
 
 \begin{table}[t]
-  \caption{Archive bands: fetched vs.\ emitted in the world bundle.}
+  \caption{Input evidence vs.\ fields emitted in the world bundle.}
   \label{tab:dataflow}
   \small
   \begin{tabular}{p{0.16\linewidth}p{0.36\linewidth}p{0.36\linewidth}}
     \toprule
-    Band & Fetched & Emitted \\
+    Band & Fetched (raw) & Emitted (bundle) \\
     \midrule
     exchange & OHLCV, funding, OI & \(\mathrm{mom5}\); status/age \\
     macro & equity-vol / dollar indices & \(\mathrm{macro\_tilt}\); status/age \\
@@ -232,21 +233,29 @@ The runtime schema also admits news, on-chain, options, and tokenomics bands; th
   \end{tabular}
 \end{table}
 
-\paragraph{PIT clock and bundle schema.}
-Decision information for calendar day \(t\) is reconstructed at \((t{-}1)\,23{:}59\); payoff is same-day close-to-close return.
-Figure~\ref{fig:ready}: macro and alternative stay ready; exchange readiness drops later and defines the thick/thin contrast.
-Table~\ref{tab:schema} lists field groups; Listing~\ref{lst:bundle} shows a Compiled example on an exchange-gap day.
+\paragraph{How compilation builds the view.}
+For calendar day \(t\), BandPIT reconstructs the decision information set at \((t{-}1)\,23{:}59\) (payoff is same-day close-to-close return).
+Each band is graded ready / limited / missing against age thresholds; missingness is disclosed rather than imputed.
+Breadth, stability, and honesty aggregate into \(\mathrm{WMI}_t=B_t U_t H_t\) (ACWMI adds a regime weight).
+PIT-safe tilts use only in-clock observations: five-day macro changes, a seven-day stablecoin-flow slope, and \(\mathrm{mom5}\).
+The valve sets \texttt{should\_ai\_abstain} when \(\mathrm{WMI}<0.2\) and exposes \texttt{thin\_world}---a switch on the view, not a substitute for seeing.
+Figure~\ref{fig:ready}: macro and alternative stay ready; exchange readiness varies and defines thick/thin days.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.98\linewidth]{fig_band_readiness.pdf}
   \Description{Band readiness for exchange, macro, and alternative over time.}
-  \caption{PIT readiness for the three-band archive.}
+  \caption{PIT readiness: what is visible in the archive over time.}
   \label{fig:ready}
 \end{figure}
 
+\paragraph{What the LLM sees: the world bundle.}
+The consumer object is a JSON world bundle (Table~\ref{tab:schema}, Listing~\ref{lst:bundle}): timing, completeness, quality (including the abstain flag), content tilts, and evidence IDs that bind rationales to disclosed bands.
+That package is the market view we ask public LLMs to read.
+Outputs used in experiments are a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days; 2025-07 to 2026-08) and the per-day bundles fed to the four arms.
+
 \begin{table}[t]
-  \caption{World-bundle field groups (what the LLM sees).}
+  \caption{World-bundle field groups (the market view).}
   \label{tab:schema}
   \small
   \begin{tabular}{ll}
@@ -256,13 +265,13 @@ Table~\ref{tab:schema} lists field groups; Listing~\ref{lst:bundle} shows a Comp
     Timing & \texttt{decision\_asof}, previous-close protocol \\
     Completeness & ready/limited/missing counts, band status \\
     Quality & WMI, ACWMI, abstain flag, \texttt{thin\_world} \\
-    Content & \(\mathrm{macro\_tilt}\), \(\mathrm{alt\_tilt}\) \\
+    Content & \(\mathrm{macro\_tilt}\), \(\mathrm{alt\_tilt}\), \(\mathrm{mom5}\) \\
     Audit & \texttt{evidence\_ids} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\begin{lstlisting}[caption={Compiled world bundle (compact OOS example).},label={lst:bundle}]
+\begin{lstlisting}[caption={World bundle example (what Compiled sees).},label={lst:bundle}]
 {"date":"2026-05-11","asset":"ADA",
  "decision_asof":"2026-05-10T23:59:00",
  "completeness":{"n_ready":2,"n_missing":1},
@@ -273,12 +282,12 @@ Table~\ref{tab:schema} lists field groups; Listing~\ref{lst:bundle} shows a Comp
    "band:exchange:missing","band:macro:ready"]}}
 \end{lstlisting}
 
-\paragraph{Four arms.}
+\paragraph{How consumers use the view.}
 \textbf{Compiled:} full bundle + hard abstain when the quality flag is true (prompt also forbids acting when the world is judged thin).
 \textbf{Ungated:} same content and numeric WMI; soft ``you may abstain.''
-\textbf{Raw:} \texttt{mom5} only---common thin wiring, not a strongest-agent baseline.
+\textbf{Raw:} \(\mathrm{mom5}\) only---a thin fragment without the compiled view.
 \textbf{Blind:} no feed.
-Refuse when \(\mathrm{WMI}<0.2\). On this scarce panel max WMI \({\approx}0.093\), every OOS day is thin under the production gate---a valve stress test, not proof the layer never opens.
+On this panel \(\max\mathrm{WMI}\approx 0.093\), so the production gate marks every OOS day thin and Compiled abstains throughout---stressing the valve while RQ1 still scores whether the disclosed view is legible.
 
 \paragraph{Frozen prompts (gating only).}
 Both Compiled and Ungated consume the same bundle content; only enforcement differs (Listings~\ref{lst:prompt-c}--\ref{lst:prompt-u}).
