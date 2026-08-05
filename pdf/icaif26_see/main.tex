@@ -134,7 +134,7 @@ Four arms: Compiled, Ungated (same content, no flag), Raw (\texttt{mom5}), Blind
 \textbf{RQ3 (secondary):} Can a transparent no-LLM rule hand off from the bundle (production refuse vs.\ nonempty tilts)?
 
 \paragraph{Contributions.}
-(1)~Data-end semantics: epistemic observations, lag reconstruction, \(\Pi_t\), and seeing vs.\ gating.
+(1)~Data-end semantics: epistemic observations, compilation \(\Pi_t\), world-quality index, and seeing vs.\ gating with a lag--missingness bound.
 (2)~Anonymized PIT compile path: collectors\(\to\)BandPIT\(\to\)service surface\(\to\)world bundles; frozen four-arm harness.
 (3)~Live + handoff validation: grounding \({\approx}0.97\) with sufficiency dissociation; thin-abstain \(1.0\) at \(100\)-day and full-OOS scale; no-LLM handoff (production refuse vs.\ nonempty tilts, \(\Delta\mathrm{CE}{=}0.334\); LOBO content share \(1.0\)).
 Estimand: data-end legibility, valve reliability, and handoff usability.
@@ -153,69 +153,84 @@ We study that prior stage: compile a world bundle, measure whether models can \e
 Our estimand is therefore orthogonal to memory routers and debate judges: without a typed PIT world, those stacks consume whatever fragment the tool dump provides.
 
 \paragraph{Selective prediction and PIT.}
-Abstention can be optimal under noise~\cite{elyaniv2010,geifman2017}; we attach refusal to world quality via a runtime field, not classifier confidence alone.
-Macro vintages~\cite{croushore2001} and crypto microstructure~\cite{makarov2020,liu2022} motivate multi-band compilation with disclosed missingness.
+Abstention can be optimal under noise~\cite{elyaniv2010,geifman2017}; we attach refusal to \emph{world} quality \(q(W_t)\) via a runtime field, not classifier confidence alone (Prop.~\ref{prop:abstain}).
+Macro vintages~\cite{croushore2001} and crypto microstructure~\cite{makarov2020,liu2022} motivate multi-band compilation with disclosed missingness (Prop.~\ref{prop:recon}).
 Bootstrap discipline for the content probe follows~\cite{white2000,politis1994,harvey2016}.
 
-\section{Observation Layer}
+\section{Observation-Layer Semantics}
 \label{sec:method}
 
+This section states the data-end theory as \emph{interface semantics}: what counts as an observation, how compilation yields a world, and when quality forces refusal.
+It is not a pricing theorem and not a generative dynamics model.
+Systems realization is Section~\ref{sec:system}; empirical tests are Section~\ref{sec:exp}.
+
 \begin{definition}[Epistemic observation]
-\(O_{j,t}=(x,\tau,q,g,r)\):
+\(O_{j,t}=(x_{j,t},\tau_{j,t},q_{j,t},g_{j,t},r_{j,t})\):
 value, latest-available time, quality, main-view gate, semantic role.
 Omitting \((\tau,q,g,r)\) yields a feature dump, not a world observation.
 \end{definition}
 
-\begin{definition}[World bundle]
-\(W_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t)\) with scalar quality \(q(W_t)\) (WMI/ACWMI);
-\(\mathcal{F}^{\mathrm{AI}}_t=\sigma(W_t)\).
-\(\Pi_t\) aligns clocks, gates honesty/missingness, and emits consumer JSON---the handoff to decision.
+\begin{definition}[Compilation]
+\(\Pi_t=B_t\circ M_t\circ A_t\): align clocks, apply honesty/missingness gates, assemble band views into a consumer object.
 \end{definition}
 
-\paragraph{Completeness, honesty, quality.}
+\begin{definition}[World bundle]
+\(W_t=\Pi_t(\mathcal{F}^{\mathrm{raw}}_t)\) with scalar quality \(q(W_t)\);
+\(\mathcal{F}^{\mathrm{AI}}_t=\sigma(W_t)\).
+\(W_t\) is the handoff object to decision.
+\end{definition}
+
+\begin{definition}[World-quality index]
 Ready/limited/missing counts disclose coverage.
-\(\mathrm{WMI}_t=B_t U_t H_t\) aggregates breadth, stability, and honesty; ACWMI adds regime weight.
-Compiled exposes \texttt{should\_ai\_abstain} and \texttt{thin\_world}.
+\(\mathrm{WMI}_t=B_t U_t H_t\) aggregates breadth, stability, and honesty in \([0,1]\); ACWMI multiplies a regime weight.
+The Compiled interface exposes \texttt{should\_ai\_abstain}=\(\mathbf{1}\{q(W_t)<q^\star\}\) and \texttt{thin\_world} (production \(q^\star=0.2\) for WMI).
+\end{definition}
 
 \paragraph{Seeing vs.\ gating.}
-The bundle is what the model \emph{sees}; the hard flag \emph{blocks} action when \(q(W_t)\) is too low.
+The bundle is what the model \emph{sees}; the hard flag \emph{blocks} action when \(q(W_t)<q^\star\).
 Tilts without a gate are a dump; a gate without a readable bundle is only a switch.
+The two interfaces are separable: Ungated keeps \(W_t\) and numeric \(q(W_t)\) but removes the hard boolean.
 
 \begin{assumption}[Bounded lag and increments]
 Band \(j\) has max observation lag \(\Delta_j\); latent increments satisfy \(\|S_u-S_{u-1}\|\le\bar\delta\).
 \end{assumption}
 
-\begin{proposition}[Lag reconstruction bound]
+\begin{proposition}[Lag--missingness reconstruction bound]
 \label{prop:recon}
-Under Assumption~1,
-\(\|\widetilde S_t-S_t\|\le C_{\mathrm{del}}\bar\delta+C_{\mathrm{noi}}\varepsilon_t+C_{\mathrm{miss}}m_t\).
-Compilation cannot erase delay; it can refuse to pretend the bound is zero.
+Under Assumption~1, any compiler that uses only in-clock observations satisfies
+\[
+\|\widetilde S_t-S_t\|
+\;\le\;
+C_{\mathrm{del}}\bar\delta\sum_j\Delta_j
++C_{\mathrm{noi}}\varepsilon_t
++C_{\mathrm{miss}}m_t,
+\]
+where \(m_t\) is disclosed missing mass and \(\varepsilon_t\) collects measurement noise.
+Operationally, BandPIT maps age to ready/limited/missing so \(m_t\) and lag terms are readable in \(W_t\); compilation cannot erase delay, but it can refuse to pretend the bound is zero.
 \end{proposition}
-
-\paragraph{Intuition.}
-Agents that concatenate tool dumps silently absorb delay and missingness into the feature vector.
-Prop.~\ref{prop:recon} makes those terms explicit: a thicker raw payload can worsen reconstruction if honesty collapses.
-The data end therefore grades readiness and discloses gaps instead of imputing a false full world.
 
 \begin{proposition}[Compilation \(\neq\) dump]
 \label{prop:compile}
-Enlarging raw span without \(\Pi_t\) need not enlarge usable \(\mathcal{F}^{\mathrm{AI}}\): ungated stale evidence can raise volume while lowering honesty.
+Enlarging raw span without \(\Pi_t\) need not enlarge usable \(\mathcal{F}^{\mathrm{AI}}\): ungated stale evidence can raise volume while lowering honesty, tightening rather than loosening Prop.~\ref{prop:recon}.
 \end{proposition}
 
 \begin{proposition}[World-conditional abstention]
 \label{prop:abstain}
-If non-abstain actions exceed a world-dependent cost, the Bayes action is abstain; with costs decreasing in WMI, abstention forms a lower set in world quality~\cite{elyaniv2010}.
+Let \(c_{\mathrm{act}}(W_t)\) be the expected cost of non-abstain actions and \(c_{\mathrm{abs}}\) the abstain cost.
+If \(c_{\mathrm{act}}(W_t)>c_{\mathrm{abs}}\) and \(c_{\mathrm{act}}\) is nonincreasing in \(q(W_t)\), the Bayes action is abstain on a lower set \(\{W:q(W)<q^\star\}\)~\cite{elyaniv2010}.
+A hard runtime flag implements that set; soft text does not.
 \end{proposition}
 
 \begin{proposition}[LOBO content vs.\ gating]
 \label{prop:lobo}
-Deleting band \(j\) changes value through a content channel and a gating channel.
-Empirically we report content share under an ungated rule so the probe speaks to nonempty fields.
+Deleting band \(j\) changes a downstream value functional through a content channel and a gating channel.
+Under an ungated rule the gating channel is shut, so the value gap identifies nonempty fields.
 \end{proposition}
 
-\paragraph{Implication for the runtime.}
-Props.~\ref{prop:compile}--\ref{prop:abstain} say the data end must export gates and abstain flags, not tilts alone: compilation without quality disclosure is still a feature dump; disclosure without a hard gate still lets thin worlds drive action.
-Prop.~\ref{prop:lobo} motivates the economic check in RQ3: if deleting a durable band does not change the content rule, the bundle is empty of content.
+\paragraph{Theory \(\rightarrow\) protocol.}
+Prop.~\ref{prop:recon}--\ref{prop:compile} \(\Rightarrow\) RQ1 (can the consumer recover disclosed readiness/tilts?).
+Prop.~\ref{prop:abstain} \(\Rightarrow\) RQ2 (hard flag vs.\ soft judgment on the same \(W_t\)).
+Prop.~\ref{prop:lobo} \(\Rightarrow\) RQ3 (no-LLM handoff / LOBO content share).
 
 \begin{remark}[Not a generative WM]
 We do not learn \(p(s_{t+1}\mid s_t,a_t)\). We deliver a state compiler with a quality-gated refuse interface---the data end of the stack.
@@ -687,23 +702,22 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
   \label{fig:lobo}
 \end{figure}
 
-\subsection{Discussion}
+\section{Discussion}
+\label{sec:disc}
+
 \paragraph{What carries the paper.}
-(i)~The data end is legible: grounding \({\approx}0.97\), with sufficiency chat a poor substitute (RQ1).
-(ii)~Thin views must not drive action: soft text fails at \(100\)-day and full-OOS scale; Blind refuses with no feed; Raw acts on fragments and loses; the hard valve works (RQ2).
-(iii)~A no-LLM handoff shows production refuse vs.\ nonempty content on the same bundle (RQ3); LOBO content share \(1.0\).
+(i)~The data end is legible: grounding \({\approx}0.97\), with sufficiency chat a poor substitute (RQ1 / Props.~\ref{prop:recon}--\ref{prop:compile}).
+(ii)~Thin views must not drive action: soft text fails at \(100\)-day and full-OOS scale; Blind refuses with no feed; Raw acts on fragments and loses; the hard valve works (RQ2 / Prop.~\ref{prop:abstain}).
+(iii)~A no-LLM handoff shows production refuse vs.\ nonempty content on the same bundle (RQ3 / Prop.~\ref{prop:lobo}); LOBO content share \(1.0\).
 Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume.
 
-\paragraph{Why grounding first.}
-Trading PnL confounds observation quality with policy skill.
-Grounding asks whether the consumer can audit ready/missing/signed state; Raw cannot, Compiled can.
-The valve then asks whether soft judgment stops action on a thin disclosed world; empirically, no---at either sample size.
-That ordering matches the stack: a decision engine that cannot see, or that acts on thin support, is not rescued by better execution.
+\paragraph{Architecture.}
+Semantics (Section~\ref{sec:method}) define the interfaces; Runtime (Section~\ref{sec:system}) implements \(\Pi_t\) and the service handoff; Experiments (Section~\ref{sec:exp}) test seeing, gating, and nonempty fields in that order.
+Trading PnL is intentionally secondary: it confounds observation quality with policy skill.
 
 \paragraph{Design.}
 World bundle not feature dump; previous-close PIT with explicit freshness; four arms separate seeing+gating, seeing without gating, thin wiring, and no feed.
-The evaluation object is the three-band bundle in Table~\ref{tab:dataflow}; WMI is computed over the full schema so missingness stays visible.
-Service-layer health and bundle reads make the valve and the view callable by any downstream policy without re-ingesting collectors.
+Service-layer health and bundle reads make the valve and the view callable by any downstream policy.
 
 \paragraph{Reproducibility.}
 Paper-lab smoke checks BandPIT/WMI/ACWMI wiring; PIT rebuild and the frozen four-arm harness regenerate the panel and live transcripts used here.
