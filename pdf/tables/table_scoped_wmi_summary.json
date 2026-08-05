@@ -1,0 +1,15 @@
+{
+  "band_scope_default": "eval_archive",
+  "eval_archive_bands": [
+    "exchange",
+    "macro",
+    "alternative"
+  ],
+  "wmi_abstain_threshold": 0.2,
+  "full_schema_wmi_max": 0.0929,
+  "full_schema_open_share_at_0.2": 0.0,
+  "scoped_wmi_max": 1.0,
+  "scoped_open_share_at_0.2": 0.612,
+  "scoped_open_equiv_band_thick": true,
+  "interpretation": "Scoped WMI measures quality of the declared consumer archive; full-schema WMI never opens because empty non-archive bands drag B/U."
+}

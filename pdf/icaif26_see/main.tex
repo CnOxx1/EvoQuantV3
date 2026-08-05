@@ -58,8 +58,7 @@
 We build that layer as an anonymized observation runtime: multi-band evidence \(\to\) BandPIT/WMI \(\to\) a point-in-time (PIT) \emph{world bundle}, with hard refusal when support is thin.
 \textbf{Evidence.} Primary---seeing: grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ \({\lesssim}0.23\) under Raw, while sufficiency chat alone is unreliable (Compiled mean \(0.60\)).
 Secondary---valve: Compiled thin-abstain is \(1.0\) (100-day and full OOS \(n{=}2000\)) while Ungated soft judgment is only \({\approx}0.68\) / \({\approx}0.56\); Raw over-trades.
-Secondary---handoff: vintaged tilts beat momentum under a no-LLM rule (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\); LOBO content share \(1.0\)).
-On this panel \(\max\mathrm{WMI}\approx 0.093{<}0.2\), so production Compiled never opens---a valve stress test.
+Secondary---handoff: scoping WMI to the declared archive opens the production gate on \({\approx}61\%\) OOS days; a no-LLM tilt rule then acts (Sharpe \(0.77\), CE \({+}0.25\)) while full-schema WMI stays capped (\(\max{\approx}0.093\)).
 \textbf{Claim.} Build the quant data end first: compile so models can see; refuse when they must not act.
 \end{abstract}
 
@@ -136,7 +135,7 @@ Four arms: Compiled, Ungated (same content, no flag), Raw (\texttt{mom5}), Blind
 \paragraph{Contributions.}
 (1)~Data-end semantics: epistemic observations, compilation \(\Pi_t\), world-quality index, and seeing vs.\ gating with a lag--missingness bound.
 (2)~Anonymized PIT compile path: collectors\(\to\)BandPIT\(\to\)service surface\(\to\)world bundles; frozen four-arm harness.
-(3)~Live + handoff validation: grounding \({\approx}0.97\) with sufficiency dissociation; thin-abstain \(1.0\) at \(100\)-day and full-OOS scale; no-LLM handoff (production refuse vs.\ nonempty tilts, \(\Delta\mathrm{CE}{=}0.334\); LOBO content share \(1.0\)).
+(3)~Live + handoff validation: grounding \({\approx}0.97\) with sufficiency dissociation; thin-abstain \(1.0\) under full-schema stress; scoped-archive Compiled-open handoff (open share \({\approx}0.61\), Sharpe \(0.77\)) plus ungated tilt contrast (\(\Delta\mathrm{CE}{=}0.334\); LOBO content share \(1.0\)).
 Estimand: data-end legibility, valve reliability, and handoff usability.
 
 \section{Related Work}
@@ -183,7 +182,8 @@ Omitting \((\tau,q,g,r)\) yields a feature dump, not a world observation.
 \begin{definition}[World-quality index]
 Ready/limited/missing counts disclose coverage.
 \(\mathrm{WMI}_t=B_t U_t H_t\) aggregates breadth, stability, and honesty in \([0,1]\); ACWMI multiplies a regime weight.
-The Compiled interface exposes \texttt{should\_ai\_abstain}=\(\mathbf{1}\{q(W_t)<q^\star\}\) and \texttt{thin\_world} (production \(q^\star=0.2\) for WMI).
+Band scope selects the support of \((B,U,H)\): full schema vs.\ the declared consumer archive.
+The Compiled interface exposes \texttt{should\_ai\_abstain}=\(\mathbf{1}\{q(W_t)<q^\star\}\) (and, under archive scope, incompleteness) with \texttt{thin\_world} (production \(q^\star=0.2\) for WMI).
 \end{definition}
 
 \paragraph{Seeing vs.\ gating.}
@@ -280,7 +280,8 @@ Paths and product names are omitted for double-blind review.
 
 \subsection{Evaluation archive}
 The runtime schema is band-extensible; this study evaluates the three-band consumer object in Table~\ref{tab:dataflow} on a PIT panel of \({\approx}3990\) asset-days (2025-07 to 2026-08): exchange ready share \({\approx}0.80\), macro \(1.0\), alternative \(1.0\).
-WMI is computed over the full schema, so \(\max\mathrm{WMI}\approx 0.093\) even on \(3/3\)-ready days.
+Full-schema WMI scores permanently empty non-archive slots and caps at \(\max{\approx}0.093\); the production valve therefore never opens under that scoring.
+Scoped WMI (\texttt{WORLD\_MODEL\_BAND\_SCOPE=eval\_archive}) renormalizes \(B,U,H\) to the declared bands \(\{\mathrm{exchange},\mathrm{macro},\mathrm{alternative}\}\) and opens only when the archive is complete and \(\mathrm{WMI}\ge 0.2\).
 
 \begin{table}[t]
   \caption{Input evidence vs.\ fields emitted in the world bundle (live archive).}
@@ -304,10 +305,10 @@ Each band is graded ready~/limited~/missing against daily-scale age thresholds (
 Missingness is disclosed rather than imputed (Prop.~\ref{prop:recon}).
 Breadth, stability, and honesty aggregate into \(\mathrm{WMI}_t=B_t U_t H_t\) (ACWMI adds regime weight).
 PIT-safe tilts use only in-clock observations: five-day macro changes, a seven-day stablecoin-flow slope, and \(\mathrm{mom5}\).
-The valve sets \texttt{should\_ai\_abstain} when \(\mathrm{WMI}<0.2\) and exposes \texttt{thin\_world}.
+The valve sets \texttt{should\_ai\_abstain} when the scoped archive is incomplete or \(\mathrm{WMI}<0.2\), and exposes \texttt{thin\_world}.
 Figure~\ref{fig:ready}: macro and alternative stay ready; exchange readiness varies and defines thick/thin days.
-Figure~\ref{fig:wmi}: WMI stays below the production gate throughout; ACWMI can look healthier under regime weight, so the runtime exports both and lets the configured index mode drive abstain.
-Table~\ref{tab:wmi}: production gate \(0.2\) never opens on this panel; \(\mathrm{WMI}\ge 0.05\) selects the band-thick subset (\({\approx}61\%\) OOS).
+Figure~\ref{fig:wmi}: full-schema WMI stays under \(0.2\); ACWMI can look healthier under regime weight, so the runtime exports both indices and the configured band scope.
+Table~\ref{tab:wmi}: scoped production gate opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) archive-ready); full-schema scoring remains a closed stress baseline.
 
 \begin{table}[t]
   \caption{BandPIT freshness thresholds (seconds $\rightarrow$ days).}
@@ -339,28 +340,28 @@ Table~\ref{tab:wmi}: production gate \(0.2\) never opens on this panel; \(\mathr
   \centering
   \includegraphics[width=0.98\linewidth]{fig12_wmi_acwmi_paths.pdf}
   \Description{WMI and ACWMI paths over the evaluation panel.}
-  \caption{World-quality paths: WMI stays under the $0.2$ production gate; ACWMI is regime-weighted.}
+  \caption{World-quality paths: full-schema WMI stays under $0.2$; ACWMI is regime-weighted.}
   \label{fig:wmi}
 \end{figure}
 
 \begin{table}[t]
-  \caption{WMI gate vs.\ open share (OOS). Production never opens on this panel.}
+  \caption{WMI gate vs.\ open share (OOS). Scoped archive vs.\ full-schema legacy.}
   \label{tab:wmi}
   \small
   \begin{tabular}{lrl}
     \toprule
     Gate & Open share & Note \\
     \midrule
-    \(0.2\) (production) & \(0.00\) & max WMI \({\approx}0.093\) \\
-    \(0.05\) (counterfactual) & \(0.61\) & \(\equiv\) band-thick \\
-    \(0.01\) & \(1.00\) & near-floor open \\
+    \(0.2\) scoped archive & \(0.61\) & complete \(\wedge\) WMI\(\ge 0.2\) \\
+    \(0.2\) full-schema legacy & \(0.00\) & max WMI \({\approx}0.093\) \\
+    \(0.05\) WMI-only (scoped) & \(1.00\) & no completeness \(\wedge\) \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \subsection{World bundle (what the LLM sees)}
 The consumer object is a JSON world bundle (Table~\ref{tab:schema}): timing, completeness, honesty, quality (including the abstain flag), content tilts, and \texttt{evidence\_ids}.
-Listing~\ref{lst:bundle} shows an exchange-gap day; Listing~\ref{lst:bundle-thick} shows a \(3/3\)-ready day that still carries \(\mathrm{WMI}\approx 0.093\) and \texttt{should\_ai\_abstain=true}---the bundle discloses quality rather than inventing coverage.
+Listing~\ref{lst:bundle} shows an exchange-gap day (scoped valve closed); Listing~\ref{lst:bundle-thick} shows a \(3/3\)-ready day where scoped WMI clears \(0.2\) and \texttt{should\_ai\_abstain=false}, while full-schema WMI remains disclosed as a ceiling audit.
 
 \begin{table}[t]
   \caption{World-bundle field groups (the market view).}
@@ -380,25 +381,27 @@ Listing~\ref{lst:bundle} shows an exchange-gap day; Listing~\ref{lst:bundle-thic
   \end{tabular}
 \end{table}
 
-\begin{lstlisting}[caption={Exchange-gap bundle (Compiled).},label={lst:bundle}]
+\begin{lstlisting}[caption={Exchange-gap bundle (Compiled; scoped closed).},label={lst:bundle}]
 {"date":"2026-05-11","asset":"ADA",
  "decision_asof":"2026-05-10T23:59:00",
  "completeness":{"n_ready":2,"n_missing":1},
- "world_model_index":{"wmi":0.015,
-   "should_ai_abstain":true,"thin_world":true},
- "macro_tilt":1.0,"alt_tilt":-1.0,
- "audit":{"evidence_ids":[
-   "band:exchange:missing","band:macro:ready"]}}
+ "world_model_index":{"band_scope":"eval_archive",
+   "wmi":0.14,"archive_complete":false,
+   "should_ai_abstain":true,"thin_world":true,
+   "full_schema_wmi":0.015},
+ "macro_tilt":1.0,"alt_tilt":-1.0}
 \end{lstlisting}
 
-\begin{lstlisting}[caption={$3/3$-ready day still thin under schema ceiling.},label={lst:bundle-thick}]
+\begin{lstlisting}[caption={$3/3$-ready day: scoped valve opens.},label={lst:bundle-thick}]
 {"date":"2026-01-16","asset":"ADA",
  "completeness":{"n_ready":3,"n_missing":0},
- "honesty":{"H":0.69,"U":0.38,"B_hier":0.35},
- "world_model_index":{"wmi":0.093,"acwmi":0.45,
-   "should_ai_abstain":true,"thin_world":true},
+ "world_model_index":{"band_scope":"eval_archive",
+   "wmi":1.0,"archive_complete":true,
+   "should_ai_abstain":false,"thin_world":false,
+   "full_schema_wmi":0.093},
  "band_status":{"exchange":"ready","macro":"ready",
-   "alternative":"ready"}}
+   "alternative":"ready"},
+ "macro_tilt":1.0,"alt_tilt":-1.0}
 \end{lstlisting}
 
 \subsection{Four arms and frozen prompts}
@@ -407,7 +410,8 @@ Actions \(\in\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstai
 \textbf{Ungated:} same content, completeness, and numeric WMI; \emph{no} hard flag; soft prompt asks the model to judge thinness.
 \textbf{Raw:} \(\mathrm{mom5}\) only---thin price wiring for the ladder.
 \textbf{Blind:} ``Today is \(d\). How should I trade \(a\)?'' with no feed.
-\(\max\mathrm{WMI}\approx 0.093\), so production Compiled abstains on every OOS day---a valve stress test under thin support.
+Live LLM arms in Section~\ref{sec:gate} were frozen under full-schema scoring (\(\max\mathrm{WMI}\approx 0.093\)), so that Compiled path abstains on every OOS day---a closed-valve stress test.
+The scoped-archive path (default band scope) opens on band-thick days and is the handoff contract in Section~\ref{sec:econ}.
 Compiled vs.\ Ungated differ only in enforcement (Listings~\ref{lst:prompt-c}--\ref{lst:prompt-u}); prompts, IS/OOS cut, and seeds are frozen.
 On thin Compiled days the evidence-alignment proxy (EAR) is \(1.0\) across vendors: rationales stay bound to disclosed \texttt{evidence\_ids}.
 
@@ -612,25 +616,26 @@ Point-positive open-slice CE and negative mixed-sample act-conditional CE can co
   {\scriptsize $^*$Raw GLM $n{=}398$; Ungated GLM $n{=}932$; others $n{=}1224$. Bootstrap mean CE ${\approx}{+}0.31$ ($B{=}5$, $999$ reps; one-sided $p{\approx}0.21$).}
 \end{table}
 
-\subsection{RQ3 (secondary): Handoff backtest---nonempty fields}
+\subsection{RQ3 (secondary): Handoff backtest---Compiled-open proof}
 \label{sec:econ}
 The data end must be usable by a downstream decision rule without an LLM in the loop.
-Table~\ref{tab:handoff} reads the same compiled panel under four handoff policies: production WMI gate \(0.2\), momentum on \(\mathrm{mom5}\), buy-and-hold, and a thick-ungated content rule on vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\).
-Production refuse is complete (Sharpe/CE \(0\), abstain \(1.0\)); the content handoff is nonempty vs.\ momentum (Table~\ref{tab:econ}, Figure~\ref{fig:econ}): Sharpe \(0.764\) / CE \({+}0.130\) vs.\ \(0.096\) / \(-0.206\); block-bootstrap \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\)).
-A \(2017\)--\(2026\) non-vintaged audit shows no edge; a date-scramble placebo flips CE from \(+0.132\) to \(-0.254\), supporting timed content.
+Full-schema WMI never clears \(0.2\) on this panel, so a legacy production gate alone cannot demonstrate handoff.
+Scoped archive WMI opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready); \texttt{DecisionHandoffService} then abstains when the valve is closed and otherwise acts on disclosed \(\mathrm{macro\_tilt}\)~/~\(\mathrm{alt\_tilt}\).
+Table~\ref{tab:handoff}: scoped Compiled-open handoff Sharpe \(0.772\) / CE \({+}0.253\) (abstain \(0.39\)) vs.\ momentum \(0.101\) / \(-0.075\) and buy-and-hold \(-1.40\); full-schema legacy remains fully closed.
+Table~\ref{tab:econ} and Figure~\ref{fig:econ} keep the ungated content contrast (tilts vs.\ momentum; \(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\); LOBO content share \(1.0\)) as a nonempty-field probe on the same vintaged tilts.
 
 \begin{table}[t]
-  \caption{Handoff backtest on the compiled OOS panel (no LLM). Production gate vs.\ content rule.}
+  \caption{Handoff backtest (no LLM). Scoped Compiled-open vs.\ full-schema closed.}
   \label{tab:handoff}
   \small
   \begin{tabular}{lrrr}
     \toprule
     Policy (reads bundle fields) & Sharpe & CE & Abstain \\
     \midrule
-    WMI gate \(0.2\) (production) & $0.000$ & $0.000$ & $1.00$ \\
-    Momentum (\(\mathrm{mom5}\)) & $0.101$ & $-0.202$ & $0.00$ \\
-    Buy-and-hold & $-1.399$ & $-1.157$ & $0.00$ \\
-    Thick-ungated tilts & $\mathbf{0.767}$ & $\mathbf{+0.132}$ & $0.08$ \\
+    Full-schema gate \(0.2\) & $0.000$ & $0.000$ & $1.00$ \\
+    Scoped gate \(0.2\) + tilts & $\mathbf{0.772}$ & $\mathbf{+0.253}$ & $0.39$ \\
+    Momentum (\(\mathrm{mom5}\)) & $0.101$ & $-0.075$ & $0.00$ \\
+    Buy-and-hold & $-1.399$ & $-0.987$ & $0.00$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -708,7 +713,7 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
 \paragraph{What carries the paper.}
 (i)~The data end is legible: grounding \({\approx}0.97\), with sufficiency chat a poor substitute (RQ1 / Props.~\ref{prop:recon}--\ref{prop:compile}).
 (ii)~Thin views must not drive action: soft text fails at \(100\)-day and full-OOS scale; Blind refuses with no feed; Raw acts on fragments and loses; the hard valve works (RQ2 / Prop.~\ref{prop:abstain}).
-(iii)~A no-LLM handoff shows production refuse vs.\ nonempty content on the same bundle (RQ3 / Prop.~\ref{prop:lobo}); LOBO content share \(1.0\).
+(iii)~Scoped-archive WMI opens the production gate on band-thick days; a no-LLM handoff then acts on disclosed tilts while full-schema scoring stays closed (RQ3 / Prop.~\ref{prop:lobo}); LOBO content share \(1.0\).
 Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume.
 
 \paragraph{Architecture.}
@@ -732,7 +737,7 @@ We evaluate the data end on the PIT archive above; decision and execution sit do
 
 End-to-end crypto quant for public LLMs needs a reliable data end before decision or execution.
 We contribute that observation layer: compile asynchronous evidence into a consumable PIT world bundle, disclose structural missingness, and hard-refuse when the view is too thin.
-Grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; sufficiency chat alone fails; the hard valve abstains \(1.0\) on thin days (including full OOS) where soft judgment does not; vintaged tilts are nonempty (\(\Delta\mathrm{CE}{=}0.334\); LOBO content share \(1.0\)).
+Grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; sufficiency chat alone fails; the hard valve abstains \(1.0\) on thin days where soft judgment does not; scoping WMI to the declared archive opens Compiled handoff on band-thick days (Sharpe \(0.77\)) while full-schema WMI remains a closed ceiling.
 Build the quant data end first: compile so models can see; refuse when they must not act.
 
 \begin{acks}
