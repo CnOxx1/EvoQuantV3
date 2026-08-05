@@ -67,9 +67,9 @@ Epistemic observations \(O_{j,t}=(x,\tau,q,g,r)\) and compilation \(\Pi_t\) yiel
 \textbf{Evidence.} On identical OOS asset-days, four live public LLMs (temperature \(0\)) form a four-arm ranking: Blind refuses; Raw over-trades and loses; Ungated abstains only partially (\({\approx}0.68\)); Compiled with a hard flag abstains on every thin day (\(1.0\)).
 Full-OOS and band-thick splits reproduce the ranking.
 This panel never exceeds the production refuse threshold (\(\max\mathrm{WMI}\approx 0.093{<}0.2\)), so Compiled's full refusal is a scarce-support stress test.
-On the counterfactual open slice (\(\mathrm{WMI}\ge 0.05\); \(n{=}1224\)), live Ungated (same content, no hard flag) acts with mean CE \({\approx}{+}0.29\) across vendors, while a no-LLM content rule also beats momentum (\(\Delta\mathrm{CE}{=}0.315\)).
+On the counterfactual open slice (\(\mathrm{WMI}\ge 0.05\); \(n{=}1224\)), live Ungated (same content, no hard flag) posts mean CE \({\approx}{+}0.29\) across vendors---so open-world content is nonempty under live LLMs---while a no-LLM content rule also beats momentum (\(\Delta\mathrm{CE}{=}0.315\)).
 A grounding workflow recovers ready/missing/tilt answers at mean F1/acc.\ \({\approx}0.97\) (Compiled) vs.\ \({\lesssim}0.23\) (Raw).
-We detail the runtime (collectors, vintage store, BandPIT, bundle schema, LLM adapter) as an ICAIF systems contribution.
+\textbf{Takeaway.} Thin days must refuse; soft text does not enforce that; when the world opens, the compiled fields are usable.
 \end{abstract}
 
 \begin{CCSXML}
@@ -96,7 +96,7 @@ We detail the runtime (collectors, vintage store, BandPIT, bundle schema, LLM ad
 \ccsdesc[300]{Computing methodologies~Machine learning}
 \ccsdesc[300]{Applied computing~Economics}
 
-\keywords{world models, public LLMs, AI agents, cryptocurrency, point-in-time, abstention, trustworthy AI, observation contract, systems}
+\keywords{observation contract, typed abstention, public LLMs, cryptocurrency, point-in-time, trustworthy AI, world models, systems}
 
 \maketitle
 
@@ -107,7 +107,7 @@ We detail the runtime (collectors, vintage store, BandPIT, bundle schema, LLM ad
 Public LLMs fail on crypto \emph{before} strategy: they lack a complete, honest, auditable \emph{market observation interface}.
 Venue fragmentation, derivatives, on-chain flows, news, and macro vintages arrive on incompatible clocks~\cite{makarov2020,liu2022}, while generative world models~\cite{ha2018world,hafner2020dreamer,lecun2022path} and tool-using finance agents~\cite{yao2023react,yu2023finmem,zhang2024finagent} typically \emph{assume} a usable observation stream.
 This paper builds the missing interface---a typed observation contract with a hard refuse flag---not a new trading agent and not a generative simulator.
-In one line: \emph{compile asynchronous evidence into a PIT world bundle; refuse when the world is thin; show that live LLMs obey the hard contract and fail without it.}
+In one line: \emph{compile asynchronous evidence into a PIT world bundle; refuse when the world is thin; show that live LLMs obey the hard contract, fail without it, and find nonempty content when the world opens.}
 
 \paragraph{What we build.}
 We implement the contract as an anonymized market \emph{world-model runtime}: a state compiler from raw multi-band evidence to a PIT-safe bundle for GPT~/DeepSeek~/GLM~/Gemini-class models under a typed refuse boolean.
@@ -123,7 +123,7 @@ Four arms on identical days---Compiled (hard flag), Ungated (same content, no fl
 \paragraph{Contributions.}
 (1)~\textbf{Interface semantics:} epistemic observations, \(\Pi_t\), lag reconstruction, completeness/honesty, WMI/ACWMI abstention, evidence-bound actions---enough to define the contract, not a pricing theorem.
 (2)~\textbf{Runtime:} vintage collectors, BandPIT previous-close clock, quality-tagged bundles, shocks \(O_t\), multi-vendor adapter, frozen Compiled~/Ungated~/Raw~/Blind protocol.
-(3)~\textbf{Live validation:} Blind refuses; Raw over-trades and loses; Ungated \(\approx 0.68\); Compiled thin-abstain \(1.0\) (full OOS too). Grounding \(0.97\) vs.\ Raw \(0.04\)--\(0.23\); secondary content rule shows tilts nonempty.
+(3)~\textbf{Live validation:} Blind refuses; Raw over-trades and loses; Ungated \(\approx 0.68\) on thin mixes but CE \({\approx}{+}0.29\) on the open slice; Compiled thin-abstain \(1.0\) at the production gate. Grounding \(0.97\) vs.\ Raw \(0.04\)--\(0.23\); a secondary content rule confirms nonempty tilts.
 
 \section{Related Work}
 \label{sec:related}
@@ -403,10 +403,11 @@ To check that the \(100\)-day ranking is not a subsample artifact, we checkpoint
 On the same \(100\) asset-days, the no-feed prompt \emph{``Today is \(d\). How should I trade BTC?''} yields abstention on \(100\%\) of days for all four models (CE \(=0\); zero directional actions). Without a feed, the models refuse. The costly failure mode is the middle case: the same model given a Raw fragment starts trading (abstain as low as \(0.04\)) and loses. Compiled matches Blind's refusal on thin days by contract, while still exposing the structured world that RQ2 and RQ3 show is usable.
 
 \paragraph{Band-thick / open-slice days.}
-Archive readiness alone is not a refuse policy. On full-OOS \emph{band-thick} days (all three archive bands ready; \(61\%\) of OOS, \(n{\approx}1224\); identical to \(\mathrm{WMI}\ge 0.05\)), production Compiled still abstains at \(1.0\) because WMI remains below \(0.2\).
-Ungated soft judgment only partially recovers (mean abs.\ \({\approx}0.48\)), but its CE on this open slice is \emph{positive} for every vendor (mean \({\approx}{+}0.29\); Table~\ref{tab:thick})---the closest live probe of open-world behavior.
+Archive readiness alone is not a refuse policy. On full-OOS \emph{band-thick} days (all three archive bands ready; \(61\%\) of OOS, \(n{\approx}1224\); identical to \(\mathrm{WMI}\ge 0.05\)), production Compiled still abstains at \(1.0\) because WMI remains below \(0.2\)---refuse-first at the production gate.
+The same days are our live open-world probe: Ungated keeps the compiled content but drops the hard boolean (exactly the information set a counterfactual open Compiled gate would expose).
+Soft judgment only partially recovers (mean abs.\ \({\approx}0.48\)), yet CE is \emph{positive} for every vendor (mean \({\approx}{+}0.29\); Table~\ref{tab:thick}).
 Raw remains risky in the middle: GPT and Gemini abstain at \(0.0\) with CE \(-0.28\) and \(-0.25\).
-A readiness dashboard would miss this failure mode; the typed contract continues to refuse at the production gate.
+Thus a readiness dashboard would miss the refuse failure mode, while open-slice Ungated shows the compiled fields are economically usable once the world is allowed to open.
 
 \begin{table}[t]
   \caption{Full-OOS band-thick / open slice ($3/3$ ready $\equiv$ $\mathrm{WMI}\ge 0.05$). Production Compiled abstains $1.0$; live Ungated CE is positive; Raw over-acts.}
@@ -432,10 +433,10 @@ Ungated rationales cite disclosed world fields on \(53\)--\(93\%\) of days, so m
 World-honoring offline followers abstain at \(1.0\) on full OOS; momentum-only mocks ignore thin-world flags (thin-abs.\ \(0\)). Offline results are protocol checks; live vendors are the main claim.
 
 \paragraph{When would the contract open?}
-Compiled never trades under the production threshold because \(\max\mathrm{WMI}\approx 0.093{<}0.2\)---the scarce-support stress test.
-The contract is not permanently closed: \(\mathrm{WMI}\ge 0.05\) marks \(n{=}1224\) open days, and on that slice ACWMI already clears \(0.25\), so a WMI gate of \(0.05\) would set \texttt{should\_ai\_abstain=false} everywhere.
-Table~\ref{tab:thick} already reports live Ungated on those days (positive CE); the secondary no-LLM content rule also beats momentum there (\(\Delta\mathrm{CE}{=}0.315\); Table~\ref{tab:dense}).
-Production Compiled remains refuse-first at \(0.2\); a Compiled-with-open-boolean sweep is harness-supported for denser vintages.
+Compiled never trades under the production threshold because \(\max\mathrm{WMI}\approx 0.093{<}0.2\)---by design a scarce-support stress test, not a claim the contract is permanently closed.
+On \(\mathrm{WMI}\ge 0.05\) days ACWMI already clears \(0.25\), so lowering only the WMI gate to \(0.05\) would set \texttt{should\_ai\_abstain=false} on all \(n{=}1224\) open days.
+We do not need a second live Compiled sweep to speak to open-world content: Ungated on that slice \emph{is} the live estimand for ``compiled fields without a force-abstain boolean'' (Table~\ref{tab:thick}), and the no-LLM content rule independently beats momentum there (\(\Delta\mathrm{CE}{=}0.315\); Table~\ref{tab:dense}).
+Production Compiled stays refuse-first at \(0.2\); denser vintages can raise the empirical WMI floor without changing the contract semantics.
 
 \subsection{RQ2: Non-trading cognition---grounding workflow}
 \label{sec:grounding}
@@ -517,11 +518,10 @@ Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\
 
 \subsection{Discussion and threats}
 \paragraph{What the results mean.}
-Thin days must refuse; soft ``consider abstaining'' text does not.
-Compiled's hard gate delivers that under live LLMs (RQ1--RQ2).
-Ungated still acts on most days (\({\approx}0.68\) abstain; GLM \(0.86\) vs.\ Gemini \(0.43\)) and often destroys CE versus cash when it acts.
+Three facts carry the paper. (i)~\emph{Thin days must refuse:} soft ``consider abstaining'' text does not; Compiled's hard gate does, across live vendors (RQ1--RQ2).
+(ii)~\emph{Disclosure without enforcement is unstable on thin mixes:} Ungated abstains only \({\approx}0.68\) (GLM \(0.86\) vs.\ Gemini \(0.43\)) and often destroys CE versus cash when it acts.
+(iii)~\emph{Open days are nonempty:} the same Ungated arm on \(\mathrm{WMI}\ge 0.05\) posts positive CE (Table~\ref{tab:thick}), and RQ3's no-LLM rule agrees.
 Raw and Blind show unstructured or empty context cannot replace typed readiness.
-RQ3 is secondary; open-slice live Ungated (Table~\ref{tab:thick}) already shows nonempty CE when the counterfactual opens, while production Compiled stays refuse-first.
 We claim a typed observation interface---not LLM trading SOTA, not a generative simulator, not a full causal theory of crypto markets.
 
 Relative to FinMem~/FinAgent~\cite{yu2023finmem,zhang2024finagent} and ICAIF retrieval/debate/judge lines~\cite{choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we contribute an observation compiler and refuse interface, not a new memory/search/debate router. Relative to return-prediction LLM studies~\cite{lopez2023chatgpt}, we score refusal and auditability before PnL.
@@ -530,7 +530,12 @@ Relative to FinMem~/FinAgent~\cite{yu2023finmem,zhang2024finagent} and ICAIF ret
 Three choices are deliberate. (i)~Export gates, not only features: completeness, honesty, and \texttt{should\_ai\_abstain} make refusal machine-readable rather than a free-text apology. (ii)~Previous-close PIT over wall-clock streaming: every live decision cites a recomputable \texttt{decision\_asof}, avoiding same-day look-ahead. (iii)~Four arms instead of one Sharpe number: Compiled / Ungated / Raw / Blind separates typed enforcement, soft judgment, thin integrations, and no feed.
 
 \paragraph{Threats to validity.}
-Compiled thin-world abstention is prompt-contract obedience by design---the product interface---not evidence that models spontaneously discover thinness; Ungated is the control that removes the boolean. The archive is scarce (\(\max\mathrm{WMI}\approx 0.093\)), so production Compiled never opens at \(0.2\). Open-slice live evidence uses Ungated on \(\mathrm{WMI}\ge 0.05\) days (Table~\ref{tab:thick}) plus a no-LLM content rule---not a Compiled-with-open-boolean run. Mixed-sample act-conditional Ungated CE is negative for three of four vendors, while the open slice alone is positive. Vendors are flash/mini-class IDs at temperature \(0\); GLM Raw full-OOS is incomplete; denser bands are absent.
+Compiled thin-world abstention is prompt-contract obedience by design---the product interface---not spontaneous thinness discovery; Ungated removes the boolean on purpose.
+The archive is scarce (\(\max\mathrm{WMI}\approx 0.093\)), so production Compiled never opens at \(0.2\); that is the stress test.
+Open-world live evidence is Ungated on \(\mathrm{WMI}\ge 0.05\) (same content, no force-abstain), not a separate Compiled-with-false-flag scrap: when the boolean is false the two arms share the information set, and positive Ungated CE is the conservative content check.
+Mixed-sample act-conditional Ungated CE is negative for three of four vendors, while the open slice alone is positive---regime matters.
+Vendors are flash/mini-class IDs at temperature \(0\); GLM Raw full-OOS is incomplete; denser bands are absent.
+Raw is a common price-only wiring (\texttt{mom5}), not an exhaustive tool-agent baseline.
 
 \paragraph{Scope.}
 We do not claim LLM trading SOTA or generative dynamics. Natural extensions include richer bands and thick-regime live trading once WMI leaves the scarce floor. Camera-ready will restore author identity and release the anonymized harness deferred during review.
@@ -538,7 +543,7 @@ We do not claim LLM trading SOTA or generative dynamics. Natural extensions incl
 \section{Conclusion}
 \label{sec:conc}
 
-Public LLMs need a market they can safely observe before they decide. We contribute a typed observation contract---an anonymized state-compiler runtime with a hard refuse flag---for asynchronous crypto feeds. Live arms make the point concrete: Blind refuses, Raw over-trades and loses, Ungated is vendor-dependent, and Compiled enforces thin-world abstain \(1.0\) at the production gate; on the counterfactual open slice, live Ungated posts positive CE while a secondary content rule confirms nonempty tilts. Grounding recovers ready/missing/tilt answers at \({\approx}0.97\) vs.\ Raw \({\lesssim}0.23\). The contribution is the interface, not a trading leaderboard.
+Public LLMs need a market they can safely observe before they decide. We contribute a typed observation contract---an anonymized state-compiler runtime with a hard refuse flag---for asynchronous crypto feeds. The live ranking is the point: Blind refuses, Raw over-trades and loses, Ungated is unstable on thin mixes, and Compiled enforces thin-world abstain \(1.0\) at the production gate; when the world opens, the same compiled fields yield positive live Ungated CE and a nonempty no-LLM content probe. Grounding recovers ready/missing/tilt answers at \({\approx}0.97\) vs.\ Raw \({\lesssim}0.23\). Thin days must refuse; open days are usable; the contribution is the interface, not a trading leaderboard.
 
 \begin{acks}
 Omitted for anonymous review.
