@@ -14,8 +14,7 @@ Stack framing: **data/observation → decision → execution**; this paper owns 
 | Differentiated claim | Soft disclosure does not enforce thin abstention | Compiled data end makes ready/missing/tilt verifiable |
 | Length | ~8 pp | **~8 pp** systems + seeing empirics (≤8) |
 
-**Submit only one narrative to a venue unless the CFP allows clearly distinct contributions.**
-These two folders are intentional siblings with **different primary estimands**; do not treat them as duplicate uploads of the same paper.
+**Submission (locked): Paper B only.** Paper A remains a sibling archive with a different estimand; do not dual-upload.
 
 ## Build
 
