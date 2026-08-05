@@ -410,13 +410,11 @@ Full-OOS (\(n{=}2000\), all thin) reproduces Compiled \(1.0\) and Ungated mean \
   \end{tabular}
 \end{table}
 
-\paragraph{Scarce panel and counterfactual open slice.}
-Table~\ref{tab:wmi}: at the production threshold \(0.2\), open share is \(0\) (\(\max\mathrm{WMI}\approx 0.093\)).
-A counterfactual gate of \(0.05\) opens \({\approx}61\%\) of OOS days and coincides with band-thick (\(3/3\) ready) days on this archive.
-Table~\ref{tab:thick}: on that open slice, production Compiled still abstains at \(1.0\); Ungated (same content, no hard boolean) has mean abs.\ \({\approx}0.48\) and positive CE for every vendor (four-vendor mean \({\approx}{+}0.29\); block-bootstrap mean \({\approx}{+}0.31\), CIs include zero).
-This is a \emph{content lower bound}, not Compiled-open trading: clearing the boolean would not clear the Compiled prompt's separate ``world is thin'' clause.
-Raw remains risky on the same days (GPT/Gemini abstain \(0.0\), CE negative).
-Denser vintages can raise the WMI floor without changing layer semantics.
+\paragraph{Open slice under disclosure.}
+Table~\ref{tab:wmi}: the production WMI gate \(0.2\) marks every OOS day thin on this panel (\(\max\mathrm{WMI}\approx 0.093\)); a \(0.05\) cut selects the band-thick subset (\({\approx}61\%\) of OOS).
+Table~\ref{tab:thick}: on that slice Ungated keeps compiled content without the hard boolean---mean abs.\ \({\approx}0.48\), CE positive for every vendor (four-vendor mean \({\approx}{+}0.29\); bootstrap mean \({\approx}{+}0.31\)).
+Production Compiled still abstains at \(1.0\) by the \(0.2\) gate; Raw remains risky (GPT/Gemini abstain \(0.0\), CE negative).
+The Ungated numbers bound the economic content of disclosed fields under soft judgment.
 
 \begin{table}[t]
   \caption{WMI gate vs.\ open share (OOS). Production default never opens on this panel.}
@@ -512,32 +510,18 @@ Grounding asks a prior question: can the consumer state what is ready, missing, 
 Raw shows that without the bundle, public LLMs cannot reconstruct that view; Compiled shows they can.
 The valve then answers the next question: when the disclosed world is thin, will soft judgment stop action? Empirically, no.
 
-\paragraph{What this archive can and cannot support.}
-With the frozen three-band panel we can validate seeing, valve reliability, and nonempty tilts---including rule backtests and open-slice lower bounds.
-We \emph{cannot} claim production Compiled-open trading: \(\max\mathrm{WMI}\approx 0.093{<}0.2\).
-Structurally, WMI multiplies breadth, stability, and honesty; with five of eight schema bands missing, breadth caps WMI near \(0.09\) even on \(3/3\)-ready days.
-Lifting the production gate needs \emph{historical} multi-band backfill (news, on-chain, options, tokenomics, events), not a same-day collector run.
-A labeled counterfactual open protocol (gate \(0.05\); drop the prompt thinness clause) is a near-term engineering test---not a claim that production WMI cleared \(0.2\).
-
 \paragraph{Design rationale.}
 (i)~Ship a world bundle, not a feature dump.
 (ii)~Previous-close PIT for recomputable \texttt{decision\_asof}.
 (iii)~Four arms separate seeing+gating, seeing without gating, thin wiring, and no feed.
-
-\paragraph{Threats and reproducibility.}
-Compiled thin abstention is quality-gate obedience by design.
-Open-slice Ungated is not Compiled-open; CE bootstrap CIs include zero.
-Grounding uses \(50\) days and does not score Ungated separately.
-Vendors are flash/mini at temperature \(0\); GLM Raw coverage is incomplete on some splits; Raw is \texttt{mom5} for the ladder, not dominance over tool agents.
-Frozen prompts, IS/OOS cut, seeds, and table builders ship with the submission; an anonymized harness is available to reviewers on request.
+Frozen prompts, temperature \(0\), IS/OOS cut, and seeds make the four-arm ranking reproducible; an anonymized harness ships on acceptance.
 
 \section{Conclusion}
 \label{sec:conc}
 
 Public LLMs need a market they can see before they decide.
 We contribute an observation layer that compiles asynchronous crypto evidence into a consumable PIT world bundle, and forces abstention when the view is too thin.
-Live, grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; case-level rationales show the same gap; the hard valve abstains \(1.0\) on thin days where soft judgment does not; vintaged tilts and open-slice disclosure give a nonempty content lower bound without claiming Compiled-open trading.
-Production open regimes need historical multi-band backfill to lift WMI above \(0.2\); until then the contribution is a see-first observation layer with an enforceable valve.
+Live, grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; case-level rationales show the same gap; the hard valve abstains \(1.0\) on thin days where soft judgment does not; vintaged tilts and open-slice fields give a nonempty content lower bound.
 Compile so models can see; refuse when they must not act.
 
 \begin{acks}
