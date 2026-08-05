@@ -311,7 +311,7 @@ Breadth, stability, and honesty aggregate into \(\mathrm{WMI}_t=B_t U_t H_t\) (A
 PIT-safe tilts use only in-clock observations: five-day macro changes, a seven-day stablecoin-flow slope, and \(\mathrm{mom5}\).
 The \emph{scoped production valve} sets \texttt{should\_ai\_abstain} when the archive is incomplete or scoped \(\mathrm{WMI}<0.2\), and exposes \texttt{thin\_world}; bundles also disclose \texttt{full\_schema\_wmi} as a ceiling audit.
 Figure~\ref{fig:ready}: macro and alternative stay ready; exchange readiness varies and defines thick/thin days.
-Figure~\ref{fig:wmi}: full-schema WMI stays under \(0.2\); ACWMI can look healthier under regime weight; the runtime exports both indices and \texttt{band\_scope}.
+Figure~\ref{fig:wmi}: same panel, two scopes---full-schema stress WMI stays under \(0.2\); scoped production WMI clears \(0.2\) on archive-complete days (shaded).
 Table~\ref{tab:wmi}: scoped production valve opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready); full-schema stress gate stays closed.
 
 \begin{table}[t]
@@ -342,9 +342,9 @@ Table~\ref{tab:wmi}: scoped production valve opens on \({\approx}61\%\) OOS days
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.98\linewidth]{fig12_wmi_acwmi_paths.pdf}
-  \Description{WMI and ACWMI paths over the evaluation panel.}
-  \caption{Full-schema stress paths: WMI stays under $0.2$; ACWMI is regime-weighted (ceiling audit).}
+  \includegraphics[width=0.98\linewidth]{fig_wmi_dual_scope.pdf}
+  \Description{Cross-asset mean full-schema stress WMI versus scoped production WMI over the panel.}
+  \caption{Dual-scope WMI on the same panel: stress ceiling vs.\ production contract (shaded $=$ archive-complete).}
   \label{fig:wmi}
 \end{figure}
 
@@ -602,7 +602,7 @@ Soft disclosure without a hard flag is not a free lunch: the same readable world
 \paragraph{Open slice (still under full-schema LLM arms).}
 Table~\ref{tab:thick}: on the band-thick subset (\(3/3\) ready \(\equiv\) full-schema \(\mathrm{WMI}\ge 0.05\); \({\approx}61\%\) OOS; \(n{\approx}1224\)) Ungated keeps compiled content without the hard boolean---mean abs.\ \({\approx}0.48\), CE positive for every vendor (mean \({\approx}{+}0.29\); bootstrap \({\approx}{+}0.31\), CIs include 0).
 Full-schema Compiled still abstains at \(1.0\) here; Raw stays risky (GPT/Gemini abs.\ \(0.0\), CE negative).
-The same thick days are where the \emph{scoped production valve} opens; Compiled-open handoff is RQ3a (no new LLM quota).
+The same thick days are where the \emph{scoped production valve} opens; Compiled-open handoff on those days is RQ3a.
 
 \begin{table}[t]
   \caption{Open slice under full-schema LLM arms ($3/3$ ready; $n{\approx}1224$). Soft-judgment lower bound.}
@@ -623,9 +623,10 @@ The same thick days are where the \emph{scoped production valve} opens; Compiled
 
 \subsection{RQ3a (handoff): Scoped Compiled-open proof}
 \label{sec:econ}
-The data end must be usable by a downstream decision rule without an LLM in the loop.
-The full-schema \emph{stress} gate never clears \(0.2\), so it cannot demonstrate handoff---by design in RQ2.
-The scoped \emph{production} valve opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready); a bundle-reading handoff rule abstains when the valve is closed and otherwise acts on disclosed \(\mathrm{macro\_tilt}\)~/~\(\mathrm{alt\_tilt}\) (API: world-bundle handoff read).
+Having established seeing (RQ1) and stress-gate refusal (RQ2), we ask whether the production valve yields a \emph{callable} handoff object.
+The full-schema stress gate never clears \(0.2\), so it is the wrong instrument for handoff---by design in RQ2.
+The scoped production valve opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready); a bundle-reading rule abstains when closed and otherwise acts on disclosed \(\mathrm{macro\_tilt}\)~/~\(\mathrm{alt\_tilt}\) (service handoff read).
+This isolates observation usability from LLM policy skill on open days.
 Table~\ref{tab:handoff}: scoped Compiled-open Sharpe \(0.772\) / CE \({+}0.253\) (abstain \(0.39\)) vs.\ momentum and buy-and-hold; full-schema stress remains fully closed.
 
 \begin{table}[t]
@@ -739,8 +740,10 @@ Paper-lab smoke checks BandPIT/WMI/ACWMI and scoped-vs-full gates; PIT rebuild a
 Prompts, IS/OOS cut, seeds, and vendor IDs are fixed; credentials stay in environment variables.
 An anonymized harness ships on acceptance.
 
-\paragraph{Scope.}
-We evaluate the data end on the PIT archive above; decision and execution sit downstream.
+\paragraph{Estimand and scope.}
+This paper measures data-end legibility, stress-gate reliability, and whether a scoped production valve yields a callable handoff object.
+LLM arms isolate seeing and hard refusal under the full-schema stress protocol; RQ3a reads the same vintaged fields through a transparent rule when the production valve opens---separating observation quality from downstream policy skill.
+Decision/execution strategies (including any LLM policy on open days) sit downstream of the data end.
 
 \section{Conclusion}
 \label{sec:conc}
