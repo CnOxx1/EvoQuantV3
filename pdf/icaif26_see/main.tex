@@ -147,6 +147,11 @@ Arms: Compiled, HPO (hard prompt on numeric WMI, no boolean), Ungated, Raw, Blin
 (3)~Live LLM evidence that the substrate works: grounding \({\approx}0.97\); stress-gate abstain \(1.0\); scoped production valve obedience (closed \(1.0\); open act \({\approx}0.89\)); nonempty tilt handoff (Sharpe \(0.77\); LOBO \(1.0\)).
 Estimand: whether public models can see a typed market world, refuse when thin, and hand off when ready---not portfolio alpha.
 
+\paragraph{Takeaway (30 seconds)}
+Seeing: grounding \({\approx}0.97\) vs.\ Raw collapse.
+Hard valve: Compiled/HPO thin-abstain \(1.0\) vs.\ soft Ungated \({\approx}0.68\); under scoped WMI, HPO falls to \({\approx}0.96\) while the boolean stays \(1.0\).
+Not alpha: open-day LLM \(\Delta\mathrm{CE}{<}0\) by design; no-LLM tilt Sharpe \(0.77\) shows fields are nonempty.
+
 \section{Related Work}
 \label{sec:related}
 
@@ -159,6 +164,7 @@ Return prediction~\cite{lopez2023chatgpt}, open financial LLMs~\cite{yang2023fin
 Methodologically they still assume a usable observation stream; application stacks then conflate bad market context with bad policy.
 We target that gap in a data-centric sense: compile a typed PIT world for LLM/agent consumers, and score market understanding (grounding, evidence-bound refusal) before debating alpha.
 The estimand is orthogonal to memory routers and debate judges: without a typed world, those systems evaluate agents on tool fragments, not on whether the market view was broad, stable, and honest.
+Contrast in one line: FinMem~/FinAgent assume an observation stream; ICAIF benches score agents on retrieved fragments; this paper compiles a typed PIT world with a hard valve and scores understanding.
 We return to this contrast in Section~\ref{sec:disc}.
 
 \paragraph{Selective prediction and PIT}
@@ -235,6 +241,7 @@ C_{\mathrm{del}}\bar\delta\sum_j\Delta_j
 where \(m_t\) is disclosed missing mass and \(\varepsilon_t\) collects measurement noise.
 Operationally, BandPIT maps age to ready/limited/missing so \(m_t\) and lag terms are readable in \(W_t\); compilation cannot erase delay, but it can refuse to pretend the bound is zero.
 With \(C_{\mathrm{del}}{=}1\) under worst-case band alignment, typical crypto parameters (\(\Delta_{\mathrm{ex}}{\approx}2\mathrm{d}\), \(\Delta_{\mathrm{macro}}{\approx}5\mathrm{d}\), \(\bar\delta{\approx}\) daily volatility \({\approx}3\%\)) make the lag term alone large relative to daily moves---illustratively \(\mathcal{O}(30\%)\) of daily-return variance scale---justifying refusal when \(B,U,H\) are incomplete rather than treating \(q^\star{=}0.2\) as a pure empirical knob.
+These statements are interface semantics that discipline the protocol; they are not asset-pricing theorems.
 \end{proposition}
 
 \begin{proposition}[Compilation \(\neq\) dump]
@@ -490,7 +497,7 @@ Availability shocks \(O_t\) are queryable on the service surface.
 
 \subsection{Setup}
 PIT panel \(\sim\)399 days \(\times\) 10 liquid names (\({\approx}3990\) asset-days; 2025-07--2026-08), chronological IS/OOS \(200/200\) days (cut \(2026\)-\(01\)-\(16\)).
-Unless noted, live arms share the same stratified \(100\) OOS asset-days (seed fixed), temperature \(0\), and four flash/mini vendors (gpt-5.4-mini, deepseek-v4-flash, glm-5.2, gemini-3.5-flash-lite) via an OpenAI-compatible adapter.
+Unless noted, live arms share the same stratified \(100\) OOS asset-days (seed fixed), temperature \(0\), and four vendor flash/mini chat endpoints (gpt-5.4-mini, deepseek-v4-flash, glm-5.2, gemini-3.5-flash-lite) via an OpenAI-compatible API; prompts are frozen in Section~\ref{sec:system}.
 Grounding uses \(50\) OOS days; full-OOS abstention uses \(n{=}2000\); no-LLM probes use \({\approx}200\) OOS days after return alignment.
 Primary metrics: RQ1 grounding F1/tilt accuracy (sufficiency chat secondary); RQ2 thin-world abstain under the \emph{full-schema stress gate} (CE as avoided loss, not alpha); RQ3a scoped production-valve LLM obedience plus no-LLM tilt handoff; RQ3b ungated tilt \(\Delta\)CE vs.\ momentum.
 
@@ -565,10 +572,10 @@ action (2026-01-17): bullish
 \label{sec:gate}
 Legibility does not imply safe action.
 All live LLM arms here freeze \emph{full-schema} bundles, so every OOS day is thin under the stress gate \(0.2\).
-Table~\ref{tab:llm} and Figure~\ref{fig:und}: on the same \(100\) days, Compiled and HPO abstain \(1.0\); Ungated soft-judges at mean \(0.68\) (Gemini \(0.43\)); Raw over-trades (Table~\ref{tab:mix}); Blind abstains \(1.0\) with no feed---safe but useless as a data end.
+Table~\ref{tab:llm} and Figure~\ref{fig:und}: on the same \(100\) days, Compiled and HPO abstain \(1.0\); Ungated soft-judges at mean \(0.68\) (Gemini \(0.43\)); Raw over-trades (directional mass dominates for three of four vendors); Blind abstains \(1.0\) with no feed---safe but useless as a data end.
 HPO recovers perfect thin abstention when full-schema \(\mathrm{WMI}\) is unambiguously below \(0.2\); Ungated soft MAY does not.
 Under production-scoped WMI (Sec.~\ref{sec:econ}), where values span \([0.09,1.0]\), HPO closed compliance softens to \({\approx}0.96\) (vendor range \(0.93\)--\(1.0\)) while the boolean valve stays \(1.0\); thus the typed boolean is essential for cross-threshold contract stability, not merely stress scenarios.
-Offline soft evidence-alignment (rationale cues to disclosed bands/tilts/quality) averages \({\approx}0.998\) Compiled / \(0.993\) HPO vs.\ \(0.80\) Ungated and \(0.38\) Raw on matched \(100\)-day slices.
+Offline soft EAR (rationale cues to disclosed bands/tilts/quality) averages \({\approx}0.998\) Compiled / \(0.993\) HPO vs.\ \(0.80\) Ungated and \(0.38\) Raw on matched \(100\)-day slices; it is a harness audit of cue binding, not a claim about faithful chain-of-thought.
 Mean \(\Delta\)CE (Compiled$-$Raw) \({+}1.07\) is avoided loss, not alpha.
 
 \begin{table}[t]
@@ -598,82 +605,23 @@ Mean \(\Delta\)CE (Compiled$-$Raw) \({+}1.07\) is avoided loss, not alpha.
   \label{fig:und}
 \end{figure}
 
-\begin{table}[t]
-  \caption{Raw action mix ($100$ days): half-baked context drives directional mass.}
-  \label{tab:mix}
-  \small
-  \begin{tabular}{lrrrr}
-    \toprule
-    Model & Abs. & Bull. & Bear. & Neut. \\
-    \midrule
-    gpt-5.4-mini & $0.04$ & $0.28$ & $0.38$ & $0.30$ \\
-    deepseek-v4-flash & $0.75$ & $0.14$ & $0.04$ & $0.07$ \\
-    glm-5.2 & $0.11$ & $0.40$ & $0.48$ & $0.01$ \\
-    gemini-3.5-flash-lite & $0.07$ & $0.44$ & $0.49$ & $0.00$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\paragraph{Full-OOS replication}
-Table~\ref{tab:fulloos}: on all \(2000\) OOS asset-days (all thin under the \emph{full-schema stress} gate \(0.2\)), Compiled thin-abstain remains \(1.000\) (Wilson \([.998,1]\)) for every vendor.
-Ungated soft rates fall to a four-vendor mean \({\approx}0.56\); Raw GPT/Gemini abstain at \(0.000\).
+\paragraph{Full-OOS and thick-slice checks}
+On all \(2000\) OOS asset-days (all thin under the full-schema stress gate), Compiled thin-abstain remains \(1.000\) (Wilson \([.998,1]\)) for every vendor; Ungated soft rates fall to mean \({\approx}0.56\) (GLM coverage incomplete on a subset); Raw GPT/Gemini abstain at \(0.000\).
 Scale does not rescue soft judgment.
-Blind refuses everywhere with no feed on the paired \(100\)-day sample (abstain \(1.0\) for every vendor): the failure mode that needs a data end is not ``models never abstain,'' but ``thin fragments make them act.''
-
-\begin{table}[t]
-  \caption{Full-OOS thin abstention ($n{=}2000$; all thin under full-schema stress gate $0.2$).}
-  \label{tab:fulloos}
-  \small
-  \begin{tabular}{lrrr}
-    \toprule
-    Model & Thin C & Thin U & Abs.\ R \\
-    \midrule
-    gpt-5.4-mini & $1.000$ & $0.666$ & $0.000$ \\
-    deepseek-v4-flash & $1.000$ & $0.540$ & $0.748$ \\
-    glm-5.2 & $1.000$ & $0.679^*$ & $0.078^*$ \\
-    gemini-3.5-flash-lite & $1.000$ & $0.359$ & $0.000$ \\
-    \midrule
-    Mean & $1.000$ & ${\approx}0.56$ & --- \\
-    \bottomrule
-  \end{tabular}\\[-2pt]
-  {\scriptsize $^*$GLM coverage incomplete (Ungated $n{=}1402$; Raw $n{=}675$).}
-\end{table}
-
-\paragraph{Inside Ungated soft acts}
-On the mixed \(100\)-day sample, when Ungated \emph{does} act, act-conditional CE is sharply negative for three of four vendors (DeepSeek \(-3.12\), GLM \(-4.28\), Gemini \(-1.67\)) while GPT is positive on its smaller act set.
-Soft disclosure without a hard flag is not a free lunch: the same readable world that RQ1 scores can still harm decisions when the valve is removed.
-
-\paragraph{Open slice (still under full-schema LLM arms)}
-Table~\ref{tab:thick}: on the band-thick subset (\(3/3\) ready \(\equiv\) full-schema \(\mathrm{WMI}\ge 0.05\); \({\approx}61\%\) OOS; \(n{\approx}1224\)) Ungated keeps compiled content without the hard boolean---mean abs.\ \({\approx}0.48\), CE positive for every vendor (mean \({\approx}{+}0.29\); bootstrap \({\approx}{+}0.31\), CIs include 0).
-Full-schema Compiled still abstains at \(1.0\) here; Raw stays risky (GPT/Gemini abs.\ \(0.0\), CE negative).
-The same thick days are where the \emph{scoped production valve} opens; live scoped LLM handoff is RQ3a.
-
-\begin{table}[t]
-  \caption{Open slice under full-schema LLM arms ($3/3$ ready; $n{\approx}1224$). Soft-judgment lower bound.}
-  \label{tab:thick}
-  \small
-  \begin{tabular}{lrrrrr}
-    \toprule
-    Model & Abs.\ U & CE U & Act-CE U & Abs.\ R & CE R \\
-    \midrule
-    gpt-5.4-mini & $0.58$ & $+0.42$ & $+0.32$ & $0.00$ & $-0.28$ \\
-    deepseek-v4-flash & $0.42$ & $+0.21$ & $+0.45$ & $0.75$ & $+0.04$ \\
-    glm-5.2 & $0.58$ & $+0.24$ & $+0.11$ & $0.09^*$ & $-0.87^*$ \\
-    gemini-3.5-flash-lite & $0.34$ & $+0.31$ & $+0.06$ & $0.00$ & $-0.25$ \\
-    \bottomrule
-  \end{tabular}\\[-2pt]
-  {\scriptsize $^*$Raw GLM $n{=}398$; Ungated GLM $n{=}932$; others $n{=}1224$. Bootstrap mean CE ${\approx}{+}0.31$ ($B{=}5$, $999$ reps; one-sided $p{\approx}0.21$). Slice-specific Abs.\ U (mean ${\approx}0.48$); compares to mixed $100$-day mean $0.68$ in Table~\ref{tab:llm}.}
-\end{table}
+On the band-thick subset (\(3/3\) ready; \({\approx}61\%\) OOS; \(n{\approx}1224\)) Ungated mean abs.\ is \({\approx}0.48\) (slice-specific; vs.\ mixed-\(100\) mean \(0.68\) in Table~\ref{tab:llm}) with positive but insignificant CE; full-schema Compiled still abstains at \(1.0\).
+Those thick days are where the scoped production valve opens (RQ3a).
+When Ungated does act on the mixed \(100\)-day sample, act-conditional CE is sharply negative for three of four vendors---soft disclosure without a hard flag is not a free lunch.
 
 \subsection{RQ3a (handoff): Scoped production valve with live LLMs}
 \label{sec:econ}
 Having established seeing (RQ1) and stress-gate refusal (RQ2), we ask whether the \emph{production} valve is callable.
+We report a negative open-day LLM \(\Delta\mathrm{CE}\) \emph{by design}: the estimand is valve usability and world nonempty-ness, not LLM portfolio skill.
 The full-schema stress gate never clears \(0.2\), so it cannot open---by design in RQ2.
 Scoped production WMI opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready).
 We re-run the same four vendors on a stratified sample of \(70\) open + \(30\) closed OOS asset-days with scoped bundles (seed fixed; temp.\ \(0\)).
 
-Table~\ref{tab:scopedllm}: on closed days Compiled abstains \(1.0\) for every vendor while HPO (numeric WMI + hard prompt; no boolean) softens to mean \({\approx}0.96\); on open days Compiled acts \({\approx}89\%\) vs.\ HPO \({\approx}86\%\).
-Open-day \(\Delta\mathrm{CE}\) vs.\ Raw is negative (mean \({\approx}{-}4.2\)): a usability check that models act when the valve opens, not a trading metric (no-LLM tilt Sharpe \(0.772\), Table~\ref{tab:handoff}).
+Table~\ref{tab:scopedllm}: on closed days Compiled abstains \(1.0\) for every vendor while HPO softens to mean \({\approx}0.96\); on open days Compiled acts \({\approx}89\%\) vs.\ HPO \({\approx}86\%\).
+Open-day \(\Delta\mathrm{CE}\) vs.\ Raw is negative (mean \({\approx}{-}4.2\))---usability that models act when the valve opens, not a trading metric---while no-LLM tilts remain nonempty (Sharpe \(0.772\), Table~\ref{tab:handoff}).
 Closed-day refusal avoids Raw losses (mean \(\Delta\mathrm{CE}{\approx}{+}1.6\)).
 
 \begin{table}[t]
@@ -808,6 +756,7 @@ We do not claim to solve crypto prediction or open-day LLM alpha; seeing a typed
 World bundle \(\neq\) feature dump; previous-close PIT; dual WMI scope; HPO separates hard prompt from hard boolean.
 Feature engineering outputs vectors; we output typed worlds with clocks, missingness, and a machine-readable valve.
 Prompts, cut, and seeds are frozen and specified in Section~\ref{sec:system}.
+Limits: three-band eval archive; flash/mini endpoints; CE is a probe score not a utility; no multi-name portfolio constraints.
 
 \balance
 \section{Conclusion}
