@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Render the anonymized layered runtime architecture figure for the ICAIF paper.
 
-Output: pdf/icaif26/figures/fig_runtime_architecture.png
+Outputs (vector + raster):
+  figures/fig_runtime_architecture.pdf
+  figures/fig_runtime_architecture.png
 """
 
 from __future__ import annotations
@@ -11,22 +13,23 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
-OUT = Path(__file__).resolve().parent / "figures" / "fig_runtime_architecture.png"
+HERE = Path(__file__).resolve().parent
+OUT_PDF = HERE / "figures" / "fig_runtime_architecture.pdf"
+OUT_PNG = HERE / "figures" / "fig_runtime_architecture.png"
 
-LAYER_W = 11.6
-BOX_H = 0.62
-FS = 9.2
-FS_SMALL = 8.0
+BOX_H = 0.58
+FS = 9.0
+FS_SMALL = 8.2
 
 
-def box(ax, x, y, w, h, text, fc, ec, fs=FS, weight="normal", text_color="black"):
+def box(ax, x, y, w, h, text, fc, ec, fs=FS, weight="normal"):
     ax.add_patch(
         FancyBboxPatch(
             (x, y),
             w,
             h,
-            boxstyle="round,pad=0.035,rounding_size=0.07",
-            linewidth=1.1,
+            boxstyle="round,pad=0.03,rounding_size=0.06",
+            linewidth=1.15,
             facecolor=fc,
             edgecolor=ec,
             zorder=3,
@@ -39,9 +42,10 @@ def box(ax, x, y, w, h, text, fc, ec, fs=FS, weight="normal", text_color="black"
         ha="center",
         va="center",
         fontsize=fs,
-        color=text_color,
+        color="black",
         weight=weight,
         zorder=4,
+        linespacing=1.15,
     )
 
 
@@ -54,16 +58,16 @@ def layer_title(ax, x, y, text, color):
         weight="bold",
         color=color,
         zorder=5,
-        bbox=dict(facecolor="white", edgecolor="none", pad=1.5),
+        bbox=dict(facecolor="white", edgecolor="none", pad=1.2),
     )
 
 
-def arrow(ax, x0, y0, x1, y1, color="#555555", lw=1.3, style="-|>", ls="-"):
+def arrow(ax, x0, y0, x1, y1, color="#555555", lw=1.25, ls="-"):
     ax.add_patch(
         FancyArrowPatch(
             (x0, y0),
             (x1, y1),
-            arrowstyle=style,
+            arrowstyle="-|>",
             mutation_scale=11,
             linewidth=lw,
             color=color,
@@ -76,9 +80,10 @@ def arrow(ax, x0, y0, x1, y1, color="#555555", lw=1.3, style="-|>", ls="-"):
 
 
 def main() -> int:
-    fig, ax = plt.subplots(figsize=(7.6, 5.9), dpi=200)
-    ax.set_xlim(0, 12.4)
-    ax.set_ylim(0, 10.4)
+    # Slightly shorter: arm definitions only (outcomes live in Sec. Experiments).
+    fig, ax = plt.subplots(figsize=(7.4, 5.15))
+    ax.set_xlim(0, 12.2)
+    ax.set_ylim(0.15, 9.55)
     ax.axis("off")
 
     c_data = ("#eaf2fb", "#4a7fb5")
@@ -86,87 +91,181 @@ def main() -> int:
     c_logic = ("#fdf1e3", "#c87a2e")
     c_serv = ("#e9f6ee", "#3f9160")
     c_cons = ("#fdeaea", "#b8514e")
-    c_out = ("#f5f5f5", "#666666")
 
-    # ---- Layer 1: data collectors -------------------------------------------------
-    y1 = 9.15
-    layer_title(ax, 0.28, y1 + BOX_H + 0.16, "Data layer — vintage-aware collectors", c_data[1])
-    bands = [
-        ("exchange", 0.5), ("macro\n(available_at)", 4.3), ("alternative", 8.1),
-    ]
-    for name, x in bands:
-        box(ax, x, y1, 3.4, BOX_H, name, c_data[0], c_data[1], fs=FS_SMALL)
-    ax.text(11.6, y1 + BOX_H / 2, "evaluation archive:\n3 populated bands",
-            fontsize=7.0, color="#555555", ha="left", va="center", style="italic")
+    # (1) Data
+    y1 = 8.45
+    layer_title(ax, 0.28, y1 + BOX_H + 0.14, "(1) Data layer — vintage-aware collectors", c_data[1])
+    for name, x in [("exchange", 0.45), ("macro (available_at)", 4.2), ("alternative", 7.95)]:
+        box(ax, x, y1, 3.35, BOX_H, name, c_data[0], c_data[1], fs=FS_SMALL)
+    ax.text(
+        11.45,
+        y1 + BOX_H / 2,
+        "eval. archive:\n3 bands",
+        fontsize=7.2,
+        color="#555555",
+        ha="left",
+        va="center",
+        style="italic",
+    )
 
-    # ---- Layer 2: stores -----------------------------------------------------------
-    y2 = 7.75
-    layer_title(ax, 0.28, y2 + BOX_H + 0.16, "Store layer — embedded analytical stores", c_store[1])
-    box(ax, 0.3, y2, 3.6, BOX_H, "raw multi-band history\n(obs. timestamps, vintages)", c_store[0], c_store[1], fs=FS_SMALL)
-    box(ax, 4.2, y2, 3.6, BOX_H, "merged market panels", c_store[0], c_store[1], fs=FS_SMALL)
-    box(ax, 8.1, y2, 3.6, BOX_H, "analytics: readiness,\nWMI/ACWMI, snapshots", c_store[0], c_store[1], fs=FS_SMALL)
+    # (2) Store
+    y2 = 7.05
+    layer_title(ax, 0.28, y2 + BOX_H + 0.14, "(2) Store layer — embedded analytical stores", c_store[1])
+    box(ax, 0.3, y2, 3.55, BOX_H, "raw multi-band history\n(timestamps / vintages)", c_store[0], c_store[1], fs=FS_SMALL)
+    box(ax, 4.15, y2, 3.55, BOX_H, "merged market panels", c_store[0], c_store[1], fs=FS_SMALL)
+    box(ax, 8.0, y2, 3.55, BOX_H, "analytics: readiness,\nWMI / ACWMI, snapshots", c_store[0], c_store[1], fs=FS_SMALL)
 
-    # ---- Layer 3: logic / compilation ---------------------------------------------
-    y3 = 6.0
-    layer_title(ax, 0.28, y3 + 0.95 + 0.16, "Logic layer — compilation  $\\Pi_t = B_t \\circ M_t \\circ A_t$", c_logic[1])
-    box(ax, 0.3, y3, 3.6, 0.95,
+    # (3) Logic
+    y3 = 5.25
+    layer_title(
+        ax,
+        0.28,
+        y3 + 0.95 + 0.14,
+        r"(3) Logic layer — compilation  $\Pi_t = B_t \circ M_t \circ A_t$",
+        c_logic[1],
+    )
+    box(
+        ax,
+        0.3,
+        y3,
+        3.55,
+        0.95,
         "BandPIT clock\ndecision_asof = $(t{-}1)$ 23:59\n(no same-day look-ahead)",
-        c_logic[0], c_logic[1], fs=FS_SMALL)
-    box(ax, 4.2, y3, 3.6, 0.95,
+        c_logic[0],
+        c_logic[1],
+        fs=FS_SMALL,
+    )
+    box(
+        ax,
+        4.15,
+        y3,
+        3.55,
+        0.95,
         "honesty / missingness gates\n$B,U,H$ → WMI $=BUH$\nACWMI (regime-cond.)",
-        c_logic[0], c_logic[1], fs=FS_SMALL)
-    box(ax, 8.1, y3, 3.6, 0.95,
-        "availability shocks $O_t$\n(quasi-exogenous\nworld-thickness lever)",
-        c_logic[0], c_logic[1], fs=FS_SMALL)
+        c_logic[0],
+        c_logic[1],
+        fs=FS_SMALL,
+    )
+    box(
+        ax,
+        8.0,
+        y3,
+        3.55,
+        0.95,
+        "availability shocks $O_t$\n(quasi-exogenous\nthickness lever)",
+        c_logic[0],
+        c_logic[1],
+        fs=FS_SMALL,
+    )
 
-    # ---- Layer 4: service / bundle -------------------------------------------------
-    y4 = 4.15
-    layer_title(ax, 0.28, y4 + 1.06 + 0.16, "Service layer — world bundle contract (read API)", c_serv[1])
-    box(ax, 0.3, y4, 11.4, 1.06,
-        "completeness $n_{ready/limited/missing}$   ·   honesty $B,U,H$   ·   quality WMI / ACWMI\n"
-        "should_ai_abstain · thin_world   ·   content: macro_tilt, alt_tilt, regime, cascade   ·   audit: evidence_ids (EAR)",
-        c_serv[0], c_serv[1], fs=FS_SMALL)
+    # (4) Service
+    y4 = 3.45
+    layer_title(ax, 0.28, y4 + 1.0 + 0.14, "(4) Service layer — world bundle contract (read API)", c_serv[1])
+    box(
+        ax,
+        0.3,
+        y4,
+        11.25,
+        1.0,
+        "completeness · honesty $B,U,H$ · WMI / ACWMI · should_ai_abstain · thin_world\n"
+        "content: macro_tilt, alt_tilt, regime · audit: evidence_ids",
+        c_serv[0],
+        c_serv[1],
+        fs=FS_SMALL,
+    )
 
-    # ---- Layer 5: consumers (four arms) -------------------------------------------
-    y5 = 2.1
-    layer_title(ax, 0.28, y5 + 1.16 + 0.16,
-        "Consumer layer — frozen prompts, temp. 0, OpenAI-compatible adapter (GPT / DeepSeek / GLM / Gemini)",
-        c_cons[1])
-    arm_w = 2.72
-    xs = [0.3, 3.28, 6.26, 9.24]
-    box(ax, xs[0], y5, arm_w, 1.16,
-        "COMPILED\nfull bundle + hard\nshould_ai_abstain\n(typed contract)",
-        c_cons[0], c_cons[1], fs=FS_SMALL, weight="bold")
-    box(ax, xs[1], y5, arm_w, 1.16,
-        "UNGATED (ablation)\nsame content, numeric\nWMI, no hard flag\n(soft judgment)",
-        "#fdf6ec", "#c8952e", fs=FS_SMALL)
-    box(ax, xs[2], y5, arm_w, 1.16,
-        "RAW\nmom5 fragment only\nno world model\n(common integration)",
-        "#f2f2f2", "#888888", fs=FS_SMALL)
-    box(ax, xs[3], y5, arm_w, 1.16,
-        "BLIND\ndirect ask, no feed\n('how should I\ntrade BTC?')",
-        "#eef2f7", "#4a7fb5", fs=FS_SMALL)
+    # (5) Consumers — definitions only (no outcome numbers; see Sec. Experiments)
+    y5 = 1.15
+    layer_title(
+        ax,
+        0.28,
+        y5 + 1.35 + 0.12,
+        "(5) Consumer layer — frozen prompts, temp. 0 (GPT / DeepSeek / GLM / Gemini)",
+        c_cons[1],
+    )
+    arm_w = 2.7
+    xs = [0.3, 3.2, 6.1, 9.0]
+    box(
+        ax,
+        xs[0],
+        y5,
+        arm_w,
+        1.35,
+        "COMPILED\nfull bundle +\nhard should_ai_abstain",
+        c_cons[0],
+        c_cons[1],
+        fs=FS_SMALL,
+        weight="bold",
+    )
+    box(
+        ax,
+        xs[1],
+        y5,
+        arm_w,
+        1.35,
+        "UNGATED\nsame content;\nno hard flag",
+        "#fdf6ec",
+        "#c8952e",
+        fs=FS_SMALL,
+    )
+    box(
+        ax,
+        xs[2],
+        y5,
+        arm_w,
+        1.35,
+        "RAW\nmom5 only;\nno world model",
+        "#f2f2f2",
+        "#666666",
+        fs=FS_SMALL,
+    )
+    box(
+        ax,
+        xs[3],
+        y5,
+        arm_w,
+        1.35,
+        "BLIND\ndirect ask;\nno data feed",
+        "#eef2f7",
+        "#4a7fb5",
+        fs=FS_SMALL,
+    )
+    ax.text(
+        6.1,
+        0.45,
+        "Live abstention outcomes: Sec.~Experiments (Table / four-arm figure).",
+        ha="center",
+        va="center",
+        fontsize=7.4,
+        color="#555555",
+        style="italic",
+    )
 
-    # ---- Output row ------------------------------------------------------------------
-    y6 = 0.35
-    box(ax, xs[0], y6, arm_w, 0.86, "abstain 1.00\nthin-world refusal\nenforced", c_out[0], c_cons[1], fs=FS_SMALL, weight="bold")
-    box(ax, xs[1], y6, arm_w, 0.86, "abstain ≈0.68\nvendor-dependent\nsoft judgment", c_out[0], "#c8952e", fs=FS_SMALL)
-    box(ax, xs[2], y6, arm_w, 0.86, "abstain 0.04–0.75\nover-trades on\nsparse support", c_out[0], "#888888", fs=FS_SMALL)
-    box(ax, xs[3], y6, arm_w, 0.86, "abstain 1.00\ncannot verify\n(no feed)", c_out[0], "#4a7fb5", fs=FS_SMALL)
+    # Arrows between layers
+    for x in (2.05, 5.9, 9.75):
+        arrow(ax, x, y1 - 0.02, x, y2 + BOX_H + 0.05)
+        arrow(ax, x, y2 - 0.02, x, y3 + 0.95 + 0.05)
+        arrow(ax, x, y3 - 0.02, x, y4 + 1.0 + 0.05)
+    # bundle → first three arms (Blind: no feed)
+    for x in [xs[i] + arm_w / 2 for i in (0, 1, 2)]:
+        arrow(ax, x, y4 - 0.02, x, y5 + 1.35 + 0.05)
+    # dashed note arrow absent for Blind — label
+    ax.text(
+        xs[3] + arm_w / 2,
+        y4 - 0.22,
+        "(no feed)",
+        ha="center",
+        va="top",
+        fontsize=6.8,
+        color="#4a7fb5",
+        style="italic",
+    )
 
-    # ---- Arrows ----------------------------------------------------------------------
-    for x in (2.1, 6.0, 9.9):
-        arrow(ax, x, y1 - 0.03, x, y2 + BOX_H + 0.06)
-        arrow(ax, x, y2 - 0.03, x, y3 + 0.95 + 0.06)
-        arrow(ax, x, y3 - 0.03, x, y4 + 1.06 + 0.06)
-    # bundle -> first three arms (blind gets no feed), arms -> outcomes
-    for x in [xs[0] + arm_w / 2, xs[1] + arm_w / 2, xs[2] + arm_w / 2]:
-        arrow(ax, x, y4 - 0.03, x, y5 + 1.16 + 0.06)
-    for x in [xi + arm_w / 2 for xi in xs]:
-        arrow(ax, x, y5 - 0.03, x, y6 + 0.86 + 0.06)
-
-    fig.savefig(OUT, bbox_inches="tight", facecolor="white")
-    print(f"wrote {OUT}")
+    OUT_PDF.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT_PDF, bbox_inches="tight", facecolor="white")
+    fig.savefig(OUT_PNG, bbox_inches="tight", facecolor="white", dpi=300)
+    print(f"wrote {OUT_PDF}")
+    print(f"wrote {OUT_PNG}")
     return 0
 
 

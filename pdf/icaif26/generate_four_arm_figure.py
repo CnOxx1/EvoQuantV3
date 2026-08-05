@@ -90,14 +90,17 @@ def main() -> int:
     ax.axhline(1.0, color="#cccccc", lw=0.7, ls=":")
     ax.legend(ncol=4, fontsize=8.2, frameon=False, loc="upper center",
               bbox_to_anchor=(0.5, 1.15))
-    ax.set_title("Live four-arm ladder: blind refuses, raw fragment over-acts, "
-                 "compiled acts on world quality  (Wilson 95% CIs, $n{=}100$)",
-                 fontsize=8.6, pad=22)
+    ax.set_title(r"Live four-arm abstention rates (Wilson 95% CIs, $n{=}100$)",
+                 fontsize=9.0, pad=18)
     ax.spines[["top", "right"]].set_visible(False)
 
-    out = FIG / "fig_four_arm_ladder.png"
-    fig.savefig(out, bbox_inches="tight", facecolor="white")
-    print(f"wrote {out}")
+    FIG.mkdir(parents=True, exist_ok=True)
+    out_png = FIG / "fig_four_arm_ladder.png"
+    out_pdf = FIG / "fig_four_arm_ladder.pdf"
+    fig.savefig(out_pdf, bbox_inches="tight", facecolor="white")
+    fig.savefig(out_png, bbox_inches="tight", facecolor="white", dpi=300)
+    print(f"wrote {out_pdf}")
+    print(f"wrote {out_png}")
     return 0
 
 

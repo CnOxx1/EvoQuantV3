@@ -225,9 +225,9 @@ We describe the anonymized prototype as a layered system (Figure~\ref{fig:pipeli
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=0.92\textwidth]{fig_runtime_architecture.png}
-  \Description{Layered architecture: vintage-aware collectors, embedded stores, BandPIT compilation with honesty gates and availability shocks, world-bundle service contract, and four consumer arms with live abstention outcomes.}
-  \caption{Anonymized runtime architecture. Five layers map raw multi-band evidence to a typed world-bundle contract; the consumer layer runs the frozen four-arm protocol (Compiled / Ungated / Raw / Blind). Bottom row summarizes live thin-world abstention (details in Sec.~\ref{sec:exp}); Blind has no feed arrow from the service layer.}
+  \includegraphics[width=0.92\textwidth]{fig_runtime_architecture.pdf}
+  \Description{Layered architecture: vintage-aware collectors, embedded stores, BandPIT compilation with honesty gates and availability shocks, world-bundle service contract, and four consumer arms (Compiled / Ungated / Raw / Blind).}
+  \caption{Anonymized runtime architecture. Five numbered layers map raw multi-band evidence to a typed world-bundle contract; the consumer layer defines the frozen four-arm protocol (Compiled / Ungated / Raw / Blind). Live abstention outcomes are in Sec.~\ref{sec:exp}; Blind has no feed from the service layer.}
   \label{fig:pipeline}
 \end{figure*}
 
@@ -278,16 +278,12 @@ Table~\ref{tab:schema} lists field groups. Listing~\ref{lst:bundle} shows a comp
 \begin{lstlisting}[caption={Compact Compiled bundle example (OOS exchange gap).},label={lst:bundle}]
 {"date":"2026-05-11","asset":"ADA",
  "decision_asof":"2026-05-10T23:59:00",
- "completeness":{"n_ready":2,"n_missing":1,
-   "ready_share":0.67,"archive_bands":
-   ["exchange","macro","alternative"]},
- "world_model_index":{"wmi":0.015,"acwmi":0.30,
+ "completeness":{"n_ready":2,"n_missing":1},
+ "world_model_index":{"wmi":0.015,
    "should_ai_abstain":true,"thin_world":true},
  "macro_tilt":1.0,"alt_tilt":-1.0,
- "detected_regime":"crisis",
  "audit":{"evidence_ids":[
-   "band:exchange:missing","band:macro:ready",
-   "band:alternative:ready","tilt:macro:1.0"]}}
+   "band:exchange:missing","band:macro:ready"]}}
 \end{lstlisting}
 
 \subsection{Four information arms and LLM adapter}
@@ -301,9 +297,9 @@ Actions \(\in\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstai
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.98\linewidth]{fig_band_readiness.png}
-  \Description{Band readiness time series for exchange, macro, and alternative; exchange readiness drops later in the sample.}
-  \caption{PIT readiness for the three-band evaluation archive.}
+  \includegraphics[width=0.98\linewidth]{fig_band_readiness.pdf}
+  \Description{Band readiness time series for exchange (solid), macro (dashed), and alternative (dotted); exchange readiness drops later in the sample.}
+  \caption{PIT readiness for the three-band evaluation archive (solid / dashed / dotted for grayscale).}
   \label{fig:ready}
 \end{figure}
 
@@ -362,7 +358,7 @@ Table~\ref{tab:llm} and Figure~\ref{fig:und} report the headline result; all arm
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{fig_four_arm_ladder.png}
+  \includegraphics[width=\linewidth]{fig_four_arm_ladder.pdf}
   \Description{Grouped bars of abstain rates for Blind, Raw, Ungated, and Compiled arms per model with Wilson error bars.}
   \caption{Live four-arm abstention rates (same $100$ days; Wilson 95\% CIs). Blind refuses; Raw over-trades; Ungated is vendor-dependent; Compiled enforces the typed refuse contract.}
   \label{fig:und}
@@ -415,7 +411,7 @@ Ungated rationales cite disclosed world fields on \(53\)--\(93\%\) of days, so m
 World-honoring offline followers abstain at \(1.0\) on full OOS; momentum-only mocks ignore thin-world flags (thin-abs.\ \(0\)). Offline results are protocol checks; live vendors are the main claim.
 
 \paragraph{When would the contract open?}
-Compiled never trades on this OOS panel because \(\max\mathrm{WMI}\approx 0.093\) lies below the production threshold \(0.2\). That is the scarce-support stress test. The contract is not permanently closed. A counterfactual open rule \(\mathrm{WMI}\ge 0.05\) marks \(n{=}1224\) asset-days (\(61\%\) of OOS)---identical to the band-thick archive slice. On those open days alone, the same no-LLM content rule \emph{acts} on \(92\%\) of days and beats momentum (CE \(+0.061\) vs.\ \(-0.254\); \(\Delta\mathrm{CE}{=}0.315\); Table~\ref{tab:dense}). So when the contract would open, the compiled world is not an empty refuse switch: it carries tradable tilts. Live LLM trading under an opened contract is left to denser vintages; here we validate refuse reliability under sparse support and content nonemptiness without an LLM in the loop.
+Compiled never trades on this OOS panel because \(\max\mathrm{WMI}\approx 0.093\) lies below the production threshold \(0.2\). That is the scarce-support stress test. The contract is not permanently closed. A counterfactual open rule \(\mathrm{WMI}\ge 0.05\) marks \(n{=}1224\) asset-days (\(61\%\) of OOS)---identical to the band-thick archive slice. On those open days alone, the same no-LLM content rule acts on \(92\%\) of days and beats momentum (CE \(+0.061\) vs.\ \(-0.254\); \(\Delta\mathrm{CE}{=}0.315\); Table~\ref{tab:dense}). When the contract would open, the compiled world carries tradable tilts, not only a refuse switch. Live LLM trading under an opened gate is left to denser vintages; here we validate refuse reliability under sparse support and content nonemptiness without an LLM.
 
 \subsection{RQ2: Non-trading cognition---grounding workflow}
 \label{sec:grounding}
@@ -445,7 +441,7 @@ The compiled world should also support analysis, not only trade/abstain decision
 RQ1--RQ2 concern the interface. RQ3 asks whether the compiled tilts are economically nonempty. A transparent rule shares return inputs with momentum and adds vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\)---no LLM in the loop. Out-of-sample (\(199\) days \(\times\) \(10\) assets) this content rule beats the baselines (Table~\ref{tab:econ}, Figure~\ref{fig:econ}): Sharpe \(0.764\) / CE \(+0.130\) versus momentum (\(0.096\), \(-0.206\)) and buy-and-hold (\(-1.404\), \(-1.163\)). The pre-specified contrast mechanism $-$ momentum is significant under block bootstrap (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\)). \(\Delta\mathrm{CE}\) is positive for all ten assets (Figure~\ref{fig:econ}, right). LOBO (Prop.~\ref{prop:lobo}) attributes the gain to band content (deleting macro/alternative collapses to momentum); gaps survive \(10\)--\(25\)bps costs. A \(2017\)--\(2026\) audit with non-vintaged proxy tilts shows no edge (\(\Delta\mathrm{CE}\approx 0\), \(p{=}0.81\)): value appears where the vintage-compiled world exists. The result supports nonempty tilts, not an LLM trading ranking.
 
 \paragraph{Within-archive dense / open world.}
-Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\) ready) and \(39\%\) are band-thin (exchange gap; Figure~\ref{fig:ready}). On this panel, band-thick coincides with the counterfactual open set \(\mathrm{WMI}\ge 0.05\). Table~\ref{tab:dense}: on that open/thick slice the content rule acts and the mechanism$-$momentum gap is \(\Delta\mathrm{CE}{=}0.315\) (CE \(+0.061\) vs.\ \(-0.254\)), stronger than on exchange-gap days (\(0.129\))---complementary to RQ1's refuse-under-thin stress test.
+Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\) ready) and \(39\%\) are band-thin (exchange gap; Figure~\ref{fig:ready}). On this panel, band-thick coincides with counterfactual open days (\(\mathrm{WMI}\ge 0.05\)). Table~\ref{tab:dense}: on that open/thick slice the content rule acts and beats momentum (\(\Delta\mathrm{CE}{=}0.315\); CE \(+0.061\) vs.\ \(-0.254\)), stronger than on exchange-gap days (\(0.129\))---complementary to RQ1's refuse-under-thin test.
 
 \begin{table}[t]
   \caption{Secondary content probe: world-model rule vs.\ traditional baselines (no LLM).}
@@ -479,7 +475,7 @@ Among the three archive bands, \(61\%\) of OOS asset-days are band-thick (\(3/3\
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{fig_oos_economics.png}
+  \includegraphics[width=\linewidth]{fig_oos_economics.pdf}
   \Description{Left: OOS cumulative wealth of the content rule above momentum and buy-and-hold. Right: per-asset delta CE bars, all ten positive.}
   \caption{Secondary content probe (no LLM). Left: equity curves; right: \(\Delta\)CE vs.\ momentum positive for every asset.}
   \label{fig:econ}
