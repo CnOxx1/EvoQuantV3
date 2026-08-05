@@ -19,6 +19,7 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{placeins}
+\usepackage{float}
 \graphicspath{{figures/}}
 
 \lstset{
@@ -158,6 +159,7 @@ Return prediction~\cite{lopez2023chatgpt}, open financial LLMs~\cite{yang2023fin
 Methodologically they still assume a usable observation stream; application stacks then conflate bad market context with bad policy.
 We target that gap in a data-centric sense: compile a typed PIT world for LLM/agent consumers, and score market understanding (grounding, evidence-bound refusal) before debating alpha.
 The estimand is orthogonal to memory routers and debate judges: without a typed world, those systems evaluate agents on tool fragments, not on whether the market view was broad, stable, and honest.
+We return to this contrast in Section~\ref{sec:disc}.
 
 \paragraph{Selective prediction and PIT}
 Abstention can be optimal under noise~\cite{elyaniv2010,geifman2017}; we attach refusal to \emph{world} quality \(q(W_t)\) via a runtime field, not classifier confidence alone (Prop.~\ref{prop:abstain})---blocking the overconfident-when-thin failure mode.
@@ -232,7 +234,7 @@ C_{\mathrm{del}}\bar\delta\sum_j\Delta_j
 \]
 where \(m_t\) is disclosed missing mass and \(\varepsilon_t\) collects measurement noise.
 Operationally, BandPIT maps age to ready/limited/missing so \(m_t\) and lag terms are readable in \(W_t\); compilation cannot erase delay, but it can refuse to pretend the bound is zero.
-For typical crypto parameters (\(\Delta_{\mathrm{ex}}{\approx}2\mathrm{d}\), \(\Delta_{\mathrm{macro}}{\approx}5\mathrm{d}\), \(\bar\delta{\approx}\) daily volatility \({\approx}3\%\)), the lag term alone is already large relative to daily moves---illustratively \(\mathcal{O}(30\%)\) of daily-return variance scale---justifying refusal when \(B,U,H\) are incomplete rather than treating \(q^\star{=}0.2\) as a pure empirical knob.
+With \(C_{\mathrm{del}}{=}1\) under worst-case band alignment, typical crypto parameters (\(\Delta_{\mathrm{ex}}{\approx}2\mathrm{d}\), \(\Delta_{\mathrm{macro}}{\approx}5\mathrm{d}\), \(\bar\delta{\approx}\) daily volatility \({\approx}3\%\)) make the lag term alone large relative to daily moves---illustratively \(\mathcal{O}(30\%)\) of daily-return variance scale---justifying refusal when \(B,U,H\) are incomplete rather than treating \(q^\star{=}0.2\) as a pure empirical knob.
 \end{proposition}
 
 \begin{proposition}[Compilation \(\neq\) dump]
@@ -343,8 +345,8 @@ Missingness is disclosed rather than imputed (Prop.~\ref{prop:recon}).
 Breadth, stability, and honesty aggregate into \(\mathrm{WMI}_t=B_t U_t H_t\) (ACWMI adds regime weight).
 PIT-safe tilts use only in-clock observations: five-day macro changes, a seven-day stablecoin-flow slope, and \(\mathrm{mom5}\).
 The \emph{scoped production valve} sets \texttt{should\_ai\_abstain} when the archive is incomplete or scoped \(\mathrm{WMI}<0.2\), and exposes \texttt{thin\_world}; bundles also disclose \texttt{full\_schema\_wmi} as a ceiling audit.
-Figure~\ref{fig:ready}: macro and alternative stay ready; exchange readiness varies and defines thick/thin days.
-Figure~\ref{fig:wmi}: same panel, two scopes---full-schema stress WMI stays under \(0.2\); scoped production WMI clears \(0.2\) on archive-complete days (shaded).
+Figure~\ref{fig:readywmi} (top): macro and alternative stay ready; exchange readiness varies and defines thick/thin days.
+Figure~\ref{fig:readywmi} (bottom): same panel, two scopes---full-schema stress WMI stays under \(0.2\); scoped production WMI clears \(0.2\) on archive-complete days (shaded).
 Table~\ref{tab:wmi}: scoped production valve opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready); full-schema stress gate stays closed.
 
 \begin{table}[ht]
@@ -365,23 +367,16 @@ Table~\ref{tab:wmi}: scoped production valve opens on \({\approx}61\%\) OOS days
   \end{tabular}
 \end{table}
 
-\begin{figure}[ht]
+\begin{figure}[t]
   \centering
-  \includegraphics[width=0.95\linewidth]{fig_band_readiness.pdf}
-  \Description{Band readiness for exchange, macro, and alternative over time.}
-  \caption{PIT readiness: what is visible in the archive over time.}
-  \label{fig:ready}
-\end{figure}
-
-\begin{figure}[ht]
-  \centering
+  \includegraphics[width=0.95\linewidth]{fig_band_readiness.pdf}\\[0.35em]
   \includegraphics[width=0.95\linewidth]{fig_wmi_dual_scope.pdf}
-  \Description{Cross-asset mean full-schema stress WMI versus scoped production WMI over the panel.}
-  \caption{Dual-scope WMI on the same panel: stress ceiling vs.\ production contract (shaded $=$ archive-complete).}
-  \label{fig:wmi}
+  \Description{Top: band readiness over time. Bottom: dual-scope WMI on the same panel.}
+  \caption{Top: PIT readiness in the archive. Bottom: dual-scope WMI (stress ceiling vs.\ production contract; shaded $=$ archive-complete).}
+  \label{fig:readywmi}
 \end{figure}
 
-\begin{table}[ht]
+\begin{table}[t]
   \caption{Dual gates vs.\ open share (OOS). Production $=$ scoped; stress $=$ full schema.}
   \label{tab:wmi}
   \small
@@ -397,10 +392,11 @@ Table~\ref{tab:wmi}: scoped production valve opens on \({\approx}61\%\) OOS days
 
 \subsection{World bundle (what the LLM sees)}
 The consumer object is a JSON world bundle (Table~\ref{tab:schema}): timing, completeness, honesty, quality (including the abstain flag), content tilts, and \texttt{evidence\_ids}.
+Table~\ref{tab:humanllm} contrasts human-desk intuition with the typed fields an LLM must parse.
 Listing~\ref{lst:bundle}: exchange-gap day (scoped valve closed).
 Listing~\ref{lst:bundle-thick}: \(3/3\)-ready day where scoped WMI\({=}1.0\) opens the production valve; \texttt{full\_schema\_wmi}\({\approx}0.093\) is disclosed as ceiling audit---same day, two scopes, not a lowered \(q^\star\).
 
-\begin{table}[ht]
+\begin{table}[H]
   \caption{World-bundle field groups (the market view).}
   \label{tab:schema}
   \small
@@ -418,16 +414,22 @@ Listing~\ref{lst:bundle-thick}: \(3/3\)-ready day where scoped WMI\({=}1.0\) ope
   \end{tabular}
 \end{table}
 
-\paragraph{Human vs.\ LLM consumption}
-{\scriptsize\noindent
-\begin{tabular}{@{}ll@{}}
-Human desk & LLM agent \\
-Reads candlesticks & Reads \texttt{band\_status} \\
-Feels a ``thin'' world & Reads \(\mathrm{WMI}{=}0.14\) \\
-Decides to wait & Reads \texttt{should\_ai\_abstain: true} \\
-Scans news/context & Matches \texttt{evidence\_ids} \\
-\end{tabular}\par}
-The bundle therefore omits charts/colors and emphasizes symbolic contracts (EAR, dual-scope WMI) that LLMs process natively.
+\begin{table}[H]
+  \caption{Human desk vs.\ LLM agent consumption of the same market day.}
+  \label{tab:humanllm}
+  \small
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Human desk & LLM agent \\
+    \midrule
+    Reads candlesticks & Reads \texttt{band\_status} \\
+    Feels a ``thin'' world & Reads \(\mathrm{WMI}{=}0.14\) \\
+    Decides to wait & Reads \texttt{should\_ai\_abstain: true} \\
+    Scans news/context & Matches \texttt{evidence\_ids} \\
+    \bottomrule
+  \end{tabular}\\[-2pt]
+  {\scriptsize The bundle omits charts/colors; EAR and dual-scope WMI are symbolic contracts LLMs process natively.}
+\end{table}
 
 \begin{lstlisting}[caption={Exchange-gap bundle (Compiled; scoped closed).},label={lst:bundle}]
 {"date":"2026-05-11","asset":"ADA",
@@ -660,7 +662,7 @@ The same thick days are where the \emph{scoped production valve} opens; live sco
     gemini-3.5-flash-lite & $0.34$ & $+0.31$ & $+0.06$ & $0.00$ & $-0.25$ \\
     \bottomrule
   \end{tabular}\\[-2pt]
-  {\scriptsize $^*$Raw GLM $n{=}398$; Ungated GLM $n{=}932$; others $n{=}1224$. Bootstrap mean CE ${\approx}{+}0.31$ ($B{=}5$, $999$ reps; one-sided $p{\approx}0.21$).}
+  {\scriptsize $^*$Raw GLM $n{=}398$; Ungated GLM $n{=}932$; others $n{=}1224$. Bootstrap mean CE ${\approx}{+}0.31$ ($B{=}5$, $999$ reps; one-sided $p{\approx}0.21$). Slice-specific Abs.\ U (mean ${\approx}0.48$); compares to mixed $100$-day mean $0.68$ in Table~\ref{tab:llm}.}
 \end{table}
 
 \subsection{RQ3a (handoff): Scoped production valve with live LLMs}
@@ -670,30 +672,28 @@ The full-schema stress gate never clears \(0.2\), so it cannot open---by design 
 Scoped production WMI opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready).
 We re-run the same four vendors on a stratified sample of \(70\) open + \(30\) closed OOS asset-days with scoped bundles (seed fixed; temp.\ \(0\)).
 
-Table~\ref{tab:scopedllm}: on closed days Compiled abstains \(1.0\) for every vendor (Ungated soft rates \({\approx}0.87\)--\(0.97\); Raw often keeps trading).
-On open days Compiled acts on a mean \({\approx}89\%\) of days---the valve opens and models consume the bundle.
-The same sample with HPO (numeric WMI + hard prompt; no boolean) yields closed abstain \({\approx}0.96\) and open act \({\approx}0.86\): prompt obedience softens once WMI is no longer unambiguously far below \(0.2\), while the typed boolean remains \(1.0\).
-Open-day CE does \emph{not} beat Raw (mean \(\Delta\mathrm{CE}{\approx}{-}4.2\)): this is a usability check that models act when the valve opens, not a trading metric; the gap reflects LLM policy errors, not a world-bundle flaw (no-LLM tilt Sharpe \(0.772\), Table~\ref{tab:handoff}).
-Closed-day refusal avoids Raw losses (mean \(\Delta\mathrm{CE}{\approx}{+}1.6\) vs.\ Raw on the closed slice).
+Table~\ref{tab:scopedllm}: on closed days Compiled abstains \(1.0\) for every vendor while HPO (numeric WMI + hard prompt; no boolean) softens to mean \({\approx}0.96\); on open days Compiled acts \({\approx}89\%\) vs.\ HPO \({\approx}86\%\).
+Open-day \(\Delta\mathrm{CE}\) vs.\ Raw is negative (mean \({\approx}{-}4.2\)): a usability check that models act when the valve opens, not a trading metric (no-LLM tilt Sharpe \(0.772\), Table~\ref{tab:handoff}).
+Closed-day refusal avoids Raw losses (mean \(\Delta\mathrm{CE}{\approx}{+}1.6\)).
 
 \begin{table}[t]
-  \caption{RQ3a live LLMs under scoped production valve ($70$ open + $30$ closed).}
+  \caption{RQ3a scoped production valve ($70$ open + $30$ closed): Compiled boolean vs.\ HPO.}
   \label{tab:scopedllm}
   \scriptsize
-  \setlength{\tabcolsep}{3.5pt}
-  \begin{tabular}{@{}lrrrrr@{}}
+  \setlength{\tabcolsep}{2.8pt}
+  \begin{tabular}{@{}lrrrrrr@{}}
     \toprule
-    Model & Abs C$_\mathrm{cl}$ & Abs C$_\mathrm{op}$ & CE C$_\mathrm{op}$ & CE R$_\mathrm{op}$ & $\Delta$CE$_\mathrm{cl}$ \\
+    Model & Abs C$_\mathrm{cl}$ & Abs H$_\mathrm{cl}$ & Act C$_\mathrm{op}$ & Act H$_\mathrm{op}$ & $\Delta$CE$_\mathrm{op}$ & $\Delta$CE$_\mathrm{cl}$ \\
     \midrule
-    gpt-5.4-mini & $1.00$ & $0.03$ & $-4.00$ & $+0.09$ & $+0.49$ \\
-    deepseek-v4-flash & $1.00$ & $0.24$ & $-5.22$ & $-0.21$ & $+0.17$ \\
-    glm-5.2 & $1.00$ & $0.11$ & $-4.31$ & $-0.39$ & $+3.06$ \\
-    gemini-3.5-flash-lite & $1.00$ & $0.07$ & $-4.27$ & $-0.46$ & $+2.64$ \\
+    gpt-5.4-mini & $1.00$ & $0.97$ & $0.97$ & $1.00$ & $-4.09$ & $+0.49$ \\
+    deepseek-v4-flash & $1.00$ & $1.00$ & $0.76$ & $0.66$ & $-5.02$ & $+0.17$ \\
+    glm-5.2 & $1.00$ & $0.93$ & $0.89$ & $0.94$ & $-3.92$ & $+3.06$ \\
+    gemini-3.5-flash-lite & $1.00$ & $0.93$ & $0.93$ & $0.86$ & $-3.82$ & $+2.64$ \\
     \midrule
-    Mean & $1.00$ & $0.11$ & --- & --- & $+1.59$ \\
+    Mean & $1.00$ & $0.96$ & $0.89$ & $0.86$ & $-4.21$ & $+1.59$ \\
     \bottomrule
   \end{tabular}\\[-2pt]
-  {\scriptsize Abs C$_{cl/op}$: Compiled abstain on closed/open days. $\Delta$CE$_{cl}=$ avoided loss vs.\ Raw on closed days.}
+  {\scriptsize Abs/Act: closed abstain / open act. H$=$HPO (no boolean). $\Delta$CE$_{op/cl}=$ Compiled$-$Raw (open usability; closed avoided loss).}
 \end{table}
 
 A transparent no-LLM rule on the same vintaged tilts remains the clean nonempty-field handoff (Table~\ref{tab:handoff}): Sharpe \(0.772\) / CE \({+}0.253\) when the scoped valve is applied, versus momentum and buy-and-hold; full-schema stress stays fully closed.
@@ -792,7 +792,7 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
 \label{sec:disc}
 
 \paragraph{What carries the paper}
-(i)~Machine-native legibility: grounding \({\approx}0.97\) from a typed, auditable object LLMs consume deterministically---not a human-simplified view (sufficiency chat is not a substitute).
+(i)~Machine-native legibility for an LLM-consumable data end: grounding \({\approx}0.97\) from a typed, auditable object---not a human-simplified view (sufficiency chat is not a substitute).
 (ii)~Hard policy binds on thin days (Compiled/HPO \(1.0\)); soft MAY does not (\({\approx}0.68\)).
 (iii)~Scoped production opens \({\approx}61\%\) OOS days; LLMs obey the valve; open-day CE \(\neq\) alpha; no-LLM tilts stay nonempty.
 Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume.
