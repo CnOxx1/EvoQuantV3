@@ -17,6 +17,7 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage{placeins}
 \graphicspath{{figures/}}
 
 \lstset{
@@ -54,11 +55,11 @@
 
 \begin{abstract}
 \textbf{Purpose.} End-to-end crypto quant for public LLMs needs a \emph{data end} before decision or execution.
-We build that layer: compile asynchronous multi-band evidence into a point-in-time (PIT) \emph{world bundle}, and hard-refuse when support is thin so half-baked context cannot drive downstream decisions.
-\textbf{Evidence.} Primary---seeing: grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ \({\lesssim}0.23\) under Raw.
-Secondary---valve: Compiled thin-abstain is \(1.0\) across four vendors while Ungated soft judgment on the same content is only \({\approx}0.68\); Raw over-trades.
-Secondary---content: vintaged tilts beat momentum under a no-LLM rule (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\)).
-The panel is scarce (\(\max\mathrm{WMI}\approx 0.093{<}0.2\)), so production Compiled never opens---a valve stress test.
+We build that layer as an anonymized observation runtime: multi-band evidence \(\to\) BandPIT/WMI \(\to\) a point-in-time (PIT) \emph{world bundle}, with hard refusal when support is thin.
+\textbf{Evidence.} Primary---seeing: grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ \({\lesssim}0.23\) under Raw, while sufficiency chat alone is unreliable (Compiled mean \(0.60\)).
+Secondary---valve: Compiled thin-abstain is \(1.0\) (100-day and full OOS \(n{=}2000\)) while Ungated soft judgment is only \({\approx}0.68\) / \({\approx}0.56\); Raw over-trades.
+Secondary---content: vintaged tilts beat momentum (\(\Delta\mathrm{CE}{=}0.334\), \(p{=}0.034\); LOBO content share \(1.0\)); open-slice Ungated CE is point-positive as a field lower bound.
+The panel is scarce (\(\max\mathrm{WMI}\approx 0.093{<}0.2\); five schema bands permanently missing), so production Compiled never opens---a valve stress test.
 \textbf{Claim.} Build the quant data end first: compile so models can see; refuse when they must not act.
 \end{abstract}
 
@@ -95,19 +96,34 @@ The panel is scarce (\(\max\mathrm{WMI}\approx 0.093{<}0.2\)), so production Com
 
 \paragraph{Purpose (read this first).}
 Build the \emph{data end} of end-to-end crypto quant for public LLMs.
-The stack is \textbf{data/observation} \(\to\) \textbf{decision} \(\to\) \textbf{execution}; agents and generative world models~\cite{yao2023react,yu2023finmem,zhang2024finagent,ha2018world,hafner2020dreamer,lecun2022path} typically assume the first stage.
+The stack is \textbf{data/observation} \(\to\) \textbf{decision} \(\to\) \textbf{execution} (Table~\ref{tab:stack}); agents and generative world models~\cite{yao2023react,yu2023finmem,zhang2024finagent,ha2018world,hafner2020dreamer,lecun2022path} typically assume the first stage.
 Crypto violates that assumption: exchange, macro, and alternative evidence arrive on incompatible clocks~\cite{makarov2020,liu2022}.
 We own only the data end---compile a PIT world bundle so models can \emph{see}, and hard-refuse when the view is too thin.
 Refusal is a safety valve, not the product and not a trading claim.
 
+\begin{table}[t]
+  \caption{End-to-end quant stack; this paper owns only the data end.}
+  \label{tab:stack}
+  \small
+  \begin{tabular}{llp{0.42\linewidth}}
+    \toprule
+    Stage & Typical owner & This paper \\
+    \midrule
+    Data / observation & Assumed by agents & World bundle + quality valve \\
+    Decision & LLM / policy / portfolio & Out of scope \\
+    Execution & Broker / OMS & Out of scope \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \paragraph{Failure modes.}
-No feed \(\to\) refuse (safe, useless).
-Thin price fragment \(\to\) trade and lose.
+No feed \(\to\) refuse (safe, useless as a data end).
+Thin price fragment \(\to\) trade and lose (unsafe for any downstream stack).
 Disclosed but ungated world \(\to\) read fields, disagree on action.
 So the data end must (i)~make the market legible and (ii)~enforce a quality valve before decision/execution.
 
 \paragraph{What we build.}
-An anonymized runtime (Section~\ref{sec:system}): multi-band evidence \(\to\) BandPIT/WMI \(\to\) JSON world bundle for GPT~/DeepSeek~/GLM~/Gemini-class models.
+An anonymized runtime (Section~\ref{sec:system}): multi-band evidence \(\to\) BandPIT/WMI \(\to\) JSON world bundle for GPT~/DeepSeek~/GLM~/Gemini-class models, served through a read API a decision layer can call.
 ``World model'' means state compiler + quality gate (Section~\ref{sec:method}), not dynamics and not a decision engine.
 The bundle is complete, honest, and auditable; \texttt{should\_ai\_abstain} is the machine-readable valve.
 
@@ -118,9 +134,9 @@ Four arms: Compiled, Ungated (same content, no flag), Raw (\texttt{mom5}), Blind
 \textbf{RQ3 (secondary):} Are vintaged tilts nonempty under a transparent no-LLM rule?
 
 \paragraph{Contributions.}
-(1)~Data-end semantics: epistemic observations, \(\Pi_t\), and seeing vs.\ gating.
-(2)~Anonymized PIT compile path: BandPIT previous-close clock, quality-tagged bundles, frozen four-arm harness.
-(3)~Live + rule validation on a scarce three-band archive: grounding \({\approx}0.97\); thin-abstain \(1.0\) vs.\ Ungated \({\approx}0.68\); \(\Delta\mathrm{CE}{=}0.334\).
+(1)~Data-end semantics: epistemic observations, lag reconstruction, \(\Pi_t\), and seeing vs.\ gating.
+(2)~Anonymized PIT compile path: layered collectors\(\to\)BandPIT\(\to\)service surface\(\to\)bundles; schema honesty (eight bands, three live); frozen four-arm harness.
+(3)~Live + rule validation: grounding \({\approx}0.97\) with sufficiency dissociation; thin-abstain \(1.0\) at \(100\)-day and full-OOS scale; nonempty tilts (\(\Delta\mathrm{CE}{=}0.334\); LOBO content share \(1.0\)) and an open-slice lower bound.
 Estimand: legibility and valve reliability---not decision SOTA, execution, or Compiled-open alpha.
 
 \section{Related Work}
@@ -132,12 +148,13 @@ We address the complementary observation-side problem: a PIT-safe, quality-tagge
 
 \paragraph{LLM agents in finance.}
 Return prediction~\cite{lopez2023chatgpt}, open financial LLMs~\cite{yang2023fingpt}, memory- and tool-augmented agents~\cite{yu2023finmem,li2023tradinggpt,zhang2024finagent,yao2023react}, and ICAIF retrieval/debate/judge systems~\cite{choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad} improve how agents fetch, debate, and are scored.
-They still assume a usable observation stream.
+They still assume a usable observation stream at the data end of the stack.
 We study that prior stage: compile a world bundle, measure whether models can \emph{see} it, then gate action when they must not act.
+Our estimand is therefore orthogonal to memory routers and debate judges: without a typed PIT world, those stacks consume whatever fragment the tool dump provides.
 
 \paragraph{Selective prediction and PIT.}
 Abstention can be optimal under noise~\cite{elyaniv2010,geifman2017}; we attach refusal to world quality via a runtime field, not classifier confidence alone.
-Macro vintages~\cite{croushore2001} and crypto microstructure~\cite{makarov2020,liu2022} motivate multi-band compilation.
+Macro vintages~\cite{croushore2001} and crypto microstructure~\cite{makarov2020,liu2022} motivate multi-band compilation with disclosed missingness.
 Bootstrap discipline for the content probe follows~\cite{white2000,politis1994,harvey2016}.
 
 \section{Observation Layer}
@@ -164,23 +181,61 @@ Compiled exposes \texttt{should\_ai\_abstain} and \texttt{thin\_world}.
 The bundle is what the model \emph{sees}; the hard flag \emph{blocks} action when \(q(W_t)\) is too low.
 Tilts without a gate are a dump; a gate without a readable bundle is only a switch.
 
+\begin{assumption}[Bounded lag and increments]
+Band \(j\) has max observation lag \(\Delta_j\); latent increments satisfy \(\|S_u-S_{u-1}\|\le\bar\delta\).
+\end{assumption}
+
+\begin{proposition}[Lag reconstruction bound]
+\label{prop:recon}
+Under Assumption~1,
+\(\|\widetilde S_t-S_t\|\le C_{\mathrm{del}}\bar\delta+C_{\mathrm{noi}}\varepsilon_t+C_{\mathrm{miss}}m_t\).
+Compilation cannot erase delay; it can refuse to pretend the bound is zero.
+\end{proposition}
+
+\paragraph{Intuition.}
+Agents that concatenate tool dumps silently absorb delay and missingness into the feature vector.
+Prop.~\ref{prop:recon} makes those terms explicit: a thicker raw payload can worsen reconstruction if honesty collapses.
+The data end therefore grades readiness and discloses gaps instead of imputing a false full world.
+
 \begin{proposition}[Compilation \(\neq\) dump]
+\label{prop:compile}
 Enlarging raw span without \(\Pi_t\) need not enlarge usable \(\mathcal{F}^{\mathrm{AI}}\): ungated stale evidence can raise volume while lowering honesty.
 \end{proposition}
 
 \begin{proposition}[World-conditional abstention]
+\label{prop:abstain}
 If non-abstain actions exceed a world-dependent cost, the Bayes action is abstain; with costs decreasing in WMI, abstention forms a lower set in world quality~\cite{elyaniv2010}.
 \end{proposition}
 
+\begin{proposition}[LOBO content vs.\ gating]
+\label{prop:lobo}
+Deleting band \(j\) changes value through a content channel and a gating channel.
+Empirically we report content share under an ungated rule so the probe speaks to nonempty fields.
+\end{proposition}
+
+\paragraph{Implication for the runtime.}
+Props.~\ref{prop:compile}--\ref{prop:abstain} say the data end must export gates and abstain flags, not tilts alone: compilation without quality disclosure is still a feature dump; disclosure without a hard gate still lets thin worlds drive action.
+Prop.~\ref{prop:lobo} motivates the economic check in RQ3: if deleting a durable band does not change the content rule, the bundle is empty of content.
+
 \begin{remark}[Not a generative WM]
-We do not learn \(p(s_{t+1}\mid s_t,a_t)\). We deliver a state compiler with a quality-gated refuse interface.
+We do not learn \(p(s_{t+1}\mid s_t,a_t)\). We deliver a state compiler with a quality-gated refuse interface---the data end of the stack.
 \end{remark}
 
-\section{Runtime: Compile Path}
+\section{Runtime: Data-End Compile Path}
 \label{sec:system}
 
-Figure~\ref{fig:pipeline} and Table~\ref{tab:modules} summarize the anonymized data-end prototype: collectors write multi-band history; BandPIT compiles a PIT state; a service emits a JSON world bundle; frozen-prompt consumers read it at temperature \(0\).
+The anonymized prototype implements the data end as a layered compile path (Figure~\ref{fig:pipeline}, Table~\ref{tab:modules}).
 Decision and execution sit downstream; this paper does not claim them.
+Paths and product names are omitted for double-blind review.
+
+\subsection{Layered design}
+\begin{enumerate}
+\item \textbf{Data layer.} Exchange, macro, and alternative collectors write vintage-aware history (observation timestamps; macro \texttt{available\_at}).
+\item \textbf{Store layer.} Embedded stores hold raw series, merged market panels, and compiled analytics (readiness, WMI/ACWMI, world snapshots).
+\item \textbf{Logic layer.} BandPIT reconstructs readiness on a previous-close clock; honesty/missingness gates implement \(\Pi_t\); WMI/ACWMI and availability shocks \(O_t\) (band outage events for quasi-exogenous levers) are first-class.
+\item \textbf{Service layer.} A read API serves quality-tagged bundles and health objects without restarting collectors for newly arrived rows. Anonymized surface includes world-bundle and decision-bundle reads, health exposing \texttt{should\_ai\_abstain}, a paper world-model time slice, and availability-shock queries---the machine-readable handoff a decision layer would call.
+\item \textbf{Consumer layer.} Frozen-prompt LLM/rule agents call an OpenAI-compatible adapter at temperature \(0\) under four arms.
+\end{enumerate}
 
 \begin{figure*}[t]
   \centering
@@ -191,7 +246,7 @@ Decision and execution sit downstream; this paper does not claim them.
 \end{figure*}
 
 \begin{table}[t]
-  \caption{Compile-path modules (not a product inventory).}
+  \caption{Compile-path modules (systems view, not a product inventory).}
   \label{tab:modules}
   \small
   \begin{tabular}{p{0.28\linewidth}p{0.62\linewidth}}
@@ -199,24 +254,23 @@ Decision and execution sit downstream; this paper does not claim them.
     Module & Role \\
     \midrule
     Collectors / stores & Timestamped / vintaged band history \\
-    BandPIT compiler & Align clocks; ready/stale/missing; \(\Pi_t\) \\
-    Quality indices & \(B,U,H\rightarrow\mathrm{WMI}\); abstain flag \\
+    BandPIT compiler & Previous-close readiness; \(\Pi_t\) \\
+    Quality indices & \(B,U,H\rightarrow\mathrm{WMI}\); abstain flag; \(O_t\) \\
     Bundle builder & Complete / honest / auditable JSON \\
+    Service surface & Bundle / health / availability reads \\
     Consumer harness & Four-arm protocol; temp.\ \(0\) \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{What enters the view.}
-This paper evaluates three bands that populate the consumer object (Table~\ref{tab:dataflow}).
-\emph{Exchange:} OHLCV klines, funding, open interest.
-\emph{Macro:} equity-volatility and dollar indices with \texttt{available\_at} vintages.
-\emph{Alternative:} aggregate stablecoin circulation.
-Every row carries an observation timestamp so compilation can enforce a previous-close information set.
-The schema is band-extensible; the experiments below score the view built from these three feeds.
+\subsection{Archive schema vs.\ live evaluation bands}
+The runtime schema is band-extensible (exchange, macro, alternative, news, on-chain, options, tokenomics, event calendar).
+On the evaluation panel (\({\approx}3990\) asset-days; 2025-07 to 2026-08), only three bands carry history: exchange ready share \({\approx}0.80\), macro \(1.0\), alternative \(1.0\); the other five are permanently \texttt{missing}.
+That structural hole caps breadth and keeps \(\max\mathrm{WMI}\approx 0.093\) even on \(3/3\)-ready days---honesty about what the data end can currently show, not a claim that denser bands never help.
+Table~\ref{tab:dataflow} lists the three live bands that populate the consumer object.
 
 \begin{table}[t]
-  \caption{Input evidence vs.\ fields emitted in the world bundle.}
+  \caption{Input evidence vs.\ fields emitted in the world bundle (live archive).}
   \label{tab:dataflow}
   \small
   \begin{tabular}{p{0.16\linewidth}p{0.36\linewidth}p{0.36\linewidth}}
@@ -226,18 +280,39 @@ The schema is band-extensible; the experiments below score the view built from t
     exchange & OHLCV, funding, OI & \(\mathrm{mom5}\); status/age \\
     macro & equity-vol / dollar indices & \(\mathrm{macro\_tilt}\); status/age \\
     alternative & stablecoin circulation & \(\mathrm{alt\_tilt}\); status/age \\
-    derived & --- & WMI, abstain flag, evidence IDs \\
+    derived & --- & WMI, ACWMI, abstain, \(O_t\), evidence IDs \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{How compilation builds the view.}
-For calendar day \(t\), BandPIT reconstructs the decision information set at \((t{-}1)\,23{:}59\) (payoff is same-day close-to-close return).
-Each band is graded ready / limited / missing against age thresholds; missingness is disclosed rather than imputed.
-Breadth, stability, and honesty aggregate into \(\mathrm{WMI}_t=B_t U_t H_t\) (ACWMI adds a regime weight).
+\subsection{PIT clock and freshness}
+For calendar day \(t\), BandPIT reconstructs the decision information set at \((t{-}1)\,23{:}59\) (payoff is same-day close-to-close return); the bundle records \texttt{decision\_asof}.
+Each band is graded ready~/limited~/missing against daily-scale age thresholds (Table~\ref{tab:fresh}).
+Missingness is disclosed rather than imputed (Prop.~\ref{prop:recon}).
+Breadth, stability, and honesty aggregate into \(\mathrm{WMI}_t=B_t U_t H_t\) (ACWMI adds regime weight).
 PIT-safe tilts use only in-clock observations: five-day macro changes, a seven-day stablecoin-flow slope, and \(\mathrm{mom5}\).
-The valve sets \texttt{should\_ai\_abstain} when \(\mathrm{WMI}<0.2\) and exposes \texttt{thin\_world}---a switch on the view, not a substitute for seeing.
+The valve sets \texttt{should\_ai\_abstain} when \(\mathrm{WMI}<0.2\) and exposes \texttt{thin\_world}.
 Figure~\ref{fig:ready}: macro and alternative stay ready; exchange readiness varies and defines thick/thin days.
+Figure~\ref{fig:wmi}: WMI stays below the production gate throughout; ACWMI can look healthier under regime weight, so the runtime exports both and lets the configured index mode drive abstain.
+Table~\ref{tab:wmi}: production gate \(0.2\) never opens on this panel; \(\mathrm{WMI}\ge 0.05\) selects the band-thick subset (\({\approx}61\%\) OOS).
+
+\begin{table}[t]
+  \caption{BandPIT freshness thresholds (seconds $\rightarrow$ days).}
+  \label{tab:fresh}
+  \small
+  \begin{tabular}{lrl}
+    \toprule
+    Band & Fresh window & In eval archive \\
+    \midrule
+    exchange & \(2\)d & yes (ready \({\approx}0.80\)) \\
+    macro & \(5\)d & yes (ready \(1.0\)) \\
+    alternative & \(7\)d & yes (ready \(1.0\)) \\
+    news / on-chain / options & \(3\)d & missing \\
+    tokenomics & \(7\)d & missing \\
+    event calendar & \(14\)d & missing \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{figure}[t]
   \centering
@@ -247,10 +322,33 @@ Figure~\ref{fig:ready}: macro and alternative stay ready; exchange readiness var
   \label{fig:ready}
 \end{figure}
 
-\paragraph{What the LLM sees: the world bundle.}
-The consumer object is a JSON world bundle (Table~\ref{tab:schema}, Listing~\ref{lst:bundle}): timing, completeness, quality (including the abstain flag), content tilts, and evidence IDs that bind rationales to disclosed bands.
-That package is the market view we ask public LLMs to read.
-Outputs used in experiments are a \(\sim\)3{,}990-row PIT panel (10 assets \(\times\) 399 days; 2025-07 to 2026-08) and the per-day bundles fed to the four arms.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.98\linewidth]{fig12_wmi_acwmi_paths.pdf}
+  \Description{WMI and ACWMI paths over the evaluation panel.}
+  \caption{World-quality paths: WMI stays under the $0.2$ production gate; ACWMI is regime-weighted.}
+  \label{fig:wmi}
+\end{figure}
+
+\begin{table}[t]
+  \caption{WMI gate vs.\ open share (OOS). Production never opens on this panel.}
+  \label{tab:wmi}
+  \small
+  \begin{tabular}{lrl}
+    \toprule
+    Gate & Open share & Note \\
+    \midrule
+    \(0.2\) (production) & \(0.00\) & max WMI \({\approx}0.093\) \\
+    \(0.05\) (counterfactual) & \(0.61\) & \(\equiv\) band-thick \\
+    \(0.01\) & \(1.00\) & near-floor open \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{World bundle (what the LLM sees)}
+The consumer object is a JSON world bundle (Table~\ref{tab:schema}): timing, completeness, honesty, quality (including the abstain flag), content tilts, and \texttt{evidence\_ids}.
+Listing~\ref{lst:bundle} shows an exchange-gap day; Listing~\ref{lst:bundle-thick} shows a \(3/3\)-ready day that still carries \(\mathrm{WMI}\approx 0.093\) and \texttt{should\_ai\_abstain=true} because five schema bands remain missing---the data end discloses that ceiling rather than inventing coverage.
+Paper-lab smoke on the production engines confirms WMI/ACWMI and abstain wiring under the configured thresholds.
 
 \begin{table}[t]
   \caption{World-bundle field groups (the market view).}
@@ -262,14 +360,15 @@ Outputs used in experiments are a \(\sim\)3{,}990-row PIT panel (10 assets \(\ti
     \midrule
     Timing & \texttt{decision\_asof}, previous-close protocol \\
     Completeness & ready/limited/missing counts, band status \\
+    Honesty & \(B,U,H\); main-view / stale gates \\
     Quality & WMI, ACWMI, abstain flag, \texttt{thin\_world} \\
     Content & \(\mathrm{macro\_tilt}\), \(\mathrm{alt\_tilt}\), \(\mathrm{mom5}\) \\
-    Audit & \texttt{evidence\_ids} \\
+    Audit & \texttt{evidence\_ids}; EAR required \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\begin{lstlisting}[caption={World bundle example (what Compiled sees).},label={lst:bundle}]
+\begin{lstlisting}[caption={Exchange-gap bundle (Compiled).},label={lst:bundle}]
 {"date":"2026-05-11","asset":"ADA",
  "decision_asof":"2026-05-10T23:59:00",
  "completeness":{"n_ready":2,"n_missing":1},
@@ -280,18 +379,31 @@ Outputs used in experiments are a \(\sim\)3{,}990-row PIT panel (10 assets \(\ti
    "band:exchange:missing","band:macro:ready"]}}
 \end{lstlisting}
 
-\paragraph{How consumers use the view.}
-\textbf{Compiled:} bundle + hard abstain when the quality flag is true.
-\textbf{Ungated:} same content and numeric WMI; soft ``you may abstain.''
-\textbf{Raw:} \(\mathrm{mom5}\) only.
-\textbf{Blind:} no feed.
-\(\max\mathrm{WMI}\approx 0.093\), so production Compiled abstains on every OOS day---a valve stress test; RQ1 still scores legibility of the disclosed view.
+\begin{lstlisting}[caption={$3/3$-ready day still thin under schema ceiling.},label={lst:bundle-thick}]
+{"date":"2026-01-16","asset":"ADA",
+ "completeness":{"n_ready":3,"n_missing":0},
+ "honesty":{"H":0.69,"U":0.38,"B_hier":0.35},
+ "world_model_index":{"wmi":0.093,"acwmi":0.45,
+   "should_ai_abstain":true,"thin_world":true},
+ "band_status":{"exchange":"ready","macro":"ready",
+   "alternative":"ready"}}
+\end{lstlisting}
+
+\subsection{Four arms and frozen prompts}
+Actions \(\in\{\mathrm{bullish},\mathrm{bearish},\mathrm{neutral},\mathrm{abstain}\}\).
+\textbf{Compiled:} full bundle; frozen prompt \emph{requires} abstain when \texttt{should\_ai\_abstain} is true (and when the world is judged thin).
+\textbf{Ungated:} same content, completeness, and numeric WMI; \emph{no} hard flag; soft prompt asks the model to judge thinness.
+\textbf{Raw:} \(\mathrm{mom5}\) only---common price-only wiring for the ladder, not an exhaustive tool-agent baseline; the estimand is the four-arm ranking of the data end, not \(\Delta\)CE vs.\ the strongest agent.
+\textbf{Blind:} ``Today is \(d\). How should I trade \(a\)?'' with no feed.
+\(\max\mathrm{WMI}\approx 0.093\), so production Compiled abstains on every OOS day---a scarce-support stress test of the valve, not a claim the data end never allows action.
 Compiled vs.\ Ungated differ only in enforcement (Listings~\ref{lst:prompt-c}--\ref{lst:prompt-u}); prompts, IS/OOS cut, and seeds are frozen.
+On thin Compiled days the evidence-alignment proxy (EAR) is \(1.0\) across vendors: rationales stay bound to disclosed \texttt{evidence\_ids}.
 
 \begin{lstlisting}[caption={Compiled (excerpt): hard valve.},label={lst:prompt-c}]
 1. If should_ai_abstain is true OR the world is thin,
    you MUST "abstain".
-2. Prefer band content over raw momentum.
+2. Prefer band content over raw momentum
+   (macro_tilt, alt_tilt are PIT-safe).
 3. Rationale must match evidence_ids.
 \end{lstlisting}
 
@@ -302,14 +414,25 @@ Compiled vs.\ Ungated differ only in enforcement (Listings~\ref{lst:prompt-c}--\
 NO hard abstain boolean; NO forced policy.
 \end{lstlisting}
 
+\paragraph{Why the hard valve is not a confound.}
+Compiled abstention is partly prompt obedience, and that is intentional: the data end's job on thin days is to \emph{block} action, not to hope the model discovers thinness (Prop.~\ref{prop:abstain}).
+Ungated measures soft judgment from the same disclosed bundle; Raw measures fragment wiring; Blind measures no feed.
+The gating result is that the hard flag is reliable across vendors; soft refusal is not---which is why half-baked context remains dangerous without the valve.
+
+\subsection{Systems validation (engines)}
+Paper-lab smoke against the production engines (same thresholds as the live service) returns a wired WMI/ACWMI sample with \texttt{should\_ai\_abstain} consistent with the configured index mode and abstain cutoffs (\(\mathrm{WMI}\) gate \(0.2\); ACWMI gate \(0.35\)).
+That check is not a substitute for the four-arm OOS evaluation below; it confirms the data-end indices the consumer bundle exposes are the same objects the runtime compiles.
+Availability shocks \(O_t\) are queryable on the service surface for event-study levers; this paper uses them as schema honesty, not as a trading identification claim.
+
+\FloatBarrier
 \section{Experiments}
 \label{sec:exp}
 
 \subsection{Setup}
-PIT panel \(\sim\)399 days, 10 liquid names, chronological IS/OOS \(200/200\) days.
-Unless noted, live arms share the same stratified \(100\) OOS asset-days (seed fixed), temperature \(0\), and four flash/mini vendors.
-The no-LLM probe uses \(199\) OOS days after return alignment.
-Primary metrics for RQ1 are grounding F1/accuracy; for RQ2, thin-world abstain rate (CE as avoided loss, not alpha).
+PIT panel \(\sim\)399 days \(\times\) 10 liquid names (\({\approx}3990\) asset-days; 2025-07--2026-08), chronological IS/OOS \(200/200\) days (cut \(2026\)-\(01\)-\(16\)).
+Unless noted, live arms share the same stratified \(100\) OOS asset-days (seed fixed), temperature \(0\), and four flash/mini vendors (gpt-5.4-mini, deepseek-v4-flash, glm-5.2, gemini-3.5-flash-lite) via an OpenAI-compatible adapter.
+Grounding uses \(50\) OOS days; full-OOS abstention uses \(n{=}2000\); the no-LLM probe uses \(199\) OOS days after return alignment.
+Primary metrics: RQ1 grounding F1/tilt accuracy (sufficiency chat secondary); RQ2 thin-world abstain rate (CE as avoided loss, not alpha); RQ3 \(\Delta\)CE of the content rule vs.\ momentum.
 
 \subsection{RQ1 (primary): Seeing---grounding workflow}
 \label{sec:grounding}
@@ -319,10 +442,9 @@ On \(50\) OOS asset-days, each model lists ready/missing bands among exchange/ma
 
 Table~\ref{tab:grounding}: Compiled mean ready/missing F1 and tilt-sign accuracy \(0.97\); Raw collapses to \(0.04\), \(0.23\), \(0.19\).
 Raw has no readiness or tilt fields, so it cannot recover archive state; Compiled forces use of the disclosed world.
-Sufficiency chat alone is weak (models may call \(3/3\)-ready ``enough'' while WMI marks thin), so we separate legibility (RQ1) from the valve (RQ2).
 
 \begin{table}[t]
-  \caption{Grounding ($50$ days): primary seeing result. C $=$ Compiled bundle; R $=$ Raw.}
+  \caption{Grounding ($50$ days): primary seeing result. C $=$ Compiled; R $=$ Raw.}
   \label{tab:grounding}
   \small
   \begin{tabular}{lrrrrrr}
@@ -340,11 +462,31 @@ Sufficiency chat alone is weak (models may call \(3/3\)-ready ``enough'' while W
   \end{tabular}
 \end{table}
 
-\paragraph{Case study (same asset-day).}
-Listings~\ref{lst:case-c}--\ref{lst:case-r} excerpt live rationales on ADA (2026-05-11): exchange missing; macro/alternative ready; thin world.
-Compiled recovers the checkable view and judges the world insufficient.
-Raw cannot list readiness or tilt signs because the fragment has no world fields.
-A second pair on ADA (2026-01-17) shows the valve contrast: Compiled abstains because \texttt{should\_ai\_abstain} is true; Raw goes bullish from \(\mathrm{mom5}=+1\) alone---half-baked context driving action.
+\paragraph{Legibility \(\neq\) sufficiency chat.}
+Table~\ref{tab:suff}: Compiled sufficiency accuracy averages only \(0.60\) (Gemini \(0.04\)) despite \(0.97\) field grounding, while Raw often answers ``enough?'' correctly by chance/heuristics (\(0.95\)) while inventing coverage.
+Chat judgment of ``is this enough to trade?'' is not a substitute for a typed world; we therefore measure seeing by checkable fields (RQ1) and action safety by the hard valve (RQ2).
+
+\begin{table}[t]
+  \caption{Sufficiency chat vs.\ field grounding ($50$ days). Seeing $=$ fields; chat alone misleads.}
+  \label{tab:suff}
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    Model & Suff.\ C & Suff.\ R & Ready F1 C & Ready F1 R \\
+    \midrule
+    gpt-5.4-mini & $0.78$ & $0.98$ & $0.94$ & $0.00$ \\
+    deepseek-v4-flash & $0.78$ & $0.90$ & $0.98$ & $0.06$ \\
+    glm-5.2 & $0.80$ & $0.96$ & $0.98$ & $0.09$ \\
+    gemini-3.5-flash-lite & $0.04$ & $0.94$ & $0.96$ & $0.03$ \\
+    \midrule
+    Mean & $0.60$ & $0.95$ & $0.97$ & $0.04$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Case study.}
+Listings~\ref{lst:case-c}--\ref{lst:case-r}: ADA (2026-05-11) exchange missing; Compiled recovers the checkable view; Raw cannot.
+A second day (2026-01-17) shows the valve contrast: Compiled abstains on \texttt{should\_ai\_abstain}; Raw goes bullish from \(\mathrm{mom5}=+1\) alone.
 
 \begin{lstlisting}[caption={Compiled grounding (gpt-5.4-mini, ADA 2026-05-11).},label={lst:case-c}]
 ready: alternative, macro
@@ -362,10 +504,9 @@ action (2026-01-17): bullish
 \subsection{RQ2 (safety valve): Hard refuse when the view is thin}
 \label{sec:gate}
 Legibility does not imply safe action.
-Table~\ref{tab:llm} and Figure~\ref{fig:und}: on the same \(100\) days, Compiled abstains on every thin day (\(1.0\)); Ungated soft-judges at mean \(0.68\) (Gemini \(0.43\)); Raw over-trades (Table~\ref{tab:mix}); Blind abstains \(1.0\) with no feed.
+Table~\ref{tab:llm} and Figure~\ref{fig:und}: on the same \(100\) days, Compiled abstains on every thin day (\(1.0\)); Ungated soft-judges at mean \(0.68\) (Gemini \(0.43\)); Raw over-trades (Table~\ref{tab:mix}); Blind abstains \(1.0\) with no feed---safe but useless as a data end.
 The costly failure mode is the middle case: half-baked Raw context makes models act and lose.
 Mean \(\Delta\)CE (Compiled$-$Raw) \({+}1.07\) is avoided loss under the valve, not an alpha claim.
-Full-OOS (\(n{=}2000\), all thin) reproduces Compiled \(1.0\) and Ungated mean \({\approx}0.56\).
 
 \begin{table}[t]
   \caption{Thin-world abstention on identical $100$ OOS days (Wilson 95\% CIs). Blind $=1.0$.}
@@ -409,16 +550,61 @@ Full-OOS (\(n{=}2000\), all thin) reproduces Compiled \(1.0\) and Ungated mean \
   \end{tabular}
 \end{table}
 
+\paragraph{Full-OOS replication.}
+Table~\ref{tab:fulloos}: on all \(2000\) OOS asset-days (every day thin under the \(0.2\) gate), Compiled thin-abstain remains \(1.000\) (Wilson \([.998,1]\)) for every vendor.
+Ungated soft rates fall to a four-vendor mean \({\approx}0.56\); Raw GPT/Gemini abstain at \(0.000\).
+Scale does not rescue soft judgment.
+Blind refuses everywhere with no feed on the paired \(100\)-day sample (abstain \(1.0\) for every vendor): the failure mode that needs a data end is not ``models never abstain,'' but ``thin fragments make them act.''
+
+\begin{table}[t]
+  \caption{Full-OOS thin abstention ($n{=}2000$ asset-days; all thin under gate $0.2$).}
+  \label{tab:fulloos}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Model & Thin C & Thin U & Abs.\ R \\
+    \midrule
+    gpt-5.4-mini & $1.000$ & $0.666$ & $0.000$ \\
+    deepseek-v4-flash & $1.000$ & $0.540$ & $0.748$ \\
+    glm-5.2 & $1.000$ & $0.679^*$ & $0.078^*$ \\
+    gemini-3.5-flash-lite & $1.000$ & $0.359$ & $0.000$ \\
+    \midrule
+    Mean & $1.000$ & ${\approx}0.56$ & --- \\
+    \bottomrule
+  \end{tabular}\\[-2pt]
+  {\scriptsize $^*$GLM coverage incomplete (Ungated $n{=}1402$; Raw $n{=}675$).}
+\end{table}
+
+\paragraph{Inside Ungated soft acts.}
+On the mixed \(100\)-day sample, when Ungated \emph{does} act, act-conditional CE is sharply negative for three of four vendors (DeepSeek \(-3.12\), GLM \(-4.28\), Gemini \(-1.67\)) while GPT is positive on its smaller act set.
+Soft disclosure without a hard flag is not a free lunch: the same readable world that RQ1 scores can still harm decisions when the valve is removed.
+
 \paragraph{Open slice (content lower bound).}
-Production gate \(0.2\) never opens on this panel (\(\max\mathrm{WMI}\approx 0.093\)); \(\mathrm{WMI}\ge 0.05\) selects the band-thick subset (\({\approx}61\%\) OOS; \(n{\approx}1224\)).
-On that slice Ungated (same content, no hard boolean) has mean abs.\ \({\approx}0.48\) and CE positive for every vendor (mean \({\approx}{+}0.29\); bootstrap \({\approx}{+}0.31\), CIs include 0)---a field lower bound, not Compiled-open.
+Table~\ref{tab:thick}: on \(\mathrm{WMI}\ge 0.05\) (\({\approx}61\%\) OOS; \(n{\approx}1224\)) Ungated keeps compiled content without the hard boolean---mean abs.\ \({\approx}0.48\), CE positive for every vendor (mean \({\approx}{+}0.29\); bootstrap \({\approx}{+}0.31\), CIs include 0).
 Production Compiled still abstains at \(1.0\); Raw stays risky (GPT/Gemini abs.\ \(0.0\), CE negative).
+Point-positive open-slice CE and negative mixed-sample act-conditional CE can coexist: regime and act selection matter; neither is a Compiled-open claim.
+
+\begin{table}[t]
+  \caption{Open slice ($3/3$ ready $\equiv$ $\mathrm{WMI}\ge 0.05$; $n{\approx}1224$). Content lower bound, not Compiled-open.}
+  \label{tab:thick}
+  \small
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Model & Abs.\ U & CE U & Act-CE U & Abs.\ R & CE R \\
+    \midrule
+    gpt-5.4-mini & $0.58$ & $+0.42$ & $+0.32$ & $0.00$ & $-0.28$ \\
+    deepseek-v4-flash & $0.42$ & $+0.21$ & $+0.45$ & $0.75$ & $+0.04$ \\
+    glm-5.2 & $0.58$ & $+0.24$ & $+0.11$ & $0.09^*$ & $-0.87^*$ \\
+    gemini-3.5-flash-lite & $0.34$ & $+0.31$ & $+0.06$ & $0.00$ & $-0.25$ \\
+    \bottomrule
+  \end{tabular}\\[-2pt]
+  {\scriptsize $^*$Raw GLM $n{=}398$; Ungated GLM $n{=}932$; others $n{=}1224$. Bootstrap mean CE ${\approx}{+}0.31$ ($B{=}5$, $999$ reps; one-sided $p{\approx}0.21$).}
+\end{table}
 
 \subsection{RQ3 (secondary): Nonempty bundle fields}
 \label{sec:econ}
 A transparent no-LLM rule on vintaged \(\mathrm{macro\_tilt}\) / \(\mathrm{alt\_tilt}\) beats momentum on shared returns (Table~\ref{tab:econ}, Figure~\ref{fig:econ}): OOS Sharpe \(0.764\) / CE \({+}0.130\) vs.\ momentum (\(0.096\), \(-0.206\)); block-bootstrap \(\Delta\mathrm{CE}{=}0.334\) (\(p{=}0.034\)).
-Leave-one-band-out attributes the gap to content, not the refuse flag; a non-vintaged audit shows no edge.
-On the open/thick slice \(\Delta\mathrm{CE}{=}0.315\); on exchange-gap days the rule abstains more (\(\Delta\mathrm{CE}{=}0.129\))---complementary to the valve test, not a thin-day profit claim.
+A \(2017\)--\(2026\) audit with non-vintaged proxy tilts shows no edge: value appears where the vintage-compiled world exists.
 
 \begin{table}[t]
   \caption{No-LLM content probe (secondary). Bootstrap $\Delta$CE $0.334$; raw gap $0.336$.}
@@ -444,28 +630,90 @@ On the open/thick slice \(\Delta\mathrm{CE}{=}0.315\); on exchange-gap days the 
   \label{fig:econ}
 \end{figure}
 
+\paragraph{Density split and LOBO channel.}
+Table~\ref{tab:dense}: on the open/thick slice \(\Delta\mathrm{CE}{=}0.315\); on exchange-gap days the rule abstains more (\(\Delta\mathrm{CE}{=}0.129\))---complementary to the valve test.
+Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting macro or alternative collapses the gap through the \emph{content} channel (content share \(1.0\); gating residual \(0\))---fields are nonempty, and the refuse flag is not what creates the edge.
+
+\begin{table}[t]
+  \caption{Content probe by archive density (OOS).}
+  \label{tab:dense}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Slice & Share & Mech CE & \(\Delta\)CE vs mom \\
+    \midrule
+    All OOS & $1.00$ & $0.130$ & $0.334^*$ \\
+    Open / thick & $0.61$ & $0.061$ & $0.315$ \\
+    Thin (exchange gap) & $0.39$ & $1.048$ & $0.129$ \\
+    \bottomrule
+  \end{tabular}\\[-2pt]
+  {\scriptsize $^*$Block-bootstrap $\Delta$CE; raw mean gap $0.336$.}
+\end{table}
+
+\begin{table}[t]
+  \caption{LOBO decomposition (ungated content probe). Content share $1.0$.}
+  \label{tab:lobo}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Drop & \(\Delta\)CE content & \(p\) & Content share \\
+    \midrule
+    macro & $-0.334$ & $0.034$ & $1.0$ \\
+    alternative & $-0.334$ & $0.034$ & $1.0$ \\
+    exchange & $0.000$ & $1.000$ & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig9_lobo_decomposition.pdf}
+  \Description{Leave-one-band-out content vs gating decomposition.}
+  \caption{LOBO: deleting macro/alternative removes the edge via content, not the refuse flag.}
+  \label{fig:lobo}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig_llm_understanding.png}
+  \Description{Understanding ladder contrasting compiled world readability against thin raw wiring.}
+  \caption{Seeing ladder (offline protocol check): compiled world fields are readable; raw momentum wiring is not a substitute world.}
+  \label{fig:understand}
+\end{figure}
+
 \subsection{Discussion}
 \paragraph{What carries the paper.}
-(i)~Legible data end (RQ1 grounding).
-(ii)~Hard valve where soft text fails (RQ2).
-(iii)~Nonempty fields under a no-LLM probe and open-slice lower bound (RQ3).
+(i)~The data end is legible: checkable grounding at \({\approx}0.97\), with sufficiency chat shown to be a poor substitute (RQ1).
+(ii)~Thin views must not drive action: soft text fails at \(100\)-day and full-OOS scale; Blind shows models can refuse with no feed, but Raw shows thin fragments make them act and lose; the hard valve works (RQ2).
+(iii)~Fields are nonempty under a no-LLM probe, density split, and LOBO content share \(1.0\); open-slice Ungated is a lower bound, not Compiled-open (RQ3).
 Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume---not a competing decision or execution layer.
 
 \paragraph{Why grounding first.}
 Trading PnL confounds observation quality with policy skill.
 Grounding asks whether the consumer can audit ready/missing/signed state; Raw cannot, Compiled can.
-The valve then asks whether soft judgment stops action on a thin disclosed world; empirically, no.
+The valve then asks whether soft judgment stops action on a thin disclosed world; empirically, no---at either sample size.
+That ordering matches the stack: a decision engine that cannot see, or that acts on thin support, is not rescued by better execution.
 
 \paragraph{Design.}
-World bundle not feature dump; previous-close PIT; four arms separate seeing+gating, seeing without gating, thin wiring, and no feed.
-Frozen prompts, temperature \(0\), IS/OOS cut, and seeds; anonymized harness on acceptance.
+World bundle not feature dump; previous-close PIT with explicit freshness; four arms separate seeing+gating, seeing without gating, thin wiring, and no feed.
+Schema honesty: eight bands in the runtime, three in the evaluation archive; WMI discloses the resulting ceiling.
+Service-layer health and bundle reads make the valve and the view callable by any downstream policy without re-ingesting collectors.
+
+\paragraph{Reproducibility.}
+Paper-lab smoke checks BandPIT/WMI/ACWMI wiring; PIT rebuild and the frozen four-arm harness regenerate the panel and live transcripts used here.
+Prompts, IS/OOS cut, seeds, and vendor IDs are fixed; credentials stay in environment variables.
+An anonymized harness ships on acceptance.
+
+\paragraph{Scope.}
+Estimand is data-end legibility and valve reliability on a scarce three-band archive---not decision-layer SOTA, not execution, and not production Compiled-open alpha.
+Denser historical bands would lift WMI; decision and execution stacks can sit on top once the view opens.
 
 \section{Conclusion}
 \label{sec:conc}
 
-Public LLMs need a data end before they decide.
-We compile asynchronous crypto evidence into a PIT world bundle and hard-refuse when the view is too thin.
-Grounding \({\approx}0.97\) vs.\ Raw collapse; thin-abstain \(1.0\) where soft judgment fails; vintaged tilts nonempty (\(\Delta\mathrm{CE}{=}0.334\)).
+End-to-end crypto quant for public LLMs needs a reliable data end before decision or execution.
+We contribute that observation layer: compile asynchronous evidence into a consumable PIT world bundle, disclose structural missingness, and hard-refuse when the view is too thin.
+Grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; sufficiency chat alone fails; the hard valve abstains \(1.0\) on thin days (including full OOS) where soft judgment does not; vintaged tilts are nonempty (\(\Delta\mathrm{CE}{=}0.334\); LOBO content share \(1.0\)).
 Build the quant data end first: compile so models can see; refuse when they must not act.
 
 \begin{acks}
