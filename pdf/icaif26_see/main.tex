@@ -341,6 +341,25 @@ Sufficiency chat alone is weak---models may call a \(3/3\)-ready day ``enough'' 
   \end{tabular}
 \end{table}
 
+\paragraph{Case study (same asset-day).}
+Listings~\ref{lst:case-c}--\ref{lst:case-r} excerpt live rationales on ADA (2026-05-11): exchange missing; macro/alternative ready; thin world.
+Compiled recovers the checkable view and judges the world insufficient.
+Raw cannot list readiness or tilt signs because the fragment has no world fields.
+A second pair on ADA (2026-01-17) shows the valve contrast: Compiled abstains because \texttt{should\_ai\_abstain} is true; Raw goes bullish from \(\mathrm{mom5}=+1\) alone---half-baked context driving action.
+
+\begin{lstlisting}[caption={Compiled grounding (gpt-5.4-mini, ADA 2026-05-11).},label={lst:case-c}]
+ready: alternative, macro
+missing: exchange
+macro_tilt +; alt_tilt -; sufficiency: insufficient
+"thin world... should_ai_abstain=true"
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Raw grounding / action (same model family).},label={lst:case-r}]
+grounding: ready=[]; cannot confirm tilts
+action (2026-01-17): bullish
+"Positive 5-period momentum in raw feed."
+\end{lstlisting}
+
 \subsection{RQ2 (safety valve): Hard refuse when the view is thin}
 \label{sec:gate}
 Legibility does not imply safe action.
@@ -495,8 +514,10 @@ The valve then answers the next question: when the disclosed world is thin, will
 
 \paragraph{What this archive can and cannot support.}
 With the frozen three-band panel we can validate seeing, valve reliability, and nonempty tilts---including rule backtests and open-slice lower bounds.
-We \emph{cannot} claim production Compiled-open trading: max WMI stays below \(0.2\).
-News, on-chain, options, and tokenomics bands are missing in the evaluation archive even though the runtime schema admits them; denser collection is the path to a live open regime.
+We \emph{cannot} claim production Compiled-open trading: \(\max\mathrm{WMI}\approx 0.093{<}0.2\).
+Structurally, WMI multiplies breadth, stability, and honesty; with five of eight schema bands missing, breadth caps WMI near \(0.09\) even on \(3/3\)-ready days.
+Lifting the production gate needs \emph{historical} multi-band backfill (news, on-chain, options, tokenomics, events), not a same-day collector run.
+A labeled counterfactual open protocol (gate \(0.05\); drop the prompt thinness clause) is a near-term engineering test---not a claim that production WMI cleared \(0.2\).
 
 \paragraph{Design rationale.}
 (i)~Ship a world bundle, not a feature dump.
@@ -515,7 +536,8 @@ Frozen prompts, IS/OOS cut, seeds, and table builders ship with the submission; 
 
 Public LLMs need a market they can see before they decide.
 We contribute an observation layer that compiles asynchronous crypto evidence into a consumable PIT world bundle, and forces abstention when the view is too thin.
-Live, grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; the hard valve abstains \(1.0\) on thin days where soft judgment does not; vintaged tilts and open-slice disclosure give a nonempty content lower bound without claiming Compiled-open trading.
+Live, grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ Raw collapse; case-level rationales show the same gap; the hard valve abstains \(1.0\) on thin days where soft judgment does not; vintaged tilts and open-slice disclosure give a nonempty content lower bound without claiming Compiled-open trading.
+Production open regimes need historical multi-band backfill to lift WMI above \(0.2\); until then the contribution is a see-first observation layer with an enforceable valve.
 Compile so models can see; refuse when they must not act.
 
 \begin{acks}
