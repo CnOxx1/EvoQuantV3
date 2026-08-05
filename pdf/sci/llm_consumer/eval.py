@@ -40,6 +40,7 @@ def _load_prompt(treatment: str) -> str:
         "compiled": "compiled.txt",
         "raw": "raw.txt",
         "ungated": "ungated.txt",
+        "hpo": "hpo.txt",
     }
     if treatment not in mapping:
         raise KeyError(f"Unknown treatment: {treatment}")
@@ -170,6 +171,19 @@ def build_ungated_bundle(row: pd.Series) -> dict[str, Any]:
     return bundle
 
 
+def build_hpo_bundle(row: pd.Series) -> dict[str, Any]:
+    """Hard-Prompt-Only: ungated fields + hard numeric threshold text (no boolean).
+
+    Isolates prompt obedience to numeric WMI/ACWMI from the typed
+    ``should_ai_abstain`` runtime flag used by Compiled.
+    """
+    bundle = build_ungated_bundle(row)
+    wmi = dict(bundle.get("world_model_index") or {})
+    wmi["note"] = "hpo_hard_prompt_numeric_threshold_no_boolean"
+    bundle["world_model_index"] = wmi
+    return bundle
+
+
 def _build_bundle(treatment: str, row: pd.Series) -> dict[str, Any]:
     if treatment == "compiled":
         return build_compiled_bundle(row)
@@ -177,6 +191,8 @@ def _build_bundle(treatment: str, row: pd.Series) -> dict[str, Any]:
         return build_raw_bundle(row)
     if treatment == "ungated":
         return build_ungated_bundle(row)
+    if treatment == "hpo":
+        return build_hpo_bundle(row)
     raise KeyError(treatment)
 
 
@@ -219,17 +235,17 @@ def _understanding_metrics(df: pd.DataFrame, transcripts: list[dict], treatment:
         # Thinness is defined by the compiled world index even for ablations.
         compiled = build_compiled_bundle(r)
         thin = bool((compiled.get("world_model_index") or {}).get("thin_world"))
-        if treatment in {"compiled", "ungated"} and thin:
+        if treatment in {"compiled", "ungated", "hpo"} and thin:
             thin_n += 1
             if t["action"] == "abstain":
                 thin_hits += 1
         if t["action"] == "abstain":
             ear_ok += 1
-        elif treatment in {"compiled", "ungated"}:
+        elif treatment in {"compiled", "ungated", "hpo"}:
             ear_ok += 1  # structured consumer harness
         else:
             ear_ok += 1 if t["action"] in {"bullish", "bearish", "neutral"} else 0
-        if treatment in {"compiled", "ungated"}:
+        if treatment in {"compiled", "ungated", "hpo"}:
             bundle = _build_bundle(treatment, r)
             ready_shares.append(float((bundle.get("completeness") or {}).get("ready_share") or 0.0))
     return {
@@ -448,7 +464,7 @@ def main(argv: list[str] | None = None) -> int:
         "--treatments",
         type=str,
         default="compiled,raw",
-        help="Comma-separated treatments: compiled,raw,ungated",
+        help="Comma-separated treatments: compiled,raw,ungated,hpo",
     )
     parser.add_argument(
         "--min-wmi",

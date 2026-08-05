@@ -1,0 +1,9 @@
+{
+  "definition": "soft_ear = share of rationales mentioning disclosed band/tilt/quality/evidence cues (offline transcript audit; not strict evidence_id match).",
+  "stress_means": {
+    "compiled": 0.665,
+    "raw": 0.3775,
+    "ungated": 0.79
+  },
+  "note": "Thin-day harness ear_proxy=1.0 remains the Compiled contract proxy (abstain when flagged). soft_ear audits free-text binding."
+}

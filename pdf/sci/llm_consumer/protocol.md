@@ -23,6 +23,7 @@ We do **not** claim unconditional LLM trading alpha.
 | Arm | Information set |
 | --- | --- |
 | **Compiled** | PIT-safe world-model bundle: band statuses, completeness, honesty \((B,U,H)\), WMI/ACWMI, tilts, regime, cascade, evidence_ids, **hard** `should_ai_abstain` (prompt requires abstain when true) |
+| **HPO** | Same numeric fields as Ungated (**no** boolean); frozen prompt **requires** abstain if `wmi < wmi_abstain_threshold` (hard prompt / soft fields) |
 | **Ungated** | Same content/completeness/numeric WMI as Compiled, but **no** hard abstain boolean and no forced policy (soft judgment ablation) |
 | **Raw** | Thin feed: momentum only; no world index; no band roles; no abstention guidance |
 

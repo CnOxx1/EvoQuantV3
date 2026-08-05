@@ -1,0 +1,5 @@
+treatment,soft_ear,abstain_rate
+compiled,0.998,1.0
+hpo,0.992,1.0
+raw,0.378,0.18
+ungated,0.8,0.492

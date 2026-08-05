@@ -1,0 +1,5 @@
+model,compiled_abstain_rate,ungated_abstain_rate,raw_abstain_rate,compiled_thin_world_abstain_rate,ungated_thin_world_abstain_rate,compiled_ear_proxy
+gpt-5.4-mini,,,,,,
+deepseek-v4-flash,,,,,,
+glm-5.2,,,,,,
+gemini-3.5-flash-lite,,,,,,
