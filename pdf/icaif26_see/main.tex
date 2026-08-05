@@ -62,7 +62,7 @@ We treat the missing piece as a \emph{data end}: an anonymized observation runti
 \textbf{Evidence.} Primary---seeing: grounding recovers ready/missing/tilt at \({\approx}0.97\) under Compiled vs.\ \({\lesssim}0.23\) under Raw, while sufficiency chat alone is unreliable (Compiled mean \(0.60\)).
 Secondary---valve: under a \emph{frozen full-schema} stress gate (\(\max\mathrm{WMI}\approx 0.093{<}0.2\)), Compiled thin-abstain is \(1.0\) (100-day and full OOS \(n{=}2000\)) while Ungated soft judgment is only \({\approx}0.68\) / \({\approx}0.56\); Raw over-trades.
 Secondary---handoff: the \emph{scoped-archive production valve} opens on \({\approx}61\%\) OOS days; live LLMs abstain \(1.0\) on closed days and act on \({\approx}89\%\) of open days, while a no-LLM tilt rule remains nonempty (Sharpe \(0.77\)).
-\textbf{Claim.} First, give models a world; then ask them to decide. We move from model-first to data-end-first: compile so models can see; refuse when they must not act.
+\textbf{Claim.} First, give models a world; then ask them to decide. We move from model-first to \emph{LLM-consumable} data-end-first: compile so models can read the market state; refuse when they must not act---a machine-native contract, not a human dashboard.
 \end{abstract}
 
 \begin{CCSXML}
@@ -124,7 +124,8 @@ No feed \(\to\) refuse (safe, useless as a data end).
 Thin price fragment \(\to\) trade and lose (unsafe for any downstream agent).
 Disclosed but ungated world \(\to\) read fields, disagree on action.
 These are not model failures; they are interface failures.
-So the data end must (i)~make the market legible to LLMs/agents and (ii)~enforce a quality valve before decision/execution.
+Primary consumer: the LLM agent---not the human desk---so the bundle replaces visual intuition with typed readiness/age/quality fields and a hard abstain boolean.
+So the data end must (i)~make the market machine-legible to LLMs/agents and (ii)~enforce a quality valve before decision/execution.
 
 \paragraph{What we build}
 An anonymized \emph{data-provision runtime for public LLMs and finance agents} (Section~\ref{sec:system}): multi-band evidence \(\to\) BandPIT/WMI \(\to\) JSON world bundle for GPT~/DeepSeek~/GLM~/Gemini-class consumers, served through a read API.
@@ -416,6 +417,17 @@ Listing~\ref{lst:bundle-thick}: \(3/3\)-ready day where scoped WMI\({=}1.0\) ope
     \bottomrule
   \end{tabular}
 \end{table}
+
+\paragraph{Human vs.\ LLM consumption}
+{\scriptsize\noindent
+\begin{tabular}{@{}ll@{}}
+Human desk & LLM agent \\
+Reads candlesticks & Reads \texttt{band\_status} \\
+Feels a ``thin'' world & Reads \(\mathrm{WMI}{=}0.14\) \\
+Decides to wait & Reads \texttt{should\_ai\_abstain: true} \\
+Scans news/context & Matches \texttt{evidence\_ids} \\
+\end{tabular}\par}
+The bundle therefore omits charts/colors and emphasizes symbolic contracts (EAR, dual-scope WMI) that LLMs process natively.
 
 \begin{lstlisting}[caption={Exchange-gap bundle (Compiled; scoped closed).},label={lst:bundle}]
 {"date":"2026-05-11","asset":"ADA",
@@ -749,7 +761,7 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
     Thin (exchange gap) & $0.39$ & $1.048^\S$ & $0.129$ \\
     \bottomrule
   \end{tabular}\\[-2pt]
-  {\scriptsize $^*$Block-bootstrap $\Delta$CE; raw mean gap $0.336$. $^\S$Always-on probe trades thin days by construction; high CE here is a mechanical selection effect, not evidence the valve should be removed---underscoring why a hard abstain flag is necessary even when content signals look strong.}
+  {\scriptsize $^*$Block-bootstrap $\Delta$CE; raw mean gap $0.336$. $^\S$Always-on probe trades thin days by construction; high CE is a selection effect, not a reason to remove the valve.}
 \end{table}
 
 \begin{table}[t]
@@ -765,7 +777,7 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
     exchange & $0.000$ & $1.000$ & --- \\
     \bottomrule
   \end{tabular}\\[-2pt]
-  {\scriptsize Dropping exchange leaves macro/alt tilts unchanged; the ungated probe relies on those tilts, so content share is undefined (---). The zero gap means exchange fields are redundant once tilt channels are active---not that exchange data is uninformative.}
+  {\scriptsize Exchange drop leaves macro/alt tilts unchanged, so content share is undefined (---); zero gap $\neq$ ``exchange is uninformative.''}
 \end{table}
 
 \begin{figure}[t]
@@ -780,7 +792,7 @@ Table~\ref{tab:lobo} and Figure~\ref{fig:lobo} (Prop.~\ref{prop:lobo}): deleting
 \label{sec:disc}
 
 \paragraph{What carries the paper}
-(i)~The compiled world is legible (grounding \({\approx}0.97\); sufficiency chat is not a substitute).
+(i)~Machine-native legibility: grounding \({\approx}0.97\) from a typed, auditable object LLMs consume deterministically---not a human-simplified view (sufficiency chat is not a substitute).
 (ii)~Hard policy binds on thin days (Compiled/HPO \(1.0\)); soft MAY does not (\({\approx}0.68\)).
 (iii)~Scoped production opens \({\approx}61\%\) OOS days; LLMs obey the valve; open-day CE \(\neq\) alpha; no-LLM tilts stay nonempty.
 Relative to FinMem~/FinAgent and ICAIF agent stacks~\cite{yu2023finmem,zhang2024finagent,choi2025finagentbench,shen2025finsearch,sun2025finresearchbench,duan2025factormad}, we supply the observation stage those systems assume.
@@ -794,7 +806,7 @@ We do not claim to solve crypto prediction or open-day LLM alpha; seeing a typed
 
 \paragraph{Design and scope}
 World bundle \(\neq\) feature dump; previous-close PIT; dual WMI scope; HPO separates hard prompt from hard boolean.
-Feature engineering outputs vectors; we output typed worlds with clocks, missingness declarations, and a machine-readable valve---downstream models read reliability rather than infer it.
+Feature engineering outputs vectors; we output typed worlds with clocks, missingness, and a machine-readable valve.
 Prompts, cut, and seeds are frozen; an anonymized harness ships on acceptance.
 
 \balance
@@ -803,9 +815,9 @@ Prompts, cut, and seeds are frozen; an anonymized harness ships on acceptance.
 
 AI-in-finance LLM/agent stacks need a reliable data end before decision or execution.
 We formalize that observation layer and show: grounding \({\approx}0.97\); hard policy (Compiled/HPO) thin-abstains \(1.0\) while soft Ungated does not; scoped production opens and is obeyed; tilts remain nonempty without claiming open-day LLM alpha.
-We do not teach models to be smarter. We teach them what the market looks like---and when not to guess.
+We do not teach models to be smarter. We teach them what the market looks like in a language they can parse---and when not to guess.
 In AI finance, seeing the world correctly is a prerequisite, not a luxury.
-Move from model-first to data-end-first: compile so models can see; refuse when they must not act.
+Move from model-first to LLM-consumable data-end-first: compile so models can read; refuse when they must not act.
 
 \begin{acks}
 Omitted for anonymous review.
