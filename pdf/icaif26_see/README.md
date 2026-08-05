@@ -12,7 +12,7 @@ Stack framing: **data/observation → decision → execution**; this paper owns 
 | Title focus | Compiling bundles **with** quality-gated refusal | Data end that compiles bundles **so LLMs can see** |
 | Shared | Same anonymized runtime, PIT panel, four arms, vendor IDs | Same |
 | Differentiated claim | Soft disclosure does not enforce thin abstention | Compiled data end makes ready/missing/tilt verifiable |
-| Length (opt2) | ~8 pp | **~6 pp** see-first + open-slice/content tables |
+| Length | ~8 pp | **~5–6 pp** data-end see-first (open-slice in prose) |
 
 **Submit only one narrative to a venue unless the CFP allows clearly distinct contributions.**
 These two folders are intentional siblings with **different primary estimands**; do not treat them as duplicate uploads of the same paper.

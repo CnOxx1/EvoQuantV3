@@ -22,9 +22,9 @@
 | --- | --- |
 | Purpose alignment (data end of E2E quant) | High |
 | Spine clarity (see → valve → content) | High |
-| Empiric thickness with available data | High (for what data allows) |
+| Empiric thickness with available data | High (for what data allows); open-slice in prose |
 | Production Compiled-open / decision SOTA claim | None (correctly scoped out) |
-| Pages | ~6 / ≤8 |
+| Pages | ~5 / ≤8 (post density trim) |
 
 ## Dual-submission
 
