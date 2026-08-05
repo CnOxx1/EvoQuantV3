@@ -1,0 +1,80 @@
+This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: ACM-Reference-Format.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Database file #1: refs.bib
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 9000 items from 6000.
+Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
+Reallocated global_strs (elt_size=200001) to 20 items from 10.
+Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Warning--empty address in choi2025finagentbench
+Warning--empty address in duan2025factormad
+Warning--empty address in geifman2017
+Warning--page numbers missing in both pages and numpages fields in geifman2017
+Warning--empty address in ha2018world
+Warning--page numbers missing in both pages and numpages fields in ha2018world
+Warning--empty address in hafner2020dreamer
+Warning--page numbers missing in both pages and numpages fields in hafner2020dreamer
+Warning--no number and no volume in lecun2022path
+Warning--page numbers missing in both pages and numpages fields in lecun2022path
+Warning--no number and no volume in li2023tradinggpt
+Warning--page numbers missing in both pages and numpages fields in li2023tradinggpt
+Warning--no number and no volume in lopez2023chatgpt
+Warning--page numbers missing in both pages and numpages fields in lopez2023chatgpt
+Warning--empty address in shen2025finsearch
+Warning--page numbers missing in both pages and numpages fields in shen2025finsearch
+Warning--empty address in sun2025finresearchbench
+Warning--empty publisher in yang2023fingpt
+Warning--empty address in yang2023fingpt
+Warning--page numbers missing in both pages and numpages fields in yang2023fingpt
+Warning--empty address in yao2023react
+Warning--page numbers missing in both pages and numpages fields in yao2023react
+Warning--empty address in zhang2024finagent
+Warning--page numbers missing in both pages and numpages fields in zhang2024finagent
+You've used 21 entries,
+            6273 wiz_defined-function locations,
+            1633 strings with 22084 characters,
+and the built_in function-call counts, 25329 in all, are:
+= -- 3270
+> -- 903
+< -- 0
++ -- 320
+- -- 325
+* -- 1828
+:= -- 2440
+add.period$ -- 104
+call.type$ -- 21
+change.case$ -- 170
+chr.to.int$ -- 21
+cite$ -- 45
+duplicate$ -- 2194
+empty$ -- 1550
+format.name$ -- 401
+if$ -- 6266
+int.to.chr$ -- 2
+int.to.str$ -- 1
+missing$ -- 94
+newline$ -- 200
+num.names$ -- 147
+pop$ -- 957
+preamble$ -- 1
+purify$ -- 338
+quote$ -- 0
+skip$ -- 767
+stack$ -- 0
+substring$ -- 1706
+swap$ -- 195
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 476
+warning$ -- 24
+while$ -- 132
+width$ -- 0
+write$ -- 431
+(There were 24 warnings)

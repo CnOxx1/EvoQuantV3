@@ -1,0 +1,5 @@
+model,abstain_rate,thin_world_abstain_rate,ear_proxy,CE
+public-llm-compiled-follower,1.0,1.0,1.0,0.0
+mock-compiled-aware,1.0,1.0,1.0,0.0
+mock-momentum,0.0,0.0,1.0,-0.2019
+mock-noisy,0.0,0.0,1.0,0.0

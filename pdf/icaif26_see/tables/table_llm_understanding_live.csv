@@ -1,0 +1,5 @@
+model,abstain_rate,thin_world_abstain_rate,ear_proxy,CE
+gpt-5.4-mini,1.0,1.0,1.0,0.0
+deepseek-v4-flash,1.0,1.0,1.0,0.0
+glm-5.2,1.0,1.0,1.0,0.0
+gemini-3.5-flash-lite,1.0,1.0,1.0,0.0

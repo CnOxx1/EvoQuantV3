@@ -1,0 +1,54 @@
+{
+  "protocol": "pdf/sci/llm_consumer/protocol.md",
+  "role": "primary_ai_consumer_validation_understanding_first",
+  "thesis": "world_model_cognition_base_for_public_llms",
+  "is_oos_cut": "2026-01-16",
+  "n_oos_rows": 2000,
+  "models": [
+    "public-llm-compiled-follower",
+    "mock-compiled-aware",
+    "mock-momentum",
+    "mock-noisy"
+  ],
+  "mean_dCE": 0.1539,
+  "mean_compiled_thin_world_abstain": 0.5,
+  "deltas": [
+    {
+      "model": "public-llm-compiled-follower",
+      "dCE_compiled_minus_raw": 0.2019,
+      "dSharpe_compiled_minus_raw": -0.101,
+      "compiled_abstain_rate": 1.0,
+      "raw_abstain_rate": 0.0,
+      "compiled_thin_world_abstain_rate": 1.0,
+      "compiled_ear_proxy": 1.0
+    },
+    {
+      "model": "mock-compiled-aware",
+      "dCE_compiled_minus_raw": 0.2019,
+      "dSharpe_compiled_minus_raw": -0.101,
+      "compiled_abstain_rate": 1.0,
+      "raw_abstain_rate": 0.0,
+      "compiled_thin_world_abstain_rate": 1.0,
+      "compiled_ear_proxy": 1.0
+    },
+    {
+      "model": "mock-momentum",
+      "dCE_compiled_minus_raw": 0.0,
+      "dSharpe_compiled_minus_raw": 0.0,
+      "compiled_abstain_rate": 0.0,
+      "raw_abstain_rate": 0.0,
+      "compiled_thin_world_abstain_rate": 0.0,
+      "compiled_ear_proxy": 1.0
+    },
+    {
+      "model": "mock-noisy",
+      "dCE_compiled_minus_raw": 0.2117,
+      "dSharpe_compiled_minus_raw": 0.575,
+      "compiled_abstain_rate": 0.0,
+      "raw_abstain_rate": 0.0,
+      "compiled_thin_world_abstain_rate": 0.0,
+      "compiled_ear_proxy": 1.0
+    }
+  ],
+  "experiment_config_hash": "08da093f3b8ee25e"
+}

@@ -1,0 +1,5 @@
+model,treatment,abstain_rate,thin_world_abstain_rate,ear_proxy,CE
+gpt-5.4-mini,ungated,0.63,0.63,1.0,-0.3003
+deepseek-v4-flash,ungated,0.81,0.81,1.0,-0.1065
+glm-5.2,ungated,0.86,0.86,1.0,0.018
+gemini-3.5-flash-lite,ungated,0.43,0.43,1.0,-1.0427

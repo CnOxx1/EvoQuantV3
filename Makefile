@@ -1,4 +1,4 @@
-.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-full paper-ai-wm paper-icaif26 paper-core paper-bootstrap paper-llm-consumer paper-reconcile test-paper
+.PHONY: test lint format typecheck dev clean help paper-lab paper-smoke paper-pit paper-pdf paper-full paper-ai-wm paper-icaif26 paper-icaif26-see paper-core paper-bootstrap paper-llm-consumer paper-reconcile test-paper
 
 PYTHON ?= python
 export PYTHONPATH := $(CURDIR)
@@ -58,7 +58,7 @@ paper-full: ## 生成完整顶刊工作论文 PDF（英+中；含 AI-WM 变体�
 paper-ai-wm: ## AI-for-finance 世界模型运行时叙事 PDF → pdf/sci/main_ai_world_model.pdf
 	$(PYTHON) pdf/sci/generate_full_manuscript_pdf.py --variant ai-wm --skip-chinese
 
-paper-icaif26: ## ICAIF '26 ACM sigconf 匿名稿（pdf/icaif26/main.pdf）
+paper-icaif26: ## ICAIF '26 Paper A（pdf/icaif26/main.pdf；refusal-primary ranking）
 	cd pdf/icaif26 && pdflatex -interaction=nonstopmode main.tex >/dev/null || true
 	cd pdf/icaif26 && bibtex main >/dev/null || true
 	cd pdf/icaif26 && pdflatex -interaction=nonstopmode main.tex >/dev/null || true
@@ -66,6 +66,15 @@ paper-icaif26: ## ICAIF '26 ACM sigconf 匿名稿（pdf/icaif26/main.pdf）
 	test -f pdf/icaif26/main.pdf
 	cp pdf/icaif26/main.pdf pdf/icaif26/main_icaif26.pdf
 	@echo "Wrote pdf/icaif26/main.pdf (ACM sigconf anonymous)"
+
+paper-icaif26-see: ## ICAIF '26 Paper B（pdf/icaif26_see/main.pdf；see-market spine）
+	cd pdf/icaif26_see && pdflatex -interaction=nonstopmode main.tex >/dev/null || true
+	cd pdf/icaif26_see && bibtex main >/dev/null || true
+	cd pdf/icaif26_see && pdflatex -interaction=nonstopmode main.tex >/dev/null || true
+	cd pdf/icaif26_see && pdflatex -interaction=nonstopmode main.tex >/dev/null || true
+	test -f pdf/icaif26_see/main.pdf
+	cp pdf/icaif26_see/main.pdf pdf/icaif26_see/main_icaif26_see.pdf
+	@echo "Wrote pdf/icaif26_see/main.pdf (ACM sigconf anonymous; see-market)"
 
 paper-core: ## World-Model-First 核心中文稿：补图 + PDF
 	$(PYTHON) pdf/sci/generate_core_figures.py
