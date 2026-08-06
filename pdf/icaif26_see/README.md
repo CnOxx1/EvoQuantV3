@@ -12,7 +12,7 @@ Stack framing: **data/observation → decision → execution**; this paper owns 
 | Spine | Observation layer with **quality-gated refusal** as primary live ranking | **Data-end seeing** (grounding / legibility) first; refusal = valve |
 | Primary RQ | RQ1 gating ladder | RQ1 grounding workflow |
 | Title focus | Compiling bundles **with** quality-gated refusal | See first; compile PIT world bundles for LLM agents |
-| Shared | Same anonymized runtime, PIT panel, four arms, vendor IDs | Same |
+| Shared | Same anonymized runtime, PIT panel, five arms, vendor IDs | Same |
 | Differentiated claim | Soft disclosure does not enforce thin abstention | Compiled data end makes ready/missing/tilt verifiable |
 | Length | ~8 pp | **~8 pp** systems + seeing empirics (≤8) |
 
