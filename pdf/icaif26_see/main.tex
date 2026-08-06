@@ -273,7 +273,7 @@ Under an ungated rule the gating channel is shut, so the value gap identifies no
 
 \paragraph{Theory \(\rightarrow\) protocol}
 Prop.~\ref{prop:recon}--\ref{prop:compile} \(\Rightarrow\) RQ1.
-Prop.~\ref{prop:abstain} \(\Rightarrow\) RQ2 (Compiled/HPO hard policy vs.\ Ungated soft MAY).
+Prop.~\ref{prop:abstain} \(\Rightarrow\) RQ2 (Compiled/HPO hard vs.\ Ungated soft MAY).
 Def.~\ref{def:wmi}+Rem.~\ref{rem:qstar} \(\Rightarrow\) RQ3a (scoped valve).
 Prop.~\ref{prop:lobo} \(\Rightarrow\) RQ3b.
 
@@ -292,8 +292,8 @@ Paths and product names are omitted for double-blind review.
 \begin{figure*}[t!]
   \centering
   \includegraphics[width=0.90\textwidth]{fig_runtime_architecture.pdf}
-  \Description{Layered observation runtime from collectors to world-bundle consumers.}
-  \caption{Data-end pipeline: evidence $\rightarrow$ BandPIT $\rightarrow$ world bundle $\rightarrow$ Compiled / Ungated / Raw / Blind.}
+  \Description{Layered observation runtime from collectors through BandPIT and the world-bundle API to the five-arm consumer harness (Compiled/HPO/Ungated/Raw/Blind).}
+  \caption{Data-end pipeline: evidence $\rightarrow$ BandPIT $\rightarrow$ world bundle $\rightarrow$ Compiled / HPO / Ungated / Raw / Blind.}
   \label{fig:pipeline}
 \end{figure*}
 
@@ -303,7 +303,7 @@ Paths and product names are omitted for double-blind review.
 \item \textbf{Store layer.} Embedded stores hold raw series, merged market panels, and compiled analytics (readiness, WMI/ACWMI, world snapshots).
 \item \textbf{Logic layer.} BandPIT reconstructs readiness on a previous-close clock; honesty and missingness gates implement \(\Pi_t\); WMI, ACWMI, and availability shocks \(O_t\) are first-class.
 \item \textbf{Service layer.} A read API serves quality-tagged bundles and health objects without restarting collectors for newly arrived rows. Anonymized surface includes world-bundle reads, a valve-gated handoff endpoint (tilt action, no LLM), health exposing the abstain flag with band scope, a paper world-model time slice, and availability-shock queries.
-\item \textbf{Consumer~/eval layer.} Frozen-prompt public LLMs (and rule agents) call an OpenAI-compatible adapter at temperature \(0\) under the five-arm ladder (Compiled/HPO/Ungated/Raw/Blind)---the harness that scores market understanding against the supplied world.
+\item \textbf{Consumer~/eval layer.} Frozen-prompt public LLMs (and rule agents) call an OpenAI-compatible adapter at temperature \(0\). The five-arm ladder (Compiled, HPO, Ungated, Raw, Blind) is the harness that scores market understanding against the supplied world.
 \end{enumerate}
 
 \begin{table}[ht]
@@ -600,8 +600,8 @@ Mean \(\Delta\)CE (Compiled$-$Raw) \({+}1.07\) is avoided loss, not alpha.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig_four_arm_ladder.pdf}
-  \Description{Abstain-rate ladder with Wilson error bars (Blind/Raw/Ungated/Compiled-HPO).}
-  \caption{Safety valve ladder: Blind refuses; Raw over-trades; Ungated is unstable; Compiled/HPO enforce hard policy.}
+  \Description{Five-arm abstain-rate ladder with Wilson error bars (Blind/Raw/Ungated/HPO/Compiled) under full-schema stress.}
+  \caption{Safety valve ladder (five arms): Blind refuses; Raw over-trades; Ungated is unstable; HPO and Compiled both enforce hard thin policy under stress.}
   \label{fig:und}
 \end{figure}
 
@@ -753,7 +753,7 @@ Level~3: compliance logging of abstain decisions for algorithmic accountability.
 We do not claim to solve crypto prediction or open-day LLM alpha; seeing a typed world reduces decision risk before models get ``smarter.''
 
 \paragraph{Design and scope}
-World bundle \(\neq\) feature dump; previous-close PIT; dual WMI scope; HPO separates hard prompt from hard boolean.
+World bundle \(\neq\) feature dump; previous-close PIT; dual WMI scope; HPO separates hard prompt from boolean.
 Feature engineering outputs vectors; we output typed worlds with clocks, missingness, and a machine-readable valve.
 Prompts, cut, and seeds are frozen and specified in Section~\ref{sec:system}.
 Limits: three-band eval archive; flash/mini endpoints; CE is a probe score not a utility; no multi-name portfolio constraints.
