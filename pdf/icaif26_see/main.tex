@@ -143,7 +143,7 @@ Arms: Compiled, HPO (hard prompt on numeric WMI, no boolean), Ungated, Raw, Blin
 
 \paragraph{Contributions}
 (1)~AI--finance data-end semantics: epistemic observations, compilation \(\Pi_t\), world-quality index with band scope, and seeing vs.\ gating---interfaces that let LLM/agent stacks consume crypto markets safely.
-(2)~An anonymized data-provision path for agents: collectors to BandPIT to service surface (bundle / health / handoff) to world bundles, plus a frozen four-arm harness to \emph{evaluate} market understanding.
+(2)~An anonymized data-provision path for agents: collectors to BandPIT to service surface (bundle / health / handoff) to world bundles, plus a frozen five-arm harness (Compiled/HPO/Ungated/Raw/Blind) to \emph{evaluate} market understanding.
 (3)~Live LLM evidence that the substrate works: grounding \({\approx}0.97\); stress-gate abstain \(1.0\); scoped production valve obedience (closed \(1.0\); open act \({\approx}0.89\)); nonempty tilt handoff (Sharpe \(0.77\); LOBO \(1.0\)).
 Estimand: whether public models can see a typed market world, refuse when thin, and hand off when ready---not portfolio alpha.
 
@@ -255,7 +255,7 @@ Let \(c_{\mathrm{act}}(W_t)\) be the expected cost of acting and \(c_{\mathrm{ab
 If \(c_{\mathrm{act}}(W_t)>c_{\mathrm{abs}}\) and \(c_{\mathrm{act}}\) is nonincreasing in \(q(W_t)\),
 the Bayes action is abstain on \(\{W:q(W)<q^\star\}\)~\cite{elyaniv2010}.
 A hard runtime contract implements that set; soft ``you may abstain'' text does not.
-In finance, this aligns with the classic ``know when not to trade'' principle; our contribution is binding it to observable world quality rather than model confidence.
+In finance, this aligns with the classic ``know when not to trade'' principle; the contribution is binding it to observable world quality rather than model confidence.
 \end{proposition}
 \begin{remark}[Threshold \(q^\star=0.2\)]
 \label{rem:qstar}
@@ -303,7 +303,7 @@ Paths and product names are omitted for double-blind review.
 \item \textbf{Store layer.} Embedded stores hold raw series, merged market panels, and compiled analytics (readiness, WMI/ACWMI, world snapshots).
 \item \textbf{Logic layer.} BandPIT reconstructs readiness on a previous-close clock; honesty and missingness gates implement \(\Pi_t\); WMI, ACWMI, and availability shocks \(O_t\) are first-class.
 \item \textbf{Service layer.} A read API serves quality-tagged bundles and health objects without restarting collectors for newly arrived rows. Anonymized surface includes world-bundle reads, a valve-gated handoff endpoint (tilt action, no LLM), health exposing the abstain flag with band scope, a paper world-model time slice, and availability-shock queries.
-\item \textbf{Consumer~/eval layer.} Frozen-prompt public LLMs (and rule agents) call an OpenAI-compatible adapter at temperature \(0\) under four arms---the harness that scores market understanding against the supplied world.
+\item \textbf{Consumer~/eval layer.} Frozen-prompt public LLMs (and rule agents) call an OpenAI-compatible adapter at temperature \(0\) under the five-arm ladder (Compiled/HPO/Ungated/Raw/Blind)---the harness that scores market understanding against the supplied world.
 \end{enumerate}
 
 \begin{table}[ht]
@@ -319,7 +319,7 @@ Paths and product names are omitted for double-blind review.
     Quality indices & \(B,U,H\rightarrow\mathrm{WMI}\); band scope; abstain; \(O_t\) \\
     Bundle builder & Complete / honest / auditable JSON \\
     Service surface & Bundle / health / handoff / availability reads \\
-    Consumer harness & Four-arm protocol; temp.\ \(0\) \\
+    Consumer harness & Five-arm protocol; temp.\ \(0\) \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -600,8 +600,8 @@ Mean \(\Delta\)CE (Compiled$-$Raw) \({+}1.07\) is avoided loss, not alpha.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig_four_arm_ladder.pdf}
-  \Description{Four-arm abstain rates with Wilson error bars.}
-  \caption{Safety valve: Blind refuses; Raw over-trades; Ungated is unstable; Compiled/HPO enforce hard policy.}
+  \Description{Abstain-rate ladder with Wilson error bars (Blind/Raw/Ungated/Compiled-HPO).}
+  \caption{Safety valve ladder: Blind refuses; Raw over-trades; Ungated is unstable; Compiled/HPO enforce hard policy.}
   \label{fig:und}
 \end{figure}
 
@@ -615,7 +615,7 @@ When Ungated does act on the mixed \(100\)-day sample, act-conditional CE is sha
 \subsection{RQ3a (handoff): Scoped production valve with live LLMs}
 \label{sec:econ}
 Having established seeing (RQ1) and stress-gate refusal (RQ2), we ask whether the \emph{production} valve is callable.
-We report a negative open-day LLM \(\Delta\mathrm{CE}\) \emph{by design}: the estimand is valve usability and world nonempty-ness, not LLM portfolio skill.
+We report a negative open-day LLM \(\Delta\mathrm{CE}\) \emph{by design}: the estimand is valve usability and world nonemptiness, not LLM portfolio skill.
 The full-schema stress gate never clears \(0.2\), so it cannot open---by design in RQ2.
 Scoped production WMI opens on \({\approx}61\%\) OOS days (\(\equiv 3/3\) ready).
 We re-run the same four vendors on a stratified sample of \(70\) open + \(30\) closed OOS asset-days with scoped bundles (seed fixed; temp.\ \(0\)).
