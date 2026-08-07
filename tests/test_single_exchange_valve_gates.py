@@ -78,7 +78,7 @@ def test_hot_source_health_prefers_observation_time(monkeypatch):
         staleness_anchor = latest_observation_dt
     else:
         staleness_anchor = last_run_dt or latest_observation_dt
-    stale_mult = max(5 * 3, 45)  # single-exchange ticker floor
+    stale_mult = max(5 * 3, max(180, 18 * 8))  # single-exchange once-cycle floor
     age = (now - staleness_anchor).total_seconds()
     assert age <= stale_mult
 

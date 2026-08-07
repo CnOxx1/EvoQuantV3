@@ -3545,7 +3545,8 @@ class ExchangeDataService:
                 "ticker",
                 "orderbook",
             }:
-                stale_after_seconds = max(stale_after_seconds, 45)
+                once_budget = max(180, len(TARGET_SYMBOLS) * 8)
+                stale_after_seconds = max(stale_after_seconds, once_budget)
             for row in latest_pair_times:
                 symbol = str(row.get("symbol") or "").strip()
                 exchange = str(row.get("exchange") or "").strip().lower()
@@ -3840,11 +3841,12 @@ class ExchangeDataService:
             else:
                 staleness_anchor = last_run_dt or latest_observation_dt
             stale_mult = int(spec["interval_seconds"]) * 3
-            # Single-venue deploys often collect serially across many symbols; give
-            # ticker/orderbook a slightly wider health window so AI visibility is
-            # not lost before the bundle is assembled.
+            # Single-venue deploys collect serially across the full symbol universe;
+            # a once-cycle often exceeds interval*3 for ticker/orderbook. Keep those
+            # hot streams AI-visible for a full once-cycle budget.
             if len(TARGET_EXCHANGES) <= 1 and source_name in {"ticker", "orderbook"}:
-                stale_mult = max(stale_mult, 45)
+                once_budget = max(180, len(TARGET_SYMBOLS) * 8)
+                stale_mult = max(stale_mult, once_budget)
             is_stale = staleness_anchor is None or (
                 now - staleness_anchor
             ).total_seconds() > stale_mult
