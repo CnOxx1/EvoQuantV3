@@ -8,6 +8,9 @@
 Ticker 和 Kline 对所有层级统一频率（batch 采集无限速压力）。
 """
 
+from __future__ import annotations
+
+import os
 from enum import Enum
 from typing import TypedDict
 
@@ -91,11 +94,18 @@ ALL_SECTOR_SYMBOLS: frozenset[str] = frozenset(
 
 
 # 目标交易所（与 settings.EXCHANGE_CONFIG 中的 key 对应）
-TARGET_EXCHANGES = [
-    "binance",
-    "okx",
-    "bybit",
+# Override with TARGET_EXCHANGES=okx (comma-separated) for single-venue / geo-limited deploys.
+_DEFAULT_TARGET_EXCHANGES = ("binance", "okx", "bybit")
+_env_exchanges = [
+    part.strip().lower()
+    for part in os.getenv("TARGET_EXCHANGES", "").split(",")
+    if part.strip()
 ]
+TARGET_EXCHANGES = [
+    name
+    for name in (_env_exchanges or list(_DEFAULT_TARGET_EXCHANGES))
+    if name in _DEFAULT_TARGET_EXCHANGES
+] or list(_DEFAULT_TARGET_EXCHANGES)
 
 # K线采集周期
 KLINE_TIMEFRAMES = [
