@@ -651,9 +651,35 @@ class AssetReadinessService:
             notes=notes,
         )
 
-    def _band_from_alternative(self, asset: str, index: dict[str, dict]) -> dict[str, object]:
+    def _band_from_alternative(
+        self,
+        asset: str,
+        index: dict[str, dict],
+        alternative_bundle: dict | None = None,
+    ) -> dict[str, object]:
         info = index.get(asset)
         if info is None:
+            # Market-level alternative evidence (e.g. stablecoin supply) is shared
+            # across assets — same contract shape as macro shared_ready.
+            bundle = alternative_bundle or {}
+            ai_ready = list(bundle.get("ai_ready_source_names") or [])
+            ok_points = int(bundle.get("latest_ok_point_count") or 0)
+            raw_rows = int(bundle.get("raw_row_count") or bundle.get("row_count") or 0)
+            if ai_ready or ok_points > 0 or raw_rows > 0:
+                return self._band_detail(
+                    band_name="alternative",
+                    status="shared_ready",
+                    evidence_count=max(ok_points, len(ai_ready), 1 if raw_rows else 0),
+                    details={
+                        "band_status": "shared_ready",
+                        "ai_ready_source_names": ai_ready,
+                        "latest_ok_point_count": ok_points,
+                        "raw_row_count": raw_rows,
+                    },
+                    notes=[
+                        "未命中该资产专属 alternative 实体；使用市场级补充证据（shared_ready）。"
+                    ],
+                )
             return self._band_detail(
                 band_name="alternative",
                 status="missing",
@@ -803,7 +829,11 @@ class AssetReadinessService:
                     options_index,
                     options_tracked_assets,
                 ),
-                "alternative": self._band_from_alternative(asset, alternative_index),
+                "alternative": self._band_from_alternative(
+                    asset,
+                    alternative_index,
+                    alternative_bundle,
+                ),
                 "macro": self._band_from_macro(band_reports.get("macro")),
             }
             for band_name, detail in band_details.items():

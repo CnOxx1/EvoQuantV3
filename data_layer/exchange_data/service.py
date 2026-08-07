@@ -37,6 +37,10 @@ class ExchangeDataService:
     AI_EXCLUDED_SOURCE_REASON = "source_not_ready_for_ai"
     MINIMUM_ASSET_COUNT_FOR_MARKET_BREADTH = 6
     MINIMUM_EXCHANGE_COUNT_FOR_MARKET_BREADTH = 4
+    # Hot streams: health must track observation freshness, not a stale run row.
+    OBSERVATION_PRIMARY_HEALTH_SOURCES = frozenset(
+        {"ticker", "orderbook", "trade_flow", "open_interest", "funding", "basis"}
+    )
 
     AI_CRITICAL_SOURCE_FLAGS = {
         "exchange_coverage_incomplete",
@@ -1509,13 +1513,20 @@ class ExchangeDataService:
         configured_exchanges = list(TARGET_EXCHANGES)
         asset_count = len(configured_symbols)
         exchange_count = len(configured_exchanges)
+        # Keep the aspirational 4-exchange floor for multi-venue defaults.
+        # Only single-venue (geo-limited) deploys scale the floor down so they
+        # are not permanently marked "limited".
+        if exchange_count <= 1:
+            min_exchange_count = max(exchange_count, 1)
+        else:
+            min_exchange_count = cls.MINIMUM_EXCHANGE_COUNT_FOR_MARKET_BREADTH
         breadth_status = "filtered"
         if scope_kind == "default":
             breadth_status = (
                 "sufficient"
                 if (
                     asset_count >= cls.MINIMUM_ASSET_COUNT_FOR_MARKET_BREADTH
-                    and exchange_count >= cls.MINIMUM_EXCHANGE_COUNT_FOR_MARKET_BREADTH
+                    and exchange_count >= min_exchange_count
                 )
                 else "limited"
             )
@@ -1526,7 +1537,7 @@ class ExchangeDataService:
             "asset_count": asset_count,
             "exchange_count": exchange_count,
             "minimum_asset_count_for_market_breadth": cls.MINIMUM_ASSET_COUNT_FOR_MARKET_BREADTH,
-            "minimum_exchange_count_for_market_breadth": cls.MINIMUM_EXCHANGE_COUNT_FOR_MARKET_BREADTH,
+            "minimum_exchange_count_for_market_breadth": min_exchange_count,
             "breadth_status": breadth_status,
             "is_market_breadth_sufficient": (
                 None if scope_kind == "filtered" else breadth_status == "sufficient"
@@ -2564,11 +2575,18 @@ class ExchangeDataService:
                     f"{' ...' if len(not_ready_for_ai_source_names) > 8 else ''}。",
                 )
 
-            if int(section_statuses["spot"]["exchange_count"]) < 2:
+            # Cross-venue validation only applies when multiple venues are configured.
+            min_spot_venues = min(2, max(len(TARGET_EXCHANGES), 1))
+            if int(section_statuses["spot"]["exchange_count"]) < min_spot_venues:
                 self._append_unique(data_quality_flags, "spot_cross_exchange_validation_weak")
                 self._append_unique(
                     quality_notes,
-                    "spot 行情低于 2 家交易所，AI 无法可靠做跨交易所价格校验。",
+                    (
+                        f"spot 行情低于 {min_spot_venues} 家目标交易所，"
+                        "AI 无法可靠做跨交易所价格校验。"
+                        if min_spot_venues > 1
+                        else "spot 行情缺少已配置目标交易所快照。"
+                    ),
                 )
 
             if stale_sections:
@@ -3523,6 +3541,11 @@ class ExchangeDataService:
             latest_stale_pair_count = 0
             latest_stale_symbols: set[str] = set()
             stale_after_seconds = int(spec["interval_seconds"]) * 3
+            if len(TARGET_EXCHANGES) <= 1 and str(spec["source_name"]) in {
+                "ticker",
+                "orderbook",
+            }:
+                stale_after_seconds = max(stale_after_seconds, 45)
             for row in latest_pair_times:
                 symbol = str(row.get("symbol") or "").strip()
                 exchange = str(row.get("exchange") or "").strip().lower()
@@ -3806,10 +3829,25 @@ class ExchangeDataService:
             last_run_dt = self._to_datetime(last_run_finished_at)
             latest_observation_time = latest_meta.get("latest_observation_time")
             latest_observation_dt = self._to_datetime(latest_observation_time)
-            staleness_anchor = last_run_dt or latest_observation_dt
+            # Prefer observation time for hot streams: an old collection_runs row
+            # must not hide fresh latest_* snapshots (common after once-mode collects).
+            source_name = str(spec["source_name"])
+            if (
+                source_name in self.OBSERVATION_PRIMARY_HEALTH_SOURCES
+                and latest_observation_dt is not None
+            ):
+                staleness_anchor = latest_observation_dt
+            else:
+                staleness_anchor = last_run_dt or latest_observation_dt
+            stale_mult = int(spec["interval_seconds"]) * 3
+            # Single-venue deploys often collect serially across many symbols; give
+            # ticker/orderbook a slightly wider health window so AI visibility is
+            # not lost before the bundle is assembled.
+            if len(TARGET_EXCHANGES) <= 1 and source_name in {"ticker", "orderbook"}:
+                stale_mult = max(stale_mult, 45)
             is_stale = staleness_anchor is None or (
                 now - staleness_anchor
-            ).total_seconds() > int(spec["interval_seconds"]) * 3
+            ).total_seconds() > stale_mult
             health_status = resolve_source_health_status(
                 enabled=True,
                 configuration_ready=bool(spec.get("configuration_ready", True)),

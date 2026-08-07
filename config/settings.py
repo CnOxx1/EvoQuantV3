@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(_BASE_DIR, ".env"), override=False)
 
-from config.symbols import TARGET_SYMBOLS
+from config.symbols import TARGET_EXCHANGES, TARGET_SYMBOLS
 from loguru import logger
 
 # 项目根目录
@@ -81,29 +81,43 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 
 # 交易所配置
+# Enabled flags follow TARGET_EXCHANGES unless explicitly overridden by
+# BINANCE_ENABLED / OKX_ENABLED / BYBIT_ENABLED (1/0/true/false).
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
 EXCHANGE_CONFIG = {
     "binance": {
-        "enabled": True,
+        "enabled": _env_bool("BINANCE_ENABLED", "binance" in TARGET_EXCHANGES),
         "rate_limit": True,
         "options": {
             "defaultType": "spot",
         },
     },
     "okx": {
-        "enabled": True,
+        "enabled": _env_bool("OKX_ENABLED", "okx" in TARGET_EXCHANGES),
         "rate_limit": True,
         "options": {
             "defaultType": "spot",
         },
     },
     "bybit": {
-        "enabled": True,
+        "enabled": _env_bool("BYBIT_ENABLED", "bybit" in TARGET_EXCHANGES),
         "rate_limit": True,
         "options": {
             "defaultType": "spot",
         },
     },
 }
+
+# Single-venue / geo-limited mode: when only one target exchange is configured,
+# cross-venue validation and market-breadth exchange floors scale down accordingly.
+CONFIGURED_EXCHANGE_COUNT = len(TARGET_EXCHANGES)
+SINGLE_EXCHANGE_MODE = CONFIGURED_EXCHANGE_COUNT <= 1
 
 # API Key 配置（生产环境应使用环境变量或密钥管理）
 API_KEYS = {
