@@ -5,8 +5,32 @@ import ccxt
 import requests as _requests
 from loguru import logger
 
-from config.settings import EXCHANGE_CONFIG, API_KEYS, REQUEST_TIMEOUT, MAX_RETRIES, RETRY_DELAY, PROXY_URL
+from config.settings import (
+    API_KEYS,
+    BINANCE_LOAD_SPOT_MARKETS_ONLY,
+    BINANCE_PUBLIC_API_BASE,
+    EXCHANGE_CONFIG,
+    MAX_RETRIES,
+    PROXY_URL,
+    REQUEST_TIMEOUT,
+    RETRY_DELAY,
+)
 from data_layer.exchange_data.circuit_breaker import circuit_registry, CircuitOpenError
+
+
+def is_geo_restricted_error(exc: BaseException) -> bool:
+    """Detect venue geo/eligibility blocks that should not be retried."""
+    msg = str(exc).lower()
+    if "restricted location" in msg or "eligibility" in msg:
+        return True
+    if "block access from your country" in msg:
+        return True
+    if "cloudfront" in msg and "403" in msg:
+        return True
+    # Bare HTTP status markers commonly present in ccxt error strings.
+    if " 451 " in f" {msg} " or msg.rstrip().endswith(" 451"):
+        return True
+    return False
 
 
 class ExchangeClientManager:
@@ -32,6 +56,30 @@ class ExchangeClientManager:
     def _client_cache_key(self, exchange_name: str, market_type: str | None) -> str:
         normalized_market_type = self._normalize_market_type(market_type)
         return f"{exchange_name}:{normalized_market_type}"
+
+    @staticmethod
+    def _apply_binance_public_data_host(
+        client: ccxt.Exchange,
+        *,
+        market_type: str,
+    ) -> None:
+        """Point Binance spot public REST at the geo-friendly data host when configured."""
+        if not BINANCE_PUBLIC_API_BASE:
+            return
+        api_urls = client.urls.get("api")
+        if not isinstance(api_urls, dict):
+            return
+        # Spot public market data only — futures remain on fapi (often still geo-blocked).
+        if market_type == "spot":
+            api_urls["public"] = f"{BINANCE_PUBLIC_API_BASE}/api/v3"
+            api_urls["v1"] = f"{BINANCE_PUBLIC_API_BASE}/api/v1"
+            logger.info(
+                f"[binance] spot public API → {BINANCE_PUBLIC_API_BASE} "
+                "(geo-friendly market data host)"
+            )
+        if market_type == "spot" and BINANCE_LOAD_SPOT_MARKETS_ONLY:
+            # Prevent load_markets() from calling fapi/dapi (HTTP 451 in restricted regions).
+            client.options["fetchMarkets"] = ["spot"]
 
     def _create_client(
         self,
@@ -72,6 +120,12 @@ class ExchangeClientManager:
         # HTTP keep-alive: reuse TCP connections across requests to reduce
         # handshake overhead on high-frequency collection cycles.
         client.session = _requests.Session()
+
+        if exchange_name == "binance":
+            self._apply_binance_public_data_host(
+                client,
+                market_type=normalized_market_type,
+            )
 
         # 配置代理
         if PROXY_URL:
@@ -145,6 +199,11 @@ def retry_on_failure(func):
             except (ccxt.NetworkError, ccxt.ExchangeNotAvailable) as e:
                 last_exception = e
                 breaker.record_failure()
+                if is_geo_restricted_error(e):
+                    logger.warning(
+                        f"[{func.__name__}] 交易所地域限制，跳过重试: {e}"
+                    )
+                    raise
                 logger.warning(
                     f"[{func.__name__}] 网络错误 (第{attempt}/{MAX_RETRIES}次): {e}"
                 )
@@ -153,6 +212,12 @@ def retry_on_failure(func):
             except ccxt.RateLimitExceeded as e:
                 last_exception = e
                 breaker.record_failure()
+                # Bybit geo-blocks often surface as 403 RateLimitExceeded in ccxt.
+                if is_geo_restricted_error(e):
+                    logger.warning(
+                        f"[{func.__name__}] 交易所地域限制，跳过重试: {e}"
+                    )
+                    raise
                 wait_time = RETRY_DELAY * attempt * 2
                 logger.warning(
                     f"[{func.__name__}] 频率限制 (第{attempt}/{MAX_RETRIES}次), "
@@ -178,4 +243,4 @@ def _infer_breaker_name(func, args, kwargs) -> str:
     for arg in args:
         if isinstance(arg, str) and arg in ("binance", "okx", "bybit"):
             return f"exchange:{arg}"
-    return f"exchange:{func.__name__}"
+    return f"exchange:{getattr(func, '__name__', 'unknown')}"

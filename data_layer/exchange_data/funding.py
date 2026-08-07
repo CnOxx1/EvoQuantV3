@@ -212,38 +212,63 @@ class FundingRateCollector:
         return results
 
     def fetch_all_funding_rates(self) -> list[FundingRate]:
-        """批量获取所有目标交易对的当前资金费率（优先批量 API，回退并行获取）。"""
+        """批量获取所有目标交易对的当前资金费率（优先批量 API，回退并行获取）。
+
+        Per-venue isolation: a geo-blocked or failing exchange must not abort
+        funding collection for the remaining venues.
+        """
         results = []
         for exchange_name in TARGET_EXCHANGES:
-            client = self.client_manager.get_client(exchange_name, market_type="swap")
-            if not client.markets:
-                client.load_markets()
-            supports_batch = bool(getattr(client, "has", {}).get("fetchFundingRates"))
+            before = len(results)
+            try:
+                client = self.client_manager.get_client(
+                    exchange_name, market_type="swap"
+                )
+                if not client.markets:
+                    client.load_markets()
+                supports_batch = bool(
+                    getattr(client, "has", {}).get("fetchFundingRates")
+                )
 
-            if supports_batch and len(TARGET_SYMBOLS) > 1:
-                try:
-                    swap_symbols = [self._to_swap_symbol(s) for s in TARGET_SYMBOLS]
-                    raw_map = client.fetch_funding_rates(swap_symbols)
-                    for symbol in TARGET_SYMBOLS:
-                        swap = self._to_swap_symbol(symbol)
-                        raw = raw_map.get(swap)
-                        if raw:
-                            rate = self._parse_funding_raw(exchange_name, symbol, raw)
-                            if rate:
-                                results.append(rate)
-                    logger.debug(f"批量获取资金费率成功: [{exchange_name}] {len(results)} 条")
-                    continue
-                except Exception as e:
-                    logger.warning(f"批量资金费率失败，回退并行获取 [{exchange_name}]: {e}")
+                if supports_batch and len(TARGET_SYMBOLS) > 1:
+                    try:
+                        swap_symbols = [
+                            self._to_swap_symbol(s) for s in TARGET_SYMBOLS
+                        ]
+                        raw_map = client.fetch_funding_rates(swap_symbols)
+                        for symbol in TARGET_SYMBOLS:
+                            swap = self._to_swap_symbol(symbol)
+                            raw = raw_map.get(swap)
+                            if raw:
+                                rate = self._parse_funding_raw(
+                                    exchange_name, symbol, raw
+                                )
+                                if rate:
+                                    results.append(rate)
+                        logger.debug(
+                            f"批量获取资金费率成功: [{exchange_name}] "
+                            f"{len(results) - before} 条"
+                        )
+                        continue
+                    except Exception as e:
+                        logger.warning(
+                            f"批量资金费率失败，回退并行获取 [{exchange_name}]: {e}"
+                        )
 
-            # 回退：并行获取
-            tasks = [(exchange_name, symbol) for symbol in TARGET_SYMBOLS]
-            batch_results = parallel_fetch(
-                self.fetch_funding_rate,
-                tasks,
-                task_label=f"funding_{exchange_name}",
-            )
-            results.extend(batch_results)
+                # 回退：并行获取
+                tasks = [(exchange_name, symbol) for symbol in TARGET_SYMBOLS]
+                batch_results = parallel_fetch(
+                    self.fetch_funding_rate,
+                    tasks,
+                    task_label=f"funding_{exchange_name}",
+                )
+                results.extend(batch_results)
+            except Exception as e:
+                logger.error(
+                    f"资金费率采集跳过交易所 [{exchange_name}]: "
+                    f"{type(e).__name__}: {e}"
+                )
+                continue
 
         logger.info(f"共获取 {len(results)} 条资金费率")
         return results
