@@ -9,7 +9,9 @@ from data_layer.perpetual_basis_curve.client import PerpetualBasisCurveClient
 
 
 # 追踪的主要标的
-TARGET_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"]
+from config.symbols import TARGET_ASSET_CODES
+
+TARGET_SYMBOLS = [f"{asset}USDT" for asset in TARGET_ASSET_CODES]
 
 
 class PerpetualBasisCurveService:

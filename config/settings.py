@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(_BASE_DIR, ".env"), override=False)
 
-from config.symbols import TARGET_SYMBOLS
-from loguru import logger
+from config.symbols import TARGET_SYMBOLS  # noqa: E402
+from loguru import logger  # noqa: E402
 
 # 项目根目录
 BASE_DIR = _BASE_DIR
@@ -385,8 +385,13 @@ MACRO_CONFIG = {
 }
 
 # 补充特征采集配置
+# GitHub Search API 的匿名配额很低；无令牌时默认关闭，用户可显式设置
+# ALTERNATIVE_ENABLE_GITHUB=1 保留匿名采集行为。
+_GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
 ALTERNATIVE_CONFIG = {
-    "enable_github": os.getenv("ALTERNATIVE_ENABLE_GITHUB", "1").strip() != "0",
+    "enable_github": os.getenv(
+        "ALTERNATIVE_ENABLE_GITHUB", "1" if _GITHUB_TOKEN else "0"
+    ).strip() != "0",
     "enable_stablecoin": os.getenv("ALTERNATIVE_ENABLE_STABLECOIN", "1").strip() != "0",
     "enable_google_trends": os.getenv(
         "ALTERNATIVE_ENABLE_GOOGLE_TRENDS",
@@ -398,7 +403,7 @@ ALTERNATIVE_CONFIG = {
     "github_timeout_seconds": int(
         os.getenv("ALTERNATIVE_GITHUB_TIMEOUT_SECONDS", "20")
     ),
-    "github_token": os.getenv("GITHUB_TOKEN", "").strip(),
+    "github_token": _GITHUB_TOKEN,
     "github_rest_base_url": os.getenv(
         "ALTERNATIVE_GITHUB_REST_BASE_URL",
         "https://api.github.com",

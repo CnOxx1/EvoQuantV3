@@ -7,7 +7,9 @@ from loguru import logger
 from data_layer.cex_orderbook_depth.client import CexOrderbookDepthClient
 
 
-DEFAULT_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
+from config.symbols import TARGET_ASSET_CODES
+
+DEFAULT_SYMBOLS = [f"{asset}USDT" for asset in TARGET_ASSET_CODES]
 DEFAULT_EXCHANGES = ["binance", "okx", "bybit"]
 
 

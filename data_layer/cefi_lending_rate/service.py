@@ -1,12 +1,14 @@
 """cefi_lending_rate 服务层。"""
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from loguru import logger
 
 from data_layer.cefi_lending_rate.client import CefiLendingRateClient
 
-TARGET_ASSETS = ["BTC", "ETH", "USDT", "USDC", "SOL"]
+from config.symbols import TARGET_ASSET_CODES
+
+TARGET_ASSETS = TARGET_ASSET_CODES
 
 
 class CefiLendingRateService:

@@ -8,7 +8,9 @@ from logic_layer.sentiment_signal.analyzer import SentimentAnalyzer
 from logic_layer.sentiment_signal.repository import SentimentSignalRepository
 
 
-TARGET_SYMBOLS = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "AVAX", "DOT", "LINK", "ARB", "OP"]
+from config.symbols import TARGET_ASSET_CODES
+
+TARGET_SYMBOLS = TARGET_ASSET_CODES
 
 
 class SentimentSignalService:

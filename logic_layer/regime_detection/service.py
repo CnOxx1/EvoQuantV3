@@ -1,15 +1,14 @@
 """regime_detection 服务层。"""
 
-import math
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from loguru import logger
 
+from config.symbols import TARGET_ASSET_CODES
 from logic_layer.regime_detection.classifier import RegimeClassifier, RegimeFeatures
 from logic_layer.regime_detection.repository import RegimeDetectionRepository
 
-
-TARGET_SYMBOLS = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "AVAX", "DOT", "LINK", "ARB", "OP"]
+TARGET_SYMBOLS = TARGET_ASSET_CODES
 
 
 class RegimeDetectionService:

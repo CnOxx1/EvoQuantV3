@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from loguru import logger
+from config.symbols import TARGET_ASSET_CODES
 
 from database.db_manager import DBManager
 from logic_layer.onchain_lead_lag.calculator import OnchainLeadLagCalculator
@@ -51,7 +52,7 @@ class OnchainLeadLagService:
         },
     }
 
-    SYMBOLS: list[str] = ["BTC", "ETH", "SOL"]
+    SYMBOLS: list[str] = TARGET_ASSET_CODES
 
     def __init__(self, db: DBManager | None = None):
         if db is not None:

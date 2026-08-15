@@ -1,13 +1,12 @@
 """social_sentiment_data 服务层。"""
 
-import json
 import statistics
 from datetime import datetime, timezone, timedelta
 
 from loguru import logger
 
+from config.symbols import TARGET_ASSET_CODES
 from data_layer.social_sentiment_data.client import SocialSentimentClient
-from data_layer.social_sentiment_data.models import SentimentAggregation
 
 
 # symbol → santiment slug 映射
@@ -29,7 +28,7 @@ SYMBOL_SLUG_MAP = {
     "APT": "aptos",
 }
 
-TARGET_SYMBOLS = list(SYMBOL_SLUG_MAP.keys())
+TARGET_SYMBOLS = TARGET_ASSET_CODES
 
 
 class SocialSentimentDataService:
@@ -184,7 +183,6 @@ class SocialSentimentDataService:
                 continue
 
             counts = [r[0] for r in rows]
-            sentiments = [r[1] for r in rows]
             mean_count = statistics.mean(counts) if counts else 0
             std_count = statistics.stdev(counts) if len(counts) > 1 else 1
             latest_zscore = (counts[0] - mean_count) / std_count if std_count > 0 else 0

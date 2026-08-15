@@ -9,7 +9,9 @@ from logic_layer.funding_rate_model.calculator import FundingRateCalculator
 from logic_layer.funding_rate_model.repository import FundingRateModelRepository
 
 
-TARGET_SYMBOLS = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "AVAX", "DOT", "LINK", "ARB", "OP"]
+from config.symbols import TARGET_ASSET_CODES
+
+TARGET_SYMBOLS = TARGET_ASSET_CODES
 
 
 class FundingRateModelService:

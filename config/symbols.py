@@ -8,8 +8,33 @@
 Ticker 和 Kline 对所有层级统一频率（batch 采集无限速压力）。
 """
 
+import os
 from enum import Enum
-from typing import TypedDict
+from typing import Sequence, TypedDict
+
+
+def _resolve_csv_override(
+    env_name: str,
+    default: Sequence[str],
+    *,
+    allowed: Sequence[str],
+) -> list[str]:
+    """读取逗号分隔的部署覆盖，并拒绝未知配置值。"""
+    raw_value = os.getenv(env_name, "").strip()
+    if not raw_value:
+        return list(default)
+
+    values = [value.strip() for value in raw_value.split(",") if value.strip()]
+    if not values:
+        return list(default)
+
+    unknown_values = [value for value in values if value not in allowed]
+    if unknown_values:
+        raise ValueError(
+            f"{env_name} 包含未支持的值: {', '.join(unknown_values)}；"
+            f"允许值: {', '.join(allowed)}"
+        )
+    return values
 
 
 class SymbolTier(str, Enum):
@@ -48,8 +73,16 @@ SYMBOL_UNIVERSE: list[SymbolConfig] = [
     {"symbol": "TIA/USDT", "tier": "monitor", "sector": "modular"},
 ]
 
-# 向后兼容：扁平符号列表（现有代码无需修改）
-TARGET_SYMBOLS: list[str] = [e["symbol"] for e in SYMBOL_UNIVERSE]
+# 默认仅监控 BTC 与 ETH；完整资产宇宙保留为显式扩展配置的允许集合。
+# 部署时可用 EVOQUANT_TARGET_SYMBOLS=BTC/USDT,ETH/USDT 覆盖默认范围。
+SUPPORTED_TARGET_SYMBOLS: list[str] = [e["symbol"] for e in SYMBOL_UNIVERSE]
+DEFAULT_TARGET_SYMBOLS: list[str] = ["BTC/USDT", "ETH/USDT"]
+TARGET_SYMBOLS: list[str] = _resolve_csv_override(
+    "EVOQUANT_TARGET_SYMBOLS",
+    DEFAULT_TARGET_SYMBOLS,
+    allowed=SUPPORTED_TARGET_SYMBOLS,
+)
+TARGET_ASSET_CODES: list[str] = [symbol.split("/", 1)[0] for symbol in TARGET_SYMBOLS]
 
 # 预建索引：O(1) 查找 symbol → config（替代线性扫描）
 _SYMBOL_INDEX: dict[str, dict] = {e["symbol"]: e for e in SYMBOL_UNIVERSE}
@@ -90,15 +123,21 @@ ALL_SECTOR_SYMBOLS: frozenset[str] = frozenset(
 )
 
 
-# 目标交易所（与 settings.EXCHANGE_CONFIG 中的 key 对应）
-TARGET_EXCHANGES = [
+# 目标交易所（与 settings.EXCHANGE_CONFIG 中的 key 对应）。
+# 部署时可用 EVOQUANT_TARGET_EXCHANGES=okx 避开不可达交易所。
+DEFAULT_TARGET_EXCHANGES = [
     "binance",
     "okx",
     "bybit",
 ]
+TARGET_EXCHANGES = _resolve_csv_override(
+    "EVOQUANT_TARGET_EXCHANGES",
+    DEFAULT_TARGET_EXCHANGES,
+    allowed=DEFAULT_TARGET_EXCHANGES,
+)
 
-# K线采集周期
-KLINE_TIMEFRAMES = [
+# K线采集周期。部署时可用 EVOQUANT_KLINE_TIMEFRAMES=1m,5m 控制请求预算。
+DEFAULT_KLINE_TIMEFRAMES = [
     "1m",
     "5m",
     "15m",
@@ -106,6 +145,11 @@ KLINE_TIMEFRAMES = [
     "4h",
     "1d",
 ]
+KLINE_TIMEFRAMES = _resolve_csv_override(
+    "EVOQUANT_KLINE_TIMEFRAMES",
+    DEFAULT_KLINE_TIMEFRAMES,
+    allowed=DEFAULT_KLINE_TIMEFRAMES,
+)
 
 # K线历史回填天数
 KLINE_BACKFILL_DAYS = 30

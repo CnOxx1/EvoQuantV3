@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import time
 from datetime import datetime, timezone
 from itertools import combinations
 
 from loguru import logger
+from config.symbols import TARGET_ASSET_CODES
 
 from database.db_manager import DBManager
 from logic_layer.cross_venue_arbitrage.calculator import CrossVenueArbCalculator
@@ -23,9 +23,7 @@ class CrossVenueArbService:
     - 通过 repository 落库
     """
 
-    SYMBOLS: list[str] = [
-        "BTC", "ETH", "SOL", "DOGE", "XRP", "ARB", "OP", "AVAX",
-    ]
+    SYMBOLS: list[str] = TARGET_ASSET_CODES
     VENUES: list[str] = [
         "binance", "okx", "bybit", "dydx", "hyperliquid",
     ]
@@ -90,7 +88,7 @@ class CrossVenueArbService:
                     """SELECT last_price
                        FROM tickers
                        WHERE symbol = ? AND exchange = ?
-                       ORDER BY ts DESC LIMIT 1""",
+                       ORDER BY timestamp DESC LIMIT 1""",
                     (pair, venue),
                 )
                 if rows and rows[0]["last_price"]:

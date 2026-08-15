@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Optional
 
 import pandas as pd
-from loguru import logger
 
 from database.db_manager import DBManager
 from logic_layer.technical_indicators.aggregator import MultiExchangeKlineAggregator
@@ -59,11 +58,15 @@ class TechnicalIndicatorService:
         for target_symbol, target_timeframe in targets:
             # 增量跳过：无新 klines 时直接跳过
             if not full_refresh and since_days is None:
-                latest_raw = self.repository.fetch_latest_open_time(
-                    "klines", target_symbol, target_timeframe
+                latest_raw = self._as_utc_timestamp(
+                    self.repository.fetch_latest_open_time(
+                        "klines", target_symbol, target_timeframe
+                    )
                 )
-                latest_merged = self.repository.fetch_latest_open_time(
-                    "merged_klines", target_symbol, target_timeframe
+                latest_merged = self._as_utc_timestamp(
+                    self.repository.fetch_latest_open_time(
+                        "merged_klines", target_symbol, target_timeframe
+                    )
                 )
                 if (
                     latest_raw is not None
@@ -109,11 +112,15 @@ class TechnicalIndicatorService:
         for target_symbol, target_timeframe in targets:
             # 增量跳过：merged_klines 无更新时跳过指标计算
             if not full_refresh and since_days is None:
-                latest_merged = self.repository.fetch_latest_open_time(
-                    "merged_klines", target_symbol, target_timeframe
+                latest_merged = self._as_utc_timestamp(
+                    self.repository.fetch_latest_open_time(
+                        "merged_klines", target_symbol, target_timeframe
+                    )
                 )
-                latest_indicator = self.repository.fetch_latest_open_time(
-                    "technical_indicators", target_symbol, target_timeframe
+                latest_indicator = self._as_utc_timestamp(
+                    self.repository.fetch_latest_open_time(
+                        "technical_indicators", target_symbol, target_timeframe
+                    )
                 )
                 if (
                     latest_merged is not None
@@ -188,6 +195,16 @@ class TechnicalIndicatorService:
             targets = [target for target in targets if target[1] == timeframe]
         return targets
 
+    @staticmethod
+    def _as_utc_timestamp(value: object | None) -> Optional[pd.Timestamp]:
+        """将数据库返回的时间值规范为 UTC-aware Timestamp。"""
+        if value is None:
+            return None
+        timestamp = pd.Timestamp(value)
+        if timestamp.tzinfo is None:
+            return timestamp.tz_localize("UTC")
+        return timestamp.tz_convert("UTC")
+
     def _resolve_merge_since_time(
         self,
         symbol: str,
@@ -207,7 +224,7 @@ class TechnicalIndicatorService:
         )
         if latest_open_time is None:
             return None
-        return latest_open_time.tz_localize("UTC") if latest_open_time.tzinfo is None else latest_open_time
+        return self._as_utc_timestamp(latest_open_time)
 
     def _resolve_indicator_start_time(
         self,
@@ -229,11 +246,7 @@ class TechnicalIndicatorService:
         )
         if latest_open_time is None:
             return None
-        latest_open_time = (
-            latest_open_time.tz_localize("UTC")
-            if latest_open_time.tzinfo is None
-            else latest_open_time
-        )
+        latest_open_time = self._as_utc_timestamp(latest_open_time)
         return latest_open_time - bars_to_timedelta(
             timeframe,
             self.INDICATOR_LOOKBACK_BARS,

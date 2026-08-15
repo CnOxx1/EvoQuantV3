@@ -21,6 +21,9 @@ from config.settings import DATABASE_PATH
 from logic_layer.technical_indicators.calculator import TechnicalIndicatorCalculator
 
 
+WAL_CHECKPOINT_ON_CLOSE = os.getenv("SQLITE_WAL_CHECKPOINT_ON_CLOSE", "1").strip() != "0"
+
+
 class DBManager:
     """SQLite 数据库连接与表管理"""
 
@@ -3145,6 +3148,8 @@ class DBManager:
 
         for thread_id, conn in connections:
             try:
+                if WAL_CHECKPOINT_ON_CLOSE:
+                    conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
                 conn.close()
                 logger.debug(f"数据库连接已关闭 [thread={thread_id}]")
             except Exception as e:

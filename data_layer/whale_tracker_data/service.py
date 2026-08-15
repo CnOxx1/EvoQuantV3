@@ -1,15 +1,15 @@
 """whale_tracker_data 服务层。"""
 
-import statistics
 from datetime import datetime, timezone, timedelta
 
 from loguru import logger
 
+from config.symbols import TARGET_ASSET_CODES
 from data_layer.whale_tracker_data.client import WhaleTrackerClient
 
 
 # 追踪的主要标的
-TARGET_SYMBOLS = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "AVAX", "DOT", "LINK", "UNI", "ARB", "OP", "APT"]
+TARGET_SYMBOLS = TARGET_ASSET_CODES
 
 # 最小追踪金额（USD）
 MIN_WHALE_TX_USD = 500_000

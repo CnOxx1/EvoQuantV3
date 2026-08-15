@@ -4,6 +4,7 @@ import hashlib
 from datetime import datetime, timezone, timedelta
 
 from loguru import logger
+from config.symbols import TARGET_ASSET_CODES
 
 from data_layer.regulatory_data.client import RegulatoryDataClient
 
@@ -186,7 +187,7 @@ class RegulatoryDataService:
     def _infer_affected_assets(title: str, body: str) -> str:
         text = (title + " " + body).upper()
         assets = []
-        for symbol in ["BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "DOGE"]:
+        for symbol in TARGET_ASSET_CODES:
             if symbol in text:
                 assets.append(symbol)
         # 也检查全名

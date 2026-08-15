@@ -19,14 +19,14 @@ from __future__ import annotations
 
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_EXCEPTION, as_completed
+from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
 from datetime import datetime, timezone
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from loguru import logger
 
 from core.feature_flags import feature_flags
-from logic_layer.result_cache import logic_cache
+from config.symbols import TARGET_ASSET_CODES
 
 
 # 默认每 5 分钟执行一次全链路
@@ -59,6 +59,15 @@ def _has_failed_dependency(module_name: str, failed_modules: set[str]) -> bool:
     """检查模块的上游依赖是否包含失败模块。"""
     deps = _MODULE_DEPENDENCIES.get(module_name, set())
     return bool(deps & failed_modules)
+
+
+def _is_source_unavailable_error(error: Exception) -> bool:
+    """判断异常是否表示可选上游数据尚未采集或初始化。"""
+    message = str(error).lower()
+    return "no such table" in message or (
+        "relation" in message and "does not exist" in message
+    )
+
 
 # Prometheus 管道阶段计时（优雅降级）
 try:
@@ -102,6 +111,17 @@ def _run_phase(phase_name: str, tasks: list[tuple[str, callable]], failed_upstre
             results[module_name] = "success"
         except Exception as exc:
             elapsed = time.monotonic() - started
+            if _is_source_unavailable_error(exc):
+                logger.info(
+                    "逻辑管道 [{}] {} 跳过 ({:.1f}s)：输入源尚未初始化 ({})",
+                    phase_name, module_name, elapsed, exc,
+                )
+                if _METRICS_AVAILABLE:
+                    PIPELINE_PHASE_DURATION.labels(
+                        phase=phase_name, module=module_name, status="skipped"
+                    ).observe(elapsed)
+                results[module_name] = "skipped:source_unavailable"
+                continue
             logger.error(
                 "逻辑管道 [{}] {} 失败 ({:.1f}s): {}",
                 phase_name, module_name, elapsed, exc,
@@ -174,6 +194,16 @@ def _execute_task(phase_name: str, module_name: str, task_fn: callable) -> str:
         return "success"
     except Exception as exc:
         elapsed = time.monotonic() - started
+        if _is_source_unavailable_error(exc):
+            logger.info(
+                "逻辑管道 [{}] {} 跳过 ({:.1f}s)：输入源尚未初始化 ({})",
+                phase_name, module_name, elapsed, exc,
+            )
+            if _METRICS_AVAILABLE:
+                PIPELINE_PHASE_DURATION.labels(
+                    phase=phase_name, module=module_name, status="skipped"
+                ).observe(elapsed)
+            return "skipped:source_unavailable"
         logger.error(
             "逻辑管道 [{}] {} 失败 ({:.1f}s): {}",
             phase_name, module_name, elapsed, exc,
@@ -477,11 +507,7 @@ def _make_ai_market_context() -> callable:
         svc = AIMarketContextService()
         try:
             svc.build_latest_snapshots(
-                entity_keys=["BTC", "ETH", "SOL", "SUI",
-                             "DOGE", "XRP", "AVAX", "LINK",
-                             "ADA", "DOT", "POL", "UNI",
-                             "ARB", "OP", "NEAR", "ATOM",
-                             "APT", "TIA"],
+                entity_keys=TARGET_ASSET_CODES,
                 persist=True,
             )
         finally:
@@ -675,8 +701,6 @@ def _invalidate_api_cache_by_modules(completed_modules: list[str]) -> None:
     每个模块映射到一组缓存前缀，只清空受影响的缓存条目。
     如果超过 50% 模块完成，则全量清空。
     """
-    from logic_layer.cache_deps import cache_deps
-
     # 模块 → 缓存前缀映射
     MODULE_CACHE_PREFIXES: dict[str, list[str]] = {
         "technical_indicators": ["tech:", "tech_deep:"],

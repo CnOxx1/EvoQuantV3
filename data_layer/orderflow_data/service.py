@@ -1,10 +1,10 @@
 """orderflow_data 服务层。"""
 
-import statistics
 from datetime import datetime, timezone, timedelta
 
 from loguru import logger
 
+from config.symbols import TARGET_ASSET_CODES
 from data_layer.orderflow_data.client import OrderflowClient
 
 
@@ -24,7 +24,7 @@ SYMBOL_MAP = {
     "OP": {"binance": "OPUSDT", "bybit": "OPUSDT", "okx": "OP-USDT-SWAP"},
 }
 
-TARGET_SYMBOLS = list(SYMBOL_MAP.keys())
+TARGET_SYMBOLS = TARGET_ASSET_CODES
 LARGE_TRADE_USD = 100_000
 
 

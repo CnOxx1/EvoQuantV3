@@ -8,7 +8,9 @@ from logic_layer.anomaly_detection.detector import AnomalyDetector
 from logic_layer.anomaly_detection.repository import AnomalyDetectionRepository
 
 
-TARGET_SYMBOLS = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "AVAX", "DOT", "LINK", "ARB", "OP"]
+from config.symbols import TARGET_ASSET_CODES
+
+TARGET_SYMBOLS = TARGET_ASSET_CODES
 
 
 class AnomalyDetectionService:
