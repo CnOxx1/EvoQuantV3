@@ -1660,6 +1660,7 @@ class ExchangeDataService:
         job_name: str,
         func,
         metadata: dict[str, object] | None = None,
+        reraise: bool = True,
     ):
         started_at = datetime.now(timezone.utc).replace(tzinfo=None)
         status = "success"
@@ -1695,7 +1696,7 @@ class ExchangeDataService:
                     separators=(",", ":"),
                 ),
             )
-        if captured_exception is not None:
+        if captured_exception is not None and reraise:
             raise captured_exception
         return result
 
@@ -1838,12 +1839,17 @@ class ExchangeDataService:
         return orderbooks
 
     def collect_once(self, include_backfill: bool = False):
-        """执行一次完整采集，用于手动触发或本地联调。"""
+        """执行一次完整采集，用于手动触发或本地联调。
+
+        Job failures are recorded but do not abort the remaining sources — a
+        geo-blocked venue in funding must not skip orderbook/derivatives.
+        """
         self._run_collection_job(
             source_name="market_info",
             job_name="market_info_once",
             func=lambda: self.market_info_collector.collect(force=True),
             metadata={"mode": "once", "force": True},
+            reraise=False,
         )
         if include_backfill:
             self.kline_collector.backfill_all()
@@ -1854,24 +1860,28 @@ class ExchangeDataService:
                     job_name="kline_once",
                     func=lambda timeframe=timeframe: self.kline_collector.collect_timeframe(timeframe),
                     metadata={"mode": "once", "timeframe": timeframe},
+                    reraise=False,
                 )
         self._run_collection_job(
             source_name="ticker",
             job_name="ticker_once",
             func=self.ticker_collector.collect,
             metadata={"mode": "once"},
+            reraise=False,
         )
         self._run_collection_job(
             source_name="funding",
             job_name="funding_once",
             func=self.funding_collector.collect,
             metadata={"mode": "once"},
+            reraise=False,
         )
         self._run_collection_job(
             source_name="orderbook",
             job_name="orderbook_once",
             func=self.orderbook_collector.collect,
             metadata={"mode": "once"},
+            reraise=False,
         )
         self.collect_derivatives_once()
 
@@ -2002,30 +2012,35 @@ class ExchangeDataService:
             job_name="trade_flow_once",
             func=self.trades_collector.collect,
             metadata={"mode": "derivatives_once"},
+            reraise=False,
         )
         self._run_collection_job(
             source_name="open_interest",
             job_name="open_interest_once",
             func=self.open_interest_collector.collect,
             metadata={"mode": "derivatives_once"},
+            reraise=False,
         )
         self._run_collection_job(
             source_name="liquidations",
             job_name="liquidations_once",
             func=self.liquidations_collector.collect,
             metadata={"mode": "derivatives_once"},
+            reraise=False,
         )
         self._run_collection_job(
             source_name="long_short_ratio",
             job_name="long_short_ratio_once",
             func=self.long_short_ratio_collector.collect,
             metadata={"mode": "derivatives_once"},
+            reraise=False,
         )
         self._run_collection_job(
             source_name="basis",
             job_name="basis_once",
             func=self.basis_collector.collect,
             metadata={"mode": "derivatives_once"},
+            reraise=False,
         )
 
     def cleanup_historical_data(self) -> dict[str, int]:

@@ -105,6 +105,20 @@ EXCHANGE_CONFIG = {
     },
 }
 
+# Binance spot public market-data host. api.binance.com is often HTTP 451 from
+# restricted regions; data-api.binance.vision serves the same public spot
+# endpoints without that eligibility gate. Override/empty to use ccxt defaults.
+BINANCE_PUBLIC_API_BASE = os.getenv(
+    "BINANCE_PUBLIC_API_BASE",
+    "https://data-api.binance.vision",
+).strip().rstrip("/")
+# When using the public data host (or when futures are geo-blocked), only load
+# spot markets so load_markets() does not call fapi/dapi (also 451).
+BINANCE_LOAD_SPOT_MARKETS_ONLY = os.getenv(
+    "BINANCE_LOAD_SPOT_MARKETS_ONLY",
+    "1" if BINANCE_PUBLIC_API_BASE else "0",
+).strip().lower() in {"1", "true", "yes", "on"}
+
 # API Key 配置（生产环境应使用环境变量或密钥管理）
 API_KEYS = {
     "binance": {
@@ -294,6 +308,18 @@ PROXY_URL = os.getenv("CRYPTO_PROXY_URL", None)
 REQUEST_TIMEOUT = 60000  # 毫秒（代理环境下 load_markets 需要更长时间）
 MAX_RETRIES = 3
 RETRY_DELAY = 2  # 秒
+
+
+def enabled_target_exchanges(target_exchanges: list[str] | None = None) -> list[str]:
+    """Return TARGET_EXCHANGES entries that are enabled in EXCHANGE_CONFIG."""
+    from config.symbols import TARGET_EXCHANGES as _DEFAULT_TARGETS
+
+    names = list(target_exchanges if target_exchanges is not None else _DEFAULT_TARGETS)
+    return [
+        name
+        for name in names
+        if EXCHANGE_CONFIG.get(name, {}).get("enabled", False)
+    ]
 
 EXCHANGE_DERIVATIVES_CONFIG = {
     "trade_flow_interval_seconds": SCHEDULER_CONFIG["exchange_trade_flow_interval"],
