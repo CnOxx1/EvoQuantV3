@@ -15,7 +15,7 @@ MODULE_COLLECTORS = (
     "data_layer.mev_data.runner", "data_layer.miner_data.runner", "data_layer.stablecoin_flow_data.runner",
     "data_layer.onchain_address_data.runner", "data_layer.exchange_reserve_data.runner",
 )
-SCRIPT_COLLECTORS = ("collect_free_asset_metadata.py", "collect_free_multi_exchange_quotes.py")
+SCRIPT_COLLECTORS = ("collect_free_asset_metadata.py", "collect_free_multi_exchange_quotes.py", "collect_ethereum_network_snapshots.py")
 
 
 def main() -> int:

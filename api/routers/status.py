@@ -36,7 +36,11 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     "onchain_address": {"db": "market", "table": "address_labels", "description": "公开已知地址标签"},
     "asset_metadata": {"db": "market", "table": "asset_metadata_snapshots", "description": "CoinGecko 公开资产元数据与当前供应快照"},
     "bitcoin_onchain_history": {"db": "market", "table": "bitcoin_onchain_history", "description": "Bitcoin 公开交易、活跃地址与手续费日频历史"},
+    "ethereum_network": {"db": "market", "table": "ethereum_network_snapshots", "description": "Ethereum 公开交易、区块与手续费网络快照"},
     "okx_derivatives_history": {"db": "exchange", "table": "okx_derivatives_raw", "description": "OKX 公开 OI、资金费率、清算与基差原始记录"},
+    "okx_market_history": {"db": "exchange", "table": "okx_market_candle_history_raw", "description": "OKX BTC/ETH 现货与永续小时 K 线原始历史"},
+    "okx_funding_history": {"db": "exchange", "table": "okx_funding_history_raw", "description": "OKX BTC/ETH 永续资金费率原始历史"},
+    "deribit_funding_history": {"db": "exchange", "table": "deribit_funding_history_raw", "description": "Deribit BTC/ETH 永续小时资金费率原始历史"},
     "multi_exchange_quotes": {"db": "exchange", "table": "public_exchange_quote_snapshots", "description": "Kraken 与 Coinbase 公开跨交易所报价原始快照"},
 }
 

@@ -22,7 +22,11 @@ class TestStatusRegistry(unittest.TestCase):
         self.assertEqual(DOMAIN_REGISTRY["mev"]["table"], "mev_blocks")
         self.assertEqual(DOMAIN_REGISTRY["asset_metadata"]["table"], "asset_metadata_snapshots")
         self.assertEqual(DOMAIN_REGISTRY["bitcoin_onchain_history"]["table"], "bitcoin_onchain_history")
+        self.assertEqual(DOMAIN_REGISTRY["ethereum_network"]["table"], "ethereum_network_snapshots")
         self.assertEqual(DOMAIN_REGISTRY["okx_derivatives_history"]["table"], "okx_derivatives_raw")
+        self.assertEqual(DOMAIN_REGISTRY["okx_market_history"]["table"], "okx_market_candle_history_raw")
+        self.assertEqual(DOMAIN_REGISTRY["okx_funding_history"]["table"], "okx_funding_history_raw")
+        self.assertEqual(DOMAIN_REGISTRY["deribit_funding_history"]["table"], "deribit_funding_history_raw")
         self.assertEqual(DOMAIN_REGISTRY["multi_exchange_quotes"]["table"], "public_exchange_quote_snapshots")
 
     def test_unlicensed_or_unimplemented_domains_are_disabled_by_default(self):
