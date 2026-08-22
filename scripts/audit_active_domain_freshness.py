@@ -19,7 +19,7 @@ DATABASES = {
     "market": ROOT / "database" / "market_data.db",
     "analytics": ROOT / "database" / "analytics.db",
 }
-TIME_COLUMNS = ("collected_at", "timestamp", "created_at", "snapshot_time", "open_time", "as_of", "ts")
+TIME_COLUMNS = ("collected_at", "observed_at", "source_updated_at", "timestamp", "created_at", "snapshot_time", "open_time", "as_of", "ts")
 
 
 def load_registry() -> dict[str, dict[str, str]]:

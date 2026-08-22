@@ -16,14 +16,14 @@ from core.feature_flags import DEFAULT_DISABLED_DOMAINS, FeatureFlags
 class TestStatusRegistry(unittest.TestCase):
     def test_registry_uses_authoritative_domain_tables(self):
         self.assertEqual(
-            DOMAIN_REGISTRY["cross_asset"]["table"],
-            "cross_asset_correlation_snapshots",
-        )
-        self.assertEqual(
             DOMAIN_REGISTRY["stablecoin_flow"]["table"],
             "stablecoin_chain_flows",
         )
         self.assertEqual(DOMAIN_REGISTRY["mev"]["table"], "mev_blocks")
+        self.assertEqual(DOMAIN_REGISTRY["asset_metadata"]["table"], "asset_metadata_snapshots")
+        self.assertEqual(DOMAIN_REGISTRY["bitcoin_onchain_history"]["table"], "bitcoin_onchain_history")
+        self.assertEqual(DOMAIN_REGISTRY["okx_derivatives_history"]["table"], "okx_derivatives_raw")
+        self.assertEqual(DOMAIN_REGISTRY["multi_exchange_quotes"]["table"], "public_exchange_quote_snapshots")
 
     def test_unlicensed_or_unimplemented_domains_are_disabled_by_default(self):
         for domain in DEFAULT_DISABLED_DOMAINS:

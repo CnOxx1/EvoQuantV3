@@ -19,15 +19,9 @@ DATABASES = {
     "market": ROOT / "database" / "market_data.db",
     "analytics": ROOT / "database" / "analytics.db",
 }
-EXPECTED_ACTIVE = {
-    "exchange", "derivatives", "orderflow", "orderbook_depth",
-    "technical_indicators", "feature_standardization", "cross_asset",
-    "portfolio_risk", "macro", "news", "onchain", "options", "defi",
-    "governance", "gas_network", "mev", "mempool", "miner",
-    "stablecoin_flow", "regime_detection", "onchain_address", "exchange_reserve",
-}
-EXPECTED_EMPTY = {
-    "anomaly_detection",
+REQUIRED_NEW_RAW_DOMAINS = {
+    "asset_metadata", "bitcoin_onchain_history", "okx_derivatives_history",
+    "multi_exchange_quotes",
 }
 
 
@@ -81,14 +75,14 @@ def main() -> int:
     }
     checks = {
         "no_error_domains": api["summary"].get("error") == 0,
-        "all_expected_public_domains_active": all(
+        "all_registered_public_domains_active": all(
             evidence[domain]["api_status"] == "active" and (evidence[domain]["row_count"] or 0) > 0
-            for domain in EXPECTED_ACTIVE
+            for domain in registry
         ),
-        "expected_internal_domains_are_empty_not_error": all(
-            evidence[domain]["api_status"] == "empty" for domain in EXPECTED_EMPTY
+        "required_expansion_domains_registered": REQUIRED_NEW_RAW_DOMAINS.issubset(registry),
+        "pure_data_catalog_has_no_empty_or_disabled_domains": (
+            api["summary"].get("empty") == 0 and api["summary"].get("disabled") == 0
         ),
-        "unavailable_domains_are_explicitly_disabled": api["summary"].get("disabled") == 12,
     }
     result = {
         "status": "passed" if all(checks.values()) else "failed",

@@ -34,6 +34,10 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     "miner": {"db": "market", "table": "miner_metrics", "description": "公开矿工网络指标"},
     "stablecoin_flow": {"db": "market", "table": "stablecoin_chain_flows", "description": "稳定币供应与链分布快照"},
     "onchain_address": {"db": "market", "table": "address_labels", "description": "公开已知地址标签"},
+    "asset_metadata": {"db": "market", "table": "asset_metadata_snapshots", "description": "CoinGecko 公开资产元数据与当前供应快照"},
+    "bitcoin_onchain_history": {"db": "market", "table": "bitcoin_onchain_history", "description": "Bitcoin 公开交易、活跃地址与手续费日频历史"},
+    "okx_derivatives_history": {"db": "exchange", "table": "okx_derivatives_raw", "description": "OKX 公开 OI、资金费率、清算与基差原始记录"},
+    "multi_exchange_quotes": {"db": "exchange", "table": "public_exchange_quote_snapshots", "description": "Kraken 与 Coinbase 公开跨交易所报价原始快照"},
 }
 
 

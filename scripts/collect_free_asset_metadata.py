@@ -38,9 +38,11 @@ def main() -> int:
          r.get("total_supply"), r.get("max_supply"), r.get("market_cap"), r.get("total_volume"),
          r.get("last_updated"), now, "https://api.coingecko.com/api/v3/coins/markets") for r in rows])
     try:
-        pairs = conn.execute("SELECT DISTINCT symbol, exchange FROM market_info").fetchall()
+        exchange_conn = sqlite3.connect(ROOT / "database" / "exchange_data.db")
+        pairs = exchange_conn.execute("SELECT DISTINCT symbol, exchange FROM market_info").fetchall()
         conn.executemany("INSERT OR IGNORE INTO asset_exchange_pair_mappings VALUES (?,?,?,?)", [
             (symbol.split("/")[0], exchange, symbol, now) for symbol, exchange in pairs])
+        exchange_conn.close()
     except sqlite3.OperationalError:
         pass
     conn.commit(); conn.close()
