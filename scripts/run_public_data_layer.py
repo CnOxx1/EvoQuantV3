@@ -15,7 +15,13 @@ MODULE_COLLECTORS = (
     "data_layer.mev_data.runner", "data_layer.miner_data.runner", "data_layer.stablecoin_flow_data.runner",
     "data_layer.onchain_address_data.runner", "data_layer.exchange_reserve_data.runner",
 )
-SCRIPT_COLLECTORS = ("collect_free_asset_metadata.py", "collect_free_multi_exchange_quotes.py", "collect_ethereum_network_snapshots.py")
+SCRIPT_COLLECTORS = (
+    ("collect_free_asset_metadata.py", ()),
+    ("collect_free_multi_exchange_quotes.py", ()),
+    ("collect_ethereum_network_snapshots.py", ()),
+    ("collect_public_multi_exchange_candles.py", ("--coinbase-days", "7", "--bitstamp-limit", "168")),
+    ("build_multi_exchange_composite_candles.py", ()),
+)
 
 
 def main() -> int:
@@ -24,8 +30,8 @@ def main() -> int:
         result = subprocess.run([sys.executable, "-m", module, "--mode", "once"], check=False)
         if result.returncode:
             failed.append(module)
-    for script in SCRIPT_COLLECTORS:
-        result = subprocess.run([sys.executable, str(ROOT / "scripts" / script)], check=False)
+    for script, arguments in SCRIPT_COLLECTORS:
+        result = subprocess.run([sys.executable, str(ROOT / "scripts" / script), *arguments], check=False)
         if result.returncode:
             failed.append(script)
     print({"collectors": len(MODULE_COLLECTORS) + len(SCRIPT_COLLECTORS), "failed": failed})

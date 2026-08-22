@@ -4,7 +4,7 @@ import json, sqlite3
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-TABLES={"exchange_data.db":["okx_derivatives_raw","okx_market_candle_history_raw","okx_funding_history_raw","deribit_funding_history_raw","public_exchange_quote_snapshots","funding_rates","open_interest_snapshots","liquidation_bars","basis_snapshots"],"market_data.db":["asset_metadata_snapshots","asset_exchange_pair_mappings","asset_project_categories","bitcoin_onchain_history","ethereum_network_snapshots","stablecoin_chain_flows"]}
+TABLES={"exchange_data.db":["okx_derivatives_raw","okx_market_candle_history_raw","okx_funding_history_raw","deribit_funding_history_raw","public_exchange_candle_history_raw","multi_exchange_composite_candles","multi_exchange_candle_quality_events","public_exchange_quote_snapshots","funding_rates","open_interest_snapshots","liquidation_bars","basis_snapshots"],"market_data.db":["asset_metadata_snapshots","asset_exchange_pair_mappings","asset_project_categories","bitcoin_onchain_history","ethereum_network_snapshots","stablecoin_chain_flows"]}
 def main():
     out={}
     for db_name,tables in TABLES.items():

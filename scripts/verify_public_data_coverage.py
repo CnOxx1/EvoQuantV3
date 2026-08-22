@@ -21,7 +21,8 @@ DATABASES = {
 }
 REQUIRED_NEW_RAW_DOMAINS = {
     "asset_metadata", "bitcoin_onchain_history", "ethereum_network", "okx_derivatives_history",
-    "okx_market_history", "okx_funding_history", "deribit_funding_history", "multi_exchange_quotes",
+    "okx_market_history", "okx_funding_history", "deribit_funding_history", "multi_exchange_candle_history",
+    "multi_exchange_composite_candles", "multi_exchange_quotes",
 }
 
 

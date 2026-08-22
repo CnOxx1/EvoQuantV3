@@ -41,6 +41,8 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     "okx_market_history": {"db": "exchange", "table": "okx_market_candle_history_raw", "description": "OKX BTC/ETH 现货与永续小时 K 线原始历史"},
     "okx_funding_history": {"db": "exchange", "table": "okx_funding_history_raw", "description": "OKX BTC/ETH 永续资金费率原始历史"},
     "deribit_funding_history": {"db": "exchange", "table": "deribit_funding_history_raw", "description": "Deribit BTC/ETH 永续小时资金费率原始历史"},
+    "multi_exchange_candle_history": {"db": "exchange", "table": "public_exchange_candle_history_raw", "description": "Coinbase、Kraken、Bitstamp 公开小时 K 线原始历史"},
+    "multi_exchange_composite_candles": {"db": "exchange", "table": "multi_exchange_composite_candles", "description": "至少两家来源一致时生成的质量门控综合小时 K 线"},
     "multi_exchange_quotes": {"db": "exchange", "table": "public_exchange_quote_snapshots", "description": "Kraken 与 Coinbase 公开跨交易所报价原始快照"},
 }
 

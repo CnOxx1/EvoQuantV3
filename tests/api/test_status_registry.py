@@ -27,6 +27,8 @@ class TestStatusRegistry(unittest.TestCase):
         self.assertEqual(DOMAIN_REGISTRY["okx_market_history"]["table"], "okx_market_candle_history_raw")
         self.assertEqual(DOMAIN_REGISTRY["okx_funding_history"]["table"], "okx_funding_history_raw")
         self.assertEqual(DOMAIN_REGISTRY["deribit_funding_history"]["table"], "deribit_funding_history_raw")
+        self.assertEqual(DOMAIN_REGISTRY["multi_exchange_candle_history"]["table"], "public_exchange_candle_history_raw")
+        self.assertEqual(DOMAIN_REGISTRY["multi_exchange_composite_candles"]["table"], "multi_exchange_composite_candles")
         self.assertEqual(DOMAIN_REGISTRY["multi_exchange_quotes"]["table"], "public_exchange_quote_snapshots")
 
     def test_unlicensed_or_unimplemented_domains_are_disabled_by_default(self):
