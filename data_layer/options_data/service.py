@@ -818,9 +818,9 @@ class OptionsDataService:
                     "lookback_hours": lookback_hours or OPTIONS_CONFIG["default_lookback_hours"],
                     "endpoint": source.endpoint,
                 },
-                configuration_ready=bool(source.endpoint),
+                configuration_ready=True,
                 unconfigured_message=(
-                    f"期权来源 {source.source_name} 未配置 endpoint，无法执行采集"
+                    f"期权来源 {source.source_name} 未配置 endpoint，且 Deribit 公共回退不可用"
                 ),
             ) or []
             summary_key = f"{source.source_name}_points"

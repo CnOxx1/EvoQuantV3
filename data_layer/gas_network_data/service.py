@@ -113,6 +113,26 @@ class GasNetworkService:
             except (ValueError, TypeError) as e:
                 logger.warning(f"Etherscan Gas Oracle 数据解析失败: {e}")
 
+        # 无密钥备用：MetaMask Gas API + Blockchair。
+        free_oracle = self.client.fetch_free_gas_oracle()
+        if free_oracle:
+            try:
+                base_fee = float(free_oracle.get("suggestBaseFee", 0))
+                priority_fee = float(free_oracle.get("FastGasPrice", 0)) - base_fee
+                block_number = int(free_oracle.get("LastBlock", 0))
+                if block_number > 0 and base_fee > 0:
+                    self.db.conn.execute("""
+                        INSERT OR REPLACE INTO gas_prices
+                        (base_fee_gwei, priority_fee_gwei, gas_used_ratio,
+                         block_number, timestamp, collected_at)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """, (base_fee, max(priority_fee, 0), 0.0, block_number, now_iso, now_iso))
+                    self.db.conn.commit()
+                    logger.info(f"免费 Gas 备用源采集完成: base={base_fee:.2f} gwei, block={block_number}")
+                    return
+            except (ValueError, TypeError) as exc:
+                logger.warning(f"免费 Gas 备用源数据解析失败: {exc}")
+
         # 备用：Blocknative
         bn_data = self.client.fetch_blocknative_gas()
         if bn_data:

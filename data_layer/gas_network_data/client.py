@@ -17,6 +17,8 @@ class GasNetworkClient:
     BASE_URLS = {
         "etherscan": "https://api.etherscan.io/api",
         "blocknative": "https://api.blocknative.com",
+        "metaswap_gas": "https://gas-api.metaswap.codefi.network/networks/1/suggestedGasFees",
+        "blockchair_eth": "https://api.blockchair.com/ethereum/stats",
     }
 
     def __init__(self, etherscan_key: str = "", blocknative_key: str = ""):
@@ -85,6 +87,30 @@ class GasNetworkClient:
             return resp.json()
         except Exception as e:
             logger.warning(f"Blocknative Gas 请求失败: {e}")
+            return {}
+
+    def fetch_free_gas_oracle(self) -> dict:
+        """无密钥备用：MetaMask Gas API 配合 Blockchair 最新区块高度。"""
+        try:
+            gas_response = self._http.get(self.BASE_URLS["metaswap_gas"])
+            gas_response.raise_for_status()
+            gas_data = gas_response.json()
+            stats_response = self._http.get(self.BASE_URLS["blockchair_eth"])
+            stats_response.raise_for_status()
+            block_number = int((stats_response.json().get("data") or {}).get("blocks") or 0)
+            medium = gas_data.get("medium") or {}
+            base_fee = float(gas_data.get("estimatedBaseFee") or 0)
+            priority_fee = float(medium.get("suggestedMaxPriorityFeePerGas") or 0)
+            if block_number <= 0 or base_fee <= 0:
+                return {}
+            return {
+                "suggestBaseFee": str(base_fee),
+                "FastGasPrice": str(base_fee + priority_fee),
+                "gasUsedRatio": "0",
+                "LastBlock": str(block_number),
+            }
+        except Exception as exc:
+            logger.warning(f"免费 Gas 备用源请求失败: {exc}")
             return {}
 
     def fetch_blocknative_mempool_stats(self) -> dict:

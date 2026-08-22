@@ -1,6 +1,7 @@
 """miner_data 服务层。"""
 
 from datetime import datetime, timezone
+from math import isfinite
 
 from loguru import logger
 
@@ -76,10 +77,16 @@ class MinerDataService:
         stats = self.client.fetch_mining_stats()
         outflows_data = self.client.fetch_miner_outflows()
 
-        hashrate = stats.get("hashrate", 0.0)
-        difficulty = stats.get("difficulty", 0.0)
-        block_reward = stats.get("block_reward", 0.0)
-        miners_revenue = stats.get("miners_revenue", 0.0)
+        hashrate = self._finite_float(stats.get("hashrate", 0.0))
+        difficulty = self._finite_float(stats.get("difficulty", 0.0))
+        block_reward = self._finite_float(stats.get("block_reward", 0.0))
+        miners_revenue = self._finite_float(stats.get("miners_revenue", 0.0))
+
+        # A complete upstream failure must not be persisted as an all-zero
+        # observation, which would make the data domain look falsely healthy.
+        if not any((hashrate, difficulty, block_reward, miners_revenue)):
+            logger.warning("miner_data 未取得可写入的真实公开指标，跳过本次快照")
+            return
 
         # 估算矿工流出：使用算力波动作为代理指标
         miner_outflow_24h = self._estimate_miner_outflow(outflows_data)
@@ -124,6 +131,15 @@ class MinerDataService:
             # 负变化意味着潜在矿工抛压
             return abs(min(change_pct, 0)) * 100
         return 0.0
+
+    @staticmethod
+    def _finite_float(value) -> float:
+        """Convert public JSON numerics to SQLite-compatible REAL safely."""
+        try:
+            number = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return 0.0
+        return number if isfinite(number) else 0.0
 
     def _estimate_difficulty_adjustment(self, stats: dict) -> float:
         """估算下次难度调整百分比。"""
@@ -170,8 +186,8 @@ class MinerDataService:
 
         for entry in history:
             ts = entry.get("timestamp", 0)
-            avg_hashrate = entry.get("avgHashrate", 0.0)
-            difficulty = entry.get("difficulty", 0.0) or 0.0
+            avg_hashrate = self._finite_float(entry.get("avgHashrate", 0.0))
+            difficulty = self._finite_float(entry.get("difficulty", 0.0))
 
             # 时间戳转换
             if isinstance(ts, (int, float)) and ts > 0:

@@ -51,7 +51,7 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     },
     "cross_asset": {
         "db": "analytics",
-        "table": "cross_asset_correlation",
+        "table": "cross_asset_correlation_snapshots",
         "description": "跨资产分析 (相关性/板块轮动)",
     },
     "portfolio_risk": {
@@ -72,12 +72,12 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     "sentiment_composite": {
         "db": "analytics",
         "table": "composite_sentiment_states",
-        "description": "综合情绪评分",
+        "description": "综合情绪评分 [未接通：公开成分权重与质量契约尚未验证]",
     },
     "liquidity_regime": {
         "db": "analytics",
         "table": "liquidity_regime_states",
-        "description": "流动性 Regime 分类",
+        "description": "流动性 Regime [未接通：依赖的储备与质押输入尚不可靠]",
     },
     # === 外部数据 (market) ===
     "macro": {
@@ -97,8 +97,8 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     },
     "options": {
         "db": "market",
-        "table": "latest_options_summary",
-        "description": "期权数据 (波动率曲面/Gamma)",
+        "table": "latest_options_timeseries",
+        "description": "期权数据 (Deribit 公开源；BTC/ETH 部分覆盖)",
     },
     "defi": {
         "db": "market",
@@ -118,22 +118,22 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     "etf_flow": {
         "db": "market",
         "table": "etf_flow_daily",
-        "description": "ETF 资金流 (净流入/AUM)",
+        "description": "ETF 资金流 [未授权：SoSoValue 商业数据许可证]",
     },
     "mev": {
         "db": "market",
-        "table": "mev_metrics",
-        "description": "MEV 数据 (三明治/清算MEV)",
+        "table": "mev_blocks",
+        "description": "MEV 数据 (Flashbots 公开区块；高级归因需授权)",
     },
     "mempool": {
         "db": "market",
-        "table": "mempool_stats",
+        "table": "mempool_snapshots",
         "description": "内存池 (压力/Fee趋势)",
     },
     "exchange_reserve": {
         "db": "market",
         "table": "exchange_reserves",
-        "description": "交易所储备 (BTC/ETH净流)",
+        "description": "交易所储备 [未接通：缺少持续可验证的免费地址归属数据]",
     },
     "miner": {
         "db": "market",
@@ -142,59 +142,59 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     },
     "stablecoin_flow": {
         "db": "market",
-        "table": "stablecoin_events",
-        "description": "稳定币事件流 (mint/burn)",
+        "table": "stablecoin_chain_flows",
+        "description": "稳定币链分布与供应快照（mint/burn 事件为部分覆盖）",
     },
     "token_unlock": {
         "db": "market",
         "table": "token_unlock_events",
-        "description": "代币解锁 (排程/卖压)",
+        "description": "代币解锁 [未接通：无稳定、可再分发的免费排程来源]",
     },
     # === 需付费 / 数据源不可用（默认禁用）===
     "whale_tracker": {
         "db": "market",
         "table": "whale_transactions",
-        "description": "巨鲸追踪 [需付费: Arkham+Nansen]",
+        "description": "巨鲸追踪 [未授权：Arkham / Nansen 商业数据]",
     },
     "whale_pnl": {
         "db": "market",
         "table": "whale_portfolios",
-        "description": "巨鲸 PnL [需付费: DeBank Pro]",
+        "description": "巨鲸 PnL [未授权：DeBank Pro 商业数据]",
     },
     "social_sentiment": {
         "db": "market",
         "table": "social_sentiment_agg",
-        "description": "社交情绪 [需付费: LunarCrush+Santiment]",
+        "description": "社交情绪 [未授权：LunarCrush / Santiment 商业数据]",
     },
     "nft_market": {
         "db": "market",
         "table": "nft_collection_stats",
-        "description": "NFT 市场 [API 已失效: Reservoir]",
+        "description": "NFT 市场 [未接通：原 Reservoir 接口不可用]",
     },
     "dex_trade_flow": {
         "db": "market",
         "table": "dex_large_trades",
-        "description": "DEX 交易流 [API 不存在: 0x]",
+        "description": "DEX 交易流 [未接通：当前 0x 接口不可用]",
     },
     "regulatory": {
         "db": "market",
         "table": "regulatory_events",
-        "description": "监管动态 [采集未实现]",
+        "description": "监管动态 [未接通：采集器尚未实现]",
     },
     "onchain_address": {
         "db": "market",
         "table": "whale_moves",
-        "description": "链上地址画像 [需付费: Arkham]",
+        "description": "链上地址画像 [未授权：Arkham 商业数据]",
     },
     "derivatives_sentiment": {
         "db": "market",
         "table": "derivatives_sentiment",
-        "description": "衍生品情绪 [数据源缺失]",
+        "description": "衍生品情绪 [未接通：尚无稳定公共来源]",
     },
     "onchain_holder": {
         "db": "market",
         "table": "holder_distribution",
-        "description": "链上持有者 [数据源缺失/付费]",
+        "description": "链上持有者 [未授权：地址级持仓分布商业数据]",
     },
 }
 

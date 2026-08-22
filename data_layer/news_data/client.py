@@ -386,7 +386,7 @@ class NewsFeedClient:
 
     def _build_connector(self) -> aiohttp.TCPConnector:
         resolver = None
-        if self.resolver_mode == "threaded":
+        if self.resolver_mode in {"threaded", "auto"}:
             resolver = aiohttp.ThreadedResolver()
         elif self.resolver_mode == "async":
             resolver = aiohttp.AsyncResolver()

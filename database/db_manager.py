@@ -2464,6 +2464,244 @@ class DBManager:
             ON data_quality_audit_snapshots(audit_scope, snapshot_time)
         """)
 
+    def _create_admin_workspace_tables(self):
+        """创建本地 Intelligence Console 的工作区表。
+
+        这些表位于既有 analytics.db，统一使用 ``admin_`` 前缀，避免与
+        市场数据和逻辑层输出表混淆。此方法必须保持幂等，以便随现有
+        ``init_analytics_tables`` 生命周期安全执行。
+        """
+        self.conn.executescript("""
+            CREATE TABLE IF NOT EXISTS admin_users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                open_id TEXT NOT NULL UNIQUE,
+                username TEXT UNIQUE,
+                password_hash TEXT,
+                password_updated_at TEXT,
+                name TEXT,
+                email TEXT,
+                login_method TEXT,
+                role TEXT NOT NULL DEFAULT 'user'
+                    CHECK(role IN ('user', 'admin')),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_signed_in TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_teams (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                slug TEXT NOT NULL UNIQUE,
+                plan TEXT NOT NULL DEFAULT 'pilot'
+                    CHECK(plan IN ('pilot', 'team', 'enterprise')),
+                created_by INTEGER NOT NULL REFERENCES admin_users(id),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_team_members (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL REFERENCES admin_teams(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+                role TEXT NOT NULL DEFAULT 'viewer'
+                    CHECK(role IN ('admin', 'analyst', 'viewer')),
+                joined_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_active_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(team_id, user_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_team_invitations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL REFERENCES admin_teams(id) ON DELETE CASCADE,
+                email TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'viewer'
+                    CHECK(role IN ('admin', 'analyst', 'viewer')),
+                status TEXT NOT NULL DEFAULT 'pending'
+                    CHECK(status IN ('pending', 'accepted', 'revoked')),
+                invited_by INTEGER NOT NULL REFERENCES admin_users(id),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expires_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_evoquant_connections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL UNIQUE REFERENCES admin_teams(id) ON DELETE CASCADE,
+                base_url TEXT NOT NULL,
+                auth_header_name TEXT NOT NULL DEFAULT 'Authorization',
+                credential_ciphertext TEXT,
+                credential_hint TEXT,
+                status TEXT NOT NULL DEFAULT 'unverified'
+                    CHECK(status IN ('unverified', 'healthy', 'degraded', 'unreachable')),
+                quality_status TEXT NOT NULL DEFAULT 'unknown'
+                    CHECK(quality_status IN ('ready', 'stale', 'partial', 'missing', 'unknown')),
+                last_checked_at TEXT,
+                last_error TEXT,
+                created_by INTEGER NOT NULL REFERENCES admin_users(id),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_watchlists (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL REFERENCES admin_teams(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                description TEXT,
+                created_by INTEGER NOT NULL REFERENCES admin_users(id),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_watchlist_assets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                watchlist_id INTEGER NOT NULL REFERENCES admin_watchlists(id) ON DELETE CASCADE,
+                symbol TEXT NOT NULL,
+                rationale TEXT,
+                priority TEXT NOT NULL DEFAULT 'normal'
+                    CHECK(priority IN ('critical', 'high', 'normal', 'low')),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(watchlist_id, symbol)
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_research_briefs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL REFERENCES admin_teams(id) ON DELETE CASCADE,
+                title TEXT NOT NULL,
+                as_of TEXT NOT NULL,
+                overall_regime TEXT,
+                summary TEXT NOT NULL,
+                quality_status TEXT NOT NULL DEFAULT 'partial'
+                    CHECK(quality_status IN ('ready', 'stale', 'partial', 'missing')),
+                source TEXT NOT NULL DEFAULT 'EvoQuant',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_brief_assets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                brief_id INTEGER NOT NULL REFERENCES admin_research_briefs(id) ON DELETE CASCADE,
+                symbol TEXT NOT NULL,
+                regime TEXT,
+                leverage TEXT,
+                funding_rate REAL,
+                liquidity TEXT,
+                sentiment_score REAL,
+                quality_status TEXT NOT NULL DEFAULT 'partial'
+                    CHECK(quality_status IN ('ready', 'stale', 'partial', 'missing')),
+                quality_note TEXT,
+                source TEXT NOT NULL DEFAULT 'EvoQuant',
+                observed_at TEXT NOT NULL,
+                UNIQUE(brief_id, symbol)
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_risk_alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL REFERENCES admin_teams(id) ON DELETE CASCADE,
+                watchlist_asset_id INTEGER REFERENCES admin_watchlist_assets(id) ON DELETE SET NULL,
+                symbol TEXT NOT NULL,
+                type TEXT NOT NULL CHECK(type IN (
+                    'unlock', 'open_interest', 'liquidation', 'liquidity',
+                    'macro', 'governance', 'data_quality'
+                )),
+                severity TEXT NOT NULL DEFAULT 'medium'
+                    CHECK(severity IN ('critical', 'high', 'medium', 'low')),
+                title TEXT NOT NULL,
+                trigger_reason TEXT NOT NULL,
+                current_value TEXT,
+                comparison_label TEXT,
+                comparison_value TEXT,
+                comparison_delta TEXT,
+                source TEXT NOT NULL,
+                quality_status TEXT NOT NULL DEFAULT 'partial'
+                    CHECK(quality_status IN ('ready', 'stale', 'partial', 'missing')),
+                event_time TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'active'
+                    CHECK(status IN ('active', 'resolved', 'dismissed')),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_ingest_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL REFERENCES admin_teams(id) ON DELETE CASCADE,
+                event_id TEXT NOT NULL,
+                payload_hash TEXT NOT NULL,
+                source TEXT NOT NULL,
+                reported_at TEXT NOT NULL,
+                received_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(team_id, event_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_alert_feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                alert_id INTEGER NOT NULL REFERENCES admin_risk_alerts(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+                outcome TEXT NOT NULL CHECK(outcome IN ('useful', 'not_useful', 'handled')),
+                note TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(alert_id, user_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_api_keys (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL REFERENCES admin_teams(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                key_prefix TEXT NOT NULL,
+                key_hash TEXT NOT NULL UNIQUE,
+                created_by INTEGER NOT NULL REFERENCES admin_users(id),
+                last_used_at TEXT,
+                total_calls INTEGER NOT NULL DEFAULT 0,
+                revoked_at TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_usage_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL REFERENCES admin_teams(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES admin_users(id) ON DELETE SET NULL,
+                api_key_id INTEGER REFERENCES admin_api_keys(id) ON DELETE SET NULL,
+                event_type TEXT NOT NULL CHECK(event_type IN (
+                    'api_request', 'brief_view', 'alert_delivery', 'connection_check'
+                )),
+                metadata_json TEXT,
+                occurred_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_admin_team_members_user
+                ON admin_team_members(user_id);
+            CREATE INDEX IF NOT EXISTS idx_admin_watchlists_team
+                ON admin_watchlists(team_id);
+            CREATE INDEX IF NOT EXISTS idx_admin_watchlist_assets_symbol
+                ON admin_watchlist_assets(symbol);
+            CREATE INDEX IF NOT EXISTS idx_admin_research_briefs_team_asof
+                ON admin_research_briefs(team_id, as_of DESC);
+            CREATE INDEX IF NOT EXISTS idx_admin_brief_assets_symbol
+                ON admin_brief_assets(symbol);
+            CREATE INDEX IF NOT EXISTS idx_admin_risk_alerts_team_event
+                ON admin_risk_alerts(team_id, event_time DESC);
+            CREATE INDEX IF NOT EXISTS idx_admin_risk_alerts_team_symbol
+                ON admin_risk_alerts(team_id, symbol);
+            CREATE INDEX IF NOT EXISTS idx_admin_ingest_events_team_reported
+                ON admin_ingest_events(team_id, reported_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_admin_alert_feedback_user_created
+                ON admin_alert_feedback(user_id, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_admin_api_keys_team
+                ON admin_api_keys(team_id);
+            CREATE INDEX IF NOT EXISTS idx_admin_usage_events_team_time
+                ON admin_usage_events(team_id, occurred_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_admin_usage_events_user_time
+                ON admin_usage_events(user_id, occurred_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_admin_usage_events_key_time
+                ON admin_usage_events(api_key_id, occurred_at DESC);
+        """)
+        self._ensure_columns("admin_users", {
+            "username": "TEXT",
+            "password_hash": "TEXT",
+            "password_updated_at": "TEXT",
+        })
+        self.conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_users_username "
+            "ON admin_users(username) WHERE username IS NOT NULL"
+        )
+
     def _create_cross_asset_analysis_tables(self):
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS cross_asset_correlation_snapshots (

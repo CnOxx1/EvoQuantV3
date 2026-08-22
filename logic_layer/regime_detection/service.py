@@ -89,14 +89,15 @@ class RegimeDetectionService:
     def _build_features(self, symbol: str) -> RegimeFeatures | None:
         """从数据库构建分类特征。"""
         try:
-            from database.router import DatabaseRouter, Domain
-            market_db = DatabaseRouter().get_manager(Domain.MARKET_DATA)
+            from database.router import DatabaseRouter
+            analytics_db = DatabaseRouter().get_analytics_db()
+            storage_symbol = self._storage_symbol(symbol)
 
-            # 获取近期 kline 数据
-            cursor = market_db.conn.execute("""
+            # merged_klines 是逻辑层标准化后的数据，存储在 analytics.db。
+            cursor = analytics_db.conn.execute("""
                 SELECT close, volume FROM merged_klines
-                WHERE entity_key = ? ORDER BY open_time DESC LIMIT 168
-            """, (symbol,))
+                WHERE symbol = ? ORDER BY open_time DESC LIMIT 168
+            """, (storage_symbol,))
             rows = cursor.fetchall()
             if len(rows) < 20:
                 return None
@@ -132,7 +133,7 @@ class RegimeDetectionService:
             adx = abs(up_moves - 7) / 7 * 50  # 粗略近似
 
             # BTC 相关性
-            corr = self._compute_btc_correlation(symbol, market_db) if symbol != "BTC" else 1.0
+            corr = self._compute_btc_correlation(symbol, analytics_db) if symbol != "BTC" else 1.0
 
             return RegimeFeatures(
                 returns=returns[-48:],  # 最近 48h
@@ -146,19 +147,24 @@ class RegimeDetectionService:
             logger.debug(f"构建特征失败 [{symbol}]: {e}")
             return None
 
+    @staticmethod
+    def _storage_symbol(symbol: str) -> str:
+        """Translate asset codes to the standardized merged-kline symbol key."""
+        return symbol if "/" in symbol else f"{symbol}/USDT"
+
     def _compute_btc_correlation(self, symbol: str, market_db) -> float:
         """计算与 BTC 的相关性。"""
         try:
             cursor = market_db.conn.execute("""
                 SELECT close FROM merged_klines
-                WHERE entity_key = 'BTC' ORDER BY open_time DESC LIMIT 48
-            """)
+                WHERE symbol = ? ORDER BY open_time DESC LIMIT 48
+            """, (self._storage_symbol("BTC"),))
             btc_closes = [r[0] for r in reversed(cursor.fetchall())]
 
             cursor = market_db.conn.execute("""
                 SELECT close FROM merged_klines
-                WHERE entity_key = ? ORDER BY open_time DESC LIMIT 48
-            """, (symbol,))
+                WHERE symbol = ? ORDER BY open_time DESC LIMIT 48
+            """, (self._storage_symbol(symbol),))
             sym_closes = [r[0] for r in reversed(cursor.fetchall())]
 
             if len(btc_closes) < 20 or len(sym_closes) < 20:

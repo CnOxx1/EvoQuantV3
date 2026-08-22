@@ -67,6 +67,7 @@ ANALYTICS_INIT_METHODS: list[str] = [
     "_create_cross_asset_analysis_tables",
     "_create_portfolio_risk_tables",
     "_create_feature_standardization_tables",
+    "_create_admin_workspace_tables",
 ]
 
 # ---------------------------------------------------------------------------

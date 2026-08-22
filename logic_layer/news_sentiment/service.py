@@ -23,6 +23,7 @@ class NewsSentimentService:
             from database.router import DatabaseRouter
             self.db = DatabaseRouter().get_analytics_db()
         self.repository = NewsSentimentRepository(self.db)
+        self.repository.ensure_tables()
         self.classifier = NewsSentimentClassifier()
 
     def init_storage(self):
@@ -100,4 +101,3 @@ class NewsSentimentService:
 
     def close(self):
         self.db.close()
-
