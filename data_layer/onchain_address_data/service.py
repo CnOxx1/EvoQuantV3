@@ -37,11 +37,15 @@ class OnchainAddressService:
                 label TEXT DEFAULT '',
                 entity TEXT DEFAULT '',
                 category TEXT DEFAULT '',
+                source TEXT DEFAULT '',
                 first_seen TEXT DEFAULT '',
                 last_active TEXT DEFAULT '',
                 updated_at TEXT NOT NULL
             )
         """)
+        columns = {row[1] for row in self.db.conn.execute("PRAGMA table_info(address_labels)")}
+        if "source" not in columns:
+            self.db.conn.execute("ALTER TABLE address_labels ADD COLUMN source TEXT DEFAULT ''")
         self.db.conn.execute("""
             CREATE TABLE IF NOT EXISTS address_flows (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,7 +96,8 @@ class OnchainAddressService:
         logger.info("onchain_address_data bootstrap 完成")
 
     def collect_once(self):
-        """执行一次采集周期：巨鲸预警 + 跟踪地址资金流。"""
+        """执行一次采集周期：公开地址标签 + 已授权时的巨鲸预警和资金流。"""
+        self._update_labels()
         self._collect_whale_alerts()
         for addr in self.TRACKED_ADDRESSES:
             self._collect_address_flows(addr)
@@ -177,6 +182,8 @@ class OnchainAddressService:
         for address in self.TRACKED_ADDRESSES:
             entity_data = self.client.fetch_arkham_entity(address)
             if not entity_data:
+                entity_data = self.client.fetch_public_label(address, chain="ethereum")
+            if not entity_data:
                 continue
 
             label = entity_data.get("label", "")
@@ -184,19 +191,21 @@ class OnchainAddressService:
             category = entity_data.get("category", "")
             first_seen = entity_data.get("first_seen", "")
             last_active = entity_data.get("last_active", "")
+            source = entity_data.get("source", "arkham")
 
             self.db.conn.execute("""
-                INSERT INTO address_labels
-                (address, label, entity, category, first_seen, last_active, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(address) DO UPDATE SET
-                    label=excluded.label,
-                    entity=excluded.entity,
-                    category=excluded.category,
-                    first_seen=excluded.first_seen,
-                    last_active=excluded.last_active,
-                    updated_at=excluded.updated_at
-            """, (address, label, entity, category, first_seen,
+            INSERT INTO address_labels
+            (address, label, entity, category, source, first_seen, last_active, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(address) DO UPDATE SET
+                label=excluded.label,
+                entity=excluded.entity,
+                category=excluded.category,
+                source=excluded.source,
+                first_seen=excluded.first_seen,
+                last_active=excluded.last_active,
+                updated_at=excluded.updated_at
+            """, (address, label, entity, category, source, first_seen,
                   last_active, now_iso))
 
         self.db.conn.commit()

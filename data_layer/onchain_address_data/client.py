@@ -40,6 +40,35 @@ class OnchainAddressClient:
             logger.warning(f"Arkham entity 请求失败: {e}")
             return {}
 
+    def fetch_public_label(self, address: str, chain: str = "ethereum") -> dict:
+        """获取可审计的公开地址标签，不要求 Arkham 等商业密钥。"""
+        if chain not in {"bitcoin", "ethereum", "tron"}:
+            logger.warning("CryptoLabel 不支持链: {}", chain)
+            return {}
+        try:
+            resp = self._http.get(f"https://cryptolabel.io/api/v1/address/{chain}/{address}")
+            resp.raise_for_status()
+            payload = resp.json()
+        except Exception as e:
+            logger.warning(f"CryptoLabel 标签请求失败: {e}")
+            return {}
+
+        entity = payload.get("entity") or {}
+        labels = payload.get("labels") or []
+        label = next((item.get("type", "") for item in labels if item.get("type")), "")
+        entity_name = entity.get("name", "")
+        category = entity.get("category", "")
+        if not (label or entity_name or category):
+            return {}
+        return {
+            "label": label,
+            "entity": entity_name,
+            "category": category,
+            "first_seen": "",
+            "last_active": "",
+            "source": "cryptolabel_public",
+        }
+
     def fetch_arkham_transfers(self, address: str, limit: int = 50) -> list[dict]:
         """从 Arkham 获取地址资金转账记录。"""
         if not self.arkham_key:

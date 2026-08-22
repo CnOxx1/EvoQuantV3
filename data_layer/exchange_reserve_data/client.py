@@ -1,103 +1,94 @@
-"""exchange_reserve_data HTTP 客户端。"""
+from __future__ import annotations
+
+import csv
+import io
+import re
+import zipfile
+from collections import defaultdict
+from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 
 import httpx
 from loguru import logger
 
 
 class ExchangeReserveDataClient:
-    """交易所储备数据 API 客户端。
+    """OKX 官方 Proof-of-Reserves CSV 客户端。
 
-    数据源：
-    - DefiLlama (交易所 TVL / 储备数据)
-    - Blockchain.com (BTC 交易所余额)
+    此客户端仅处理 OKX 在公开下载页面列出的版本化储备证明文件；不使用
+    DeFi TVL、未验证地址或第三方估算值替代交易所储备。
     """
 
-    BASE_URLS = {
-        "defillama": "https://api.llama.fi",
-        "blockchain": "https://blockchain.info",
-    }
+    REPORTS_PAGE = "https://www.okx.com/en-us/proof-of-reserves/download"
+    ARCHIVE_PATTERN = re.compile(
+        r"https://static\.okx\.com/cdn/okx/por/chain/por_csv_(\d{10})_V\d+\.zip"
+    )
+    MAX_ARCHIVE_BYTES = 200 * 1024 * 1024
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30, follow_redirects=True)
+        self._http = httpx.Client(timeout=90, follow_redirects=True)
 
-    # ─── BTC Reserves ─────────────────────────────────────────────────────
-
-    def fetch_btc_reserves(self) -> list[dict]:
-        """从 Blockchain.com 获取 BTC 交易所储备数据。"""
+    def discover_latest_okx_report(self) -> dict:
+        """从 OKX 官方下载页发现最新可下载的储备 CSV。"""
         try:
-            resp = self._http.get(
-                f"{self.BASE_URLS['blockchain']}/balance",
-                params={"active": "1d", "cors": "true"},
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            results = []
-            if isinstance(data, dict):
-                for address, info in data.items():
-                    results.append({
-                        "address": address,
-                        "balance": info.get("final_balance", 0),
-                    })
-            return results
-        except Exception as e:
-            logger.warning(f"Blockchain.com BTC reserves 请求失败: {e}")
-            return []
+            response = self._http.get(self.REPORTS_PAGE)
+            response.raise_for_status()
+            matches = self.ARCHIVE_PATTERN.findall(response.text)
+            urls = self.ARCHIVE_PATTERN.finditer(response.text)
+            candidates = [(match.group(1), match.group(0)) for match in urls]
+            if not matches or not candidates:
+                logger.warning("OKX PoR 下载页未找到可用 CSV 链接")
+                return {}
+            timestamp, archive_url = max(candidates, key=lambda item: item[0])
+            report_at = datetime.strptime(timestamp, "%Y%m%d%H").replace(tzinfo=timezone.utc)
+            return {
+                "exchange": "OKX",
+                "report_at": report_at.isoformat(),
+                "archive_url": archive_url,
+                "source_kind": "okx_official_proof_of_reserves",
+            }
+        except Exception as exc:
+            logger.warning(f"OKX PoR 报告列表请求失败: {exc}")
+            return {}
 
-    # ─── ETH Reserves ─────────────────────────────────────────────────────
-
-    def fetch_eth_reserves(self) -> list[dict]:
-        """从 DefiLlama 获取 ETH 交易所储备数据（通过 protocols 接口）。"""
+    def fetch_okx_reserves(self) -> dict:
+        """下载并汇总最新版 OKX 官方 CSV 中的币种余额。"""
+        report = self.discover_latest_okx_report()
+        if not report:
+            return {}
         try:
-            resp = self._http.get(
-                f"{self.BASE_URLS['defillama']}/protocols",
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            results = []
-            if isinstance(data, list):
-                for protocol in data:
-                    category = protocol.get("category", "")
-                    if category and "exchange" in category.lower():
-                        chains = protocol.get("chainTvls", {})
-                        eth_tvl = chains.get("Ethereum", 0)
-                        if eth_tvl and eth_tvl > 0:
-                            results.append({
-                                "exchange": protocol.get("name", "unknown"),
-                                "asset": "ETH",
-                                "reserve_balance": float(eth_tvl),
-                            })
-            return results
-        except Exception as e:
-            logger.warning(f"DefiLlama ETH reserves 请求失败: {e}")
-            return []
-
-    # ─── Stablecoin Reserves ──────────────────────────────────────────────
-
-    def fetch_stablecoin_reserves(self) -> list[dict]:
-        """从 DefiLlama 获取稳定币交易所储备数据。"""
-        try:
-            resp = self._http.get(
-                f"{self.BASE_URLS['defillama']}/protocols",
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            results = []
-            if isinstance(data, list):
-                for protocol in data:
-                    category = protocol.get("category", "")
-                    if category and "exchange" in category.lower():
-                        # 使用总 TVL 近似稳定币储备
-                        stables = protocol.get("stablesTvl", 0) or 0
-                        if stables > 0:
-                            results.append({
-                                "exchange": protocol.get("name", "unknown"),
-                                "asset": "USDT",
-                                "reserve_balance": float(stables),
-                            })
-            return results
-        except Exception as e:
-            logger.warning(f"DefiLlama stablecoin reserves 请求失败: {e}")
-            return []
+            response = self._http.get(report["archive_url"])
+            response.raise_for_status()
+            if len(response.content) > self.MAX_ARCHIVE_BYTES:
+                raise ValueError("OKX PoR 归档超过安全大小限制")
+            totals: dict[str, Decimal] = defaultdict(Decimal)
+            archive = zipfile.ZipFile(io.BytesIO(response.content))
+            for info in archive.infolist():
+                if not info.filename.lower().endswith(".csv"):
+                    continue
+                with archive.open(info) as raw:
+                    reader = csv.DictReader(io.TextIOWrapper(raw, encoding="utf-8-sig", errors="replace"))
+                    if not {"coin", "amount"}.issubset(reader.fieldnames or set()):
+                        continue
+                    for row in reader:
+                        coin = (row.get("coin") or "").strip()
+                        try:
+                            amount = Decimal((row.get("amount") or "0").strip())
+                        except InvalidOperation:
+                            continue
+                        if coin and amount >= 0:
+                            totals[coin] += amount
+            if not totals:
+                logger.warning("OKX PoR CSV 中未解析到资产余额")
+                return {}
+            report["assets"] = [
+                {"asset": asset, "reserve_balance": float(balance)}
+                for asset, balance in sorted(totals.items())
+            ]
+            return report
+        except Exception as exc:
+            logger.warning(f"OKX PoR CSV 下载或解析失败: {exc}")
+            return {}
 
     def close(self):
         self._http.close()

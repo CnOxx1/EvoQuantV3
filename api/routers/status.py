@@ -133,7 +133,7 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     "exchange_reserve": {
         "db": "market",
         "table": "exchange_reserves",
-        "description": "交易所储备 [未接通：缺少持续可验证的免费地址归属数据]",
+        "description": "交易所储备（OKX 官方 Proof-of-Reserves 报告快照；非实时净流量）",
     },
     "miner": {
         "db": "market",
@@ -183,8 +183,8 @@ DOMAIN_REGISTRY: dict[str, dict[str, str]] = {
     },
     "onchain_address": {
         "db": "market",
-        "table": "whale_moves",
-        "description": "链上地址画像 [未授权：Arkham 商业数据]",
+        "table": "address_labels",
+        "description": "链上地址公开标签（CryptoLabel；BTC/ETH/TRON 已知实体，非全量鲸鱼归因）",
     },
     "derivatives_sentiment": {
         "db": "market",

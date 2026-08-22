@@ -24,7 +24,7 @@ EXPECTED_ACTIVE = {
     "technical_indicators", "feature_standardization", "cross_asset",
     "portfolio_risk", "macro", "news", "onchain", "options", "defi",
     "governance", "gas_network", "mev", "mempool", "miner",
-    "stablecoin_flow", "regime_detection",
+    "stablecoin_flow", "regime_detection", "onchain_address", "exchange_reserve",
 }
 EXPECTED_EMPTY = {
     "anomaly_detection",
@@ -88,7 +88,7 @@ def main() -> int:
         "expected_internal_domains_are_empty_not_error": all(
             evidence[domain]["api_status"] == "empty" for domain in EXPECTED_EMPTY
         ),
-        "unavailable_domains_are_explicitly_disabled": api["summary"].get("disabled") == 14,
+        "unavailable_domains_are_explicitly_disabled": api["summary"].get("disabled") == 12,
     }
     result = {
         "status": "passed" if all(checks.values()) else "failed",
