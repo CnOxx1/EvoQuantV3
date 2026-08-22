@@ -15,6 +15,7 @@ class FundingRateCollector:
     """资金费率采集器（合约交易必需）"""
 
     HISTORY_BATCH_LIMIT = 100
+    MAX_HISTORY_BATCHES = 100
 
     def __init__(self, client_manager: ExchangeClientManager, db: DBManager):
         self.client_manager = client_manager
@@ -157,7 +158,11 @@ class FundingRateCollector:
         results = []
 
         try:
-            while True:
+            for batch_number in range(1, self.MAX_HISTORY_BATCHES + 1):
+                logger.info(
+                    f"回填资金费率批次 {batch_number}/{self.MAX_HISTORY_BATCHES}: "
+                    f"[{exchange_name}] {symbol} since={since_ms}"
+                )
                 raw_list = self._fetch_funding_history(
                     exchange_name,
                     symbol,
@@ -196,6 +201,10 @@ class FundingRateCollector:
                     break
                 since_ms = last_ts + 1
                 time.sleep(0.2)
+            else:
+                logger.warning(
+                    f"历史资金费率达到批次上限，停止回填 [{exchange_name}] {symbol}"
+                )
 
             logger.info(
                 f"获取历史资金费率: [{exchange_name}] {symbol} 共{len(results)}条"
