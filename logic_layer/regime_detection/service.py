@@ -52,8 +52,7 @@ class RegimeDetectionService:
             # 计算持续时间
             prev = self.repository.fetch_latest_regime(symbol)
             if prev and prev["regime"] == price_regime:
-                prev_time = datetime.fromisoformat(prev["as_of"])
-                duration = int((datetime.now(timezone.utc) - prev_time).total_seconds() / 3600)
+                duration = self._duration_hours(prev["as_of"])
             else:
                 duration = 0
                 # 记录转换
@@ -151,6 +150,21 @@ class RegimeDetectionService:
     def _storage_symbol(symbol: str) -> str:
         """Translate asset codes to the standardized merged-kline symbol key."""
         return symbol if "/" in symbol else f"{symbol}/USDT"
+
+    @staticmethod
+    def _duration_hours(previous_as_of: str, now: datetime | None = None) -> int:
+        """Return elapsed hours while accepting legacy naive and UTC timestamps."""
+        previous = datetime.fromisoformat(previous_as_of)
+        if previous.tzinfo is None:
+            previous = previous.replace(tzinfo=timezone.utc)
+        else:
+            previous = previous.astimezone(timezone.utc)
+        current = now or datetime.now(timezone.utc)
+        if current.tzinfo is None:
+            current = current.replace(tzinfo=timezone.utc)
+        else:
+            current = current.astimezone(timezone.utc)
+        return max(0, int((current - previous).total_seconds() / 3600))
 
     def _compute_btc_correlation(self, symbol: str, market_db) -> float:
         """计算与 BTC 的相关性。"""
